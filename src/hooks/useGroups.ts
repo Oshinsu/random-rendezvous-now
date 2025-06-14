@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Group } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { GeolocationService, LocationData } from '@/services/geolocation';
+import { GooglePlacesService } from '@/services/googlePlaces';
 
 // Liste des bars parisiens pour la sélection aléatoire
 const PARIS_BARS = [
@@ -27,25 +27,6 @@ export interface GroupMember {
   joinedAt: string;
   status: 'confirmed' | 'pending';
 }
-
-const getRandomBar = (userLat?: number, userLng?: number) => {
-  if (userLat && userLng) {
-    // Trier les bars par distance si on a la position utilisateur
-    const barsWithDistance = PARIS_BARS.map(bar => ({
-      ...bar,
-      distance: GeolocationService.calculateDistance(userLat, userLng, bar.lat, bar.lng)
-    })).sort((a, b) => a.distance - b.distance);
-    
-    // Prendre un des 5 bars les plus proches au hasard
-    const nearestBars = barsWithDistance.slice(0, 5);
-    const randomIndex = Math.floor(Math.random() * nearestBars.length);
-    return nearestBars[randomIndex];
-  }
-  
-  // Fallback: bar complètement aléatoire
-  const randomIndex = Math.floor(Math.random() * PARIS_BARS.length);
-  return PARIS_BARS[randomIndex];
-};
 
 // Global channel reference to prevent multiple subscriptions
 let globalChannel: any = null;
@@ -466,51 +447,67 @@ export const useGroups = () => {
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
-        // Sélection d'UN SEUL bar basée sur la géolocalisation du groupe et des participants
-        let barSelectionLocation = null;
+        // Utiliser l'API Google Places pour trouver un vrai bar
+        let searchLocation = null;
         
         if (targetGroup.latitude && targetGroup.longitude) {
-          barSelectionLocation = {
+          searchLocation = {
             latitude: targetGroup.latitude,
             longitude: targetGroup.longitude
           };
         } else if (userLocation) {
-          barSelectionLocation = {
+          searchLocation = {
             latitude: userLocation.latitude,
             longitude: userLocation.longitude
           };
         }
         
-        const selectedBar = getRandomBar(
-          barSelectionLocation?.latitude,
-          barSelectionLocation?.longitude
-        );
-        
-        // Rendez-vous dans 1 heure après la formation du groupe
-        const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-        
-        console.log('🍺 Bar sélectionné pour le groupe complet:', {
-          bar: selectedBar.name,
-          address: selectedBar.address,
-          meetingTime: meetingTime.toLocaleString('fr-FR'),
-          selectionBasedOn: barSelectionLocation ? 'Géolocalisation du groupe/utilisateur' : 'Sélection aléatoire'
-        });
-        
-        await supabase
-          .from('groups')
-          .update({
-            current_participants: newParticipantCount,
-            status: 'confirmed',
-            bar_name: selectedBar.name,
-            bar_address: selectedBar.address,
-            meeting_time: meetingTime.toISOString()
-          })
-          .eq('id', targetGroup.id);
+        if (searchLocation) {
+          console.log('🔍 Recherche d\'un bar via Google Places...');
+          const selectedBar = await GooglePlacesService.findNearbyBars(
+            searchLocation.latitude,
+            searchLocation.longitude,
+            5000 // 5km de rayon
+          );
+          
+          if (selectedBar) {
+            // Rendez-vous dans 1 heure après la formation du groupe
+            const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+            
+            console.log('🍺 Bar trouvé via Google Places:', {
+              name: selectedBar.name,
+              address: selectedBar.formatted_address,
+              meetingTime: meetingTime.toLocaleString('fr-FR'),
+              coordinates: selectedBar.geometry.location
+            });
+            
+            await supabase
+              .from('groups')
+              .update({
+                current_participants: newParticipantCount,
+                status: 'confirmed',
+                bar_name: selectedBar.name,
+                bar_address: selectedBar.formatted_address,
+                meeting_time: meetingTime.toISOString(),
+                bar_latitude: selectedBar.geometry.location.lat,
+                bar_longitude: selectedBar.geometry.location.lng,
+                bar_place_id: selectedBar.place_id
+              })
+              .eq('id', targetGroup.id);
 
-        toast({ 
-          title: '🎉 Groupe complet !', 
-          description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
-        });
+            toast({ 
+              title: '🎉 Groupe complet !', 
+              description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
+            });
+          } else {
+            console.error('❌ Impossible de trouver un bar via Google Places');
+            toast({ 
+              title: 'Erreur', 
+              description: 'Impossible de trouver un bar dans votre zone.', 
+              variant: 'destructive' 
+            });
+          }
+        }
       } else {
         await supabase
           .from('groups')

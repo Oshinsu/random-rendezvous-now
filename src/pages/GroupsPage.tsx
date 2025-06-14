@@ -120,6 +120,8 @@ const GroupsPage = () => {
                       barAddress={currentGroup.bar_address}
                       meetingTime={currentGroup.meeting_time}
                       isGroupComplete={isGroupComplete}
+                      barLatitude={currentGroup.bar_latitude}
+                      barLongitude={currentGroup.bar_longitude}
                     />
                   )}
 
