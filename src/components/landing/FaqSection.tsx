@@ -8,41 +8,44 @@ import {
 
 const faqs = [
   {
-    question: "Sérieux, 100% random ? Et si je tombe avec des gens bizarres ?",
-    answer: "C'est ça, l'aventure ! Et hey, le 'bizarre' d'aujourd'hui est peut-être ton meilleur pote de demain. Au pire, c'est une histoire à raconter pour 1€. Le risque est fun, non ?",
+    question: "Vraiment 100% random ? Et si je tombe avec des gens bizarres ?",
+    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote pour 1€. Le risque fait partie du charme, non ?",
   },
   {
-    question: "Je ne vois pas de carte avant de payer ? Un peu flippant, non ?",
-    answer: "Le mystère fait partie du jeu ! On te garantit un bar sympa et accessible. Fais confiance au hasard (et à notre sélection de bars partenaires qui grandit chaque jour).",
+    question: "Pourquoi je ne vois pas le bar avant de payer ?",
+    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection croissante de bars partenaires.",
   },
   {
-    question: "Et si personne ne me plaît dans le groupe ?",
-    answer: "Random, c'est pas Tinder avec un G. L'idée, c'est de passer un bon moment, élargir ton cercle, pas de trouver l'âme sœur en 5 minutes. Chill. Le but est la rencontre, l'expérience sociale.",
+    question: "Et si le groupe ne me plaît pas ?",
+    answer: "Random n'est pas Tinder en groupe. L'objectif : passer un bon moment et élargir ton cercle social. Reste ouvert, la magie opère souvent quand on s'y attend le moins !",
   },
   {
-    question: "1€ par personne ? Pourquoi payer ?",
-    answer: "Pour garantir l'engagement (moins de lapins !), éviter les faux comptes, et nous permettre de te proposer une expérience sans pub, de qualité, et de développer des partenariats avec les meilleurs bars.",
+    question: "Pourquoi payer 1€ ?",
+    answer: "Pour s'assurer que tout le monde est motivé (fini les lapins !), éviter les faux profils, et nous permettre d'améliorer constamment l'expérience sans pub intrusive.",
   },
   {
-    question: "Est-ce que c'est sécurisé ?",
-    answer: "Absolument. Le paiement est sécurisé. Nous travaillons uniquement avec des établissements publics. Et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit est notre priorité."
+    question: "C'est sécurisé ?",
+    answer: "Totalement. Paiement sécurisé, lieux publics uniquement, et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit = notre obsession."
   }
 ];
 
 const FaqSection = () => {
   return (
-    <section className="py-16 md:py-24 bg-secondary">
+    <section className="py-16 md:py-20 bg-secondary">
       <div className="container mx-auto px-6">
-        <h2 className="text-4xl md:text-5xl font-heading font-bold text-center mb-12 md:mb-16">
-          Vos Questions, <span className="text-primary">Nos Réponses (Sans Filtre)</span>
+        <h2 className="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+          Questions <span className="text-primary">Brûlantes</span> ?
         </h2>
+        <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+          On répond cash, sans détour. Comme on aime chez Random.
+        </p>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
           {faqs.map((faq, index) => (
             <AccordionItem value={`item-${index}`} key={index} className="border-b-muted/50 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
-              <AccordionTrigger className="text-left text-lg hover:no-underline py-4 font-semibold">
+              <AccordionTrigger className="text-left text-base hover:no-underline py-4 font-semibold hover:text-primary transition-colors duration-300">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4 pt-2">
+              <AccordionContent className="text-muted-foreground pb-4 pt-2 text-sm leading-relaxed">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

@@ -3,43 +3,46 @@ import { Sparkles, ShieldCheck, ThumbsUp, Zap } from "lucide-react";
 
 const benefits = [
   {
-    icon: <Sparkles className="w-10 h-10 text-primary" />,
-    title: "L'Authenticité Brut",
-    description: "Pas de filtres, pas de masques, pas de profils léchés. Juste des humains, prêts à connecter.",
+    icon: <Sparkles className="w-8 h-8 text-primary" />,
+    title: "100% Authentique",
+    description: "Fini les filtres et les profils bidons. Ici, on se montre tel qu'on est. L'authenticité, c'est notre kiff.",
   },
   {
-    icon: <Zap className="w-10 h-10 text-primary" />,
-    title: "Le Frisson de l'Inconnu",
-    description: "Redécouvre le plaisir de la surprise. Chaque rencontre est une nouvelle page blanche.",
+    icon: <Zap className="w-8 h-8 text-primary" />,
+    title: "L'Adrénaline de l'Inconnu",
+    description: "Redécouvre le frisson de la surprise. Chaque soirée Random est une page blanche à écrire ensemble.",
   },
   {
-    icon: <ThumbsUp className="w-10 h-10 text-primary" />,
-    title: "Simplicité Radicale",
-    description: "Une app, un bouton. On a dit minimaliste ? On l'a fait. Moins de temps sur ton écran, plus dans la vraie vie.",
+    icon: <ThumbsUp className="w-8 h-8 text-primary" />,
+    title: "Simple comme Bonjour",
+    description: "Une app, un bouton, une aventure. Moins de temps sur ton écran, plus de moments IRL qui comptent.",
   },
   {
-    icon: <ShieldCheck className="w-10 h-10 text-primary" />,
-    title: "Sécurité & Confiance",
-    description: "Paiement sécurisé de 1€ pour engager. Bientôt, des bars partenaires premium pour des expériences au top.",
+    icon: <ShieldCheck className="w-8 h-8 text-primary" />,
+    title: "Sécurisé & Fiable",
+    description: "1€ pour filtrer les motivés. Bars partenaires sélectionnés. Ta sécurité, notre priorité absolue.",
   },
 ];
 
 const WhyRandomSection = () => {
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-16 md:py-20 bg-background">
       <div className="container mx-auto px-6">
-        <h2 className="text-4xl md:text-5xl font-heading font-bold text-center mb-12 md:mb-16">
-          Pourquoi <span className="text-primary">Random</span> Va Te Changer La Vie ?
+        <h2 className="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+          Pourquoi <span className="text-primary">Random</span> Change Tout ?
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+        <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+          Parce qu'on en a marre des soirées prévisibles et des connexions superficielles.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {benefits.map((benefit, index) => (
-            <div key={index} className="flex items-start space-x-4 p-4 animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
-              <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
+            <div key={index} className="flex items-start space-x-4 p-6 rounded-xl bg-white/50 backdrop-blur-sm border border-neutral-200/50 transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in group" style={{animationDelay: `${index * 150}ms`}}>
+              <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full group-hover:bg-primary/20 transition-colors duration-300">
                 {benefit.icon}
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-1">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
+                <h3 className="text-lg font-bold mb-2">{benefit.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description}</p>
               </div>
             </div>
           ))}

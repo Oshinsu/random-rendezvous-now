@@ -17,36 +17,52 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="py-20 md:py-32 bg-background text-foreground animate-fade-in">
+    <section className="py-16 md:py-24 bg-background text-foreground animate-fade-in">
       <div className="container mx-auto px-6 text-center">
-        <h1 className="text-5xl md:text-7xl font-heading font-extrabold mb-6">
-          Random: <span className="text-primary">Lance les Dés</span> de Ta Soirée.
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-extrabold mb-6 tracking-tight">
+          Random: <span className="text-primary">Bye Bye</span> les Soirées Plates
         </h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
-          Fatigué des swipes sans fin et des profils bidons ? Random te jette à l'eau.
-          Des groupes de 5, au pif, dans un bar près de toi. L'anti-app de rencontre. Juste du hasard, de vraies rencontres.
+        <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+          Marre des swipes sans fin et des plans foireux ? Random te connecte à 4 inconnus dans un bar surprise. 
+          <span className="font-semibold text-foreground"> 1€, 1 clic, 1 aventure.</span>
         </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
           <Button 
             onClick={handleMainAction}
             size="lg" 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg w-full sm:w-auto"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-base w-full sm:w-auto transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
           >
-            <Zap className="mr-2 h-5 w-5" />
-            {user ? 'Aller au Dashboard' : 'Commencer l\'Aventure'}
+            <Zap className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+            {user ? 'Mon Dashboard' : 'Tenter l\'Aventure'}
           </Button>
           <Button 
             variant="outline" 
             size="lg" 
-            className="text-primary-foreground border-primary hover:bg-primary/10 font-semibold px-8 py-6 text-lg w-full sm:w-auto"
+            className="text-primary-foreground border-primary hover:bg-primary/10 font-semibold px-8 py-4 text-base w-full sm:w-auto transform hover:scale-105 transition-all duration-300 hover:shadow-lg group"
           >
-             <Download className="mr-2 h-5 w-5" /> 
-             {user ? 'Inviter des Amis' : 'Rejoindre la Révolution'}
+             <Download className="mr-2 h-5 w-5 group-hover:animate-bounce" /> 
+             {user ? 'Partager Random' : 'Découvrir le Concept'}
           </Button>
         </div>
-        <p className="mt-8 text-sm text-muted-foreground">
-          {user ? 'Prêt pour votre prochaine aventure Random ?' : 'Créez votre compte et lancez-vous !'}
-        </p>
+        <div className="max-w-2xl mx-auto">
+          <p className="text-sm text-muted-foreground mb-4">
+            {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez déjà +500 aventuriers parisiens'}
+          </p>
+          <div className="flex justify-center items-center gap-6 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              Groupes actifs
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+              Bars partenaires
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              Paris uniquement
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );
