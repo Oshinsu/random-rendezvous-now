@@ -89,6 +89,7 @@ export const useGroups = () => {
       }
 
       // Transformer les données pour correspondre à l'interface GroupMember avec noms masqués
+      // CORRECTION: Tous les membres sont connectés par défaut pour éviter la simulation aléatoire
       const members: GroupMember[] = participantsData.map((participant: any, index: number) => {
         // Utiliser des noms masqués "Rander 1", "Rander 2", etc.
         const maskedName = `Rander ${index + 1}`;
@@ -96,13 +97,13 @@ export const useGroups = () => {
         return {
           id: participant.id,
           name: maskedName,
-          isConnected: Math.random() > 0.3, // Simulation de la connexion en temps réel
+          isConnected: true, // CORRECTION: Tous connectés pour le test
           joinedAt: participant.joined_at,
           status: participant.status as 'confirmed' | 'pending'
         };
       });
 
-      console.log('👥 Membres transformés avec noms masqués:', members);
+      console.log('👥 Membres transformés avec noms masqués (tous connectés):', members);
       setGroupMembers(members);
       return members;
     } catch (error) {
@@ -223,16 +224,86 @@ export const useGroups = () => {
       const realCount = realParticipants?.length || 0;
       console.log('📊 Nombre réel de participants:', realCount);
 
-      // Mettre à jour le groupe avec le bon comptage
-      const { error: updateError } = await supabase
+      // CORRECTION: Vérifier si le groupe doit passer à "confirmed"
+      const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
-        .update({ current_participants: realCount })
-        .eq('id', groupId);
+        .select('status, bar_name')
+        .eq('id', groupId)
+        .single();
 
-      if (updateError) {
-        console.error('❌ Erreur de mise à jour:', updateError);
+      if (groupError) {
+        console.error('❌ Erreur récupération groupe:', groupError);
+        return;
+      }
+
+      // Si on a 5 participants et que le groupe est encore en waiting, le passer en confirmed
+      if (realCount >= 5 && currentGroup.status === 'waiting') {
+        console.log('🎯 Groupe complet détecté, passage en confirmed et recherche de bar...');
+        
+        // Mettre à jour le statut et chercher un bar
+        let updateData: any = {
+          current_participants: realCount,
+          status: 'confirmed'
+        };
+
+        // Essayer de trouver un bar via l'Edge Function
+        try {
+          console.log('🔍 Recherche d\'un bar via Edge Function...');
+          const selectedBar = await GooglePlacesService.findNearbyBars(
+            48.8566, // Paris par défaut
+            2.3522,
+            8000
+          );
+          
+          if (selectedBar) {
+            // Rendez-vous dans 1 heure après la formation du groupe
+            const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+            
+            updateData = {
+              ...updateData,
+              bar_name: selectedBar.name,
+              bar_address: selectedBar.formatted_address,
+              meeting_time: meetingTime.toISOString(),
+              bar_latitude: selectedBar.geometry.location.lat,
+              bar_longitude: selectedBar.geometry.location.lng,
+              bar_place_id: selectedBar.place_id
+            };
+            
+            console.log('🍺 Bar assigné:', {
+              name: selectedBar.name,
+              address: selectedBar.formatted_address,
+              meetingTime: meetingTime.toLocaleString('fr-FR')
+            });
+          } else {
+            console.warn('⚠️ Aucun bar trouvé, groupe confirmé sans bar');
+          }
+        } catch (barError) {
+          console.error('❌ Erreur recherche de bar:', barError);
+        }
+
+        // Mettre à jour le groupe
+        const { error: updateError } = await supabase
+          .from('groups')
+          .update(updateData)
+          .eq('id', groupId);
+
+        if (updateError) {
+          console.error('❌ Erreur de mise à jour:', updateError);
+        } else {
+          console.log('✅ Groupe mis à jour avec succès');
+        }
       } else {
-        console.log('✅ Comptage synchronisé:', realCount);
+        // Juste mettre à jour le comptage
+        const { error: updateError } = await supabase
+          .from('groups')
+          .update({ current_participants: realCount })
+          .eq('id', groupId);
+
+        if (updateError) {
+          console.error('❌ Erreur de mise à jour:', updateError);
+        } else {
+          console.log('✅ Comptage synchronisé:', realCount);
+        }
       }
     } catch (error) {
       console.error('❌ Erreur de synchronisation:', error);
@@ -443,110 +514,8 @@ export const useGroups = () => {
 
       console.log('✅ Utilisateur ajouté au groupe avec succès');
 
-      // Mettre à jour le nombre de participants
-      const newParticipantCount = targetGroup.current_participants + 1;
-      
-      if (newParticipantCount >= 5) {
-        // Utiliser l'Edge Function pour trouver un vrai bar
-        let searchLocation = null;
-        
-        if (targetGroup.latitude && targetGroup.longitude) {
-          searchLocation = {
-            latitude: targetGroup.latitude,
-            longitude: targetGroup.longitude
-          };
-        } else if (userLocation) {
-          searchLocation = {
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude
-          };
-        }
-        
-        if (searchLocation) {
-          console.log('🔍 Recherche d\'un bar via Edge Function...');
-          try {
-            const selectedBar = await GooglePlacesService.findNearbyBars(
-              searchLocation.latitude,
-              searchLocation.longitude,
-              8000 // Augmenter le rayon à 8km pour plus de résultats
-            );
-            
-            if (selectedBar) {
-              // Rendez-vous dans 1 heure après la formation du groupe
-              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-              
-              console.log('🍺 Bar trouvé via Edge Function:', {
-                name: selectedBar.name,
-                address: selectedBar.formatted_address,
-                meetingTime: meetingTime.toLocaleString('fr-FR'),
-                coordinates: selectedBar.geometry.location
-              });
-              
-              await supabase
-                .from('groups')
-                .update({
-                  current_participants: newParticipantCount,
-                  status: 'confirmed',
-                  bar_name: selectedBar.name,
-                  bar_address: selectedBar.formatted_address,
-                  meeting_time: meetingTime.toISOString(),
-                  bar_latitude: selectedBar.geometry.location.lat,
-                  bar_longitude: selectedBar.geometry.location.lng,
-                  bar_place_id: selectedBar.place_id
-                })
-                .eq('id', targetGroup.id);
-
-              toast({ 
-                title: '🎉 Groupe complet !', 
-                description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
-              });
-            } else {
-              throw new Error('Aucun bar trouvé par l\'Edge Function');
-            }
-          } catch (barError) {
-            console.error('❌ Erreur lors de la recherche de bar:', barError);
-            
-            // Marquer le groupe comme complet mais sans bar pour l'instant
-            await supabase
-              .from('groups')
-              .update({
-                current_participants: newParticipantCount,
-                status: 'confirmed'
-              })
-              .eq('id', targetGroup.id);
-
-            toast({ 
-              title: '⚠️ Groupe formé', 
-              description: 'Votre groupe est formé mais nous cherchons encore le bar parfait. Nous vous tiendrons informés !',
-              variant: 'destructive'
-            });
-          }
-        } else {
-          console.error('❌ Pas de localisation disponible pour chercher un bar');
-          
-          await supabase
-            .from('groups')
-            .update({ current_participants: newParticipantCount })
-            .eq('id', targetGroup.id);
-
-          toast({ 
-            title: '⚠️ Localisation requise', 
-            description: 'Activez la géolocalisation pour trouver des bars près de vous.',
-            variant: 'destructive'
-          });
-        }
-      } else {
-        await supabase
-          .from('groups')
-          .update({ current_participants: newParticipantCount })
-          .eq('id', targetGroup.id);
-
-        const locationInfo = userLocation ? ` près de ${userLocation.locationName}` : '';
-        toast({ 
-          title: '🚀 Vous êtes dans la course !', 
-          description: `Groupe rejoint${locationInfo} ! En attente de ${5 - newParticipantCount} autre${5 - newParticipantCount > 1 ? 's' : ''} participant${5 - newParticipantCount > 1 ? 's' : ''}.`,
-        });
-      }
+      // La synchronisation se fera automatiquement via syncGroupParticipantCount
+      // qui est appelé dans fetchUserGroups
 
       // Attendre un peu avant de rafraîchir pour éviter les conflits
       setTimeout(() => {
