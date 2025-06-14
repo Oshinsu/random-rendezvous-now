@@ -99,7 +99,7 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Affichage des groupes uniquement s'il y en a */}
+            {/* Affichage des groupes */}
             {userGroups.length > 0 && (
               <div className="space-y-12">
                 {/* Groupes actifs */}
