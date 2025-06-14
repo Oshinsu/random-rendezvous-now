@@ -23,7 +23,7 @@ const GroupMap = ({
   barLongitude
 }: GroupMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isGroupComplete || !barLatitude || !barLongitude || !mapRef.current) {
@@ -42,7 +42,7 @@ const GroupMap = ({
 
         const google = await loader.load();
         
-        const mapOptions: google.maps.MapOptions = {
+        const mapOptions: any = {
           center: { lat: barLatitude, lng: barLongitude },
           zoom: 16,
           mapTypeId: google.maps.MapTypeId.ROADMAP,

@@ -1,4 +1,3 @@
-
 export interface Group {
   id: string;
   created_at: string;
@@ -12,6 +11,9 @@ export interface Group {
   longitude?: number;
   location_name?: string;
   search_radius?: number;
+  bar_latitude?: number;
+  bar_longitude?: number;
+  bar_place_id?: string;
 }
 
 export interface GroupParticipant {
