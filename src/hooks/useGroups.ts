@@ -733,17 +733,28 @@ export const useGroups = () => {
           .delete()
           .eq('id', groupId);
       } else if (!checkError && remainingParticipants && remainingParticipants.length < 5) {
-        // Remettre le groupe en attente s'il y a moins de 5 participants
-        console.log('⏳ Remise du groupe en attente');
+        // CORRECTION: Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
+        console.log('⏳ Remise du groupe en attente et suppression des infos bar');
         await supabase
           .from('groups')
           .update({
             status: 'waiting',
             bar_name: null,
             bar_address: null,
-            meeting_time: null
+            meeting_time: null,
+            bar_latitude: null,
+            bar_longitude: null,
+            bar_place_id: null
           })
           .eq('id', groupId);
+
+        // Envoyer un message système pour informer de la remise en attente
+        if (remainingParticipants && remainingParticipants.length > 0) {
+          await sendGroupSystemMessage(
+            groupId,
+            `📋 Le groupe est de nouveau en attente de participants (${remainingParticipants.length}/5). Le bar précédent a été annulé.`
+          );
+        }
       }
 
       toast({ 

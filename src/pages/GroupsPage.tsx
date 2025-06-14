@@ -248,6 +248,7 @@ const GroupsPage = () => {
                       )}
                     </div>
 
+                    {/* CORRECTION: Le bouton quitter doit être accessible même pour les groupes confirmés (complets) */}
                     {currentGroup.status !== 'completed' && (
                       <Button
                         onClick={() => leaveGroup(currentGroup.id)}
