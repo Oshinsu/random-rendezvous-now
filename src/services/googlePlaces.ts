@@ -13,41 +13,33 @@ interface PlaceResult {
   price_level?: number;
 }
 
-interface GooglePlacesResponse {
-  results: PlaceResult[];
-  status: string;
-}
-
 export class GooglePlacesService {
-  private static readonly API_KEY = 'AIzaSyCySpM4EZYtGpOY6dhANdZ1ZzVfArTexBw';
-  private static readonly BASE_URL = 'https://maps.googleapis.com/maps/api/place';
-
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 5000): Promise<PlaceResult | null> {
     try {
       console.log('🔍 Recherche de bars près de:', { latitude, longitude, radius });
       
-      const url = `${this.BASE_URL}/nearbysearch/json?` +
-        `location=${latitude},${longitude}&` +
-        `radius=${radius}&` +
-        `type=bar&` +
-        `key=${this.API_KEY}`;
+      // Appeler la Edge Function Supabase au lieu de l'API Google directement
+      const response = await fetch('/functions/v1/find-nearby-bars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          radius
+        })
+      });
 
-      const response = await fetch(url);
-      const data: GooglePlacesResponse = await response.json();
-
-      if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-        console.error('❌ Aucun bar trouvé:', data.status);
-        return null;
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Erreur Edge Function:', errorData);
+        throw new Error(errorData.error || 'Erreur lors de la recherche de bars');
       }
 
-      // Filtrer les bars avec une note correcte et prendre le mieux noté
-      const goodBars = data.results
-        .filter(bar => bar.rating && bar.rating >= 3.5)
-        .sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-      const selectedBar = goodBars[0] || data.results[0];
+      const selectedBar = await response.json();
       
-      console.log('🍺 Bar sélectionné:', {
+      console.log('🍺 Bar sélectionné via Edge Function:', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,
@@ -63,19 +55,11 @@ export class GooglePlacesService {
 
   static async getPlaceDetails(placeId: string): Promise<any> {
     try {
-      const url = `${this.BASE_URL}/details/json?` +
-        `place_id=${placeId}&` +
-        `fields=name,formatted_address,geometry,rating,formatted_phone_number,opening_hours&` +
-        `key=${this.API_KEY}`;
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.status === 'OK') {
-        return data.result;
-      }
+      // Cette fonction pourrait aussi être déplacée vers une Edge Function si nécessaire
+      console.log('📍 Récupération des détails pour place_id:', placeId);
       
-      console.error('❌ Erreur détails du lieu:', data.status);
+      // Pour l'instant, on retourne null car on n'utilise pas encore cette fonction
+      // Elle pourrait être implémentée plus tard si nécessaire
       return null;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des détails:', error);

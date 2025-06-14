@@ -447,7 +447,7 @@ export const useGroups = () => {
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
-        // Utiliser l'API Google Places pour trouver un vrai bar
+        // Utiliser l'Edge Function pour trouver un vrai bar
         let searchLocation = null;
         
         if (targetGroup.latitude && targetGroup.longitude) {
@@ -463,50 +463,77 @@ export const useGroups = () => {
         }
         
         if (searchLocation) {
-          console.log('🔍 Recherche d\'un bar via Google Places...');
-          const selectedBar = await GooglePlacesService.findNearbyBars(
-            searchLocation.latitude,
-            searchLocation.longitude,
-            5000 // 5km de rayon
-          );
-          
-          if (selectedBar) {
-            // Rendez-vous dans 1 heure après la formation du groupe
-            const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+          console.log('🔍 Recherche d\'un bar via Edge Function...');
+          try {
+            const selectedBar = await GooglePlacesService.findNearbyBars(
+              searchLocation.latitude,
+              searchLocation.longitude,
+              8000 // Augmenter le rayon à 8km pour plus de résultats
+            );
             
-            console.log('🍺 Bar trouvé via Google Places:', {
-              name: selectedBar.name,
-              address: selectedBar.formatted_address,
-              meetingTime: meetingTime.toLocaleString('fr-FR'),
-              coordinates: selectedBar.geometry.location
-            });
+            if (selectedBar) {
+              // Rendez-vous dans 1 heure après la formation du groupe
+              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+              
+              console.log('🍺 Bar trouvé via Edge Function:', {
+                name: selectedBar.name,
+                address: selectedBar.formatted_address,
+                meetingTime: meetingTime.toLocaleString('fr-FR'),
+                coordinates: selectedBar.geometry.location
+              });
+              
+              await supabase
+                .from('groups')
+                .update({
+                  current_participants: newParticipantCount,
+                  status: 'confirmed',
+                  bar_name: selectedBar.name,
+                  bar_address: selectedBar.formatted_address,
+                  meeting_time: meetingTime.toISOString(),
+                  bar_latitude: selectedBar.geometry.location.lat,
+                  bar_longitude: selectedBar.geometry.location.lng,
+                  bar_place_id: selectedBar.place_id
+                })
+                .eq('id', targetGroup.id);
+
+              toast({ 
+                title: '🎉 Groupe complet !', 
+                description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
+              });
+            } else {
+              throw new Error('Aucun bar trouvé par l\'Edge Function');
+            }
+          } catch (barError) {
+            console.error('❌ Erreur lors de la recherche de bar:', barError);
             
+            // Marquer le groupe comme complet mais sans bar pour l'instant
             await supabase
               .from('groups')
               .update({
                 current_participants: newParticipantCount,
-                status: 'confirmed',
-                bar_name: selectedBar.name,
-                bar_address: selectedBar.formatted_address,
-                meeting_time: meetingTime.toISOString(),
-                bar_latitude: selectedBar.geometry.location.lat,
-                bar_longitude: selectedBar.geometry.location.lng,
-                bar_place_id: selectedBar.place_id
+                status: 'confirmed'
               })
               .eq('id', targetGroup.id);
 
             toast({ 
-              title: '🎉 Groupe complet !', 
-              description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
-            });
-          } else {
-            console.error('❌ Impossible de trouver un bar via Google Places');
-            toast({ 
-              title: 'Erreur', 
-              description: 'Impossible de trouver un bar dans votre zone.', 
-              variant: 'destructive' 
+              title: '⚠️ Groupe formé', 
+              description: 'Votre groupe est formé mais nous cherchons encore le bar parfait. Nous vous tiendrons informés !',
+              variant: 'destructive'
             });
           }
+        } else {
+          console.error('❌ Pas de localisation disponible pour chercher un bar');
+          
+          await supabase
+            .from('groups')
+            .update({ current_participants: newParticipantCount })
+            .eq('id', targetGroup.id);
+
+          toast({ 
+            title: '⚠️ Localisation requise', 
+            description: 'Activez la géolocalisation pour trouver des bars près de vous.',
+            variant: 'destructive'
+          });
         }
       } else {
         await supabase
