@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +18,14 @@ const PARIS_BARS = [
   { name: "Moonshiner", address: "5 Rue Sedaine, 75011 Paris", lat: 48.8553, lng: 2.3714 },
   { name: "Glass", address: "7 Rue Frochot, 75009 Paris", lat: 48.8823, lng: 2.3367 }
 ];
+
+export interface GroupMember {
+  id: string;
+  name: string;
+  isConnected: boolean;
+  joinedAt: string;
+  status: 'confirmed' | 'pending';
+}
 
 const getRandomBar = (userLat?: number, userLng?: number) => {
   if (userLat && userLng) {
@@ -47,6 +54,7 @@ export const useGroups = () => {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const fetchingRef = useRef(false);
@@ -66,6 +74,65 @@ export const useGroups = () => {
     };
 
     getUserLocation();
+  }, []);
+
+  const fetchGroupMembers = useCallback(async (groupId: string) => {
+    try {
+      console.log('👥 Récupération des membres du groupe:', groupId);
+      
+      // Récupérer les participants avec leurs profils
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('group_participants')
+        .select(`
+          id,
+          user_id,
+          joined_at,
+          status,
+          profiles!inner(
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+
+      if (participantsError) {
+        console.error('❌ Erreur récupération participants:', participantsError);
+        throw participantsError;
+      }
+
+      console.log('✅ Participants récupérés:', participantsData?.length || 0);
+
+      if (!participantsData) {
+        setGroupMembers([]);
+        return [];
+      }
+
+      // Transformer les données pour correspondre à l'interface GroupMember
+      const members: GroupMember[] = participantsData.map((participant: any) => {
+        const profile = participant.profiles;
+        const displayName = profile ? 
+          `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 
+          profile.email?.split('@')[0] || 
+          'Utilisateur' : 'Utilisateur';
+
+        return {
+          id: participant.id,
+          name: displayName,
+          isConnected: Math.random() > 0.3, // Simulation de la connexion en temps réel
+          joinedAt: participant.joined_at,
+          status: participant.status as 'confirmed' | 'pending'
+        };
+      });
+
+      setGroupMembers(members);
+      return members;
+    } catch (error) {
+      console.error('❌ Erreur fetchGroupMembers:', error);
+      setGroupMembers([]);
+      return [];
+    }
   }, []);
 
   const fetchUserGroups = useCallback(async () => {
@@ -103,6 +170,7 @@ export const useGroups = () => {
 
       if (!participations || participations.length === 0) {
         setUserGroups([]);
+        setGroupMembers([]);
         return;
       }
 
@@ -134,9 +202,16 @@ export const useGroups = () => {
           .in('id', groupIds)
           .order('created_at', { ascending: false });
         
-        setUserGroups((correctedGroups || []) as Group[]);
+        const finalGroups = (correctedGroups || []) as Group[];
+        setUserGroups(finalGroups);
+
+        // Charger les membres du premier groupe actif
+        if (finalGroups.length > 0) {
+          await fetchGroupMembers(finalGroups[0].id);
+        }
       } else {
         setUserGroups([]);
+        setGroupMembers([]);
       }
     } catch (error) {
       console.error('❌ Erreur fetchUserGroups:', error);
@@ -149,7 +224,7 @@ export const useGroups = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user]);
+  }, [user, fetchGroupMembers]);
 
   // Nouvelle fonction pour synchroniser le comptage des participants
   const syncGroupParticipantCount = async (groupId: string) => {
@@ -527,6 +602,7 @@ export const useGroups = () => {
     } else {
       console.log('🚫 Pas d\'utilisateur, reset des groupes');
       setUserGroups([]);
+      setGroupMembers([]);
     }
   }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
 
@@ -576,10 +652,12 @@ export const useGroups = () => {
   return {
     groups,
     userGroups,
+    groupMembers,
     loading,
     userLocation,
     joinRandomGroup,
     leaveGroup,
-    fetchUserGroups
+    fetchUserGroups,
+    fetchGroupMembers
   };
 };

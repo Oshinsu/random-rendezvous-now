@@ -9,7 +9,7 @@ import GroupMap from '@/components/GroupMap';
 import GroupChat from '@/components/GroupChat';
 
 const GroupsPage = () => {
-  const { userGroups, loading, fetchUserGroups, leaveGroup, userLocation } = useGroups();
+  const { userGroups, groupMembers, loading, fetchUserGroups, leaveGroup, userLocation } = useGroups();
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
@@ -22,13 +22,6 @@ const GroupsPage = () => {
 
   // Pour le moment, on affiche le premier groupe actif
   const currentGroup = activeGroups[0];
-
-  // Mock data pour les membres (à remplacer par les vraies données)
-  const mockMembers = currentGroup ? [
-    { id: '1', name: 'Alice Martin', isConnected: true, joinedAt: '2024-06-14T10:00:00Z', status: 'confirmed' as const },
-    { id: '2', name: 'Bob Dupont', isConnected: true, joinedAt: '2024-06-14T10:05:00Z', status: 'confirmed' as const },
-    { id: '3', name: 'Claire Durand', isConnected: false, joinedAt: '2024-06-14T10:10:00Z', status: 'confirmed' as const },
-  ] : [];
 
   const isGroupComplete = currentGroup?.status === 'confirmed' && currentGroup?.current_participants >= 5;
 
@@ -106,7 +99,7 @@ const GroupsPage = () => {
                 {/* Colonne gauche - Membres */}
                 <div className="space-y-6">
                   <GroupMembersList
-                    members={mockMembers}
+                    members={groupMembers}
                     maxParticipants={currentGroup.max_participants}
                     currentParticipants={currentGroup.current_participants}
                   />
