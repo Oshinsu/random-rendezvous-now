@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -5,25 +6,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-heading font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-95",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-medium hover:shadow-glow hover:scale-105",
+        destructive: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-medium hover:shadow-strong hover:scale-105",
+        outline: "border-2 border-neutral-200 bg-white/80 backdrop-blur-sm text-neutral-700 hover:bg-white hover:border-brand-300 hover:text-brand-700 hover:scale-105 shadow-soft hover:shadow-medium",
+        secondary: "bg-gradient-to-r from-neutral-100 to-neutral-200 text-neutral-900 hover:bg-gradient-to-r hover:from-neutral-200 hover:to-neutral-300 hover:scale-105 shadow-soft hover:shadow-medium",
+        ghost: "text-neutral-700 hover:bg-brand-50 hover:text-brand-700 hover:scale-105",
+        link: "text-brand-600 underline-offset-4 hover:underline hover:text-brand-700 font-medium",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-12 px-6 py-3",
+        sm: "h-10 rounded-xl px-4 text-xs",
+        lg: "h-14 rounded-3xl px-8 text-base",
+        icon: "h-12 w-12 rounded-2xl",
       },
     },
     defaultVariants: {

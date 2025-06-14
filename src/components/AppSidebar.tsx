@@ -1,5 +1,5 @@
 
-import { Home, Users, User } from 'lucide-react';
+import { Home, Users, User, Sparkles } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -40,43 +40,43 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r border-slate-200/60 bg-white/95 backdrop-blur-sm"
+      className="border-r border-neutral-200/50 glass-morphism"
       collapsible="icon"
     >
-      <SidebarHeader className="p-4 border-b border-slate-200/60">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-lg">R</span>
+      <SidebarHeader className="p-6 border-b border-neutral-200/50">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center shadow-medium">
+            <Sparkles className="h-6 w-6 text-white" />
           </div>
           {!isCollapsed && (
             <div>
-              <span className="font-bold text-xl text-slate-800">Random</span>
-              <p className="text-sm text-slate-600">App</p>
+              <span className="font-display text-2xl font-bold gradient-text">Random</span>
+              <p className="text-sm font-heading text-neutral-600 font-medium">Aventures</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4">
+      <SidebarContent className="py-6">
         <SidebarGroup>
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-slate-600 font-medium px-3 mb-2">
+            <SidebarGroupLabel className="text-neutral-600 font-heading font-semibold px-6 mb-4 text-xs uppercase tracking-wider">
               Navigation
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2 px-4">
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)}
-                    className="mx-2 rounded-lg hover:bg-amber-50 data-[active=true]:bg-amber-100 data-[active=true]:text-amber-800 data-[active=true]:border-l-4 data-[active=true]:border-amber-500 transition-all duration-200"
+                    className="mx-0 rounded-2xl hover:bg-brand-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-brand-500 data-[active=true]:to-brand-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
-                    <NavLink to={item.url} className="flex items-center space-x-3 py-2">
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                    <NavLink to={item.url} className="flex items-center space-x-4 py-3 px-4 w-full">
+                      <item.icon className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white" />
+                      {!isCollapsed && <span className="font-heading font-semibold">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -86,17 +86,17 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-slate-200/60">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-10 w-10 ring-2 ring-amber-200">
-            <AvatarFallback className="bg-gradient-to-br from-amber-500 to-amber-600 text-white font-semibold">
+      <SidebarFooter className="p-6 border-t border-neutral-200/50">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-12 w-12 ring-2 ring-brand-200 shadow-medium">
+            <AvatarFallback className="bg-gradient-to-br from-brand-500 to-brand-600 text-white font-heading font-bold">
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-slate-800 truncate">{userName}</p>
-              <p className="text-sm text-slate-600 truncate">{user?.email}</p>
+              <p className="font-heading font-semibold text-neutral-800 truncate">{userName}</p>
+              <p className="text-sm font-body text-neutral-600 truncate">{user?.email}</p>
             </div>
           )}
         </div>

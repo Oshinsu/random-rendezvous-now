@@ -9,14 +9,14 @@ interface AppLayoutProps {
 const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-neutral-50 via-white to-brand-50">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-4 border-b border-slate-200/60 px-6 bg-white/80 backdrop-blur-sm">
-            <SidebarTrigger className="text-slate-700 hover:bg-slate-100 transition-colors" />
+          <header className="flex h-20 shrink-0 items-center gap-6 border-b border-neutral-200/50 px-8 glass-morphism">
+            <SidebarTrigger className="text-neutral-700 hover:bg-brand-50 hover:text-brand-700 transition-all duration-300 rounded-xl p-2" />
             <div className="ml-auto">
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
-                Random App
+              <h1 className="text-2xl font-display font-bold gradient-text">
+                Random
               </h1>
             </div>
           </header>

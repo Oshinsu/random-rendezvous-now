@@ -5,7 +5,7 @@ import RandomButton from '@/components/RandomButton';
 import GroupsList from '@/components/GroupsList';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Users, Sparkles, Trophy, TrendingUp, Clock } from 'lucide-react';
+import { RefreshCw, Users, Sparkles, Trophy, TrendingUp, Clock, Zap, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -27,101 +27,95 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-gradient-to-br from-slate-50 to-amber-50/30">
-        <div className="container mx-auto px-6 py-8 space-y-8 max-w-7xl">
-          {/* Section de bienvenue */}
-          <div className="text-center space-y-6 bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-amber-200/50 shadow-lg">
-            <div className="flex justify-center items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Sparkles className="h-8 w-8 text-white" />
+      <div className="min-h-full bg-gradient-to-br from-neutral-50 to-brand-50">
+        <div className="container mx-auto px-8 py-12 space-y-12 max-w-7xl">
+          {/* Section de bienvenue moderne */}
+          <div className="text-center space-y-8 card-modern animate-in">
+            <div className="flex justify-center items-center space-x-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl flex items-center justify-center shadow-glow animate-float">
+                <Zap className="h-10 w-10 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-slate-800 tracking-tight">
-                  Bonjour {user?.user_metadata?.first_name || 'Aventurier'} !
+                <h1 className="font-display text-5xl font-bold gradient-text">
+                  Salut {user?.user_metadata?.first_name || 'Aventurier'} !
                 </h1>
-                <p className="text-xl text-slate-600 mt-2 font-medium">
+                <p className="text-xl font-heading text-neutral-600 mt-3 font-medium">
                   Prêt pour une nouvelle aventure parisienne ?
                 </p>
               </div>
             </div>
             
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg font-body text-neutral-700 max-w-3xl mx-auto leading-relaxed">
               Découvrez de nouveaux bars secrets, rencontrez des personnes formidables 
               et créez des souvenirs inoubliables en un simple clic !
             </p>
           </div>
 
-          {/* Bouton Random */}
-          <div className="flex justify-center">
+          {/* Bouton Random moderne */}
+          <div className="flex justify-center animate-up" style={{ animationDelay: '0.2s' }}>
             <RandomButton />
           </div>
 
-          {/* Statistiques */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-blue-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
-                  <Clock className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600 font-medium uppercase tracking-wide">Groupes Actifs</p>
-                  <p className="text-3xl font-bold text-blue-600">{activeGroups.length}</p>
-                  <p className="text-xs text-blue-500 font-medium">En cours</p>
-                </div>
+          {/* Statistiques modernes */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-up" style={{ animationDelay: '0.4s' }}>
+            <div className="stat-card border-l-blue-500">
+              <div className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl shadow-medium">
+                <Clock className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-heading font-bold text-neutral-500 uppercase tracking-wider">Groupes Actifs</p>
+                <p className="text-4xl font-display font-bold text-blue-600 mt-1">{activeGroups.length}</p>
+                <p className="text-sm font-body text-blue-500 font-medium mt-1">En cours de formation</p>
               </div>
             </div>
             
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-emerald-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md">
-                  <Trophy className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600 font-medium uppercase tracking-wide">Complétées</p>
-                  <p className="text-3xl font-bold text-emerald-600">{completedGroups.length}</p>
-                  <p className="text-xs text-emerald-500 font-medium">Missions accomplies</p>
-                </div>
+            <div className="stat-card border-l-emerald-500">
+              <div className="p-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl shadow-medium">
+                <Trophy className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-heading font-bold text-neutral-500 uppercase tracking-wider">Aventures Complétées</p>
+                <p className="text-4xl font-display font-bold text-emerald-600 mt-1">{completedGroups.length}</p>
+                <p className="text-sm font-body text-emerald-500 font-medium mt-1">Missions accomplies</p>
               </div>
             </div>
             
-            <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
-                  <TrendingUp className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600 font-medium uppercase tracking-wide">Total</p>
-                  <p className="text-3xl font-bold text-purple-600">{userGroups.length}</p>
-                  <p className="text-xs text-purple-500 font-medium">Aventures</p>
-                </div>
+            <div className="stat-card border-l-purple-500">
+              <div className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl shadow-medium">
+                <TrendingUp className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-heading font-bold text-neutral-500 uppercase tracking-wider">Total Aventures</p>
+                <p className="text-4xl font-display font-bold text-purple-600 mt-1">{userGroups.length}</p>
+                <p className="text-sm font-body text-purple-500 font-medium mt-1">Expériences vécues</p>
               </div>
             </div>
           </div>
 
-          {/* Section Groupes */}
+          {/* Section Groupes moderne */}
           {userGroups.length > 0 ? (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-slate-200/50 shadow-lg">
+            <div className="space-y-8 animate-up" style={{ animationDelay: '0.6s' }}>
+              <div className="flex justify-between items-center card-modern">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3 tracking-tight">
-                    <Users className="h-7 w-7 text-amber-600" />
-                    Mes Groupes d'Aventure
+                  <h2 className="font-display text-3xl font-bold text-neutral-800 flex items-center gap-4">
+                    <Users className="h-8 w-8 text-brand-600" />
+                    Mes Aventures
                   </h2>
-                  <p className="text-slate-600 mt-1 font-medium">Gérez vos aventures en cours et passées</p>
+                  <p className="font-body text-neutral-600 mt-2 text-lg">Gérez vos expériences en cours et passées</p>
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex space-x-4">
                   <Button
                     onClick={handleRefresh}
                     disabled={loading}
                     variant="outline"
                     size="sm"
-                    className="border-2 border-slate-300 hover:border-amber-500 hover:text-amber-600 transition-colors"
+                    className="font-heading"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Actualiser
                   </Button>
                   <Link to="/groups">
-                    <Button size="sm" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md">
+                    <Button size="sm" className="font-heading">
                       <Users className="h-4 w-4 mr-2" />
                       Voir tout
                     </Button>
@@ -130,20 +124,23 @@ const Dashboard = () => {
               </div>
 
               {activeGroups.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-700 flex items-center gap-2 px-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    Groupes Actifs ({activeGroups.length})
-                  </h3>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 px-2">
+                    <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-glow"></div>
+                    <h3 className="font-heading text-xl font-bold text-neutral-700">
+                      Groupes Actifs ({activeGroups.length})
+                    </h3>
+                  </div>
                   <GroupsList
                     groups={activeGroups.slice(0, 2)}
                     title=""
                     emptyMessage="Aucun groupe actif"
                   />
                   {activeGroups.length > 2 && (
-                    <div className="text-center pt-4">
+                    <div className="text-center pt-6">
                       <Link to="/groups">
-                        <Button variant="outline" size="sm" className="border-slate-300 hover:border-amber-500 hover:text-amber-600">
+                        <Button variant="outline" size="sm" className="font-heading">
+                          <Star className="h-4 w-4 mr-2" />
                           Voir {activeGroups.length - 2} groupe{activeGroups.length - 2 > 1 ? 's' : ''} de plus
                         </Button>
                       </Link>
@@ -153,27 +150,36 @@ const Dashboard = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-16 space-y-6 bg-white/70 backdrop-blur-sm rounded-2xl border-2 border-dashed border-slate-300 shadow-lg">
-              <div className="text-8xl animate-bounce">🎲</div>
-              <div className="space-y-4">
-                <h3 className="text-3xl font-bold text-slate-800 tracking-tight">Votre première aventure vous attend !</h3>
-                <p className="text-slate-600 text-lg max-w-md mx-auto leading-relaxed">
-                  Cliquez sur le bouton "Lancer l'Aventure" ci-dessus pour rejoindre votre premier groupe.
+            <div className="text-center py-20 space-y-8 card-modern animate-up" style={{ animationDelay: '0.6s' }}>
+              <div className="text-8xl animate-float">🎲</div>
+              <div className="space-y-6">
+                <h3 className="font-display text-4xl font-bold text-neutral-800">Votre première aventure vous attend !</h3>
+                <p className="font-body text-neutral-600 text-xl max-w-2xl mx-auto leading-relaxed">
+                  Cliquez sur le bouton "Lancer l'Aventure" ci-dessus pour rejoindre votre premier groupe d'aventuriers.
                 </p>
-                <div className="flex justify-center space-x-6 text-sm text-slate-500 font-medium">
-                  <span>🌟 Rencontres authentiques</span>
-                  <span>🍸 Bars secrets</span>
-                  <span>🎯 Groupes de 5</span>
+                <div className="flex justify-center space-x-8 text-sm font-heading text-neutral-500 font-semibold">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-brand-500" />
+                    Rencontres authentiques
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-brand-500" />
+                    Groupes de 5
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-brand-500" />
+                    2h d'aventure
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
           {loading && (
-            <div className="fixed bottom-6 right-6 bg-white/90 backdrop-blur-sm shadow-xl rounded-full p-4 border border-amber-200">
-              <div className="flex items-center space-x-3">
-                <RefreshCw className="h-5 w-5 animate-spin text-amber-600" />
-                <span className="text-sm font-medium text-slate-700">Mise à jour...</span>
+            <div className="fixed bottom-8 right-8 glass-morphism shadow-strong rounded-3xl p-6 border border-brand-200">
+              <div className="flex items-center space-x-4">
+                <RefreshCw className="h-6 w-6 animate-spin text-brand-600" />
+                <span className="font-heading font-semibold text-neutral-700">Mise à jour...</span>
               </div>
             </div>
           )}
