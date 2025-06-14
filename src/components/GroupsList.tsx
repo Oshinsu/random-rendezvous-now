@@ -13,13 +13,13 @@ const GroupsList = ({ groups, title, emptyMessage, showLeaveButton = true }: Gro
   return (
     <div className="space-y-6">
       {title && (
-        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{title}</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
       )}
       
       {groups.length === 0 ? (
-        <div className="text-center py-12 text-slate-500 bg-white/50 backdrop-blur-sm rounded-xl border border-slate-200/50 shadow-sm">
+        <div className="text-center py-12 bg-gray-50 rounded-xl">
           <div className="text-4xl mb-4">📭</div>
-          <p className="text-lg font-medium">{emptyMessage}</p>
+          <p className="text-gray-600">{emptyMessage}</p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">

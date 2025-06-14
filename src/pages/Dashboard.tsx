@@ -9,18 +9,44 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 py-8 px-6">
-        {/* Header "Bienvenue" placé à gauche */}
-        <div className="w-full max-w-4xl pl-2 pr-8">
-          <h1 className="font-heading text-3xl font-bold text-neutral-900 mb-1">
-            Bienvenue, <span className="text-amber-700">{userName}</span>
-          </h1>
-          <p className="font-body text-lg text-neutral-700 mb-6 max-w-xl">
-            Prêt·e à vivre une aventure spontanée près de chez toi ? Lance une aventure et rejoins un groupe local en quelques secondes.
-          </p>
-          {/* Bouton Démarrer - taille large, aligné à gauche */}
-          <div className="w-auto">
-            <RandomButton size="lg" />
+      <div className="min-h-full bg-white">
+        <div className="px-8 py-12">
+          <div className="max-w-4xl">
+            <div className="mb-12">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                Bonjour <span className="text-amber-600">{userName}</span>
+              </h1>
+              <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
+                Découvrez de nouvelles personnes autour d'un verre. 
+                Rejoignez une aventure spontanée près de chez vous.
+              </p>
+            </div>
+            
+            <div className="space-y-8">
+              <div>
+                <RandomButton size="lg" />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">🎯</div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Simple</h3>
+                  <p className="text-sm text-gray-600">Un clic et vous êtes dans l'aventure</p>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">🌍</div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Local</h3>
+                  <p className="text-sm text-gray-600">Rencontrez des gens près de chez vous</p>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">⚡</div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Instantané</h3>
+                  <p className="text-sm text-gray-600">Groupes formés automatiquement</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -29,4 +55,3 @@ const Dashboard = () => {
 }
 
 export default Dashboard
-
