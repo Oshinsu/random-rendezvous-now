@@ -2,7 +2,7 @@
 import { useGroups } from '@/hooks/useGroups';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Users, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Users, ArrowLeft, UserX } from 'lucide-react';
 import RandomButton from '@/components/RandomButton';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
@@ -36,13 +36,6 @@ const GroupsPage = () => {
   console.log('🔍 [GroupsPage] Groupe complet?', isGroupComplete);
   console.log('🔍 [GroupsPage] A besoin d\'assignation de bar?', needsBarAssignment);
   console.log('🔍 [GroupsPage] Peut afficher la carte?', canShowMap);
-  console.log('🔍 [GroupsPage] Bar assigné?', {
-    name: currentGroup?.bar_name,
-    address: currentGroup?.bar_address,
-    meetingTime: currentGroup?.meeting_time,
-    coordinates: currentGroup?.bar_latitude && currentGroup?.bar_longitude ? 
-      `${currentGroup.bar_latitude}, ${currentGroup.bar_longitude}` : 'Non défini'
-  });
 
   // Fonction pour obtenir l'adresse du bar ou une adresse par défaut
   const getBarAddress = () => {
@@ -109,19 +102,32 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Pas de groupe actif */}
+            {/* Message élégant quand pas de groupe actif */}
             {!currentGroup && !loading && (
               <div className="text-center py-20">
-                <div className="w-32 h-32 bg-gradient-to-br from-brand-100 to-brand-200 rounded-full flex items-center justify-center mx-auto mb-8">
-                  <Users className="h-16 w-16 text-brand-600" />
+                <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-8">
+                  <UserX className="h-16 w-16 text-red-600" />
                 </div>
                 <h3 className="text-3xl font-display font-bold text-neutral-800 mb-4">
-                  Aucun groupe actif
+                  Accès restreint
                 </h3>
                 <p className="text-xl text-neutral-600 font-body mb-8 max-w-2xl mx-auto">
-                  Vous n'avez pas encore rejoint de groupe. Créez votre première aventure !
+                  Vous ne pouvez pas accéder à cette page si vous n'avez pas de groupe actif.
                 </p>
-                <RandomButton size="lg" />
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 max-w-md mx-auto mb-8">
+                  <p className="text-amber-800 font-medium mb-4">
+                    💡 Pour accéder à cette page, vous devez d'abord rejoindre un groupe d'aventure !
+                  </p>
+                  <RandomButton size="lg" />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => window.history.back()}
+                  className="mt-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Retour au tableau de bord
+                </Button>
               </div>
             )}
 
