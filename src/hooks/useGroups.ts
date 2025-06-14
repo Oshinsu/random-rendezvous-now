@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -280,7 +281,7 @@ export const useGroups = () => {
         return null;
       }
 
-      // Filtrer par distance (rayon de 5km par défaut)
+      // Filtrer par distance (rayon de 10km par défaut)
       const compatibleGroups = nearbyGroups.filter(group => {
         if (!group.latitude || !group.longitude) return false;
         
@@ -291,7 +292,7 @@ export const useGroups = () => {
           group.longitude
         );
         
-        const searchRadius = group.search_radius || 5000; // 5km par défaut
+        const searchRadius = group.search_radius || 10000; // 10km par défaut
         console.log(`📏 Distance au groupe ${group.id}: ${GeolocationService.formatDistance(distance)} (rayon: ${GeolocationService.formatDistance(searchRadius)})`);
         return distance <= searchRadius;
       });
@@ -408,15 +409,16 @@ export const useGroups = () => {
           current_participants: 0
         };
 
-        // Ajouter la géolocalisation si disponible
+        // Ajouter la géolocalisation si disponible avec rayon de 10km par défaut
         if (userLocation) {
           newGroupData.latitude = userLocation.latitude;
           newGroupData.longitude = userLocation.longitude;
           newGroupData.location_name = userLocation.locationName;
-          newGroupData.search_radius = 5000; // 5km par défaut
+          newGroupData.search_radius = 10000; // 10km par défaut
           console.log('📍 Nouveau groupe avec géolocalisation:', {
             location: userLocation.locationName,
-            coordinates: `${userLocation.latitude}, ${userLocation.longitude}`
+            coordinates: `${userLocation.latitude}, ${userLocation.longitude}`,
+            radius: '10km'
           });
         }
 
@@ -464,7 +466,7 @@ export const useGroups = () => {
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
-        // Sélection du bar basée sur la géolocalisation du groupe et des participants
+        // Sélection d'UN SEUL bar basée sur la géolocalisation du groupe et des participants
         let barSelectionLocation = null;
         
         if (targetGroup.latitude && targetGroup.longitude) {
@@ -479,16 +481,18 @@ export const useGroups = () => {
           };
         }
         
-        const randomBar = getRandomBar(
+        const selectedBar = getRandomBar(
           barSelectionLocation?.latitude,
           barSelectionLocation?.longitude
         );
         
-        const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+        // Rendez-vous dans 1 heure après la formation du groupe
+        const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
         
         console.log('🍺 Bar sélectionné pour le groupe complet:', {
-          bar: randomBar.name,
-          address: randomBar.address,
+          bar: selectedBar.name,
+          address: selectedBar.address,
+          meetingTime: meetingTime.toLocaleString('fr-FR'),
           selectionBasedOn: barSelectionLocation ? 'Géolocalisation du groupe/utilisateur' : 'Sélection aléatoire'
         });
         
@@ -497,15 +501,15 @@ export const useGroups = () => {
           .update({
             current_participants: newParticipantCount,
             status: 'confirmed',
-            bar_name: randomBar.name,
-            bar_address: randomBar.address,
+            bar_name: selectedBar.name,
+            bar_address: selectedBar.address,
             meeting_time: meetingTime.toISOString()
           })
           .eq('id', targetGroup.id);
 
         toast({ 
           title: '🎉 Groupe complet !', 
-          description: `Votre groupe de 5 est formé ! Rendez-vous au ${randomBar.name} dans 2h.`,
+          description: `Votre groupe de 5 est formé ! Rendez-vous au ${selectedBar.name} dans 1h.`,
         });
       } else {
         await supabase
