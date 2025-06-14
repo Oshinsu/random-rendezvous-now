@@ -25,6 +25,17 @@ const GroupsPage = () => {
 
   const isGroupComplete = currentGroup?.status === 'confirmed' && currentGroup?.current_participants >= 5;
 
+  // Debug: Afficher les informations du groupe dans la console
+  console.log('🔍 [GroupsPage] Groupe actuel:', currentGroup);
+  console.log('🔍 [GroupsPage] Groupe complet?', isGroupComplete);
+  console.log('🔍 [GroupsPage] Bar assigné?', {
+    name: currentGroup?.bar_name,
+    address: currentGroup?.bar_address,
+    meetingTime: currentGroup?.meeting_time,
+    coordinates: currentGroup?.bar_latitude && currentGroup?.bar_longitude ? 
+      `${currentGroup.bar_latitude}, ${currentGroup.bar_longitude}` : 'Non défini'
+  });
+
   return (
     <AppLayout>
       <div className="min-h-full bg-gradient-to-br from-white via-brand-50/30 to-brand-100/20">
@@ -114,11 +125,12 @@ const GroupsPage = () => {
 
                 {/* Colonne droite - Carte et destination */}
                 <div className="space-y-6">
-                  {isGroupComplete && currentGroup.bar_name && currentGroup.bar_address && currentGroup.meeting_time && (
+                  {/* Afficher la carte même si toutes les données ne sont pas présentes */}
+                  {isGroupComplete && (
                     <GroupMap
-                      barName={currentGroup.bar_name}
-                      barAddress={currentGroup.bar_address}
-                      meetingTime={currentGroup.meeting_time}
+                      barName={currentGroup.bar_name || "Bar en cours d'attribution..."}
+                      barAddress={currentGroup.bar_address || "Adresse en cours de recherche..."}
+                      meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
                       isGroupComplete={isGroupComplete}
                       barLatitude={currentGroup.bar_latitude}
                       barLongitude={currentGroup.bar_longitude}
@@ -157,6 +169,41 @@ const GroupsPage = () => {
                           <span className="font-medium text-neutral-800">
                             {currentGroup.location_name}
                           </span>
+                        </div>
+                      )}
+                      {/* Debug info - Afficher les informations du bar */}
+                      {currentGroup.bar_name && (
+                        <div className="border-t pt-3 mt-3">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600">Bar :</span>
+                            <span className="font-medium text-green-700">
+                              {currentGroup.bar_name}
+                            </span>
+                          </div>
+                          {currentGroup.bar_address && (
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Adresse :</span>
+                              <span className="font-medium text-neutral-800 text-right max-w-48 truncate">
+                                {currentGroup.bar_address}
+                              </span>
+                            </div>
+                          )}
+                          {currentGroup.meeting_time && (
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">RDV :</span>
+                              <span className="font-medium text-blue-700">
+                                {new Date(currentGroup.meeting_time).toLocaleString('fr-FR')}
+                              </span>
+                            </div>
+                          )}
+                          {currentGroup.bar_latitude && currentGroup.bar_longitude && (
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Coordonnées :</span>
+                              <span className="font-medium text-neutral-800 text-xs">
+                                {currentGroup.bar_latitude.toFixed(4)}, {currentGroup.bar_longitude.toFixed(4)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

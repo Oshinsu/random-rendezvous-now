@@ -166,6 +166,7 @@ export const useGroups = () => {
       }
 
       console.log('✅ Groupes récupérés:', groupsData?.length || 0);
+      console.log('📊 Détails des groupes:', groupsData);
 
       // Vérifier et corriger le comptage des participants pour chaque groupe
       if (groupsData && groupsData.length > 0) {
@@ -181,6 +182,7 @@ export const useGroups = () => {
           .order('created_at', { ascending: false });
         
         const finalGroups = (correctedGroups || []) as Group[];
+        console.log('📊 Groupes après synchronisation:', finalGroups);
         setUserGroups(finalGroups);
 
         // Charger les membres du premier groupe actif
@@ -227,7 +229,7 @@ export const useGroups = () => {
       // CORRECTION: Vérifier si le groupe doit passer à "confirmed"
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
-        .select('status, bar_name')
+        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude')
         .eq('id', groupId)
         .single();
 
@@ -235,6 +237,8 @@ export const useGroups = () => {
         console.error('❌ Erreur récupération groupe:', groupError);
         return;
       }
+
+      console.log('📋 État actuel du groupe:', currentGroup);
 
       // Si on a 5 participants et que le groupe est encore en waiting, le passer en confirmed
       if (realCount >= 5 && currentGroup.status === 'waiting') {
@@ -246,39 +250,74 @@ export const useGroups = () => {
           status: 'confirmed'
         };
 
-        // Essayer de trouver un bar via l'Edge Function
-        try {
-          console.log('🔍 Recherche d\'un bar via Edge Function...');
-          const selectedBar = await GooglePlacesService.findNearbyBars(
-            48.8566, // Paris par défaut
-            2.3522,
-            8000
-          );
-          
-          if (selectedBar) {
-            // Rendez-vous dans 1 heure après la formation du groupe
+        // Si le bar n'est pas encore assigné, essayer de trouver un bar
+        if (!currentGroup.bar_name) {
+          try {
+            console.log('🔍 Recherche d\'un bar via Edge Function...');
+            const selectedBar = await GooglePlacesService.findNearbyBars(
+              48.8566, // Paris par défaut
+              2.3522,
+              8000
+            );
+            
+            if (selectedBar) {
+              // Rendez-vous dans 1 heure après la formation du groupe
+              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+              
+              updateData = {
+                ...updateData,
+                bar_name: selectedBar.name,
+                bar_address: selectedBar.formatted_address,
+                meeting_time: meetingTime.toISOString(),
+                bar_latitude: selectedBar.geometry.location.lat,
+                bar_longitude: selectedBar.geometry.location.lng,
+                bar_place_id: selectedBar.place_id
+              };
+              
+              console.log('🍺 Bar assigné via API:', {
+                name: selectedBar.name,
+                address: selectedBar.formatted_address,
+                meetingTime: meetingTime.toLocaleString('fr-FR'),
+                coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
+              });
+            } else {
+              console.warn('⚠️ API échouée, utilisation d\'un bar de fallback');
+              // Utiliser un bar de fallback depuis la liste locale
+              const randomBar = PARIS_BARS[Math.floor(Math.random() * PARIS_BARS.length)];
+              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+              
+              updateData = {
+                ...updateData,
+                bar_name: randomBar.name,
+                bar_address: randomBar.address,
+                meeting_time: meetingTime.toISOString(),
+                bar_latitude: randomBar.lat,
+                bar_longitude: randomBar.lng
+              };
+              
+              console.log('🍺 Bar de fallback assigné:', {
+                name: randomBar.name,
+                address: randomBar.address,
+                meetingTime: meetingTime.toLocaleString('fr-FR')
+              });
+            }
+          } catch (barError) {
+            console.error('❌ Erreur recherche de bar:', barError);
+            // En cas d'erreur, utiliser un bar de fallback
+            const fallbackBar = PARIS_BARS[0];
             const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
             
             updateData = {
               ...updateData,
-              bar_name: selectedBar.name,
-              bar_address: selectedBar.formatted_address,
+              bar_name: fallbackBar.name,
+              bar_address: fallbackBar.address,
               meeting_time: meetingTime.toISOString(),
-              bar_latitude: selectedBar.geometry.location.lat,
-              bar_longitude: selectedBar.geometry.location.lng,
-              bar_place_id: selectedBar.place_id
+              bar_latitude: fallbackBar.lat,
+              bar_longitude: fallbackBar.lng
             };
             
-            console.log('🍺 Bar assigné:', {
-              name: selectedBar.name,
-              address: selectedBar.formatted_address,
-              meetingTime: meetingTime.toLocaleString('fr-FR')
-            });
-          } else {
-            console.warn('⚠️ Aucun bar trouvé, groupe confirmé sans bar');
+            console.log('🍺 Bar d\'urgence assigné après erreur:', fallbackBar.name);
           }
-        } catch (barError) {
-          console.error('❌ Erreur recherche de bar:', barError);
         }
 
         // Mettre à jour le groupe
@@ -290,7 +329,7 @@ export const useGroups = () => {
         if (updateError) {
           console.error('❌ Erreur de mise à jour:', updateError);
         } else {
-          console.log('✅ Groupe mis à jour avec succès');
+          console.log('✅ Groupe mis à jour avec succès:', updateData);
         }
       } else {
         // Juste mettre à jour le comptage
