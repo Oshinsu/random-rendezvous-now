@@ -3,7 +3,7 @@ import { Group } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Users, LogOut, Calendar, Star, Crown, Gem, Navigation } from 'lucide-react';
+import { MapPin, Clock, Users, LogOut, Calendar, Navigation } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 import { GeolocationService } from '@/services/geolocation';
 
@@ -20,27 +20,27 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
       waiting: { 
         variant: 'secondary' as const, 
         text: 'En Attente', 
-        className: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-900 border-2 border-yellow-300 font-elegant font-bold px-4 py-2 text-sm' 
+        className: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-900 border-2 border-yellow-300 font-semibold px-4 py-2' 
       },
       full: { 
         variant: 'default' as const, 
         text: 'Complet', 
-        className: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 border-2 border-blue-300 font-elegant font-bold px-4 py-2 text-sm' 
+        className: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 border-2 border-blue-300 font-semibold px-4 py-2' 
       },
       confirmed: { 
         variant: 'default' as const, 
         text: 'Confirmé', 
-        className: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border-2 border-emerald-300 font-elegant font-bold px-4 py-2 text-sm' 
+        className: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border-2 border-emerald-300 font-semibold px-4 py-2' 
       },
       completed: { 
         variant: 'outline' as const, 
         text: 'Terminé', 
-        className: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 border-2 border-gray-300 font-elegant font-bold px-4 py-2 text-sm' 
+        className: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 border-2 border-gray-300 font-semibold px-4 py-2' 
       },
       cancelled: { 
         variant: 'destructive' as const, 
         text: 'Annulé', 
-        className: 'bg-gradient-to-r from-red-100 to-red-200 text-red-900 border-2 border-red-300 font-elegant font-bold px-4 py-2 text-sm' 
+        className: 'bg-gradient-to-r from-red-100 to-red-200 text-red-900 border-2 border-red-300 font-semibold px-4 py-2' 
       }
     };
     
@@ -84,29 +84,38 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
 
   const groupDistance = getDistanceToGroup();
 
+  const handleLeaveGroup = async () => {
+    console.log('🚪 Tentative de quitter le groupe:', group.id);
+    try {
+      await leaveGroup(group.id);
+      console.log('✅ Groupe quitté avec succès');
+    } catch (error) {
+      console.error('❌ Erreur lors de la sortie du groupe:', error);
+    }
+  };
+
   return (
-    <Card className="w-full glass-luxury border-2 border-yellow-200/50 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 luxury-float">
-      <CardHeader className="pb-6">
+    <Card className="w-full bg-white/80 backdrop-blur-sm border-2 border-amber-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+      <CardHeader className="pb-4">
         <div className="flex justify-between items-start">
           <div className="space-y-3">
-            <CardTitle className="text-3xl font-luxury font-black bg-gradient-to-r from-yellow-600 to-yellow-800 bg-clip-text text-transparent">
-              Cercle #{group.id.slice(-6)}
+            <CardTitle className="text-2xl font-bold text-slate-800">
+              Groupe d'Aventure
             </CardTitle>
-            <div className="flex items-center space-x-3">
-              <Gem className="h-6 w-6 text-yellow-600" />
-              <span className="text-lg text-gray-700 font-elegant font-semibold tracking-wide">Expérience Premium</span>
+            <div className="text-sm text-slate-600">
+              Créé le {new Date(group.created_at).toLocaleDateString('fr-FR')}
             </div>
             
             {/* Informations de localisation */}
             {(group.location_name || groupDistance) && (
-              <div className="flex items-center space-x-3 text-sm">
-                <Navigation className="h-5 w-5 text-blue-600" />
+              <div className="flex items-center space-x-2 text-sm">
+                <Navigation className="h-4 w-4 text-blue-600" />
                 <div className="space-x-2">
                   {group.location_name && (
-                    <span className="text-blue-700 font-semibold">{group.location_name}</span>
+                    <span className="text-blue-700 font-medium">{group.location_name}</span>
                   )}
                   {groupDistance && (
-                    <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">
+                    <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded-full text-xs font-medium">
                       à {groupDistance}
                     </span>
                   )}
@@ -118,47 +127,47 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-8">
-        {/* Progression des participants luxueuse */}
-        <div className="space-y-4">
+      <CardContent className="space-y-6">
+        {/* Progression des participants */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Users className="h-7 w-7 text-yellow-600" />
-              <span className="text-2xl font-luxury font-bold text-gray-800">
-                {group.current_participants}/{group.max_participants} membres exclusifs
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-amber-600" />
+              <span className="text-lg font-semibold text-slate-800">
+                {group.current_participants}/{group.max_participants} participants
               </span>
             </div>
-            <span className="text-lg text-gray-600 font-elegant font-semibold">
+            <span className="text-sm text-slate-600 font-medium">
               {Math.round(getProgressPercentage())}%
             </span>
           </div>
           
-          {/* Barre de progression luxueuse */}
-          <div className="w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded-full h-4 overflow-hidden shadow-inner">
+          {/* Barre de progression */}
+          <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-700 ease-out gold-glow"
+              className="bg-gradient-to-r from-amber-400 to-amber-600 h-full rounded-full transition-all duration-500"
               style={{ width: `${getProgressPercentage()}%` }}
             ></div>
           </div>
         </div>
 
-        {/* Informations du bar premium */}
+        {/* Informations du bar */}
         {(group.status === 'confirmed' || group.status === 'full') && group.bar_name && (
-          <div className="glass-gold border-2 border-emerald-300 rounded-2xl p-6 space-y-4">
-            <div className="flex items-start space-x-4">
-              <MapPin className="h-7 w-7 text-emerald-700 mt-1 flex-shrink-0" />
+          <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-start space-x-3">
+              <MapPin className="h-5 w-5 text-emerald-700 mt-1 flex-shrink-0" />
               <div>
-                <div className="font-luxury font-bold text-emerald-900 text-2xl">{group.bar_name}</div>
-                <div className="text-emerald-800 text-lg font-elegant">{group.bar_address}</div>
+                <div className="font-bold text-emerald-900 text-lg">{group.bar_name}</div>
+                <div className="text-emerald-800">{group.bar_address}</div>
               </div>
             </div>
 
             {group.meeting_time && (
-              <div className="flex items-start space-x-4 pt-4 border-t-2 border-emerald-200">
-                <Calendar className="h-7 w-7 text-emerald-700 mt-1" />
+              <div className="flex items-start space-x-3 pt-3 border-t border-emerald-200">
+                <Calendar className="h-5 w-5 text-emerald-700 mt-1" />
                 <div>
-                  <div className="font-luxury font-bold text-emerald-900 text-xl">Rendez-vous Premium</div>
-                  <div className="text-emerald-800 capitalize font-elegant text-lg">
+                  <div className="font-bold text-emerald-900">Rendez-vous</div>
+                  <div className="text-emerald-800 capitalize">
                     {formatDateTime(group.meeting_time)}
                   </div>
                 </div>
@@ -167,18 +176,18 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
           </div>
         )}
 
-        {/* Message d'attente luxueux */}
+        {/* Message d'attente */}
         {group.status === 'waiting' && (
-          <div className="glass-gold border-2 border-yellow-300 rounded-2xl p-6">
-            <div className="flex items-center space-x-4">
-              <Clock className="h-7 w-7 text-yellow-700" />
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-5 w-5 text-yellow-700" />
               <div>
-                <div className="font-luxury font-bold text-yellow-900 text-xl">Assemblage en cours</div>
-                <div className="text-yellow-800 text-lg font-elegant">
-                  Plus que {group.max_participants - group.current_participants} membre{group.max_participants - group.current_participants > 1 ? 's' : ''} pour compléter ce cercle exclusif !
+                <div className="font-bold text-yellow-900">En attente de participants</div>
+                <div className="text-yellow-800">
+                  Plus que {group.max_participants - group.current_participants} participant{group.max_participants - group.current_participants > 1 ? 's' : ''} pour compléter le groupe !
                 </div>
                 {group.search_radius && (
-                  <div className="text-yellow-700 text-sm font-medium mt-2">
+                  <div className="text-yellow-700 text-sm mt-1">
                     Rayon de recherche: {GeolocationService.formatDistance(group.search_radius)}
                   </div>
                 )}
@@ -187,17 +196,17 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
           </div>
         )}
 
-        {/* Bouton quitter luxueux */}
+        {/* Bouton quitter */}
         {showLeaveButton && group.status !== 'completed' && (
           <Button
-            onClick={() => leaveGroup(group.id)}
+            onClick={handleLeaveGroup}
             disabled={loading}
             variant="outline"
             size="lg"
-            className="w-full border-2 border-red-300 text-red-800 hover:bg-red-50 hover:border-red-400 transition-all duration-300 font-elegant font-bold text-lg py-4"
+            className="w-full border-2 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 transition-all duration-200 font-semibold"
           >
-            <LogOut className="h-6 w-6 mr-3" />
-            Quitter le Cercle
+            <LogOut className="h-5 w-5 mr-2" />
+            {loading ? 'Sortie en cours...' : 'Quitter le Groupe'}
           </Button>
         )}
       </CardContent>

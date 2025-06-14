@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -116,7 +115,24 @@ export const useGroups = () => {
       }
 
       console.log('✅ Groupes récupérés:', groupsData?.length || 0);
-      setUserGroups((groupsData || []) as Group[]);
+
+      // Vérifier et corriger le comptage des participants pour chaque groupe
+      if (groupsData && groupsData.length > 0) {
+        for (const group of groupsData) {
+          await syncGroupParticipantCount(group.id);
+        }
+        
+        // Re-fetch les groupes après correction
+        const { data: correctedGroups } = await supabase
+          .from('groups')
+          .select('*')
+          .in('id', groupIds)
+          .order('created_at', { ascending: false });
+        
+        setUserGroups((correctedGroups || []) as Group[]);
+      } else {
+        setUserGroups([]);
+      }
     } catch (error) {
       console.error('❌ Erreur fetchUserGroups:', error);
       toast({ 
@@ -129,6 +145,42 @@ export const useGroups = () => {
       fetchingRef.current = false;
     }
   }, [user]);
+
+  // Nouvelle fonction pour synchroniser le comptage des participants
+  const syncGroupParticipantCount = async (groupId: string) => {
+    try {
+      console.log('🔄 Synchronisation du comptage pour le groupe:', groupId);
+      
+      // Compter les vrais participants
+      const { data: realParticipants, error: countError } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+
+      if (countError) {
+        console.error('❌ Erreur de comptage:', countError);
+        return;
+      }
+
+      const realCount = realParticipants?.length || 0;
+      console.log('📊 Nombre réel de participants:', realCount);
+
+      // Mettre à jour le groupe avec le bon comptage
+      const { error: updateError } = await supabase
+        .from('groups')
+        .update({ current_participants: realCount })
+        .eq('id', groupId);
+
+      if (updateError) {
+        console.error('❌ Erreur de mise à jour:', updateError);
+      } else {
+        console.log('✅ Comptage synchronisé:', realCount);
+      }
+    } catch (error) {
+      console.error('❌ Erreur de synchronisation:', error);
+    }
+  };
 
   const findCompatibleGroup = async (userLocation: LocationData) => {
     try {
@@ -386,11 +438,14 @@ export const useGroups = () => {
   };
 
   const leaveGroup = async (groupId: string) => {
-    if (!user || loading) return;
+    if (!user || loading) {
+      console.log('🚫 Impossible de quitter - pas d\'utilisateur ou chargement en cours');
+      return;
+    }
 
     setLoading(true);
     try {
-      console.log('🚪 Quitter le groupe:', groupId);
+      console.log('🚪 Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
       // Supprimer la participation
       const { error: deleteError } = await supabase
@@ -400,41 +455,41 @@ export const useGroups = () => {
         .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error('❌ Erreur pour quitter le groupe:', deleteError);
+        console.error('❌ Erreur pour supprimer la participation:', deleteError);
         throw deleteError;
       }
 
-      // Récupérer le groupe pour mettre à jour le count
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .select('current_participants')
-        .eq('id', groupId)
-        .single();
+      console.log('✅ Participation supprimée');
 
-      if (!groupError && group) {
-        const newCount = Math.max(0, group.current_participants - 1);
-        
-        if (newCount === 0) {
-          // Supprimer le groupe s'il est vide
-          await supabase
-            .from('groups')
-            .delete()
-            .eq('id', groupId);
-        } else {
-          // Mettre à jour le count et le statut si nécessaire
-          const updateData: any = { current_participants: newCount };
-          if (newCount < 5) {
-            updateData.status = 'waiting';
-            updateData.bar_name = null;
-            updateData.bar_address = null;
-            updateData.meeting_time = null;
-          }
-          
-          await supabase
-            .from('groups')
-            .update(updateData)
-            .eq('id', groupId);
-        }
+      // Synchroniser le comptage après suppression
+      await syncGroupParticipantCount(groupId);
+
+      // Vérifier s'il reste des participants
+      const { data: remainingParticipants, error: checkError } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+
+      if (!checkError && remainingParticipants && remainingParticipants.length === 0) {
+        // Supprimer le groupe s'il est vide
+        console.log('🗑️ Suppression du groupe vide');
+        await supabase
+          .from('groups')
+          .delete()
+          .eq('id', groupId);
+      } else if (!checkError && remainingParticipants && remainingParticipants.length < 5) {
+        // Remettre le groupe en attente s'il y a moins de 5 participants
+        console.log('⏳ Remise du groupe en attente');
+        await supabase
+          .from('groups')
+          .update({
+            status: 'waiting',
+            bar_name: null,
+            bar_address: null,
+            meeting_time: null
+          })
+          .eq('id', groupId);
       }
 
       toast({ 
