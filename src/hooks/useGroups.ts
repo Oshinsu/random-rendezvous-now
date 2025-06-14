@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Group, GroupParticipant } from '@/types/database';
@@ -30,8 +30,8 @@ export const useGroups = () => {
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchUserGroups = async () => {
-    if (!user) return;
+  const fetchUserGroups = useCallback(async () => {
+    if (!user || loading) return;
     
     setLoading(true);
     try {
@@ -53,7 +53,6 @@ export const useGroups = () => {
 
       if (!participations || participations.length === 0) {
         setUserGroups([]);
-        setLoading(false);
         return;
       }
 
@@ -70,7 +69,6 @@ export const useGroups = () => {
       }
 
       console.log('User groups data:', groupsData);
-      // Type cast the data to match our Group interface
       setUserGroups((groupsData || []) as Group[]);
     } catch (error) {
       console.error('Error fetching user groups:', error);
@@ -82,7 +80,7 @@ export const useGroups = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, loading]);
 
   const joinRandomGroup = async () => {
     if (!user) {
@@ -119,7 +117,7 @@ export const useGroups = () => {
           .from('groups')
           .select('*')
           .in('id', groupIds)
-          .in('status', ['waiting', 'full', 'confirmed']);
+          .in('status', ['waiting', 'confirmed']);
 
         if (activeGroupsError) {
           console.error('Error checking active groups:', activeGroupsError);
@@ -325,10 +323,10 @@ export const useGroups = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && !loading) {
       fetchUserGroups();
     }
-  }, [user]);
+  }, [user, fetchUserGroups]);
 
   return {
     groups,

@@ -5,8 +5,49 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%; /* Darker background */
-    --foreground: 0 0% 98%; /* Light foreground */
+    --background: 0 0% 100%; /* White background */
+    --foreground: 240 10% 3.9%; /* Dark foreground */
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 43 96% 56%; /* Amber/Gold primary */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 43 96% 56%; /* Amber/Gold ring */
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 43 96% 56%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
@@ -14,8 +55,8 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 260 85% 65%; /* Vibrant Purple */
-    --primary-foreground: 0 0% 98%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 240 5.9% 10%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -31,22 +72,45 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 260 85% 65%; /* Vibrant Purple for ring */
+    --ring: 43 96% 56%;
 
-    --radius: 0.5rem;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 43 96% 56%;
   }
-
-  /* Remove .dark class specific overrides if we want dark by default */
-  /* Or ensure html has class="dark" */
 
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif; /* Adding a default font */
+    font-family: 'Inter', sans-serif;
   }
 }
 
-/* Add Inter font import if not already via HTML */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Poppins:wght@700;800&display=swap');
+/* Add Inter and Poppins font imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap');
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f59e0b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d97706;
+}

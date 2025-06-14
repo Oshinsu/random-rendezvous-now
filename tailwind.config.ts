@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,7 +25,7 @@ export default {
 		extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        heading: ['Poppins', 'sans-serif'], // Exemple de police pour les titres
+        heading: ['Poppins', 'sans-serif'],
       },
 			colors: {
 				border: 'hsl(var(--border))',
@@ -33,7 +34,7 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))', // Vibrant Purple
+					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
@@ -49,12 +50,12 @@ export default {
 					foreground: 'hsl(var(--muted-foreground))'
 				},
 				accent: {
-					DEFAULT: 'hsl(var(--accent))', // Peut être un vert néon ou bleu électrique
+					DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))'
 				},
         brand: {
-          purple: 'hsl(var(--primary))', // alias pour notre couleur primaire
-          // neonGreen: '#39FF14', // exemple
+          gold: '#f59e0b',
+          lightGold: '#fbbf24',
         },
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
@@ -106,7 +107,10 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fadeIn 0.5s ease-out forwards',
-			}
+			},
+      boxShadow: {
+        '3xl': '0 35px 60px -12px rgba(0, 0, 0, 0.3)',
+      }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
