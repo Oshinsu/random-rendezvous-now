@@ -4,8 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGroups } from '@/hooks/useGroups';
 import RandomButton from '@/components/RandomButton';
 import GroupsList from '@/components/GroupsList';
+import AppNavigation from '@/components/AppNavigation';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -27,6 +29,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AppNavigation />
+      
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Hero Section */}
         <div className="text-center space-y-4">
@@ -44,35 +48,46 @@ const Dashboard = () => {
         </div>
 
         {/* Groups Section */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-heading font-bold">Mes Groupes</h2>
-            <Button
-              onClick={fetchUserGroups}
-              disabled={loading}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
-            </Button>
+            <h2 className="text-2xl font-heading font-bold">Aperçu de mes groupes</h2>
+            <div className="flex space-x-2">
+              <Button
+                onClick={fetchUserGroups}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </Button>
+              <Link to="/groups">
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Voir tous
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {activeGroups.length > 0 && (
-            <GroupsList
-              groups={activeGroups}
-              title="Groupes Actifs"
-              emptyMessage="Aucun groupe actif"
-            />
-          )}
-
-          {completedGroups.length > 0 && (
-            <GroupsList
-              groups={completedGroups}
-              title="Historique"
-              emptyMessage="Aucune aventure passée"
-              showLeaveButton={false}
-            />
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-muted-foreground">Groupes Actifs</h3>
+              <GroupsList
+                groups={activeGroups.slice(0, 2)}
+                title=""
+                emptyMessage="Aucun groupe actif"
+              />
+              {activeGroups.length > 2 && (
+                <div className="text-center">
+                  <Link to="/groups">
+                    <Button variant="outline">
+                      Voir les {activeGroups.length - 2} autres groupes
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {userGroups.length === 0 && !loading && (
