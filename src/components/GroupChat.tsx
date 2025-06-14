@@ -62,11 +62,10 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     if (message.user_id === user?.id) {
       return 'Vous';
     }
-    // Pour les autres utilisateurs, utiliser un nom masqué basé sur l'index
-    const userMessages = messages.filter(m => !m.is_system && m.user_id !== user?.id);
-    const uniqueUsers = [...new Set(userMessages.map(m => m.user_id))];
-    const userIndex = uniqueUsers.indexOf(message.user_id);
-    return userIndex >= 0 ? `Rander ${userIndex + 1}` : 'Utilisateur';
+    // Pour les autres utilisateurs, utiliser un nom anonyme basé sur l'ID
+    const userId = message.user_id;
+    const userIndex = userId ? userId.slice(-4) : 'Anon';
+    return `Utilisateur ${userIndex}`;
   };
 
   // Ne pas afficher le chat si l'utilisateur n'est pas connecté
@@ -110,6 +109,8 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     );
   }
 
+  console.log('🔍 [GroupChat] Messages actuels:', messages.length, messages);
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -140,25 +141,31 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
             messages.map((message) => {
               const sender = getMessageSender(message);
               const isOwnMessage = message.user_id === user?.id && !message.is_system;
-              const isTemporary = message.id.startsWith('temp-');
+              
+              console.log('🔍 [GroupChat] Affichage message:', {
+                id: message.id,
+                sender,
+                isOwnMessage,
+                content: message.message,
+                timestamp: message.created_at
+              });
               
               return (
                 <div
                   key={message.id}
-                  className={`p-3 rounded-lg transition-opacity ${
+                  className={`p-3 rounded-lg ${
                     message.is_system
                       ? 'bg-blue-100 border border-blue-200 text-blue-800'
                       : isOwnMessage
                       ? 'bg-brand-100 ml-8 border border-brand-200'
                       : 'bg-white mr-8 border border-gray-200'
-                  } ${isTemporary ? 'opacity-70' : 'opacity-100'}`}
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className={`text-sm font-semibold ${
                       message.is_system ? 'text-blue-700' : 'text-gray-700'
                     }`}>
                       {sender}
-                      {isTemporary && ' (envoi...)'}
                     </span>
                     <span className="text-xs text-gray-500">
                       {formatTime(message.created_at)}

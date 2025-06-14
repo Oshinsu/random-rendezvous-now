@@ -37,6 +37,7 @@ export const useGroupChat = (groupId: string) => {
       }
 
       console.log('✅ Messages chargés:', data?.length || 0);
+      console.log('🔍 [useGroupChat] Messages détail:', data);
       setMessages(data || []);
     } catch (error) {
       console.error('❌ Erreur loadMessages:', error);
@@ -137,6 +138,7 @@ export const useGroupChat = (groupId: string) => {
             }
             
             console.log('✅ Nouveau message ajouté à la liste');
+            console.log('🔍 [useGroupChat] État des messages après ajout:', [...prev, newMessage].length);
             return [...prev, newMessage];
           });
         }
@@ -163,6 +165,11 @@ export const useGroupChat = (groupId: string) => {
       supabase.removeChannel(channel);
     };
   }, [groupId, user?.id]);
+
+  // Debug: surveiller les changements de messages
+  useEffect(() => {
+    console.log('🔍 [useGroupChat] Messages state changé:', messages.length, messages);
+  }, [messages]);
 
   return {
     messages,
