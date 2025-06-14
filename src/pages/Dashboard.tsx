@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGroups } from '@/hooks/useGroups';
 import RandomButton from '@/components/RandomButton';
 import AppLayout from '@/components/AppLayout';
-import { Trophy, Clock, Star, Users, ArrowRight, Sparkles } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -19,103 +18,62 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-gradient-to-br from-[#fffbe8] via-[#fef6e2] to-brand-50 transition-all duration-500">
-        <div className="container mx-auto px-6 py-10 space-y-10 max-w-5xl">
-          <div className="text-center space-y-4 glass-card rounded-3xl p-8 animate-in">
-            <div className="flex justify-center items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-br from-amber-400/90 to-amber-500/90 rounded-2xl flex items-center justify-center shadow-lg">
-                <Sparkles className="h-7 w-7 text-white" />
+      <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col">
+        <main className="flex-grow w-full flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-3xl mx-auto flex flex-col items-center text-center">
+            <div className="flex items-center justify-center mb-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-3xl font-bold">R</span>
               </div>
             </div>
-            <h1 className="font-playfair text-4xl font-bold text-[#c8a42d] drop-shadow-glow-gold">
-              Bienvenue {user?.user_metadata?.first_name ?? 'Aventurier'}
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-playfair font-extrabold mb-6 tracking-tight bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent drop-shadow-glow-gold">
+              Random : Bienvenue {user?.user_metadata?.first_name ?? 'Aventurier'}
             </h1>
-            <p className="text-lg text-neutral-500 font-body">
-              Vivez une expérience spontanée, raffinée et unique près de chez vous.
+            <p className="text-lg md:text-xl text-amber-900/80 mb-8 max-w-2xl mx-auto leading-relaxed font-body font-medium">
+              Vivez une expérience spontanée, raffinée et unique près de chez vous.<br className="hidden md:block" />
+              Retrouvez vos groupes actifs et votre prochaine aventure – le tout en 1 clic.
             </p>
-          </div>
-
-          <div className="flex justify-center animate-up" style={{ animationDelay: '0.05s' }}>
-            <RandomButton />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-up" style={{ animationDelay: '0.15s' }}>
-            <div className="glass-card rounded-2xl p-6 flex flex-col items-center gap-3 border-l-4 border-l-amber-400 shadow-sm">
-              <div className="p-3 bg-gradient-to-br from-amber-400/95 to-amber-600/90 rounded-xl shadow">
-                <Clock className="h-7 w-7 text-white" />
-              </div>
-              <p className="text-xs font-playfair text-amber-700 uppercase tracking-wide">Aventures Actives</p>
-              <p className="text-2xl font-bold text-[#c8a42d] font-playfair">{activeGroups.length}</p>
-            </div>
-            <div className="glass-card rounded-2xl p-6 flex flex-col items-center gap-3 border-l-4 border-l-amber-200 shadow-sm">
-              <div className="p-3 bg-gradient-to-br from-amber-400/95 to-amber-600/90 rounded-xl shadow">
-                <Trophy className="h-7 w-7 text-white" />
-              </div>
-              <p className="text-xs font-playfair text-amber-700 uppercase tracking-wide">Accomplies</p>
-              <p className="text-2xl font-bold text-[#c8a42d] font-playfair">{completedGroups.length}</p>
-            </div>
-            <div className="glass-card rounded-2xl p-6 flex flex-col items-center gap-3 border-l-4 border-l-amber-100 shadow-sm">
-              <div className="p-3 bg-gradient-to-br from-amber-400/95 to-amber-600/90 rounded-xl shadow">
-                <Users className="h-7 w-7 text-white" />
-              </div>
-              <p className="text-xs font-playfair text-amber-700 uppercase tracking-wide">Total</p>
-              <p className="text-2xl font-bold text-[#c8a42d] font-playfair">{userGroups.length}</p>
-            </div>
-          </div>
-
-          {!userGroups.length ? (
-            <div className="text-center py-12 space-y-6 glass-card rounded-3xl animate-up" style={{ animationDelay: '0.22s' }}>
-              <div className="text-4xl">⚡</div>
-              <h2 className="font-playfair text-2xl text-[#c8a42d] font-bold">Démarrez votre première aventure</h2>
-              <p className="text-neutral-500 max-w-md mx-auto leading-relaxed font-body">
-                Un seul clic vous connecte à un groupe raffiné pour découvrir un lieu exclusif, sans efforts.
-              </p>
-              <div className="flex justify-center space-x-8 text-sm text-neutral-500 pt-2">
-                <span className="flex items-center gap-1 font-playfair">
-                  <div className="p-1 bg-gradient-to-br from-amber-400 to-amber-600 rounded">
-                    <Users className="h-4 w-4 text-white" />
-                  </div>
-                  5 max
-                </span>
-                <span className="flex items-center gap-1 font-playfair">
-                  <div className="p-1 bg-gradient-to-br from-amber-400 to-amber-600 rounded">
-                    <Clock className="h-4 w-4 text-white" />
-                  </div>
-                  2h
-                </span>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 w-full mb-6">
+              <RandomButton />
+              <div className="rounded-2xl border border-amber-300 px-6 py-3 text-amber-700 text-base font-semibold font-heading bg-white/80 shadow-soft select-none cursor-default mt-2 sm:mt-0">
+                {userGroups.length
+                  ? `Groupes actifs : ${activeGroups.length} / Terminé : ${completedGroups.length}`
+                  : "Aucun groupe actif"}
               </div>
             </div>
-          ) : (
-            <div className="space-y-4 animate-up" style={{ animationDelay: '0.25s' }}>
-              <div className="glass-card rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                  <h2 className="font-playfair text-xl text-[#c8a42d] flex items-center gap-2">
-                    <span className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg">
-                      <Users className="h-6 w-6 text-white" />
-                    </span>
-                    Vos Aventures
-                  </h2>
-                  <p className="text-sm text-neutral-500 font-body mt-1">Retrouvez et gérez vos souvenirs.</p>
+            <div className="flex flex-col gap-2 mt-2 mb-4">
+              {loading && (
+                <div className="flex items-center gap-2 text-sm text-amber-700 font-medium">
+                  <span className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin inline-block" />
+                  Synchronisation en cours...
                 </div>
-                <div className="hidden">
-                  {/* Supprime les boutons multiples, on garde l’action Random */}
+              )}
+              {!loading && userGroups.length === 0 && (
+                <div className="text-amber-700 text-sm font-medium">
+                  Démarrez votre première aventure – il suffit d’un clic sur le bouton ci-dessus.
                 </div>
-              </div>
+              )}
             </div>
-          )}
-
-          {loading && (
-            <div className="fixed bottom-10 right-10 glass-morphism shadow-lg rounded-2xl p-4 border border-amber-200">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 animate-spin text-[#c8a42d]" />
-                <span className="text-sm font-playfair text-neutral-700">Synchronisation en cours...</span>
-              </div>
+            <div className="mt-6 max-w-xl mx-auto flex justify-center gap-6 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Groupes actifs
+              </span>
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                Bars partenaires
+              </span>
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                Paris uniquement
+              </span>
             </div>
-          )}
-        </div>
+          </div>
+        </main>
       </div>
     </AppLayout>
   );
 };
 
 export default Dashboard;
+
