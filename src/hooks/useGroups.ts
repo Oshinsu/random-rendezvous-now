@@ -80,7 +80,7 @@ export const useGroups = () => {
     try {
       console.log('👥 Récupération des membres du groupe:', groupId);
       
-      // Récupérer les participants avec leurs profils
+      // Récupérer les participants avec leurs profils en utilisant la clé étrangère
       const { data: participantsData, error: participantsError } = await supabase
         .from('group_participants')
         .select(`
@@ -88,7 +88,7 @@ export const useGroups = () => {
           user_id,
           joined_at,
           status,
-          profiles!inner(
+          profiles (
             first_name,
             last_name,
             email
@@ -103,6 +103,7 @@ export const useGroups = () => {
       }
 
       console.log('✅ Participants récupérés:', participantsData?.length || 0);
+      console.log('📊 Données des participants:', participantsData);
 
       if (!participantsData) {
         setGroupMembers([]);
@@ -112,10 +113,15 @@ export const useGroups = () => {
       // Transformer les données pour correspondre à l'interface GroupMember
       const members: GroupMember[] = participantsData.map((participant: any) => {
         const profile = participant.profiles;
-        const displayName = profile ? 
-          `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 
-          profile.email?.split('@')[0] || 
-          'Utilisateur' : 'Utilisateur';
+        let displayName = 'Utilisateur';
+        
+        if (profile) {
+          if (profile.first_name || profile.last_name) {
+            displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+          } else if (profile.email) {
+            displayName = profile.email.split('@')[0];
+          }
+        }
 
         return {
           id: participant.id,
@@ -126,6 +132,7 @@ export const useGroups = () => {
         };
       });
 
+      console.log('👥 Membres transformés:', members);
       setGroupMembers(members);
       return members;
     } catch (error) {
