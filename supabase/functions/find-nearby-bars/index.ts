@@ -45,6 +45,7 @@ serve(async (req) => {
     }
 
     console.log('🔍 Recherche de bars près de:', { latitude, longitude, radius });
+    console.log('📍 Position reçue - Lat:', latitude, 'Lng:', longitude);
     
     // Utiliser la clé API depuis les secrets Supabase
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
@@ -65,6 +66,8 @@ serve(async (req) => {
       `type=bar&` +
       `key=${apiKey}`;
 
+    console.log('🌐 URL de recherche Google Places:', url);
+
     const response = await fetch(url);
     const data: GooglePlacesResponse = await response.json();
 
@@ -72,6 +75,7 @@ serve(async (req) => {
 
     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
       console.error('❌ Aucun bar trouvé:', data.status);
+      console.log('🔍 Réponse complète Google Places:', JSON.stringify(data, null, 2));
       return new Response(
         JSON.stringify({ error: 'Aucun bar trouvé dans cette zone', status: data.status }),
         { 

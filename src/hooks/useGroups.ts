@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +7,7 @@ import { toast } from '@/hooks/use-toast';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GooglePlacesService } from '@/services/googlePlaces';
 
-// Liste des bars parisiens pour la sélection aléatoire
+// Liste des bars parisiens pour la sélection aléatoire (fallback seulement)
 const PARIS_BARS = [
   { name: "Le Procope", address: "13 Rue de l'Ancienne Comédie, 75006 Paris", lat: 48.8534, lng: 2.3371 },
   { name: "Harry's Bar", address: "5 Rue Daunou, 75002 Paris", lat: 48.8699, lng: 2.3314 },
@@ -229,7 +230,7 @@ export const useGroups = () => {
       // CORRECTION: Vérifier si le groupe doit passer à "confirmed"
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
-        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude')
+        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude, latitude, longitude')
         .eq('id', groupId)
         .single();
 
@@ -253,10 +254,28 @@ export const useGroups = () => {
         // Si le bar n'est pas encore assigné, essayer de trouver un bar
         if (!currentGroup.bar_name) {
           try {
-            console.log('🔍 Recherche d\'un bar via Edge Function...');
+            // CORRECTION: Utiliser la position du groupe ou la position utilisateur actuelle
+            let searchLatitude = currentGroup.latitude;
+            let searchLongitude = currentGroup.longitude;
+            
+            // Si le groupe n'a pas de position, utiliser la position utilisateur actuelle
+            if (!searchLatitude && !searchLongitude && userLocation) {
+              searchLatitude = userLocation.latitude;
+              searchLongitude = userLocation.longitude;
+              console.log('📍 Utilisation position utilisateur pour recherche:', { searchLatitude, searchLongitude });
+            }
+            
+            // Fallback sur Paris seulement si aucune position n'est disponible
+            if (!searchLatitude && !searchLongitude) {
+              searchLatitude = 48.8566;
+              searchLongitude = 2.3522;
+              console.log('⚠️ Aucune position disponible, utilisation de Paris comme fallback');
+            }
+            
+            console.log('🔍 Recherche d\'un bar via Edge Function avec position:', { searchLatitude, searchLongitude });
             const selectedBar = await GooglePlacesService.findNearbyBars(
-              48.8566, // Paris par défaut
-              2.3522,
+              searchLatitude,
+              searchLongitude,
               8000
             );
             
