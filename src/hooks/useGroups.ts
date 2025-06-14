@@ -240,92 +240,91 @@ export const useGroups = () => {
 
       console.log('📋 État actuel du groupe:', currentGroup);
 
-      // Si on a 5 participants et que le groupe est encore en waiting, le passer en confirmed
-      if (realCount >= 5 && currentGroup.status === 'waiting') {
-        console.log('🎯 Groupe complet détecté, passage en confirmed et recherche de bar...');
+      // CORRECTION: Si on a 5 participants ET que le bar n'est pas assigné, rechercher un bar
+      const needsBarAssignment = realCount >= 5 && !currentGroup.bar_name;
+      
+      if (needsBarAssignment) {
+        console.log('🎯 Groupe complet sans bar détecté, recherche de bar...');
         
         let updateData: any = {
           current_participants: realCount,
           status: 'confirmed'
         };
 
-        // CORRECTION: Toujours essayer de chercher un bar, même si échec précédent
-        if (!currentGroup.bar_name) {
-          try {
-            // Déterminer la position pour la recherche
-            let searchLatitude = currentGroup.latitude;
-            let searchLongitude = currentGroup.longitude;
-            
-            // Utiliser la position utilisateur actuelle si le groupe n'a pas de position
-            if (!searchLatitude && !searchLongitude && userLocation) {
-              searchLatitude = userLocation.latitude;
-              searchLongitude = userLocation.longitude;
-              console.log('📍 Utilisation position utilisateur pour recherche:', { searchLatitude, searchLongitude });
-            }
-            
-            // Fallback sur Paris si aucune position disponible
-            if (!searchLatitude && !searchLongitude) {
-              searchLatitude = 48.8566;
-              searchLongitude = 2.3522;
-              console.log('⚠️ Aucune position disponible, utilisation de Paris comme fallback');
-            }
-            
-            console.log('🔍 DÉBUT recherche bar via API avec:', { searchLatitude, searchLongitude });
-            
-            // Appel à l'API pour trouver un bar
-            const selectedBar = await GooglePlacesService.findNearbyBars(
-              searchLatitude,
-              searchLongitude,
-              8000
-            );
-            
-            console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
-            
-            if (selectedBar && selectedBar.name) {
-              // Bar trouvé via API
-              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-              
-              updateData = {
-                ...updateData,
-                bar_name: selectedBar.name,
-                bar_address: selectedBar.formatted_address,
-                meeting_time: meetingTime.toISOString(),
-                bar_latitude: selectedBar.geometry.location.lat,
-                bar_longitude: selectedBar.geometry.location.lng,
-                bar_place_id: selectedBar.place_id
-              };
-              
-              console.log('🍺 Bar assigné via API:', {
-                name: selectedBar.name,
-                address: selectedBar.formatted_address,
-                meetingTime: meetingTime.toLocaleString('fr-FR'),
-                coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
-              });
-            } else {
-              throw new Error('Aucun bar trouvé via API');
-            }
-          } catch (barError) {
-            console.error('❌ Erreur recherche de bar via API:', barError);
-            
-            // Utiliser un bar de fallback en cas d'erreur
-            const randomBar = PARIS_BARS[Math.floor(Math.random() * PARIS_BARS.length)];
+        try {
+          // Déterminer la position pour la recherche
+          let searchLatitude = currentGroup.latitude;
+          let searchLongitude = currentGroup.longitude;
+          
+          // Utiliser la position utilisateur actuelle si le groupe n'a pas de position
+          if (!searchLatitude && !searchLongitude && userLocation) {
+            searchLatitude = userLocation.latitude;
+            searchLongitude = userLocation.longitude;
+            console.log('📍 Utilisation position utilisateur pour recherche:', { searchLatitude, searchLongitude });
+          }
+          
+          // Fallback sur Paris si aucune position disponible
+          if (!searchLatitude && !searchLongitude) {
+            searchLatitude = 48.8566;
+            searchLongitude = 2.3522;
+            console.log('⚠️ Aucune position disponible, utilisation de Paris comme fallback');
+          }
+          
+          console.log('🔍 DÉBUT recherche bar via API avec:', { searchLatitude, searchLongitude });
+          
+          // Appel à l'API pour trouver un bar
+          const selectedBar = await GooglePlacesService.findNearbyBars(
+            searchLatitude,
+            searchLongitude,
+            8000
+          );
+          
+          console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
+          
+          if (selectedBar && selectedBar.name) {
+            // Bar trouvé via API
             const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
             
             updateData = {
               ...updateData,
-              bar_name: randomBar.name,
-              bar_address: randomBar.address,
+              bar_name: selectedBar.name,
+              bar_address: selectedBar.formatted_address,
               meeting_time: meetingTime.toISOString(),
-              bar_latitude: randomBar.lat,
-              bar_longitude: randomBar.lng
+              bar_latitude: selectedBar.geometry.location.lat,
+              bar_longitude: selectedBar.geometry.location.lng,
+              bar_place_id: selectedBar.place_id
             };
             
-            console.log('🍺 Bar de fallback assigné après erreur API:', {
-              name: randomBar.name,
-              address: randomBar.address,
-              meetingTime: meetingTime.toLocaleString('fr-FR')
+            console.log('🍺 Bar assigné via API:', {
+              name: selectedBar.name,
+              address: selectedBar.formatted_address,
+              meetingTime: meetingTime.toLocaleString('fr-FR'),
+              coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
             });
+          } else {
+            throw new Error('Aucun bar trouvé via API');
           }
+        } catch (barError) {
+          console.error('❌ Erreur recherche de bar via API:', barError);
+          
+          // Utiliser un bar de fallback en cas d'erreur
+          const randomBar = PARIS_BARS[Math.floor(Math.random() * PARIS_BARS.length)];
+          const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+          
+          updateData = {
+            ...updateData,
+            bar_name: randomBar.name,
+            bar_address: randomBar.address,
+            meeting_time: meetingTime.toISOString(),
+            bar_latitude: randomBar.lat,
+            bar_longitude: randomBar.lng
+          };
+          
+          console.log('🍺 Bar de fallback assigné après erreur API:', {
+            name: randomBar.name,
+            address: randomBar.address,
+            meetingTime: meetingTime.toLocaleString('fr-FR')
+          });
         }
 
         // Mettre à jour le groupe

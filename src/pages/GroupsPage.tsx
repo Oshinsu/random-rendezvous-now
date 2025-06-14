@@ -7,6 +7,7 @@ import RandomButton from '@/components/RandomButton';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
 import GroupChat from '@/components/GroupChat';
+import BarAssignmentButton from '@/components/BarAssignmentButton';
 
 const GroupsPage = () => {
   const { userGroups, groupMembers, loading, fetchUserGroups, leaveGroup, userLocation } = useGroups();
@@ -24,10 +25,12 @@ const GroupsPage = () => {
   const currentGroup = activeGroups[0];
 
   const isGroupComplete = currentGroup?.status === 'confirmed' && currentGroup?.current_participants >= 5;
+  const needsBarAssignment = isGroupComplete && !currentGroup?.bar_name;
 
   // Debug: Afficher les informations du groupe dans la console
   console.log('🔍 [GroupsPage] Groupe actuel:', currentGroup);
   console.log('🔍 [GroupsPage] Groupe complet?', isGroupComplete);
+  console.log('🔍 [GroupsPage] A besoin d\'assignation de bar?', needsBarAssignment);
   console.log('🔍 [GroupsPage] Bar assigné?', {
     name: currentGroup?.bar_name,
     address: currentGroup?.bar_address,
@@ -125,10 +128,29 @@ const GroupsPage = () => {
 
                 {/* Colonne droite - Carte et destination */}
                 <div className="space-y-6">
-                  {/* Afficher la carte même si toutes les données ne sont pas présentes */}
-                  {isGroupComplete && (
+                  {/* Notification si bar pas assigné */}
+                  {needsBarAssignment && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                      <div className="text-center">
+                        <h3 className="text-lg font-semibold text-amber-800 mb-2">
+                          🍺 Assignation du bar en cours
+                        </h3>
+                        <p className="text-amber-700 mb-4">
+                          Votre groupe est complet ! Cliquez ci-dessous pour rechercher un bar.
+                        </p>
+                        <BarAssignmentButton
+                          groupId={currentGroup.id}
+                          onBarAssigned={handleRefresh}
+                          userLocation={userLocation}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Afficher la carte seulement si le bar est assigné */}
+                  {isGroupComplete && currentGroup.bar_name && (
                     <GroupMap
-                      barName={currentGroup.bar_name || "Bar en cours d'attribution..."}
+                      barName={currentGroup.bar_name}
                       barAddress={currentGroup.bar_address || "Adresse en cours de recherche..."}
                       meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
                       isGroupComplete={isGroupComplete}
@@ -171,7 +193,7 @@ const GroupsPage = () => {
                           </span>
                         </div>
                       )}
-                      {/* Debug info - Afficher les informations du bar */}
+                      {/* Informations du bar si disponibles */}
                       {currentGroup.bar_name && (
                         <div className="border-t pt-3 mt-3">
                           <div className="flex justify-between">
