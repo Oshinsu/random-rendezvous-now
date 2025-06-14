@@ -5,7 +5,7 @@ import RandomButton from '@/components/RandomButton';
 import GroupsList from '@/components/GroupsList';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Users, Trophy, TrendingUp, Clock, Zap, Star, ArrowRight } from 'lucide-react';
+import { RefreshCw, Users, Trophy, TrendingUp, Clock, Zap, Star, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -29,24 +29,24 @@ const Dashboard = () => {
     <AppLayout>
       <div className="min-h-full bg-gradient-to-br from-neutral-50 to-brand-50">
         <div className="container mx-auto px-6 py-6 space-y-6 max-w-5xl">
-          {/* Section de bienvenue simplifiée */}
+          {/* Section de bienvenue optimisée */}
           <div className="text-center space-y-4 glass-card rounded-xl p-6 animate-in">
             <div className="flex justify-center items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="h-6 w-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold gradient-text">
-                  Salut {user?.user_metadata?.first_name || 'Aventurier'} ! 👋
+                <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
+                  Bienvenue {user?.user_metadata?.first_name || 'Aventurier'}
                 </h1>
-                <p className="text-sm text-neutral-600 mt-1">
-                  Prêt pour ta prochaine aventure ?
+                <p className="text-sm text-neutral-600 mt-1 font-heading">
+                  Votre prochaine aventure vous attend
                 </p>
               </div>
             </div>
             
-            <p className="text-sm text-neutral-700 max-w-xl mx-auto">
-              Rejoins des groupes près de chez toi et découvre de nouveaux lieux avec des personnes comme toi.
+            <p className="text-sm text-neutral-700 max-w-xl mx-auto font-body leading-relaxed">
+              Rejoignez des groupes près de chez vous et découvrez de nouveaux lieux avec des personnes partageant vos envies d'exploration.
             </p>
           </div>
 
@@ -55,38 +55,38 @@ const Dashboard = () => {
             <RandomButton />
           </div>
 
-          {/* Statistiques compactes */}
+          {/* Statistiques avec icônes blanc/or */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-up" style={{ animationDelay: '0.2s' }}>
             <div className="glass-card rounded-xl p-4 flex items-center gap-3 border-l-4 border-l-blue-500 hover:scale-105 transition-all duration-300">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md">
                 <Clock className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">En cours</p>
-                <p className="text-xl font-bold text-blue-600">{activeGroups.length}</p>
-                <p className="text-xs text-blue-500">aventures actives</p>
+                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide font-heading">Aventures Actives</p>
+                <p className="text-xl font-bold text-blue-600 font-display">{activeGroups.length}</p>
+                <p className="text-xs text-blue-500 font-body">expériences en cours</p>
               </div>
             </div>
             
             <div className="glass-card rounded-xl p-4 flex items-center gap-3 border-l-4 border-l-emerald-500 hover:scale-105 transition-all duration-300">
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md">
                 <Trophy className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Terminées</p>
-                <p className="text-xl font-bold text-emerald-600">{completedGroups.length}</p>
-                <p className="text-xs text-emerald-500">expériences vécues</p>
+                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide font-heading">Accomplies</p>
+                <p className="text-xl font-bold text-emerald-600 font-display">{completedGroups.length}</p>
+                <p className="text-xs text-emerald-500 font-body">souvenirs créés</p>
               </div>
             </div>
             
             <div className="glass-card rounded-xl p-4 flex items-center gap-3 border-l-4 border-l-purple-500 hover:scale-105 transition-all duration-300">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total</p>
-                <p className="text-xl font-bold text-purple-600">{userGroups.length}</p>
-                <p className="text-xs text-purple-500">moments partagés</p>
+                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide font-heading">Expérience Totale</p>
+                <p className="text-xl font-bold text-purple-600 font-display">{userGroups.length}</p>
+                <p className="text-xs text-purple-500 font-body">rencontres uniques</p>
               </div>
             </div>
           </div>
@@ -96,11 +96,13 @@ const Dashboard = () => {
             <div className="space-y-4 animate-up" style={{ animationDelay: '0.3s' }}>
               <div className="flex justify-between items-center glass-card rounded-xl p-4">
                 <div>
-                  <h2 className="text-lg font-bold text-neutral-800 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-brand-600" />
-                    Mes Aventures
+                  <h2 className="text-xl font-display font-bold text-neutral-800 flex items-center gap-2">
+                    <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    Vos Aventures
                   </h2>
-                  <p className="text-sm text-neutral-600 mt-1">Gère tes expériences locales</p>
+                  <p className="text-sm text-neutral-600 mt-1 font-body">Gérez vos expériences de découverte</p>
                 </div>
                 <div className="flex space-x-2">
                   <Button
@@ -108,7 +110,7 @@ const Dashboard = () => {
                     disabled={loading}
                     variant="outline"
                     size="sm"
-                    className="text-xs hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 font-heading"
                   >
                     <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
                     Actualiser
@@ -116,10 +118,10 @@ const Dashboard = () => {
                   <Link to="/groups">
                     <Button 
                       size="sm" 
-                      className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 group"
+                      className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 group bg-gradient-to-r from-amber-500 to-amber-600 font-heading"
                     >
                       <Users className="h-4 w-4 mr-1" />
-                      Tout voir
+                      Tout explorer
                       <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
                     </Button>
                   </Link>
@@ -130,8 +132,8 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 px-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-base font-semibold text-neutral-700">
-                      En cours ({activeGroups.length})
+                    <h3 className="text-base font-heading font-semibold text-neutral-700">
+                      Expériences Actives ({activeGroups.length})
                     </h3>
                   </div>
                   <GroupsList
@@ -145,10 +147,10 @@ const Dashboard = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 group"
+                          className="text-xs hover:scale-105 active:scale-95 transition-all duration-200 group font-heading"
                         >
                           <Star className="h-4 w-4 mr-1" />
-                          Voir {activeGroups.length - 2} de plus
+                          Découvrir {activeGroups.length - 2} autres aventures
                           <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
                         </Button>
                       </Link>
@@ -159,20 +161,24 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="text-center py-12 space-y-4 glass-card rounded-xl animate-up" style={{ animationDelay: '0.3s' }}>
-              <div className="text-4xl">🎯</div>
+              <div className="text-4xl">⚡</div>
               <div className="space-y-3">
-                <h3 className="text-lg font-bold text-neutral-800">C'est parti pour l'aventure !</h3>
-                <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                  Un clic suffit pour rejoindre un groupe de 5 personnes près de chez toi.
+                <h3 className="text-xl font-display font-bold text-neutral-800">Lancez votre première aventure</h3>
+                <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed font-body">
+                  Un simple clic vous connecte à un groupe de 5 personnes pour une expérience de découverte inoubliable.
                 </p>
                 <div className="flex justify-center space-x-4 text-xs text-neutral-500 pt-2">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3 text-brand-500" />
-                    5 personnes max
+                  <span className="flex items-center gap-1 font-body">
+                    <div className="p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded">
+                      <Users className="h-3 w-3 text-white" />
+                    </div>
+                    5 personnes maximum
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-brand-500" />
-                    2h d'évasion
+                  <span className="flex items-center gap-1 font-body">
+                    <div className="p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded">
+                      <Clock className="h-3 w-3 text-white" />
+                    </div>
+                    2h de découverte
                   </span>
                 </div>
               </div>
@@ -183,7 +189,7 @@ const Dashboard = () => {
             <div className="fixed bottom-6 right-6 glass-morphism shadow-lg rounded-xl p-3 border border-brand-200">
               <div className="flex items-center space-x-2">
                 <RefreshCw className="h-4 w-4 animate-spin text-brand-600" />
-                <span className="text-xs font-medium text-neutral-700">Synchronisation...</span>
+                <span className="text-xs font-medium text-neutral-700 font-body">Synchronisation en cours...</span>
               </div>
             </div>
           )}

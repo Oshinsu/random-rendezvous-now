@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink } from 'lucide-react';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
@@ -45,10 +45,10 @@ const AppNavigation = () => {
           {/* Logo */}
           <div className="flex items-center">
             <NavLink to="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">R</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">R</span>
               </div>
-              <span className="font-heading font-bold text-xl">Random</span>
+              <span className="font-display font-bold text-xl bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">Random</span>
             </NavLink>
           </div>
 
@@ -61,9 +61,9 @@ const AppNavigation = () => {
                     <NavLink 
                       to="/dashboard" 
                       className={({ isActive }) => 
-                        `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                        `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                           isActive 
-                            ? 'bg-primary text-primary-foreground' 
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
                             : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         }`
                       }
@@ -79,9 +79,9 @@ const AppNavigation = () => {
                     <NavLink 
                       to="/groups" 
                       className={({ isActive }) => 
-                        `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                        `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                           isActive 
-                            ? 'bg-primary text-primary-foreground' 
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
                             : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         }`
                       }
@@ -112,7 +112,7 @@ const AppNavigation = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-gradient-to-br from-amber-500 to-amber-600 text-white font-heading">
                       {getInitials(userName)}
                     </AvatarFallback>
                   </Avatar>
@@ -121,21 +121,27 @@ const AppNavigation = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{userName}</p>
-                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                    <p className="font-heading font-medium">{userName}</p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground font-body">
                       {user?.email}
                     </p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <NavLink to="/profile" className="flex items-center">
+                  <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profil</span>
                   </NavLink>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <NavLink to="/" className="flex items-center font-heading">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    <span>Page d'accueil</span>
+                  </NavLink>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
+                <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
                 </DropdownMenuItem>
@@ -151,9 +157,9 @@ const AppNavigation = () => {
               <NavLink 
                 to="/dashboard" 
                 className={({ isActive }) => 
-                  `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                  `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                     isActive 
-                      ? 'bg-primary text-primary-foreground' 
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`
                 }
@@ -166,9 +172,9 @@ const AppNavigation = () => {
               <NavLink 
                 to="/groups" 
                 className={({ isActive }) => 
-                  `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+                  `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                     isActive 
-                      ? 'bg-primary text-primary-foreground' 
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`
                 }
@@ -176,6 +182,15 @@ const AppNavigation = () => {
               >
                 <Users className="h-4 w-4" />
                 <span>Mes Groupes</span>
+              </NavLink>
+
+              <NavLink 
+                to="/" 
+                className="flex items-center space-x-2 px-4 py-2 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-accent font-heading"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>Page d'accueil</span>
               </NavLink>
             </nav>
           </div>

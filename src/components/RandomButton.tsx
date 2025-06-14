@@ -34,21 +34,27 @@ const RandomButton = () => {
     <div className="flex flex-col items-center space-y-10 p-10 card-modern max-w-4xl mx-auto">
       <div className="text-center space-y-6">
         <h2 className="font-display text-5xl font-bold text-neutral-800 flex items-center justify-center gap-4">
-          <Zap className="h-12 w-12 text-brand-500 animate-glow" />
-          Aventure Aléatoire
-          <Zap className="h-12 w-12 text-brand-500 animate-glow" />
+          <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg">
+            <Zap className="h-12 w-12 text-white animate-glow" />
+          </div>
+          Aventure Spontanée
+          <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg">
+            <Zap className="h-12 w-12 text-white animate-glow" />
+          </div>
         </h2>
         <p className="font-body text-neutral-600 text-xl max-w-2xl font-medium leading-relaxed">
-          Rejoins un groupe de 5 aventuriers près de chez toi et découvrez ensemble un lieu secret !
+          Rejoignez un groupe de 5 aventuriers près de chez vous et découvrez ensemble un lieu secret de votre région.
         </p>
         
         {/* Statut de géolocalisation */}
         <div className="flex items-center justify-center space-x-3 p-4 glass-card rounded-2xl border border-neutral-200/50">
-          <Navigation className={`h-6 w-6 ${userLocation ? 'text-emerald-600' : 'text-neutral-400'}`} />
+          <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg">
+            <Navigation className="h-6 w-6 text-white" />
+          </div>
           <span className="font-heading font-semibold text-neutral-700">
             {userLocation 
-              ? `📍 Position: ${userLocation.locationName}`
-              : '🔍 Géolocalisation indisponible - matching aléatoire'
+              ? `Position: ${userLocation.locationName}`
+              : 'Géolocalisation indisponible - matching universel'
             }
           </span>
         </div>
@@ -60,7 +66,7 @@ const RandomButton = () => {
         size="lg"
         className={`
           px-16 py-8 text-2xl font-heading font-bold rounded-3xl shadow-strong
-          transition-all duration-700 transform
+          transition-all duration-700 transform bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700
           ${isRolling 
             ? 'scale-110 animate-glow shadow-glow-strong' 
             : isDisabled
@@ -71,18 +77,18 @@ const RandomButton = () => {
       >
         <div className="flex items-center space-x-4">
           <Dice6 
-            className={`h-8 w-8 ${isRolling ? 'animate-spin' : isDisabled ? '' : 'group-hover:rotate-12'} transition-transform duration-500`} 
+            className={`h-8 w-8 text-white ${isRolling ? 'animate-spin' : isDisabled ? '' : 'group-hover:rotate-12'} transition-transform duration-500`} 
           />
-          <span>
-            {isRolling ? 'Recherche en cours...' : loading ? 'Chargement...' : 'LANCER L\'AVENTURE'}
+          <span className="text-white">
+            {isRolling ? 'Recherche en cours...' : loading ? 'Chargement...' : 'DÉMARRER L\'AVENTURE'}
           </span>
-          <Sparkles className={`h-7 w-7 ${isRolling ? 'animate-pulse' : ''}`} />
+          <Sparkles className={`h-7 w-7 text-white ${isRolling ? 'animate-pulse' : ''}`} />
         </div>
       </Button>
 
       <div className="grid grid-cols-3 gap-8 w-full">
         <div className="flex flex-col items-center space-y-4 p-8 glass-card rounded-3xl border-2 border-blue-200/60 hover:border-blue-400 transition-all duration-500 hover:scale-105 shadow-medium hover:shadow-strong">
-          <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl shadow-medium">
+          <div className="p-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl shadow-medium">
             <Users className="h-12 w-12 text-white" />
           </div>
           <span className="text-4xl font-display font-bold text-blue-600">5</span>
@@ -90,22 +96,22 @@ const RandomButton = () => {
         </div>
         
         <div className="flex flex-col items-center space-y-4 p-8 glass-card rounded-3xl border-2 border-emerald-200/60 hover:border-emerald-400 transition-all duration-500 hover:scale-105 shadow-medium hover:shadow-strong">
-          <div className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl shadow-medium">
+          <div className="p-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl shadow-medium">
             <Clock className="h-12 w-12 text-white" />
           </div>
           <span className="text-4xl font-display font-bold text-emerald-600">2h</span>
-          <span className="font-heading font-semibold text-neutral-600">D'aventure</span>
+          <span className="font-heading font-semibold text-neutral-600">D'exploration</span>
         </div>
         
         <div className="flex flex-col items-center space-y-4 p-8 glass-card rounded-3xl border-2 border-purple-200/60 hover:border-purple-400 transition-all duration-500 hover:scale-105 shadow-medium hover:shadow-strong">
-          <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl shadow-medium">
+          <div className="p-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl shadow-medium">
             <Target className="h-12 w-12 text-white" />
           </div>
           <span className="text-4xl font-display font-bold text-purple-600">
-            {userLocation ? '📍' : '100%'}
+            {userLocation ? 'LOCAL' : 'SURPRISE'}
           </span>
           <span className="font-heading font-semibold text-neutral-600">
-            {userLocation ? 'Géolocalisé' : 'Surprise'}
+            {userLocation ? 'Géolocalisé' : 'Partout'}
           </span>
         </div>
       </div>
@@ -122,24 +128,30 @@ const RandomButton = () => {
       <div className="text-center space-y-3 mt-6">
         <div className="flex items-center justify-center gap-6 font-heading font-semibold text-neutral-600">
           <span className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-brand-500" />
+            <div className="p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded">
+              <Star className="h-5 w-5 text-white" />
+            </div>
             Algorithme intelligent
           </span>
           <span className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-brand-500" />
+            <div className="p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded">
+              <MapPin className="h-5 w-5 text-white" />
+            </div>
             Matching géolocalisé
           </span>
           <span className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-brand-500" />
+            <div className="p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded">
+              <Users className="h-5 w-5 text-white" />
+            </div>
             Rencontres authentiques
           </span>
         </div>
         <p className="font-body text-neutral-500">
-          Découvrez des lieux secrets près de chez vous grâce à notre sélection intelligente
+          Découvrez des lieux secrets près de chez vous grâce à notre sélection experte
         </p>
         {userLocation && (
           <p className="font-body text-emerald-600 font-medium">
-            🎯 Groupes prioritaires près de {userLocation.locationName}
+            Groupes prioritaires près de {userLocation.locationName}
           </p>
         )}
       </div>
