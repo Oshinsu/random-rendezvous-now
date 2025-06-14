@@ -3,12 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // BrowserRouter est retiré d'ici
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import AuthPage from "./pages/AuthPage"; // Ajout de AuthPage
-import { useAuth } from "./contexts/AuthContext"; // Ajout de useAuth
-import { useEffect }_ from "react"; // Correction : _ après useEffect n'est pas valide
+import AuthPage from "./pages/AuthPage";
+import { useAuth } from "./contexts/AuthContext";
+import { useEffect } from "react"; // Corrected import
 
 const queryClient = new QueryClient();
 
