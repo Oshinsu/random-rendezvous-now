@@ -53,7 +53,10 @@ export type Database = {
       groups: {
         Row: {
           bar_address: string | null
+          bar_latitude: number | null
+          bar_longitude: number | null
           bar_name: string | null
+          bar_place_id: string | null
           created_at: string
           current_participants: number
           id: string
@@ -67,7 +70,10 @@ export type Database = {
         }
         Insert: {
           bar_address?: string | null
+          bar_latitude?: number | null
+          bar_longitude?: number | null
           bar_name?: string | null
+          bar_place_id?: string | null
           created_at?: string
           current_participants?: number
           id?: string
@@ -81,7 +87,10 @@ export type Database = {
         }
         Update: {
           bar_address?: string | null
+          bar_latitude?: number | null
+          bar_longitude?: number | null
           bar_name?: string | null
+          bar_place_id?: string | null
           created_at?: string
           current_participants?: number
           id?: string

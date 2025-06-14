@@ -182,7 +182,7 @@ const GroupMap = ({
           <MapPin className="h-5 w-5" />
           Votre destination
           {!hasExactLocation && (
-            <AlertCircle className="h-4 w-4 text-amber-500" title="Position approximative" />
+            <AlertCircle className="h-4 w-4 text-amber-500" />
           )}
         </CardTitle>
       </CardHeader>
