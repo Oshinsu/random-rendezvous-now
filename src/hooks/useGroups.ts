@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -207,7 +206,7 @@ export const useGroups = () => {
     }
   }, [user, fetchGroupMembers]);
 
-  // Nouvelle fonction pour synchroniser le comptage des participants
+  // Fonction améliorée pour synchroniser le comptage des participants
   const syncGroupParticipantCount = async (groupId: string) => {
     try {
       console.log('🔄 Synchronisation du comptage pour le groupe:', groupId);
@@ -227,7 +226,7 @@ export const useGroups = () => {
       const realCount = realParticipants?.length || 0;
       console.log('📊 Nombre réel de participants:', realCount);
 
-      // CORRECTION: Vérifier si le groupe doit passer à "confirmed"
+      // Vérifier l'état actuel du groupe
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
         .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude, latitude, longitude')
@@ -245,42 +244,45 @@ export const useGroups = () => {
       if (realCount >= 5 && currentGroup.status === 'waiting') {
         console.log('🎯 Groupe complet détecté, passage en confirmed et recherche de bar...');
         
-        // Mettre à jour le statut et chercher un bar
         let updateData: any = {
           current_participants: realCount,
           status: 'confirmed'
         };
 
-        // Si le bar n'est pas encore assigné, essayer de trouver un bar
+        // CORRECTION: Toujours essayer de chercher un bar, même si échec précédent
         if (!currentGroup.bar_name) {
           try {
-            // CORRECTION: Utiliser la position du groupe ou la position utilisateur actuelle
+            // Déterminer la position pour la recherche
             let searchLatitude = currentGroup.latitude;
             let searchLongitude = currentGroup.longitude;
             
-            // Si le groupe n'a pas de position, utiliser la position utilisateur actuelle
+            // Utiliser la position utilisateur actuelle si le groupe n'a pas de position
             if (!searchLatitude && !searchLongitude && userLocation) {
               searchLatitude = userLocation.latitude;
               searchLongitude = userLocation.longitude;
               console.log('📍 Utilisation position utilisateur pour recherche:', { searchLatitude, searchLongitude });
             }
             
-            // Fallback sur Paris seulement si aucune position n'est disponible
+            // Fallback sur Paris si aucune position disponible
             if (!searchLatitude && !searchLongitude) {
               searchLatitude = 48.8566;
               searchLongitude = 2.3522;
               console.log('⚠️ Aucune position disponible, utilisation de Paris comme fallback');
             }
             
-            console.log('🔍 Recherche d\'un bar via Edge Function avec position:', { searchLatitude, searchLongitude });
+            console.log('🔍 DÉBUT recherche bar via API avec:', { searchLatitude, searchLongitude });
+            
+            // Appel à l'API pour trouver un bar
             const selectedBar = await GooglePlacesService.findNearbyBars(
               searchLatitude,
               searchLongitude,
               8000
             );
             
-            if (selectedBar) {
-              // Rendez-vous dans 1 heure après la formation du groupe
+            console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
+            
+            if (selectedBar && selectedBar.name) {
+              // Bar trouvé via API
               const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
               
               updateData = {
@@ -300,55 +302,47 @@ export const useGroups = () => {
                 coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
               });
             } else {
-              console.warn('⚠️ API échouée, utilisation d\'un bar de fallback');
-              // Utiliser un bar de fallback depuis la liste locale
-              const randomBar = PARIS_BARS[Math.floor(Math.random() * PARIS_BARS.length)];
-              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-              
-              updateData = {
-                ...updateData,
-                bar_name: randomBar.name,
-                bar_address: randomBar.address,
-                meeting_time: meetingTime.toISOString(),
-                bar_latitude: randomBar.lat,
-                bar_longitude: randomBar.lng
-              };
-              
-              console.log('🍺 Bar de fallback assigné:', {
-                name: randomBar.name,
-                address: randomBar.address,
-                meetingTime: meetingTime.toLocaleString('fr-FR')
-              });
+              throw new Error('Aucun bar trouvé via API');
             }
           } catch (barError) {
-            console.error('❌ Erreur recherche de bar:', barError);
-            // En cas d'erreur, utiliser un bar de fallback
-            const fallbackBar = PARIS_BARS[0];
+            console.error('❌ Erreur recherche de bar via API:', barError);
+            
+            // Utiliser un bar de fallback en cas d'erreur
+            const randomBar = PARIS_BARS[Math.floor(Math.random() * PARIS_BARS.length)];
             const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
             
             updateData = {
               ...updateData,
-              bar_name: fallbackBar.name,
-              bar_address: fallbackBar.address,
+              bar_name: randomBar.name,
+              bar_address: randomBar.address,
               meeting_time: meetingTime.toISOString(),
-              bar_latitude: fallbackBar.lat,
-              bar_longitude: fallbackBar.lng
+              bar_latitude: randomBar.lat,
+              bar_longitude: randomBar.lng
             };
             
-            console.log('🍺 Bar d\'urgence assigné après erreur:', fallbackBar.name);
+            console.log('🍺 Bar de fallback assigné après erreur API:', {
+              name: randomBar.name,
+              address: randomBar.address,
+              meetingTime: meetingTime.toLocaleString('fr-FR')
+            });
           }
         }
 
         // Mettre à jour le groupe
+        console.log('💾 Mise à jour du groupe avec:', updateData);
         const { error: updateError } = await supabase
           .from('groups')
           .update(updateData)
           .eq('id', groupId);
 
         if (updateError) {
-          console.error('❌ Erreur de mise à jour:', updateError);
+          console.error('❌ Erreur de mise à jour du groupe:', updateError);
         } else {
-          console.log('✅ Groupe mis à jour avec succès:', updateData);
+          console.log('✅ Groupe mis à jour avec succès');
+          // Forcer un rechargement des groupes après mise à jour
+          setTimeout(() => {
+            fetchUserGroups();
+          }, 1000);
         }
       } else {
         // Juste mettre à jour le comptage
@@ -358,7 +352,7 @@ export const useGroups = () => {
           .eq('id', groupId);
 
         if (updateError) {
-          console.error('❌ Erreur de mise à jour:', updateError);
+          console.error('❌ Erreur de mise à jour du comptage:', updateError);
         } else {
           console.log('✅ Comptage synchronisé:', realCount);
         }

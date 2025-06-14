@@ -16,13 +16,14 @@ interface PlaceResult {
 export class GooglePlacesService {
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 5000): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 Recherche de bars près de:', { latitude, longitude, radius });
+      console.log('🔍 [GooglePlacesService] Recherche de bars près de:', { latitude, longitude, radius });
       
-      // Appeler la Edge Function Supabase au lieu de l'API Google directement
-      const response = await fetch('/functions/v1/find-nearby-bars', {
+      // CORRECTION: Utiliser l'URL complète de la fonction Edge
+      const response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/find-nearby-bars', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocmlldnZkbmFqdnlseXJvd3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4OTQ1MzUsImV4cCI6MjA2NTQ3MDUzNX0.RfwNUnsTFAzfRqxiqCOtunXBTMJj90MKWOm1iwzVBAs`
         },
         body: JSON.stringify({
           latitude,
@@ -31,24 +32,26 @@ export class GooglePlacesService {
         })
       });
 
+      console.log('🌐 [GooglePlacesService] Réponse HTTP status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Erreur Edge Function:', errorData);
-        throw new Error(errorData.error || 'Erreur lors de la recherche de bars');
+        const errorText = await response.text();
+        console.error('❌ [GooglePlacesService] Erreur HTTP:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const selectedBar = await response.json();
       
-      console.log('🍺 Bar sélectionné via Edge Function:', {
+      console.log('🍺 [GooglePlacesService] Bar sélectionné via Edge Function:', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,
-        location: selectedBar.geometry.location
+        location: selectedBar.geometry?.location
       });
 
       return selectedBar;
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche de bars:', error);
+      console.error('❌ [GooglePlacesService] Erreur lors de la recherche de bars:', error);
       return null;
     }
   }
