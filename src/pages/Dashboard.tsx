@@ -46,7 +46,7 @@ const Dashboard = () => {
             </div>
             
             <p className="text-sm text-neutral-700 max-w-xl mx-auto">
-              Découvre Paris autrement, rencontre des gens cool et vis des moments uniques.
+              Rejoins des groupes près de chez toi et découvre de nouveaux lieux avec des personnes comme toi.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ const Dashboard = () => {
                     <Users className="h-5 w-5 text-brand-600" />
                     Mes Aventures
                   </h2>
-                  <p className="text-sm text-neutral-600 mt-1">Gère tes expériences parisienne</p>
+                  <p className="text-sm text-neutral-600 mt-1">Gère tes expériences locales</p>
                 </div>
                 <div className="flex space-x-2">
                   <Button
@@ -163,7 +163,7 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <h3 className="text-lg font-bold text-neutral-800">C'est parti pour l'aventure !</h3>
                 <p className="text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
-                  Un clic suffit pour rejoindre ta première bande d'aventuriers parisiens.
+                  Un clic suffit pour rejoindre un groupe de 5 personnes près de chez toi.
                 </p>
                 <div className="flex justify-center space-x-4 text-xs text-neutral-500 pt-2">
                   <span className="flex items-center gap-1">

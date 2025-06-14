@@ -54,7 +54,7 @@ const GroupsPage = () => {
                 <Sparkles className="h-7 w-7 text-amber-600" />
                 Nouvelle Aventure
               </h2>
-              <p className="text-slate-600 font-medium">Rejoins un nouveau groupe dès maintenant</p>
+              <p className="text-slate-600 font-medium">Rejoins un nouveau groupe près de chez toi</p>
             </div>
             <RandomButton />
           </div>

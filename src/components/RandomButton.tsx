@@ -39,7 +39,7 @@ const RandomButton = () => {
           <Zap className="h-12 w-12 text-brand-500 animate-glow" />
         </h2>
         <p className="font-body text-neutral-600 text-xl max-w-2xl font-medium leading-relaxed">
-          Rejoins un groupe de 5 aventuriers et découvre un bar parisien secret en 2 heures !
+          Rejoins un groupe de 5 aventuriers près de chez toi et découvrez ensemble un lieu secret !
         </p>
         
         {/* Statut de géolocalisation */}
@@ -135,7 +135,7 @@ const RandomButton = () => {
           </span>
         </div>
         <p className="font-body text-neutral-500">
-          Plus de 50 bars parisiens secrets dans notre sélection premium
+          Découvrez des lieux secrets près de chez vous grâce à notre sélection intelligente
         </p>
         {userLocation && (
           <p className="font-body text-emerald-600 font-medium">
