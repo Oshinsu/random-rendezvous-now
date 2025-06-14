@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Group, GroupParticipant } from '@/types/database';
@@ -29,15 +29,18 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
+  const isLoadingRef = useRef(false);
 
   const fetchUserGroups = useCallback(async () => {
-    if (!user) {
-      setUserGroups([]);
+    if (!user || isLoadingRef.current) {
+      if (!user) setUserGroups([]);
       return;
     }
     
+    isLoadingRef.current = true;
+    
     try {
-      console.log('DEBUG: Fetching user groups for user:', user.id);
+      console.log('🔄 Récupération des groupes utilisateur pour:', user.id);
       
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -46,46 +49,46 @@ export const useGroups = () => {
         .eq('status', 'confirmed');
 
       if (participationError) {
-        console.error('DEBUG: Error fetching participations:', participationError);
+        console.error('❌ Erreur lors de la récupération des participations:', participationError);
         throw participationError;
       }
 
-      console.log('DEBUG: User participations found:', participations);
+      console.log('✅ Participations trouvées:', participations?.length || 0);
 
       if (!participations || participations.length === 0) {
-        console.log('DEBUG: No participations found, setting empty array');
         setUserGroups([]);
         return;
       }
 
       const groupIds = participations.map(p => p.group_id);
-      console.log('DEBUG: Fetching groups with IDs:', groupIds);
       
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select('*')
-        .in('id', groupIds);
+        .in('id', groupIds)
+        .order('created_at', { ascending: false });
 
       if (groupsError) {
-        console.error('DEBUG: Error fetching groups:', groupsError);
+        console.error('❌ Erreur lors de la récupération des groupes:', groupsError);
         throw groupsError;
       }
 
-      console.log('DEBUG: Groups data retrieved:', groupsData);
+      console.log('✅ Groupes récupérés:', groupsData?.length || 0);
       setUserGroups((groupsData || []) as Group[]);
     } catch (error) {
-      console.error('DEBUG: Error in fetchUserGroups:', error);
+      console.error('❌ Erreur dans fetchUserGroups:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de récupérer vos groupes.', 
         variant: 'destructive' 
       });
+    } finally {
+      isLoadingRef.current = false;
     }
   }, [user]);
 
   const joinRandomGroup = async () => {
     if (!user) {
-      console.error('DEBUG: No user found for joinRandomGroup');
       toast({ 
         title: 'Erreur', 
         description: 'Vous devez être connecté pour rejoindre un groupe.', 
@@ -94,7 +97,12 @@ export const useGroups = () => {
       return false;
     }
 
-    console.log('DEBUG: Starting joinRandomGroup for user:', user.id);
+    if (loading) {
+      console.log('⏳ Opération déjà en cours...');
+      return false;
+    }
+
+    console.log('🎲 Démarrage de joinRandomGroup pour:', user.id);
     setLoading(true);
     
     try {
@@ -107,12 +115,12 @@ export const useGroups = () => {
         .in('groups.status', ['waiting', 'confirmed']);
 
       if (checkError) {
-        console.error('DEBUG: Error checking existing participation:', checkError);
+        console.error('❌ Erreur de vérification:', checkError);
         throw checkError;
       }
 
       if (existingParticipation && existingParticipation.length > 0) {
-        console.log('DEBUG: User already in active group');
+        console.log('⚠️ Utilisateur déjà dans un groupe actif');
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif !', 
@@ -131,7 +139,7 @@ export const useGroups = () => {
         .limit(1);
 
       if (groupError) {
-        console.error('DEBUG: Error fetching waiting groups:', groupError);
+        console.error('❌ Erreur de recherche de groupes:', groupError);
         throw groupError;
       }
 
@@ -139,9 +147,9 @@ export const useGroups = () => {
 
       if (waitingGroups && waitingGroups.length > 0) {
         targetGroup = waitingGroups[0] as Group;
-        console.log('DEBUG: Joining existing group:', targetGroup.id);
+        console.log('🔗 Rejoindre le groupe existant:', targetGroup.id);
       } else {
-        console.log('DEBUG: Creating new group...');
+        console.log('🆕 Création d\'un nouveau groupe...');
         const { data: newGroup, error: createError } = await supabase
           .from('groups')
           .insert({
@@ -153,12 +161,12 @@ export const useGroups = () => {
           .single();
 
         if (createError) {
-          console.error('DEBUG: Error creating group:', createError);
+          console.error('❌ Erreur de création de groupe:', createError);
           throw createError;
         }
 
         targetGroup = newGroup as Group;
-        console.log('DEBUG: New group created:', targetGroup.id);
+        console.log('✅ Nouveau groupe créé:', targetGroup.id);
       }
 
       // Ajouter l'utilisateur au groupe
@@ -171,14 +179,13 @@ export const useGroups = () => {
         });
 
       if (joinError) {
-        console.error('DEBUG: Error joining group:', joinError);
+        console.error('❌ Erreur d\'ajout au groupe:', joinError);
         throw joinError;
       }
 
-      console.log('DEBUG: User successfully added to group');
+      console.log('✅ Utilisateur ajouté au groupe avec succès');
 
-      // Le trigger se chargera de mettre à jour automatiquement le count et le statut
-      // Mais on peut aussi le faire manuellement pour avoir une réponse immédiate
+      // Mettre à jour le nombre de participants
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
@@ -197,20 +204,25 @@ export const useGroups = () => {
           .eq('id', targetGroup.id);
 
         toast({ 
-          title: 'Groupe complet !', 
+          title: '🎉 Groupe complet !', 
           description: `Votre groupe de 5 est formé ! Rendez-vous au ${randomBar.name} dans 2h.`,
         });
       } else {
+        await supabase
+          .from('groups')
+          .update({ current_participants: newParticipantCount })
+          .eq('id', targetGroup.id);
+
         toast({ 
-          title: 'Vous êtes dans la course !', 
-          description: `Groupe rejoint ! En attente de ${5 - newParticipantCount} autres participants.`,
+          title: '🚀 Vous êtes dans la course !', 
+          description: `Groupe rejoint ! En attente de ${5 - newParticipantCount} autre${5 - newParticipantCount > 1 ? 's' : ''} participant${5 - newParticipantCount > 1 ? 's' : ''}.`,
         });
       }
 
       await fetchUserGroups();
       return true;
     } catch (error) {
-      console.error('DEBUG: Error in joinRandomGroup:', error);
+      console.error('❌ Erreur dans joinRandomGroup:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de rejoindre un groupe. Veuillez réessayer.', 
@@ -223,11 +235,11 @@ export const useGroups = () => {
   };
 
   const leaveGroup = async (groupId: string) => {
-    if (!user) return;
+    if (!user || loading) return;
 
     setLoading(true);
     try {
-      console.log('DEBUG: Leaving group:', groupId);
+      console.log('🚪 Quitter le groupe:', groupId);
 
       // Supprimer la participation
       const { error: deleteError } = await supabase
@@ -237,21 +249,51 @@ export const useGroups = () => {
         .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error('DEBUG: Error leaving group:', deleteError);
+        console.error('❌ Erreur pour quitter le groupe:', deleteError);
         throw deleteError;
       }
 
-      // Les triggers se chargeront automatiquement de mettre à jour le groupe
-      // ou de le supprimer s'il devient vide
+      // Récupérer le groupe pour mettre à jour le count
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .select('current_participants')
+        .eq('id', groupId)
+        .single();
+
+      if (!groupError && group) {
+        const newCount = Math.max(0, group.current_participants - 1);
+        
+        if (newCount === 0) {
+          // Supprimer le groupe s'il est vide
+          await supabase
+            .from('groups')
+            .delete()
+            .eq('id', groupId);
+        } else {
+          // Mettre à jour le count et le statut si nécessaire
+          const updateData: any = { current_participants: newCount };
+          if (newCount < 5) {
+            updateData.status = 'waiting';
+            updateData.bar_name = null;
+            updateData.bar_address = null;
+            updateData.meeting_time = null;
+          }
+          
+          await supabase
+            .from('groups')
+            .update(updateData)
+            .eq('id', groupId);
+        }
+      }
 
       toast({ 
-        title: 'Groupe quitté', 
+        title: '✅ Groupe quitté', 
         description: 'Vous avez quitté le groupe avec succès.' 
       });
       
       await fetchUserGroups();
     } catch (error) {
-      console.error('DEBUG: Error leaving group:', error);
+      console.error('❌ Erreur pour quitter le groupe:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de quitter le groupe.', 
