@@ -58,6 +58,28 @@ export const useGroups = () => {
     getUserLocation();
   }, []);
 
+  // Fonction pour envoyer un message système au chat du groupe
+  const sendGroupSystemMessage = async (groupId: string, message: string) => {
+    try {
+      const { error } = await supabase
+        .from('group_messages')
+        .insert({
+          group_id: groupId,
+          user_id: '00000000-0000-0000-0000-000000000000', // ID factice pour les messages système
+          message: message,
+          is_system: true
+        });
+
+      if (error) {
+        console.error('❌ Erreur envoi message système groupe:', error);
+      } else {
+        console.log('✅ Message système envoyé au groupe:', message);
+      }
+    } catch (error) {
+      console.error('❌ Erreur sendGroupSystemMessage:', error);
+    }
+  };
+
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     try {
       console.log('👥 Récupération des membres du groupe:', groupId);
@@ -338,6 +360,15 @@ export const useGroups = () => {
           console.error('❌ Erreur de mise à jour du groupe:', updateError);
         } else {
           console.log('✅ Groupe mis à jour avec succès');
+          
+          // Envoyer un message système pour notifier que le groupe est complet
+          if (updateData.bar_name) {
+            await sendGroupSystemMessage(
+              groupId, 
+              `🎉 Le groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure. Bon amusement !`
+            );
+          }
+          
           // Forcer un rechargement des groupes après mise à jour
           setTimeout(() => {
             fetchUserGroups();
@@ -565,6 +596,12 @@ export const useGroups = () => {
 
       console.log('✅ Utilisateur ajouté au groupe avec succès');
 
+      // Envoyer un message système pour notifier l'arrivée du nouveau membre
+      await sendGroupSystemMessage(
+        targetGroup.id,
+        `🚀 Un nouveau membre a rejoint le groupe ! Nous sommes maintenant ${await getCurrentParticipantCount(targetGroup.id)}/5.`
+      );
+
       // La synchronisation se fera automatiquement via syncGroupParticipantCount
       // qui est appelé dans fetchUserGroups
 
@@ -587,6 +624,27 @@ export const useGroups = () => {
     }
   };
 
+  // Fonction helper pour obtenir le nombre actuel de participants
+  const getCurrentParticipantCount = async (groupId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+      
+      if (error) {
+        console.error('❌ Erreur comptage participants:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    } catch (error) {
+      console.error('❌ Erreur getCurrentParticipantCount:', error);
+      return 0;
+    }
+  };
+
   const leaveGroup = async (groupId: string) => {
     if (!user || loading) {
       console.log('🚫 Impossible de quitter - pas d\'utilisateur ou chargement en cours');
@@ -596,6 +654,9 @@ export const useGroups = () => {
     setLoading(true);
     try {
       console.log('🚪 Quitter le groupe:', groupId, 'utilisateur:', user.id);
+
+      // Obtenir le nombre de participants avant de quitter
+      const participantsBeforeLeaving = await getCurrentParticipantCount(groupId);
 
       // Supprimer la participation avec vérification explicite de l'utilisateur
       const { error: deleteError } = await supabase
@@ -611,6 +672,15 @@ export const useGroups = () => {
       }
 
       console.log('✅ Participation supprimée');
+
+      // Envoyer un message système pour notifier le départ
+      const participantsAfterLeaving = participantsBeforeLeaving - 1;
+      if (participantsAfterLeaving > 0) {
+        await sendGroupSystemMessage(
+          groupId,
+          `👋 Un membre a quitté le groupe. Il reste ${participantsAfterLeaving}/5 participants.`
+        );
+      }
 
       // Synchroniser le comptage après suppression
       await syncGroupParticipantCount(groupId);

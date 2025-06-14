@@ -102,7 +102,7 @@ export const useGroupChat = (groupId: string) => {
     }
   };
 
-  // Configuration realtime
+  // Configuration realtime améliorée
   useEffect(() => {
     if (!groupId || !user) return;
 
@@ -111,8 +111,8 @@ export const useGroupChat = (groupId: string) => {
     // Charger les messages initiaux
     loadMessages();
 
-    // Configurer la souscription realtime
-    const channel = supabase
+    // Configurer la souscription realtime pour les messages ET les changements de participants
+    const messagesChannel = supabase
       .channel(`group-chat-${groupId}`)
       .on(
         'postgres_changes',
@@ -136,12 +136,36 @@ export const useGroupChat = (groupId: string) => {
         }
       )
       .subscribe((status) => {
-        console.log('🛰️ Statut de souscription:', status);
+        console.log('🛰️ Statut de souscription messages:', status);
+      });
+
+    // Canal séparé pour les changements de participants (pour déclencher les messages système)
+    const participantsChannel = supabase
+      .channel(`group-participants-${groupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'group_participants',
+          filter: `group_id=eq.${groupId}`
+        },
+        (payload) => {
+          console.log('🛰️ Changement de participant détecté:', payload);
+          // Recharger les messages pour voir les nouveaux messages système
+          setTimeout(() => {
+            loadMessages();
+          }, 500);
+        }
+      )
+      .subscribe((status) => {
+        console.log('🛰️ Statut de souscription participants:', status);
       });
 
     return () => {
-      console.log('🛰️ Nettoyage souscription realtime');
-      supabase.removeChannel(channel);
+      console.log('🛰️ Nettoyage souscriptions realtime');
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(participantsChannel);
     };
   }, [groupId, user]);
 
