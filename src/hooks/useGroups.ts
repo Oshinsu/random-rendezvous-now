@@ -62,7 +62,7 @@ export const useGroups = () => {
     getUserLocation();
   }, []);
 
-  // Fonction pour envoyer un message système au chat du groupe
+  // Fonction pour envoyer un message système au chat du groupe (utilisée seulement pour les événements importants)
   const sendGroupSystemMessage = async (groupId: string, message: string) => {
     try {
       const { error } = await supabase
@@ -300,12 +300,7 @@ export const useGroups = () => {
             if (!searchLatitude || !searchLongitude) {
               console.error('❌ ERREUR: Aucune position géographique fiable disponible pour la recherche de bar');
               
-              await sendGroupSystemMessage(
-                groupId,
-                '⚠️ Impossible de rechercher un bar sans géolocalisation. Veuillez réessayer avec la géolocalisation activée.'
-              );
-              
-              // Passer quand même le groupe en confirmed mais sans bar
+              // CORRECTION: Passer quand même le groupe en confirmed sans message système pour éviter le spam
               await supabase
                 .from('groups')
                 .update({ 
@@ -367,13 +362,7 @@ export const useGroups = () => {
             }
           } catch (barError) {
             console.error('❌ Erreur recherche de bar via API:', barError);
-            
-            await sendGroupSystemMessage(
-              groupId,
-              `❌ Impossible de trouver un bar dans votre région. Erreur: ${barError instanceof Error ? barError.message : 'Erreur inconnue'}`
-            );
-            
-            // Passer quand même le groupe en confirmed pour que la carte s'affiche
+            // CORRECTION: Passer quand même le groupe en confirmed pour que la carte s'affiche, sans message
           }
         }
 
@@ -389,16 +378,11 @@ export const useGroups = () => {
         } else {
           console.log('✅ Groupe mis à jour avec succès');
           
-          // Envoyer un message système pour notifier que le groupe est complet
+          // CORRECTION: Envoyer seulement UN message système quand un bar est trouvé
           if (updateData.bar_name) {
             await sendGroupSystemMessage(
               groupId, 
-              `🎉 Le groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure. Bon amusement !`
-            );
-          } else {
-            await sendGroupSystemMessage(
-              groupId, 
-              `🎉 Le groupe est maintenant complet ! La recherche de bar est en cours...`
+              `🎉 Votre groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure.`
             );
           }
           
@@ -629,11 +613,7 @@ export const useGroups = () => {
 
       console.log('✅ Utilisateur ajouté au groupe avec succès');
 
-      // Envoyer un message système pour notifier l'arrivée du nouveau membre
-      await sendGroupSystemMessage(
-        targetGroup.id,
-        `🚀 Un nouveau membre a rejoint le groupe ! Nous sommes maintenant ${await getCurrentParticipantCount(targetGroup.id)}/5.`
-      );
+      // CORRECTION: Ne plus envoyer de message système pour chaque nouveau membre
 
       // La synchronisation se fera automatiquement via syncGroupParticipantCount
       // qui est appelé dans fetchUserGroups
@@ -706,14 +686,7 @@ export const useGroups = () => {
 
       console.log('✅ Participation supprimée');
 
-      // Envoyer un message système pour notifier le départ
-      const participantsAfterLeaving = participantsBeforeLeaving - 1;
-      if (participantsAfterLeaving > 0) {
-        await sendGroupSystemMessage(
-          groupId,
-          `👋 Un membre a quitté le groupe. Il reste ${participantsAfterLeaving}/5 participants.`
-        );
-      }
+      // CORRECTION: Ne plus envoyer de message système pour les départs
 
       // Synchroniser le comptage après suppression
       await syncGroupParticipantCount(groupId);
@@ -748,13 +721,7 @@ export const useGroups = () => {
           })
           .eq('id', groupId);
 
-        // Envoyer un message système pour informer de la remise en attente
-        if (remainingParticipants && remainingParticipants.length > 0) {
-          await sendGroupSystemMessage(
-            groupId,
-            `📋 Le groupe est de nouveau en attente de participants (${remainingParticipants.length}/5). Le bar précédent a été annulé.`
-          );
-        }
+        // CORRECTION: Ne plus envoyer de message système pour la remise en attente
       }
 
       toast({ 

@@ -16,7 +16,7 @@ interface GroupChatProps {
 
 const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   const { user } = useAuth();
-  const { messages, loading, sending, sendMessage, sendSystemMessage } = useGroupChat(groupId);
+  const { messages, loading, sending, sendMessage } = useGroupChat(groupId);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -28,27 +28,19 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     scrollToBottom();
   }, [messages]);
 
-  // Envoyer un message système quand le groupe est complet et qu'un bar est assigné
-  useEffect(() => {
-    if (isGroupComplete && barName && messages.length > 0) {
-      // Vérifier s'il n'y a pas déjà un message système pour ce bar
-      const hasSystemMessage = messages.some(
-        msg => msg.is_system && msg.message.includes(barName)
-      );
-      
-      if (!hasSystemMessage) {
-        const systemMessageText = `🎉 Votre groupe est maintenant complet ! Rendez-vous au ${barName} dans environ 1 heure. Bon amusement !`;
-        sendSystemMessage(systemMessageText);
-      }
-    }
-  }, [isGroupComplete, barName, messages.length, sendSystemMessage]);
-
   const handleSendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -93,7 +85,10 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     );
   }
 
-  if (!isGroupComplete) {
+  // CORRECTION: Le chat est maintenant disponible dès qu'il y a au moins 2 participants
+  const canUseChat = groupId && user;
+
+  if (!canUseChat) {
     return (
       <Card className="w-full">
         <CardHeader>
@@ -105,7 +100,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
         <CardContent>
           <div className="text-center py-8 text-gray-500">
             <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Le chat sera disponible une fois le groupe complet</p>
+            <p>En attente de membres...</p>
           </div>
         </CardContent>
       </Card>
@@ -182,7 +177,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Tapez votre message..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={handleKeyPress}
             disabled={sending}
             className="flex-1"
           />
