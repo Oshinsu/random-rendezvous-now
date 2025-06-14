@@ -58,31 +58,31 @@
   }
 
   h1 {
-    @apply font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+    @apply font-display text-3xl md:text-4xl font-bold tracking-tight;
   }
 
   h2 {
-    @apply font-heading text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight;
+    @apply font-heading text-xl md:text-2xl font-bold tracking-tight;
   }
 
   h3 {
-    @apply font-heading text-xl md:text-2xl font-semibold tracking-tight;
-  }
-
-  h4 {
     @apply font-heading text-lg md:text-xl font-semibold tracking-tight;
   }
 
-  h5 {
-    @apply font-heading text-base md:text-lg font-medium tracking-tight;
+  h4 {
+    @apply font-heading text-base md:text-lg font-semibold tracking-tight;
   }
 
-  h6 {
+  h5 {
     @apply font-heading text-sm md:text-base font-medium tracking-tight;
   }
 
+  h6 {
+    @apply font-heading text-xs md:text-sm font-medium tracking-tight;
+  }
+
   p {
-    @apply font-body text-base leading-7 text-neutral-700;
+    @apply font-body text-sm md:text-base leading-6 text-neutral-700;
   }
 }
 
@@ -104,6 +104,15 @@
       0 20px 40px rgba(0, 0, 0, 0.08),
       0 8px 16px rgba(241, 194, 50, 0.04),
       inset 0 1px 2px rgba(255, 255, 255, 0.9);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 25px 50px rgba(0, 0, 0, 0.12),
+      0 12px 20px rgba(241, 194, 50, 0.08),
+      inset 0 1px 2px rgba(255, 255, 255, 0.9);
   }
 
   .gradient-brand {
@@ -120,9 +129,9 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-heading font-semibold rounded-2xl;
     @apply bg-gradient-to-r from-brand-500 to-brand-600 text-white;
-    @apply shadow-medium hover:shadow-strong;
-    @apply transition-all duration-300 ease-out;
-    @apply hover:scale-105 hover:shadow-glow active:scale-95;
+    @apply shadow-medium hover:shadow-glow;
+    @apply transition-all duration-300 ease-out transform-gpu;
+    @apply hover:scale-105 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
     @apply border-0 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
   }
 
@@ -130,18 +139,22 @@
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-heading font-semibold rounded-2xl;
     @apply bg-white/80 backdrop-blur-sm text-neutral-700 border border-neutral-200;
     @apply shadow-soft hover:shadow-medium;
-    @apply transition-all duration-300 ease-out;
-    @apply hover:scale-105 hover:bg-white hover:border-brand-300;
+    @apply transition-all duration-300 ease-out transform-gpu;
+    @apply hover:scale-105 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
+    @apply hover:bg-white hover:border-brand-300;
     @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
   }
 
   .card-modern {
-    @apply glass-card rounded-3xl p-8 transition-all duration-500;
-    @apply hover:scale-105 hover:shadow-strong;
+    @apply glass-card rounded-3xl p-6 transition-all duration-500 transform-gpu;
+  }
+
+  .card-modern:hover {
+    @apply scale-105 shadow-strong;
   }
 
   .stat-card {
-    @apply card-modern flex items-center gap-6 min-h-[120px];
+    @apply card-modern flex items-center gap-4 min-h-[100px];
     @apply border-l-4 border-l-brand-500;
   }
 }
@@ -157,6 +170,10 @@
 
   .animate-up {
     animation: slideUp 0.8s ease-out forwards;
+  }
+
+  .transform-gpu {
+    transform: translateZ(0);
   }
 }
 
@@ -188,4 +205,15 @@
 ::-moz-selection {
   background: rgba(241, 194, 50, 0.3);
   color: #825c16;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  '0%': { opacity: '0', transform: 'translateY(20px)' },
+  '100%': { opacity: '1', transform: 'translateY(0)' },
+}
+
+@keyframes slideUp {
+  '0%': { opacity: '0', transform: 'translateY(30px)' },
+  '100%': { opacity: '1', transform: 'translateY(0)' },
 }
