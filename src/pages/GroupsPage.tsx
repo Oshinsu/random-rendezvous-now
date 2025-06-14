@@ -1,4 +1,3 @@
-
 import { useGroups } from '@/hooks/useGroups';
 import GroupCard from '@/components/GroupCard';
 import AppLayout from '@/components/AppLayout';
@@ -206,7 +205,7 @@ const GroupsPage = () => {
                   <p className="text-xl text-brand-100 mb-8 font-body">
                     Rencontrez 4 nouvelles personnes et créez de nouveaux souvenirs dès aujourd'hui
                   </p>
-                  <RandomButton size="lg" variant="secondary" />
+                  <RandomButton size="lg" />
                 </div>
               </div>
             )}
