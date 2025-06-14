@@ -32,6 +32,9 @@ export interface GroupMember {
 let globalChannel: any = null;
 let subscriberCount = 0;
 
+// Cache pour éviter les messages système répétitifs
+const sentSystemMessages = new Set<string>();
+
 export const useGroups = () => {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -41,6 +44,7 @@ export const useGroups = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef<number>(0);
+  const syncingGroupsRef = useRef(new Set<string>()); // Track des groupes en cours de synchronisation
 
   // Obtenir la géolocalisation de l'utilisateur au montage
   useEffect(() => {
@@ -62,9 +66,18 @@ export const useGroups = () => {
     getUserLocation();
   }, []);
 
-  // Fonction pour envoyer un message système au chat du groupe (utilisée seulement pour les événements importants)
+  // Fonction pour envoyer un message système au chat du groupe (avec protection anti-spam)
   const sendGroupSystemMessage = async (groupId: string, message: string) => {
     try {
+      // Créer une clé unique pour ce message et groupe
+      const messageKey = `${groupId}:${message}`;
+      
+      // Vérifier si ce message a déjà été envoyé récemment
+      if (sentSystemMessages.has(messageKey)) {
+        console.log('🚫 Message système déjà envoyé récemment, ignoré:', message);
+        return;
+      }
+
       const { error } = await supabase
         .from('group_messages')
         .insert({
@@ -78,6 +91,11 @@ export const useGroups = () => {
         console.error('❌ Erreur envoi message système groupe:', error);
       } else {
         console.log('✅ Message système envoyé au groupe:', message);
+        // Ajouter au cache et supprimer après 30 secondes
+        sentSystemMessages.add(messageKey);
+        setTimeout(() => {
+          sentSystemMessages.delete(messageKey);
+        }, 30000);
       }
     } catch (error) {
       console.error('❌ Erreur sendGroupSystemMessage:', error);
@@ -107,7 +125,6 @@ export const useGroups = () => {
       }
 
       console.log('✅ Participants récupérés:', participantsData?.length || 0);
-      console.log('📊 Données des participants:', participantsData);
 
       if (!participantsData) {
         setGroupMembers([]);
@@ -146,7 +163,7 @@ export const useGroups = () => {
     
     // Éviter les appels trop fréquents
     const now = Date.now();
-    if (now - lastFetchRef.current < 1000) {
+    if (now - lastFetchRef.current < 2000) { // Augmenté à 2 secondes
       console.log('🚫 Fetch trop fréquent, ignoré');
       return;
     }
@@ -191,12 +208,14 @@ export const useGroups = () => {
       }
 
       console.log('✅ Groupes récupérés:', groupsData?.length || 0);
-      console.log('📊 Détails des groupes:', groupsData);
 
-      // Vérifier et corriger le comptage des participants pour chaque groupe
+      // Vérifier et corriger le comptage des participants pour chaque groupe (sans spam)
       if (groupsData && groupsData.length > 0) {
         for (const group of groupsData) {
-          await syncGroupParticipantCount(group.id);
+          // Éviter la synchronisation si déjà en cours pour ce groupe
+          if (!syncingGroupsRef.current.has(group.id)) {
+            await syncGroupParticipantCount(group.id);
+          }
         }
         
         // Re-fetch les groupes après correction
@@ -231,8 +250,16 @@ export const useGroups = () => {
     }
   }, [user, fetchGroupMembers]);
 
-  // Fonction améliorée pour synchroniser le comptage des participants
+  // Fonction améliorée pour synchroniser le comptage des participants (SANS BOUCLE)
   const syncGroupParticipantCount = async (groupId: string) => {
+    // Éviter les synchronisations parallèles pour le même groupe
+    if (syncingGroupsRef.current.has(groupId)) {
+      console.log('🚫 Synchronisation déjà en cours pour le groupe:', groupId);
+      return;
+    }
+
+    syncingGroupsRef.current.add(groupId);
+
     try {
       console.log('🔄 Synchronisation du comptage pour le groupe:', groupId);
       
@@ -254,7 +281,7 @@ export const useGroups = () => {
       // Vérifier l'état actuel du groupe
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
-        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude, latitude, longitude')
+        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude, latitude, longitude, current_participants')
         .eq('id', groupId)
         .single();
 
@@ -265,7 +292,14 @@ export const useGroups = () => {
 
       console.log('📋 État actuel du groupe:', currentGroup);
 
-      // CORRECTION: Si on a 5 participants, passer en confirmed ET rechercher un bar si nécessaire
+      // CORRECTION: Éviter les mises à jour inutiles
+      if (currentGroup.current_participants === realCount && 
+          (realCount < 5 || (realCount >= 5 && currentGroup.status === 'confirmed'))) {
+        console.log('✅ Groupe déjà synchronisé, pas de mise à jour nécessaire');
+        return;
+      }
+
+      // Si on a 5 participants, passer en confirmed ET rechercher un bar si nécessaire
       if (realCount >= 5) {
         console.log('🎯 Groupe complet détecté, passage en confirmed...');
         
@@ -274,7 +308,7 @@ export const useGroups = () => {
           status: 'confirmed'
         };
 
-        // Si pas de bar assigné, en rechercher un
+        // Si pas de bar assigné ET pas encore de message système envoyé, en rechercher un
         if (!currentGroup.bar_name) {
           console.log('🍺 Recherche de bar nécessaire...');
           
@@ -296,11 +330,10 @@ export const useGroups = () => {
               console.log('📍 Utilisation position du groupe:', { searchLatitude, searchLongitude });
             }
             
-            // Si aucune position valide disponible, utiliser les coordonnées existantes du bar ou échouer
+            // Si aucune position valide disponible, passer quand même en confirmed sans bar
             if (!searchLatitude || !searchLongitude) {
               console.error('❌ ERREUR: Aucune position géographique fiable disponible pour la recherche de bar');
               
-              // CORRECTION: Passer quand même le groupe en confirmed sans message système pour éviter le spam
               await supabase
                 .from('groups')
                 .update({ 
@@ -362,7 +395,7 @@ export const useGroups = () => {
             }
           } catch (barError) {
             console.error('❌ Erreur recherche de bar via API:', barError);
-            // CORRECTION: Passer quand même le groupe en confirmed pour que la carte s'affiche, sans message
+            // Passer quand même le groupe en confirmed pour que la carte s'affiche, sans message
           }
         }
 
@@ -378,21 +411,16 @@ export const useGroups = () => {
         } else {
           console.log('✅ Groupe mis à jour avec succès');
           
-          // CORRECTION: Envoyer seulement UN message système quand un bar est trouvé
+          // Envoyer seulement UN message système quand un bar est trouvé ET seulement si pas déjà envoyé
           if (updateData.bar_name) {
             await sendGroupSystemMessage(
               groupId, 
               `🎉 Votre groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure.`
             );
           }
-          
-          // Forcer un rechargement des groupes après mise à jour
-          setTimeout(() => {
-            fetchUserGroups();
-          }, 1000);
         }
       } else {
-        // Juste mettre à jour le comptage
+        // Juste mettre à jour le comptage sans message système
         const { error: updateError } = await supabase
           .from('groups')
           .update({ current_participants: realCount })
@@ -406,8 +434,34 @@ export const useGroups = () => {
       }
     } catch (error) {
       console.error('❌ Erreur de synchronisation:', error);
+    } finally {
+      // Libérer le verrou de synchronisation
+      syncingGroupsRef.current.delete(groupId);
     }
   };
+
+  // Fonction helper pour obtenir le nombre actuel de participants
+  const getCurrentParticipantCount = async (groupId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+      
+      if (error) {
+        console.error('❌ Erreur comptage participants:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    } catch (error) {
+      console.error('❌ Erreur getCurrentParticipantCount:', error);
+      return 0;
+    }
+  };
+
+  // ... keep existing code (findCompatibleGroup function)
 
   const findCompatibleGroup = async (userLocation: LocationData) => {
     try {
@@ -481,6 +535,7 @@ export const useGroups = () => {
     }
   };
 
+  // Fonction pour rejoindre un groupe aléatoire
   const joinRandomGroup = async () => {
     if (!user) {
       toast({ 
@@ -613,15 +668,10 @@ export const useGroups = () => {
 
       console.log('✅ Utilisateur ajouté au groupe avec succès');
 
-      // CORRECTION: Ne plus envoyer de message système pour chaque nouveau membre
-
-      // La synchronisation se fera automatiquement via syncGroupParticipantCount
-      // qui est appelé dans fetchUserGroups
-
       // Attendre un peu avant de rafraîchir pour éviter les conflits
       setTimeout(() => {
         fetchUserGroups();
-      }, 500);
+      }, 1000);
       
       return true;
     } catch (error) {
@@ -637,27 +687,7 @@ export const useGroups = () => {
     }
   };
 
-  // Fonction helper pour obtenir le nombre actuel de participants
-  const getCurrentParticipantCount = async (groupId: string): Promise<number> => {
-    try {
-      const { data, error } = await supabase
-        .from('group_participants')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('status', 'confirmed');
-      
-      if (error) {
-        console.error('❌ Erreur comptage participants:', error);
-        return 0;
-      }
-      
-      return data?.length || 0;
-    } catch (error) {
-      console.error('❌ Erreur getCurrentParticipantCount:', error);
-      return 0;
-    }
-  };
-
+  // Fonction pour quitter un groupe
   const leaveGroup = async (groupId: string) => {
     if (!user || loading) {
       console.log('🚫 Impossible de quitter - pas d\'utilisateur ou chargement en cours');
@@ -686,8 +716,6 @@ export const useGroups = () => {
 
       console.log('✅ Participation supprimée');
 
-      // CORRECTION: Ne plus envoyer de message système pour les départs
-
       // Synchroniser le comptage après suppression
       await syncGroupParticipantCount(groupId);
 
@@ -706,7 +734,7 @@ export const useGroups = () => {
           .delete()
           .eq('id', groupId);
       } else if (!checkError && remainingParticipants && remainingParticipants.length < 5) {
-        // CORRECTION: Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
+        // Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
         console.log('⏳ Remise du groupe en attente et suppression des infos bar');
         await supabase
           .from('groups')
@@ -720,8 +748,6 @@ export const useGroups = () => {
             bar_place_id: null
           })
           .eq('id', groupId);
-
-        // CORRECTION: Ne plus envoyer de message système pour la remise en attente
       }
 
       toast({ 
@@ -732,7 +758,7 @@ export const useGroups = () => {
       // Attendre un peu avant de rafraîchir
       setTimeout(() => {
         fetchUserGroups();
-      }, 500);
+      }, 1000);
     } catch (error) {
       console.error('❌ Erreur pour quitter le groupe:', error);
       toast({ 
@@ -757,7 +783,7 @@ export const useGroups = () => {
     }
   }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
 
-  // ➜ Souscription en temps réel aux changements de participations utilisateur
+  // ➜ Souscription en temps réel aux changements de participations utilisateur (OPTIMISÉE)
   useEffect(() => {
     if (!user) return;
 
@@ -779,8 +805,13 @@ export const useGroups = () => {
           },
           (payload) => {
             console.log('🛰️ [Realtime] Changement détecté sur group_participants:', payload);
-            // Rafraîchir les groupes pour tous les utilisateurs connectés
-            fetchUserGroups();
+            
+            // Débounce pour éviter les appels trop fréquents
+            const debounceKey = 'realtime-update';
+            clearTimeout((window as any)[debounceKey]);
+            (window as any)[debounceKey] = setTimeout(() => {
+              fetchUserGroups();
+            }, 1500); // Attendre 1.5 secondes avant de rafraîchir
           }
         )
         .subscribe();
