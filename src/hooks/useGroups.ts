@@ -37,7 +37,6 @@ export const useGroups = () => {
     try {
       console.log('DEBUG: Fetching user groups for user:', user.id);
       
-      // Récupérer les participations de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
         .select('group_id')
@@ -57,7 +56,6 @@ export const useGroups = () => {
         return;
       }
 
-      // Récupérer les détails des groupes
       const groupIds = participations.map(p => p.group_id);
       console.log('DEBUG: Fetching groups with IDs:', groupIds);
       
@@ -100,7 +98,6 @@ export const useGroups = () => {
     setLoading(true);
     
     try {
-      // Vérifier si l'utilisateur est déjà dans un groupe actif
       console.log('DEBUG: Checking existing participations...');
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
@@ -116,7 +113,6 @@ export const useGroups = () => {
       console.log('DEBUG: Existing participations check result:', existingParticipation);
 
       if (existingParticipation && existingParticipation.length > 0) {
-        // Vérifier si ces groupes sont encore actifs
         const groupIds = existingParticipation.map(p => p.group_id);
         console.log('DEBUG: Checking if groups are still active:', groupIds);
         
@@ -144,13 +140,13 @@ export const useGroups = () => {
         }
       }
 
-      // Chercher un groupe en attente avec de la place
+      // FIX: Corriger la requête SQL problématique
       console.log('DEBUG: Looking for available waiting groups...');
       const { data: waitingGroups, error: groupError } = await supabase
         .from('groups')
         .select('*')
         .eq('status', 'waiting')
-        .lt('current_participants', 'max_participants')
+        .lt('current_participants', 5) // FIX: Utiliser la valeur directement au lieu de comparer à une colonne
         .order('created_at', { ascending: true })
         .limit(1);
 
@@ -164,11 +160,9 @@ export const useGroups = () => {
       let targetGroup: Group;
 
       if (waitingGroups && waitingGroups.length > 0) {
-        // Rejoindre un groupe existant
         targetGroup = waitingGroups[0] as Group;
         console.log('DEBUG: Joining existing group:', targetGroup.id);
       } else {
-        // Créer un nouveau groupe
         console.log('DEBUG: Creating new group...');
         const { data: newGroup, error: createError } = await supabase
           .from('groups')
@@ -189,7 +183,6 @@ export const useGroups = () => {
         console.log('DEBUG: New group created:', targetGroup.id);
       }
 
-      // Ajouter l'utilisateur au groupe
       console.log('DEBUG: Adding user to group...');
       const { error: joinError } = await supabase
         .from('group_participants')
@@ -206,7 +199,6 @@ export const useGroups = () => {
 
       console.log('DEBUG: User successfully added to group');
 
-      // Mettre à jour le nombre de participants
       const newParticipantCount = targetGroup.current_participants + 1;
       const newStatus = newParticipantCount >= 5 ? 'confirmed' : 'waiting';
       console.log('DEBUG: Updating group with new participant count:', newParticipantCount, 'new status:', newStatus);
@@ -216,10 +208,9 @@ export const useGroups = () => {
         status: newStatus
       };
 
-      // Si le groupe est complet, assigner un bar et une heure
       if (newStatus === 'confirmed') {
         const randomBar = getRandomBar();
-        const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000); // Dans 2h
+        const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
         
         updateData = {
           ...updateData,
@@ -242,7 +233,6 @@ export const useGroups = () => {
 
       console.log('DEBUG: Group updated successfully');
 
-      // Messages de succès
       if (newStatus === 'confirmed') {
         toast({ 
           title: 'Groupe complet !', 
@@ -277,7 +267,6 @@ export const useGroups = () => {
     try {
       console.log('Leaving group:', groupId);
 
-      // Supprimer la participation
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -289,7 +278,6 @@ export const useGroups = () => {
         throw deleteError;
       }
 
-      // Récupérer le groupe pour mettre à jour le compteur
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('current_participants, status')
@@ -304,11 +292,9 @@ export const useGroups = () => {
       const newParticipantCount = Math.max(0, group.current_participants - 1);
       
       if (newParticipantCount === 0) {
-        // Supprimer le groupe s'il n'y a plus personne
         await supabase.from('groups').delete().eq('id', groupId);
         console.log('Empty group deleted');
       } else {
-        // Mettre à jour le groupe (remettre en waiting si nécessaire)
         const newStatus = newParticipantCount < 5 ? 'waiting' : group.status;
         await supabase
           .from('groups')
