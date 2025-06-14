@@ -39,6 +39,10 @@ const getRandomBar = (userLat?: number, userLng?: number) => {
   return PARIS_BARS[randomIndex];
 };
 
+// Global channel reference to prevent multiple subscriptions
+let globalChannel: any = null;
+let subscriberCount = 0;
+
 export const useGroups = () => {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -526,31 +530,46 @@ export const useGroups = () => {
     }
   }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
 
-  // ➜ Nouveau: Souscription en temps réel aux changements de participations utilisateur
+  // ➜ Souscription en temps réel aux changements de participations utilisateur
   useEffect(() => {
     if (!user) return;
 
-    // On écoute tous les INSERT et DELETE sur la table group_participants pour cet utilisateur
-    const channel = supabase
-      .channel(`realtime:user-participation:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'group_participants',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('🛰️ [Realtime] Changement detecté sur group_participants:', payload);
-          // Rafraîchit les groupes pour l'utilisateur connecté
-          fetchUserGroups();
-        }
-      )
-      .subscribe();
+    // Incrémenter le compteur d'abonnés
+    subscriberCount++;
+    console.log('📡 Nouveaux abonnés:', subscriberCount);
+
+    // Créer ou réutiliser le canal global
+    if (!globalChannel) {
+      console.log('🛰️ Création du canal realtime global');
+      globalChannel = supabase
+        .channel('global-group-participants-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'group_participants',
+          },
+          (payload) => {
+            console.log('🛰️ [Realtime] Changement détecté sur group_participants:', payload);
+            // Rafraîchir les groupes pour tous les utilisateurs connectés
+            fetchUserGroups();
+          }
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      // Décrémenter le compteur d'abonnés
+      subscriberCount--;
+      console.log('📡 Abonnés restants:', subscriberCount);
+
+      // Nettoyer le canal seulement quand il n'y a plus d'abonnés
+      if (subscriberCount <= 0 && globalChannel) {
+        console.log('🛰️ Fermeture du canal realtime global');
+        supabase.removeChannel(globalChannel);
+        globalChannel = null;
+      }
     };
   }, [user?.id, fetchUserGroups]);
 
