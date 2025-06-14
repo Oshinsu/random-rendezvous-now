@@ -31,9 +31,11 @@ export const useGroups = () => {
   const [loading, setLoading] = useState(false);
 
   const fetchUserGroups = useCallback(async () => {
-    if (!user || loading) return;
+    if (!user) {
+      setUserGroups([]);
+      return;
+    }
     
-    setLoading(true);
     try {
       console.log('DEBUG: Fetching user groups for user:', user.id);
       
@@ -78,8 +80,6 @@ export const useGroups = () => {
         description: 'Impossible de récupérer vos groupes.', 
         variant: 'destructive' 
       });
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
@@ -98,55 +98,35 @@ export const useGroups = () => {
     setLoading(true);
     
     try {
-      console.log('DEBUG: Checking existing participations...');
+      // Vérifier les participations existantes
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
-        .select('*')
+        .select('group_id, groups!inner(status)')
         .eq('user_id', user.id)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .in('groups.status', ['waiting', 'confirmed']);
 
       if (checkError) {
         console.error('DEBUG: Error checking existing participation:', checkError);
         throw checkError;
       }
 
-      console.log('DEBUG: Existing participations check result:', existingParticipation);
-
       if (existingParticipation && existingParticipation.length > 0) {
-        const groupIds = existingParticipation.map(p => p.group_id);
-        console.log('DEBUG: Checking if groups are still active:', groupIds);
-        
-        const { data: activeGroups, error: activeGroupsError } = await supabase
-          .from('groups')
-          .select('*')
-          .in('id', groupIds)
-          .in('status', ['waiting', 'confirmed']);
-
-        if (activeGroupsError) {
-          console.error('DEBUG: Error checking active groups:', activeGroupsError);
-          throw activeGroupsError;
-        }
-
-        console.log('DEBUG: Active groups found:', activeGroups);
-
-        if (activeGroups && activeGroups.length > 0) {
-          console.log('DEBUG: User already in active group, aborting');
-          toast({ 
-            title: 'Déjà dans un groupe', 
-            description: 'Vous êtes déjà dans un groupe actif !', 
-            variant: 'destructive' 
-          });
-          return false;
-        }
+        console.log('DEBUG: User already in active group');
+        toast({ 
+          title: 'Déjà dans un groupe', 
+          description: 'Vous êtes déjà dans un groupe actif !', 
+          variant: 'destructive' 
+        });
+        return false;
       }
 
-      // FIX: Corriger la requête SQL problématique
-      console.log('DEBUG: Looking for available waiting groups...');
+      // Chercher un groupe en attente avec de la place
       const { data: waitingGroups, error: groupError } = await supabase
         .from('groups')
         .select('*')
         .eq('status', 'waiting')
-        .lt('current_participants', 5) // FIX: Utiliser la valeur directement au lieu de comparer à une colonne
+        .lt('current_participants', 5)
         .order('created_at', { ascending: true })
         .limit(1);
 
@@ -154,8 +134,6 @@ export const useGroups = () => {
         console.error('DEBUG: Error fetching waiting groups:', groupError);
         throw groupError;
       }
-
-      console.log('DEBUG: Available waiting groups found:', waitingGroups);
 
       let targetGroup: Group;
 
@@ -183,7 +161,7 @@ export const useGroups = () => {
         console.log('DEBUG: New group created:', targetGroup.id);
       }
 
-      console.log('DEBUG: Adding user to group...');
+      // Ajouter l'utilisateur au groupe
       const { error: joinError } = await supabase
         .from('group_participants')
         .insert({
@@ -199,44 +177,28 @@ export const useGroups = () => {
 
       console.log('DEBUG: User successfully added to group');
 
+      // Le trigger se chargera de mettre à jour automatiquement le count et le statut
+      // Mais on peut aussi le faire manuellement pour avoir une réponse immédiate
       const newParticipantCount = targetGroup.current_participants + 1;
-      const newStatus = newParticipantCount >= 5 ? 'confirmed' : 'waiting';
-      console.log('DEBUG: Updating group with new participant count:', newParticipantCount, 'new status:', newStatus);
-
-      let updateData: any = { 
-        current_participants: newParticipantCount,
-        status: newStatus
-      };
-
-      if (newStatus === 'confirmed') {
+      
+      if (newParticipantCount >= 5) {
         const randomBar = getRandomBar();
         const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
         
-        updateData = {
-          ...updateData,
-          bar_name: randomBar.name,
-          bar_address: randomBar.address,
-          meeting_time: meetingTime.toISOString()
-        };
-        console.log('DEBUG: Group is full, adding bar info:', randomBar);
-      }
+        await supabase
+          .from('groups')
+          .update({
+            current_participants: newParticipantCount,
+            status: 'confirmed',
+            bar_name: randomBar.name,
+            bar_address: randomBar.address,
+            meeting_time: meetingTime.toISOString()
+          })
+          .eq('id', targetGroup.id);
 
-      const { error: updateError } = await supabase
-        .from('groups')
-        .update(updateData)
-        .eq('id', targetGroup.id);
-
-      if (updateError) {
-        console.error('DEBUG: Error updating group:', updateError);
-        throw updateError;
-      }
-
-      console.log('DEBUG: Group updated successfully');
-
-      if (newStatus === 'confirmed') {
         toast({ 
           title: 'Groupe complet !', 
-          description: `Votre groupe de 5 est formé ! Rendez-vous au ${updateData.bar_name} dans 2h.`,
+          description: `Votre groupe de 5 est formé ! Rendez-vous au ${randomBar.name} dans 2h.`,
         });
       } else {
         toast({ 
@@ -245,7 +207,6 @@ export const useGroups = () => {
         });
       }
 
-      console.log('DEBUG: Refreshing user groups...');
       await fetchUserGroups();
       return true;
     } catch (error) {
@@ -264,9 +225,11 @@ export const useGroups = () => {
   const leaveGroup = async (groupId: string) => {
     if (!user) return;
 
+    setLoading(true);
     try {
-      console.log('Leaving group:', groupId);
+      console.log('DEBUG: Leaving group:', groupId);
 
+      // Supprimer la participation
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -274,58 +237,36 @@ export const useGroups = () => {
         .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error('Error leaving group:', deleteError);
+        console.error('DEBUG: Error leaving group:', deleteError);
         throw deleteError;
       }
 
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .select('current_participants, status')
-        .eq('id', groupId)
-        .single();
+      // Les triggers se chargeront automatiquement de mettre à jour le groupe
+      // ou de le supprimer s'il devient vide
 
-      if (groupError) {
-        console.error('Error fetching group:', groupError);
-        throw groupError;
-      }
-
-      const newParticipantCount = Math.max(0, group.current_participants - 1);
+      toast({ 
+        title: 'Groupe quitté', 
+        description: 'Vous avez quitté le groupe avec succès.' 
+      });
       
-      if (newParticipantCount === 0) {
-        await supabase.from('groups').delete().eq('id', groupId);
-        console.log('Empty group deleted');
-      } else {
-        const newStatus = newParticipantCount < 5 ? 'waiting' : group.status;
-        await supabase
-          .from('groups')
-          .update({ 
-            current_participants: newParticipantCount,
-            status: newStatus,
-            ...(newStatus === 'waiting' && {
-              bar_name: null,
-              bar_address: null,
-              meeting_time: null
-            })
-          })
-          .eq('id', groupId);
-        console.log('Group updated after leave');
-      }
-
-      toast({ title: 'Groupe quitté', description: 'Vous avez quitté le groupe avec succès.' });
       await fetchUserGroups();
     } catch (error) {
-      console.error('Error leaving group:', error);
+      console.error('DEBUG: Error leaving group:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de quitter le groupe.', 
         variant: 'destructive' 
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (user) {
       fetchUserGroups();
+    } else {
+      setUserGroups([]);
     }
   }, [user, fetchUserGroups]);
 
