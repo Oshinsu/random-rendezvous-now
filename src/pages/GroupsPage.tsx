@@ -24,18 +24,18 @@ const GroupsPage = () => {
   // Pour le moment, on affiche le premier groupe actif
   const currentGroup = activeGroups[0];
 
+  // Debug: Afficher les informations du groupe dans la console
+  console.log('🔍 [GroupsPage] Groupe actuel:', currentGroup);
+  console.log('🔍 [GroupsPage] userGroups:', userGroups);
+  console.log('🔍 [GroupsPage] activeGroups:', activeGroups);
+  console.log('🔍 [GroupsPage] loading:', loading);
+
   // CORRECTION: Un groupe est complet s'il a 5 participants, peu importe le statut
   const isGroupComplete = currentGroup?.current_participants >= 5;
   // Un groupe a besoin d'assignation de bar s'il est complet ET en statut confirmed mais sans bar
   const needsBarAssignment = isGroupComplete && currentGroup?.status === 'confirmed' && !currentGroup?.bar_name;
   // Un groupe peut afficher la carte s'il est complet (même sans bar assigné)
   const canShowMap = isGroupComplete;
-
-  // Debug: Afficher les informations du groupe dans la console
-  console.log('🔍 [GroupsPage] Groupe actuel:', currentGroup);
-  console.log('🔍 [GroupsPage] Groupe complet?', isGroupComplete);
-  console.log('🔍 [GroupsPage] A besoin d\'assignation de bar?', needsBarAssignment);
-  console.log('🔍 [GroupsPage] Peut afficher la carte?', canShowMap);
 
   // Fonction pour obtenir l'adresse du bar ou une adresse par défaut
   const getBarAddress = () => {
@@ -55,44 +55,7 @@ const GroupsPage = () => {
       <div className="min-h-full bg-gradient-to-br from-white via-brand-50/30 to-brand-100/20">
         <div className="px-4 md:px-8 py-8">
           <div className="max-w-6xl mx-auto">
-            {/* Header - seulement si on a un groupe actif */}
-            {currentGroup && (
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-neutral-600 hover:text-neutral-800"
-                    onClick={() => window.history.back()}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Retour
-                  </Button>
-                  <div>
-                    <h1 className="text-3xl font-display font-bold text-neutral-800">
-                      Mon Groupe
-                    </h1>
-                    <p className="text-neutral-600 font-body">
-                      Suivez l'évolution de votre aventure en temps réel
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white/50 backdrop-blur-sm border-brand-300 text-brand-700 hover:bg-brand-50"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Actualiser
-                  </Button>
-                </div>
-              </div>
-            )}
-
+            
             {/* État de chargement */}
             {loading && userGroups.length === 0 && (
               <div className="text-center py-20">
@@ -104,8 +67,8 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Message élégant quand pas de groupe actif */}
-            {!currentGroup && !loading && (
+            {/* Message quand pas de groupe actif - SEULEMENT AFFICHER CECI si pas de groupe */}
+            {!loading && !currentGroup && (
               <div className="text-center py-20">
                 <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-8">
                   <UserX className="h-16 w-16 text-red-600" />
@@ -133,144 +96,183 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Affichage du groupe actif - SEULEMENT si il y a un groupe */}
-            {currentGroup && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Colonne gauche - Membres */}
-                <div className="space-y-6">
-                  <GroupMembersList
-                    members={groupMembers}
-                    maxParticipants={currentGroup.max_participants}
-                    currentParticipants={currentGroup.current_participants}
-                  />
+            {/* SEULEMENT afficher le contenu du groupe SI currentGroup existe */}
+            {!loading && currentGroup && (
+              <>
+                {/* Header - seulement si on a un groupe actif */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-neutral-600 hover:text-neutral-800"
+                      onClick={() => window.history.back()}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Retour
+                    </Button>
+                    <div>
+                      <h1 className="text-3xl font-display font-bold text-neutral-800">
+                        Mon Groupe
+                      </h1>
+                      <p className="text-neutral-600 font-body">
+                        Suivez l'évolution de votre aventure en temps réel
+                      </p>
+                    </div>
+                  </div>
                   
-                  {/* Chat du groupe */}
-                  <GroupChat
-                    groupId={currentGroup.id}
-                    isGroupComplete={isGroupComplete}
-                    barName={currentGroup.bar_name}
-                  />
-                </div>
-
-                {/* Colonne droite - Carte et destination */}
-                <div className="space-y-6">
-                  {/* Notification si bar pas assigné */}
-                  {needsBarAssignment && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                      <div className="text-center">
-                        <h3 className="text-lg font-semibold text-amber-800 mb-2">
-                          🍺 Assignation du bar en cours
-                        </h3>
-                        <p className="text-amber-700 mb-4">
-                          Votre groupe est complet ! Cliquez ci-dessous pour rechercher un bar.
-                        </p>
-                        <BarAssignmentButton
-                          groupId={currentGroup.id}
-                          onBarAssigned={handleRefresh}
-                          userLocation={userLocation}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Afficher la carte si le groupe est complet */}
-                  {canShowMap && (
-                    <GroupMap
-                      barName={currentGroup.bar_name || "Bar en cours de recherche"}
-                      barAddress={getBarAddress()}
-                      meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
-                      isGroupComplete={isGroupComplete}
-                      barLatitude={currentGroup.bar_latitude}
-                      barLongitude={currentGroup.bar_longitude}
-                    />
-                  )}
-
-                  {/* Informations du groupe */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-soft border border-white/50">
-                    <h3 className="text-xl font-display font-bold text-neutral-800 mb-4">
-                      Informations du groupe
-                    </h3>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600">Statut :</span>
-                        <span className={`font-medium ${
-                          currentGroup.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'
-                        }`}>
-                          {currentGroup.status === 'confirmed' ? 'Confirmé' : 'En attente'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600">Participants :</span>
-                        <span className="font-medium text-neutral-800">
-                          {currentGroup.current_participants}/{currentGroup.max_participants}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-neutral-600">Créé le :</span>
-                        <span className="font-medium text-neutral-800">
-                          {new Date(currentGroup.created_at).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                      {currentGroup.location_name && (
-                        <div className="flex justify-between">
-                          <span className="text-neutral-600">Zone :</span>
-                          <span className="font-medium text-neutral-800">
-                            {currentGroup.location_name}
-                          </span>
-                        </div>
-                      )}
-                      {/* Informations du bar si disponibles */}
-                      {currentGroup.bar_name && (
-                        <div className="border-t pt-3 mt-3">
-                          <div className="flex justify-between">
-                            <span className="text-neutral-600">Bar :</span>
-                            <span className="font-medium text-green-700">
-                              {currentGroup.bar_name}
-                            </span>
-                          </div>
-                          {(currentGroup.bar_address || (currentGroup.bar_latitude && currentGroup.bar_longitude)) && (
-                            <div className="flex justify-between">
-                              <span className="text-neutral-600">Adresse :</span>
-                              <span className="font-medium text-neutral-800 text-right max-w-48 truncate">
-                                {getBarAddress()}
-                              </span>
-                            </div>
-                          )}
-                          {currentGroup.meeting_time && (
-                            <div className="flex justify-between">
-                              <span className="text-neutral-600">RDV :</span>
-                              <span className="font-medium text-blue-700">
-                                {new Date(currentGroup.meeting_time).toLocaleString('fr-FR')}
-                              </span>
-                            </div>
-                          )}
-                          {currentGroup.bar_latitude && currentGroup.bar_longitude && (
-                            <div className="flex justify-between">
-                              <span className="text-neutral-600">Coordonnées :</span>
-                              <span className="font-medium text-neutral-800 text-xs">
-                                {currentGroup.bar_latitude.toFixed(4)}, {currentGroup.bar_longitude.toFixed(4)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* CORRECTION: Le bouton quitter doit être accessible même pour les groupes confirmés (complets) */}
-                    {currentGroup.status !== 'completed' && (
-                      <Button
-                        onClick={() => leaveGroup(currentGroup.id)}
-                        disabled={loading}
-                        variant="outline"
-                        size="sm"
-                        className="w-full mt-6 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
-                      >
-                        Quitter le groupe
-                      </Button>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleRefresh}
+                      disabled={loading}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/50 backdrop-blur-sm border-brand-300 text-brand-700 hover:bg-brand-50"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                      Actualiser
+                    </Button>
                   </div>
                 </div>
-              </div>
+
+                {/* Affichage du groupe actif */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Colonne gauche - Membres */}
+                  <div className="space-y-6">
+                    <GroupMembersList
+                      members={groupMembers}
+                      maxParticipants={currentGroup.max_participants}
+                      currentParticipants={currentGroup.current_participants}
+                    />
+                    
+                    {/* Chat du groupe */}
+                    <GroupChat
+                      groupId={currentGroup.id}
+                      isGroupComplete={isGroupComplete}
+                      barName={currentGroup.bar_name}
+                    />
+                  </div>
+
+                  {/* Colonne droite - Carte et destination */}
+                  <div className="space-y-6">
+                    {/* Notification si bar pas assigné */}
+                    {needsBarAssignment && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold text-amber-800 mb-2">
+                            🍺 Assignation du bar en cours
+                          </h3>
+                          <p className="text-amber-700 mb-4">
+                            Votre groupe est complet ! Cliquez ci-dessous pour rechercher un bar.
+                          </p>
+                          <BarAssignmentButton
+                            groupId={currentGroup.id}
+                            onBarAssigned={handleRefresh}
+                            userLocation={userLocation}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Afficher la carte si le groupe est complet */}
+                    {canShowMap && (
+                      <GroupMap
+                        barName={currentGroup.bar_name || "Bar en cours de recherche"}
+                        barAddress={getBarAddress()}
+                        meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
+                        isGroupComplete={isGroupComplete}
+                        barLatitude={currentGroup.bar_latitude}
+                        barLongitude={currentGroup.bar_longitude}
+                      />
+                    )}
+
+                    {/* Informations du groupe */}
+                    <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-soft border border-white/50">
+                      <h3 className="text-xl font-display font-bold text-neutral-800 mb-4">
+                        Informations du groupe
+                      </h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-neutral-600">Statut :</span>
+                          <span className={`font-medium ${
+                            currentGroup.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'
+                          }`}>
+                            {currentGroup.status === 'confirmed' ? 'Confirmé' : 'En attente'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-600">Participants :</span>
+                          <span className="font-medium text-neutral-800">
+                            {currentGroup.current_participants}/{currentGroup.max_participants}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-600">Créé le :</span>
+                          <span className="font-medium text-neutral-800">
+                            {new Date(currentGroup.created_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                        {currentGroup.location_name && (
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600">Zone :</span>
+                            <span className="font-medium text-neutral-800">
+                              {currentGroup.location_name}
+                            </span>
+                          </div>
+                        )}
+                        {/* Informations du bar si disponibles */}
+                        {currentGroup.bar_name && (
+                          <div className="border-t pt-3 mt-3">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Bar :</span>
+                              <span className="font-medium text-green-700">
+                                {currentGroup.bar_name}
+                              </span>
+                            </div>
+                            {(currentGroup.bar_address || (currentGroup.bar_latitude && currentGroup.bar_longitude)) && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">Adresse :</span>
+                                <span className="font-medium text-neutral-800 text-right max-w-48 truncate">
+                                  {getBarAddress()}
+                                </span>
+                              </div>
+                            )}
+                            {currentGroup.meeting_time && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">RDV :</span>
+                                <span className="font-medium text-blue-700">
+                                  {new Date(currentGroup.meeting_time).toLocaleString('fr-FR')}
+                                </span>
+                              </div>
+                            )}
+                            {currentGroup.bar_latitude && currentGroup.bar_longitude && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-600">Coordonnées :</span>
+                                <span className="font-medium text-neutral-800 text-xs">
+                                  {currentGroup.bar_latitude.toFixed(4)}, {currentGroup.bar_longitude.toFixed(4)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CORRECTION: Le bouton quitter doit être accessible même pour les groupes confirmés (complets) */}
+                      {currentGroup.status !== 'completed' && (
+                        <Button
+                          onClick={() => leaveGroup(currentGroup.id)}
+                          disabled={loading}
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-6 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+                        >
+                          Quitter le groupe
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
