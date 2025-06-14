@@ -32,8 +32,9 @@ export interface GroupMember {
 let globalChannel: any = null;
 let subscriberCount = 0;
 
-// Cache pour éviter les messages système répétitifs
+// Cache pour éviter les messages système répétitifs - AMÉLIORÉ
 const sentSystemMessages = new Set<string>();
+const lastBarAssignmentTime = new Map<string, number>();
 
 export const useGroups = () => {
   const { user } = useAuth();
@@ -66,16 +67,27 @@ export const useGroups = () => {
     getUserLocation();
   }, []);
 
-  // Fonction pour envoyer un message système au chat du groupe (avec protection anti-spam)
+  // Fonction pour envoyer un message système au chat du groupe (AMÉLIORÉE contre le spam)
   const sendGroupSystemMessage = async (groupId: string, message: string) => {
     try {
       // Créer une clé unique pour ce message et groupe
       const messageKey = `${groupId}:${message}`;
       
-      // Vérifier si ce message a déjà été envoyé récemment
+      // Vérifier si ce message a déjà été envoyé récemment (plus strict)
       if (sentSystemMessages.has(messageKey)) {
         console.log('🚫 Message système déjà envoyé récemment, ignoré:', message);
         return;
+      }
+
+      // Vérifier spécifiquement pour les messages de bar assigné
+      if (message.includes('Rendez-vous au')) {
+        const lastTime = lastBarAssignmentTime.get(groupId) || 0;
+        const now = Date.now();
+        if (now - lastTime < 60000) { // 1 minute minimum entre les messages d'assignation
+          console.log('🚫 Message d\'assignation de bar trop récent, ignoré');
+          return;
+        }
+        lastBarAssignmentTime.set(groupId, now);
       }
 
       const { error } = await supabase
@@ -91,17 +103,18 @@ export const useGroups = () => {
         console.error('❌ Erreur envoi message système groupe:', error);
       } else {
         console.log('✅ Message système envoyé au groupe:', message);
-        // Ajouter au cache et supprimer après 30 secondes
+        // Ajouter au cache et supprimer après 2 minutes (plus long)
         sentSystemMessages.add(messageKey);
         setTimeout(() => {
           sentSystemMessages.delete(messageKey);
-        }, 30000);
+        }, 120000);
       }
     } catch (error) {
       console.error('❌ Erreur sendGroupSystemMessage:', error);
     }
   };
 
+  // Fonction pour récupérer les membres d'un groupe
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     try {
       console.log('👥 Récupération des membres du groupe:', groupId);
@@ -161,9 +174,9 @@ export const useGroups = () => {
       return;
     }
     
-    // Éviter les appels trop fréquents
+    // Éviter les appels trop fréquents (RÉDUIT pour plus de réactivité)
     const now = Date.now();
-    if (now - lastFetchRef.current < 2000) { // Augmenté à 2 secondes
+    if (now - lastFetchRef.current < 1000) { // Réduit à 1 seconde
       console.log('🚫 Fetch trop fréquent, ignoré');
       return;
     }
@@ -250,7 +263,7 @@ export const useGroups = () => {
     }
   }, [user, fetchGroupMembers]);
 
-  // Fonction améliorée pour synchroniser le comptage des participants (SANS BOUCLE)
+  // Fonction améliorée pour synchroniser le comptage des participants (OPTIMISÉE)
   const syncGroupParticipantCount = async (groupId: string) => {
     // Éviter les synchronisations parallèles pour le même groupe
     if (syncingGroupsRef.current.has(groupId)) {
@@ -292,9 +305,12 @@ export const useGroups = () => {
 
       console.log('📋 État actuel du groupe:', currentGroup);
 
-      // CORRECTION: Éviter les mises à jour inutiles
-      if (currentGroup.current_participants === realCount && 
-          (realCount < 5 || (realCount >= 5 && currentGroup.status === 'confirmed'))) {
+      // AMÉLIORATION: Éviter les mises à jour inutiles ET détecter les changements de bar
+      const needsCountUpdate = currentGroup.current_participants !== realCount;
+      const needsStatusUpdate = realCount >= 5 && currentGroup.status !== 'confirmed';
+      const needsBarSearch = realCount >= 5 && !currentGroup.bar_name;
+
+      if (!needsCountUpdate && !needsStatusUpdate && !needsBarSearch) {
         console.log('✅ Groupe déjà synchronisé, pas de mise à jour nécessaire');
         return;
       }
@@ -308,7 +324,7 @@ export const useGroups = () => {
           status: 'confirmed'
         };
 
-        // Si pas de bar assigné ET pas encore de message système envoyé, en rechercher un
+        // Si pas de bar assigné, en rechercher un
         if (!currentGroup.bar_name) {
           console.log('🍺 Recherche de bar nécessaire...');
           
@@ -783,7 +799,7 @@ export const useGroups = () => {
     }
   }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
 
-  // ➜ Souscription en temps réel aux changements de participations utilisateur (OPTIMISÉE)
+  // ➜ Souscription en temps réel aux changements de participations utilisateur ET de groupes (AMÉLIORÉE)
   useEffect(() => {
     if (!user) return;
 
@@ -795,7 +811,7 @@ export const useGroups = () => {
     if (!globalChannel) {
       console.log('🛰️ Création du canal realtime global');
       globalChannel = supabase
-        .channel('global-group-participants-changes')
+        .channel('global-group-changes')
         .on(
           'postgres_changes',
           {
@@ -806,12 +822,30 @@ export const useGroups = () => {
           (payload) => {
             console.log('🛰️ [Realtime] Changement détecté sur group_participants:', payload);
             
-            // Débounce pour éviter les appels trop fréquents
-            const debounceKey = 'realtime-update';
+            // Débounce plus court pour plus de réactivité
+            const debounceKey = 'realtime-participants-update';
             clearTimeout((window as any)[debounceKey]);
             (window as any)[debounceKey] = setTimeout(() => {
               fetchUserGroups();
-            }, 1500); // Attendre 1.5 secondes avant de rafraîchir
+            }, 800); // Réduit à 800ms
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'groups',
+          },
+          (payload) => {
+            console.log('🛰️ [Realtime] Changement détecté sur groups:', payload);
+            
+            // Débounce encore plus court pour les mises à jour de groupes (assignation de bar)
+            const debounceKey = 'realtime-groups-update';
+            clearTimeout((window as any)[debounceKey]);
+            (window as any)[debounceKey] = setTimeout(() => {
+              fetchUserGroups();
+            }, 500); // Très réactif pour les mises à jour de bar
           }
         )
         .subscribe();

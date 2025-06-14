@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { MapPin, Navigation, Clock, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,9 @@ const GroupMap = ({
 }: GroupMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [barLocationUpdated, setBarLocationUpdated] = useState(false);
 
   // Coordonnées par défaut pour Paris si les coordonnées du bar ne sont pas disponibles
   const defaultLat = 48.8566;
@@ -38,6 +41,47 @@ const GroupMap = ({
     isGroupComplete,
     coordinates: barLatitude && barLongitude ? `${barLatitude}, ${barLongitude}` : 'Coordonnées par défaut utilisées'
   });
+
+  // Effet pour détecter les changements de coordonnées du bar
+  useEffect(() => {
+    if (barLatitude && barLongitude && mapInstanceRef.current && mapLoaded) {
+      console.log('🎯 [GroupMap] Nouvelles coordonnées du bar détectées, animation en cours...');
+      
+      const newPosition = { lat: barLatitude, lng: barLongitude };
+      
+      // Animation de zoom et de centrage sur le nouveau bar
+      mapInstanceRef.current.panTo(newPosition);
+      
+      // Zoom progressif avec animation
+      setTimeout(() => {
+        mapInstanceRef.current.setZoom(17);
+      }, 500);
+      
+      // Mettre à jour le marqueur
+      if (markerRef.current) {
+        markerRef.current.setPosition(newPosition);
+        
+        // Animation du marqueur (petit bounce)
+        markerRef.current.setAnimation(window.google?.maps?.Animation?.BOUNCE);
+        setTimeout(() => {
+          markerRef.current.setAnimation(null);
+        }, 2000);
+      }
+      
+      setBarLocationUpdated(true);
+      
+      // Animation de vibration de la carte pour attirer l'attention
+      if (mapRef.current) {
+        mapRef.current.style.transform = 'scale(1.02)';
+        mapRef.current.style.transition = 'transform 0.3s ease-in-out';
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.style.transform = 'scale(1)';
+          }
+        }, 300);
+      }
+    }
+  }, [barLatitude, barLongitude, mapLoaded]);
 
   useEffect(() => {
     if (!isGroupComplete || !mapRef.current) {
@@ -67,7 +111,15 @@ const GroupMap = ({
               elementType: 'labels.text',
               stylers: [{ visibility: 'off' }]
             }
-          ]
+          ],
+          // Amélioration des animations
+          gestureHandling: 'cooperative',
+          zoomControl: true,
+          mapTypeControl: false,
+          scaleControl: false,
+          streetViewControl: false,
+          rotateControl: false,
+          fullscreenControl: true
         };
 
         const map = new google.maps.Map(mapRef.current!, mapOptions);
@@ -78,6 +130,7 @@ const GroupMap = ({
           position: { lat: mapLat, lng: mapLng },
           map: map,
           title: barName,
+          animation: barLatitude && barLongitude ? google.maps.Animation.DROP : null,
           icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
@@ -90,6 +143,8 @@ const GroupMap = ({
             anchor: new google.maps.Point(16, 40)
           }
         });
+
+        markerRef.current = marker;
 
         // Ajouter une infobulle
         const infoWindow = new google.maps.InfoWindow({
@@ -108,9 +163,12 @@ const GroupMap = ({
           infoWindow.open(map, marker);
         });
 
-        // Ouvrir l'infobulle par défaut
-        infoWindow.open(map, marker);
+        // Ouvrir l'infobulle par défaut seulement si on a des coordonnées précises
+        if (barLatitude && barLongitude) {
+          infoWindow.open(map, marker);
+        }
 
+        setMapLoaded(true);
         console.log('✅ Carte Google Maps initialisée avec succès');
       } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation de Google Maps:', error);
@@ -123,6 +181,9 @@ const GroupMap = ({
       if (mapInstanceRef.current) {
         // Nettoyer la carte si nécessaire
         mapInstanceRef.current = null;
+      }
+      if (markerRef.current) {
+        markerRef.current = null;
       }
     };
   }, [isGroupComplete, mapLat, mapLng, barName, barAddress]);
@@ -176,20 +237,33 @@ const GroupMap = ({
   const hasExactLocation = barLatitude && barLongitude;
 
   return (
-    <Card className="w-full bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+    <Card className={`w-full transition-all duration-500 ${hasExactLocation ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'} ${barLocationUpdated ? 'animate-pulse' : ''}`}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-emerald-800">
-          <MapPin className="h-5 w-5" />
+        <CardTitle className={`flex items-center gap-2 transition-colors duration-300 ${hasExactLocation ? 'text-emerald-800' : 'text-amber-800'}`}>
+          <MapPin className={`h-5 w-5 ${barLocationUpdated ? 'animate-bounce' : ''}`} />
           Votre destination
           {!hasExactLocation && (
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertCircle className="h-4 w-4 text-amber-500 animate-pulse" />
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Notification de mise à jour si bar assigné récemment */}
+        {barLocationUpdated && hasExactLocation && (
+          <div className="bg-gradient-to-r from-emerald-100 to-green-100 border border-emerald-300 rounded-xl p-4 animate-fade-in">
+            <div className="flex items-center gap-2 text-emerald-800">
+              <MapPin className="h-4 w-4 animate-bounce" />
+              <span className="text-sm font-semibold">🎉 Destination trouvée !</span>
+            </div>
+            <p className="text-emerald-700 text-xs mt-1">
+              Votre bar a été sélectionné automatiquement. Consultez la carte ci-dessous !
+            </p>
+          </div>
+        )}
+
         {/* Avertissement si position approximative */}
         {!hasExactLocation && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 animate-pulse">
             <div className="flex items-center gap-2 text-amber-800">
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm font-medium">Position en cours d'attribution</span>
@@ -201,22 +275,22 @@ const GroupMap = ({
         )}
 
         {/* Informations du bar */}
-        <div className={`bg-white rounded-xl p-6 shadow-sm border ${hasExactLocation ? 'border-emerald-200' : 'border-amber-200'}`}>
+        <div className={`bg-white rounded-xl p-6 shadow-sm border transition-all duration-300 ${hasExactLocation ? 'border-emerald-200' : 'border-amber-200'}`}>
           <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 ${hasExactLocation ? 'bg-emerald-500' : 'bg-amber-500'} rounded-xl flex items-center justify-center`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${hasExactLocation ? 'bg-emerald-500' : 'bg-amber-500'}`}>
               <MapPin className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className={`text-xl font-bold ${hasExactLocation ? 'text-emerald-900' : 'text-amber-900'} mb-2`}>
+              <h3 className={`text-xl font-bold mb-2 transition-colors duration-300 ${hasExactLocation ? 'text-emerald-900' : 'text-amber-900'}`}>
                 {barName}
               </h3>
-              <p className={`${hasExactLocation ? 'text-emerald-700' : 'text-amber-700'} mb-3`}>
+              <p className={`mb-3 transition-colors duration-300 ${hasExactLocation ? 'text-emerald-700' : 'text-amber-700'}`}>
                 {barAddress}
               </p>
               <div className="flex items-center gap-2">
                 <Badge 
                   variant="secondary" 
-                  className={`${hasExactLocation ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'} cursor-pointer`}
+                  className={`transition-all duration-300 cursor-pointer hover:scale-105 ${hasExactLocation ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}`}
                   onClick={openInGoogleMaps}
                 >
                   <Navigation className="h-3 w-3 mr-1" />
@@ -228,7 +302,7 @@ const GroupMap = ({
         </div>
 
         {/* Horaire de rendez-vous */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-emerald-200">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-emerald-200 transition-all duration-300 hover:shadow-md">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
               <Clock className="h-6 w-6 text-white" />
@@ -245,11 +319,11 @@ const GroupMap = ({
           </div>
         </div>
 
-        {/* Carte Google Maps */}
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-emerald-200">
+        {/* Carte Google Maps avec animation */}
+        <div className={`bg-white rounded-xl overflow-hidden shadow-sm border border-emerald-200 transition-all duration-500 ${mapLoaded ? 'opacity-100' : 'opacity-50'}`}>
           <div 
             ref={mapRef} 
-            className="w-full h-64"
+            className="w-full h-64 transition-all duration-300"
             style={{ minHeight: '256px' }}
           />
         </div>
