@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { MapPin, Navigation, Clock, AlertCircle } from 'lucide-react';
@@ -27,6 +26,7 @@ const GroupMap = ({
   const markerRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [barLocationUpdated, setBarLocationUpdated] = useState(false);
+  const lastCoordinatesRef = useRef<{ lat?: number; lng?: number }>({});
 
   // Coordonnées par défaut pour Paris si les coordonnées du bar ne sont pas disponibles
   const defaultLat = 48.8566;
@@ -42,12 +42,22 @@ const GroupMap = ({
     coordinates: barLatitude && barLongitude ? `${barLatitude}, ${barLongitude}` : 'Coordonnées par défaut utilisées'
   });
 
-  // Effet pour détecter les changements de coordonnées du bar
+  // Effet pour détecter les changements de coordonnées du bar SEULEMENT si elles ont vraiment changé
   useEffect(() => {
-    if (barLatitude && barLongitude && mapInstanceRef.current && mapLoaded) {
+    const hasValidCoordinates = barLatitude && barLongitude;
+    const lastCoords = lastCoordinatesRef.current;
+    
+    // Vérifier si les coordonnées ont vraiment changé
+    const coordinatesChanged = hasValidCoordinates && 
+      (lastCoords.lat !== barLatitude || lastCoords.lng !== barLongitude);
+
+    if (coordinatesChanged && mapInstanceRef.current && mapLoaded) {
       console.log('🎯 [GroupMap] Nouvelles coordonnées du bar détectées, animation en cours...');
       
       const newPosition = { lat: barLatitude, lng: barLongitude };
+      
+      // Mettre à jour la référence des coordonnées
+      lastCoordinatesRef.current = { lat: barLatitude, lng: barLongitude };
       
       // Animation de zoom et de centrage sur le nouveau bar
       mapInstanceRef.current.panTo(newPosition);
@@ -72,20 +82,28 @@ const GroupMap = ({
         }
       }
       
-      setBarLocationUpdated(true);
-      
-      // Animation de vibration de la carte pour attirer l'attention
-      if (mapRef.current) {
-        mapRef.current.style.transform = 'scale(1.02)';
-        mapRef.current.style.transition = 'transform 0.3s ease-in-out';
+      // Marquer comme mis à jour une seule fois
+      if (!barLocationUpdated) {
+        setBarLocationUpdated(true);
+        
+        // Animation de vibration de la carte pour attirer l'attention
+        if (mapRef.current) {
+          mapRef.current.style.transform = 'scale(1.02)';
+          mapRef.current.style.transition = 'transform 0.3s ease-in-out';
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.style.transform = 'scale(1)';
+            }
+          }, 300);
+        }
+        
+        // Retirer la notification après quelques secondes
         setTimeout(() => {
-          if (mapRef.current) {
-            mapRef.current.style.transform = 'scale(1)';
-          }
-        }, 300);
+          setBarLocationUpdated(false);
+        }, 5000);
       }
     }
-  }, [barLatitude, barLongitude, mapLoaded]);
+  }, [barLatitude, barLongitude, mapLoaded, barLocationUpdated]);
 
   useEffect(() => {
     if (!isGroupComplete || !mapRef.current) {
@@ -149,6 +167,11 @@ const GroupMap = ({
         });
 
         markerRef.current = marker;
+
+        // Initialiser la référence des coordonnées
+        if (barLatitude && barLongitude) {
+          lastCoordinatesRef.current = { lat: barLatitude, lng: barLongitude };
+        }
 
         // Ajouter une infobulle
         const infoWindow = new google.maps.InfoWindow({
@@ -241,7 +264,7 @@ const GroupMap = ({
   const hasExactLocation = barLatitude && barLongitude;
 
   return (
-    <Card className={`w-full transition-all duration-500 ${hasExactLocation ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'} ${barLocationUpdated ? 'animate-pulse' : ''}`}>
+    <Card className={`w-full transition-all duration-500 ${hasExactLocation ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'}`}>
       <CardHeader>
         <CardTitle className={`flex items-center gap-2 transition-colors duration-300 ${hasExactLocation ? 'text-emerald-800' : 'text-amber-800'}`}>
           <MapPin className={`h-5 w-5 ${barLocationUpdated ? 'animate-bounce' : ''}`} />
