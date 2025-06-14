@@ -1,4 +1,5 @@
 
+import React from 'react'; // Ajout de l'import React manquant
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
