@@ -52,7 +52,7 @@ const GroupsPage = () => {
                 <p className="text-gray-600 mb-6">
                   Rejoignez un groupe près de chez vous en quelques secondes
                 </p>
-                <RandomButton size="default" />
+                <RandomButton size="sm" />
               </div>
             </div>
 
@@ -117,7 +117,7 @@ const GroupsPage = () => {
                 <p className="text-gray-600 mb-6 max-w-md mx-auto">
                   Commencez votre première aventure en rejoignant un groupe près de chez vous
                 </p>
-                <RandomButton size="default" />
+                <RandomButton size="sm" />
               </div>
             )}
 
