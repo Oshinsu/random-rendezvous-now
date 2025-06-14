@@ -17,56 +17,75 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20">
-        <div className="container mx-auto px-2 py-6 flex flex-col items-center">
-          <div className="flex items-center justify-center mb-1">
-            <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-xl md:text-2xl font-bold">R</span>
+      <div className="min-h-full bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 flex flex-col items-center py-8 px-2">
+        <div className="w-full max-w-md">
+          {/* Logo-titre simple */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 shadow">
+              <span className="text-white text-xl font-bold font-playfair">R</span>
             </div>
+            <h1 className="text-xl md:text-2xl font-playfair font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent drop-shadow-glow-gold">
+              Random
+            </h1>
           </div>
-          <h1 className="text-lg md:text-xl font-playfair font-bold mb-1 tracking-tight bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent drop-shadow-glow-gold">
-            Random&nbsp;: Bienvenue {user?.user_metadata?.first_name ?? 'Aventurier'}
-          </h1>
-          <p className="text-xs md:text-sm text-amber-900/80 mb-3 max-w-xl mx-auto leading-normal font-body font-normal">
-            Vivez une expérience spontanée, raffinée et unique près de chez vous.<br className="hidden md:block" />
-            Retrouvez vos groupes actifs et votre prochaine aventure – le tout en 1 clic.
-          </p>
 
-          <div className="flex flex-col md:flex-row items-center gap-2 w-full max-w-md">
+          {/* Sous-titre */}
+          <div className="text-center mb-7">
+            <div className="font-heading text-[15px] text-neutral-800 font-semibold mb-1">
+              Bienvenue {user?.user_metadata?.first_name ?? 'Aventurier'}
+            </div>
+            <p className="text-xs text-amber-900/80 font-body">
+              Vivez une expérience spontanée et unique près de chez vous.
+            </p>
+          </div>
+
+          {/* Random Button, version compacte */}
+          <div className="mb-6">
             <RandomButton size="sm" />
-            <div className="rounded-xl border border-amber-300 px-3 py-1 text-amber-700 text-xs md:text-sm font-medium font-heading bg-white/80 shadow-soft select-none cursor-default ml-0 md:ml-2 mt-2 md:mt-0">
-              {userGroups.length
-                ? `Groupes actifs : ${activeGroups.length} / Terminé : ${completedGroups.length}`
-                : "Aucun groupe actif"}
+          </div>
+
+          {/* Statistiques groupes */}
+          <div className="flex items-center justify-between bg-white/80 rounded-xl shadow border border-amber-200 px-4 py-3 mb-4">
+            <div className="flex flex-col items-center">
+              <span className="text-[11px] font-medium text-neutral-600 uppercase">Actifs</span>
+              <span className="text-lg font-display font-bold text-blue-600">{activeGroups.length}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[11px] font-medium text-neutral-600 uppercase">Terminé</span>
+              <span className="text-lg font-display font-bold text-emerald-600">{completedGroups.length}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[11px] font-medium text-neutral-600 uppercase">Total</span>
+              <span className="text-lg font-display font-bold text-amber-700">{userGroups.length}</span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1 mt-1 mb-1 w-full max-w-md">
-            {loading && (
-              <div className="flex items-center gap-1 text-xs text-amber-700 font-medium">
+          {/* Message d’état des groupes */}
+          <div className="mb-2 text-center">
+            {loading ? (
+              <div className="flex justify-center items-center gap-2 text-xs text-amber-700 font-medium">
                 <span className="w-2 h-2 border border-amber-500 border-t-transparent rounded-full animate-spin inline-block" />
                 Synchronisation en cours...
               </div>
-            )}
-            {!loading && userGroups.length === 0 && (
+            ) : userGroups.length === 0 ? (
               <div className="text-amber-700 text-xs font-medium">
-                Démarrez votre première aventure – un clic suffit.
+                Démarrez votre première aventure en un clic.
               </div>
+            ) : (
+              <div className="text-xs text-neutral-700">{activeGroups.length > 0 ? 'Vous avez des groupes en attente !' : 'Aucune aventure en cours.'}</div>
             )}
           </div>
 
-          <div className="mt-3 flex justify-center gap-3 text-[11px] md:text-xs text-muted-foreground">
-            <span className="flex items-center gap-0.5">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-              Groupes actifs
+          {/* Légende simplifiée */}
+          <div className="flex justify-center gap-3 text-[11px] text-muted-foreground mt-4">
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div> Actifs
             </span>
-            <span className="flex items-center gap-0.5">
-              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
-              Bars partenaires
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Terminé
             </span>
-            <span className="flex items-center gap-0.5">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-              Paris uniquement
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div> Paris
             </span>
           </div>
         </div>
@@ -76,3 +95,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
