@@ -77,33 +77,11 @@ const GroupsPage = () => {
               </div>
             </div>
 
-            {/* Groupes actifs */}
-            {activeGroups.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  Groupes Actifs
-                </h2>
-                <GroupsList
-                  groups={activeGroups}
-                  title=""
-                  emptyMessage="Aucun groupe actif"
-                />
-              </div>
-            )}
-
-            {/* Aventures terminées */}
-            {completedGroups.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-green-600" />
-                  Aventures Terminées
-                </h2>
-                <GroupsList
-                  groups={completedGroups}
-                  title=""
-                  emptyMessage="Aucune aventure terminée"
-                />
+            {/* État de chargement */}
+            {loading && userGroups.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Chargement de vos groupes...</p>
               </div>
             )}
 
@@ -121,11 +99,38 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* État de chargement */}
-            {loading && userGroups.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Chargement de vos groupes...</p>
+            {/* Affichage des groupes uniquement s'il y en a */}
+            {userGroups.length > 0 && (
+              <div className="space-y-12">
+                {/* Groupes actifs */}
+                {activeGroups.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                      Groupes Actifs ({activeGroups.length})
+                    </h2>
+                    <GroupsList
+                      groups={activeGroups}
+                      title=""
+                      emptyMessage=""
+                    />
+                  </div>
+                )}
+
+                {/* Aventures terminées */}
+                {completedGroups.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                      <Trophy className="h-5 w-5 text-green-600" />
+                      Aventures Terminées ({completedGroups.length})
+                    </h2>
+                    <GroupsList
+                      groups={completedGroups}
+                      title=""
+                      emptyMessage=""
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
