@@ -51,7 +51,6 @@ export const useGroups = () => {
         console.log('📍 Position utilisateur obtenue:', location);
       } catch (error) {
         console.warn('⚠️ Impossible d\'obtenir la position:', error);
-        // CORRECTION: Ne plus continuer sans géolocalisation, mais avertir l'utilisateur
         toast({
           title: '⚠️ Géolocalisation non disponible',
           description: 'La recherche de bars sera moins précise sans votre position.',
@@ -116,7 +115,6 @@ export const useGroups = () => {
       }
 
       // Transformer les données pour correspondre à l'interface GroupMember avec noms masqués
-      // CORRECTION: Tous les membres sont connectés par défaut pour éviter la simulation aléatoire
       const members: GroupMember[] = participantsData.map((participant: any, index: number) => {
         // Utiliser des noms masqués "Rander 1", "Rander 2", etc.
         const maskedName = `Rander ${index + 1}`;
@@ -124,7 +122,7 @@ export const useGroups = () => {
         return {
           id: participant.id,
           name: maskedName,
-          isConnected: true, // CORRECTION: Tous connectés pour le test
+          isConnected: true, // Tous connectés pour le test
           joinedAt: participant.joined_at,
           status: participant.status as 'confirmed' | 'pending'
         };
@@ -267,124 +265,116 @@ export const useGroups = () => {
 
       console.log('📋 État actuel du groupe:', currentGroup);
 
-      // CORRECTION: Si on a 5 participants ET que le bar n'est pas assigné, rechercher un bar
-      const needsBarAssignment = realCount >= 5 && !currentGroup.bar_name;
-      
-      if (needsBarAssignment) {
-        console.log('🎯 Groupe complet sans bar détecté, recherche de bar...');
+      // CORRECTION: Si on a 5 participants, passer en confirmed ET rechercher un bar si nécessaire
+      if (realCount >= 5) {
+        console.log('🎯 Groupe complet détecté, passage en confirmed...');
         
         let updateData: any = {
           current_participants: realCount,
           status: 'confirmed'
         };
 
-        try {
-          // CORRECTION: Utiliser obligatoirement la position utilisateur actuelle ou échouer
-          let searchLatitude: number | null = null;
-          let searchLongitude: number | null = null;
+        // Si pas de bar assigné, en rechercher un
+        if (!currentGroup.bar_name) {
+          console.log('🍺 Recherche de bar nécessaire...');
           
-          // 1. Priorité à la position utilisateur actuelle (la plus fiable)
-          if (userLocation) {
-            searchLatitude = userLocation.latitude;
-            searchLongitude = userLocation.longitude;
-            console.log('📍 Utilisation position utilisateur actuelle:', { searchLatitude, searchLongitude, location: userLocation.locationName });
-          }
-          // 2. Sinon, position du groupe si elle existe
-          else if (currentGroup.latitude && currentGroup.longitude) {
-            searchLatitude = currentGroup.latitude;
-            searchLongitude = currentGroup.longitude;
-            console.log('📍 Utilisation position du groupe:', { searchLatitude, searchLongitude });
-          }
-          
-          // CORRECTION: Si aucune position valide disponible, ne pas utiliser Paris par défaut
-          if (!searchLatitude || !searchLongitude) {
-            console.error('❌ ERREUR CRITIQUE: Aucune position géographique fiable disponible pour la recherche de bar');
+          try {
+            // Utiliser obligatoirement la position utilisateur actuelle ou échouer
+            let searchLatitude: number | null = null;
+            let searchLongitude: number | null = null;
             
-            // Mettre à jour le groupe avec un statut d'erreur
-            await supabase
-              .from('groups')
-              .update({ 
-                current_participants: realCount,
-                status: 'waiting' // Remettre en attente plutôt que de forcer une position incorrecte
-              })
-              .eq('id', groupId);
+            // 1. Priorité à la position utilisateur actuelle
+            if (userLocation) {
+              searchLatitude = userLocation.latitude;
+              searchLongitude = userLocation.longitude;
+              console.log('📍 Utilisation position utilisateur actuelle:', { searchLatitude, searchLongitude, location: userLocation.locationName });
+            }
+            // 2. Sinon, position du groupe si elle existe
+            else if (currentGroup.latitude && currentGroup.longitude) {
+              searchLatitude = currentGroup.latitude;
+              searchLongitude = currentGroup.longitude;
+              console.log('📍 Utilisation position du groupe:', { searchLatitude, searchLongitude });
+            }
+            
+            // Si aucune position valide disponible, utiliser les coordonnées existantes du bar ou échouer
+            if (!searchLatitude || !searchLongitude) {
+              console.error('❌ ERREUR: Aucune position géographique fiable disponible pour la recherche de bar');
+              
+              await sendGroupSystemMessage(
+                groupId,
+                '⚠️ Impossible de rechercher un bar sans géolocalisation. Veuillez réessayer avec la géolocalisation activée.'
+              );
+              
+              // Passer quand même le groupe en confirmed mais sans bar
+              await supabase
+                .from('groups')
+                .update({ 
+                  current_participants: realCount,
+                  status: 'confirmed'
+                })
+                .eq('id', groupId);
+              
+              return;
+            }
+            
+            console.log('🔍 DÉBUT recherche bar via API avec position validée:', { searchLatitude, searchLongitude });
+            
+            // Appel à l'API pour trouver un bar avec un rayon adapté à la région
+            const searchRadius = userLocation?.locationName?.toLowerCase().includes('martinique') ? 15000 : 8000;
+            console.log('📏 Rayon de recherche adapté:', searchRadius, 'mètres');
+            
+            const selectedBar = await GooglePlacesService.findNearbyBars(
+              searchLatitude,
+              searchLongitude,
+              searchRadius
+            );
+            
+            console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
+            
+            if (selectedBar && selectedBar.name) {
+              // Vérifier que ce n'est pas un hôtel
+              const barName = selectedBar.name.toLowerCase();
+              const isHotel = ['hotel', 'hôtel', 'motel', 'resort', 'auberge'].some(hotelWord => 
+                barName.includes(hotelWord)
+              );
+              
+              if (isHotel) {
+                console.error('❌ ERREUR: L\'API a retourné un hôtel au lieu d\'un bar:', selectedBar.name);
+                throw new Error('Résultat invalide: hôtel détecté');
+              }
+              
+              // Bar valide trouvé via API
+              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
+              
+              updateData = {
+                ...updateData,
+                bar_name: selectedBar.name,
+                bar_address: selectedBar.formatted_address,
+                meeting_time: meetingTime.toISOString(),
+                bar_latitude: selectedBar.geometry.location.lat,
+                bar_longitude: selectedBar.geometry.location.lng,
+                bar_place_id: selectedBar.place_id
+              };
+              
+              console.log('🍺 Bar validé et assigné via API:', {
+                name: selectedBar.name,
+                address: selectedBar.formatted_address,
+                meetingTime: meetingTime.toLocaleString('fr-FR'),
+                coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
+              });
+            } else {
+              throw new Error('Aucun bar trouvé via API');
+            }
+          } catch (barError) {
+            console.error('❌ Erreur recherche de bar via API:', barError);
             
             await sendGroupSystemMessage(
               groupId,
-              '⚠️ Impossible de rechercher un bar sans géolocalisation. Veuillez réessayer avec la géolocalisation activée.'
+              `❌ Impossible de trouver un bar dans votre région. Erreur: ${barError instanceof Error ? barError.message : 'Erreur inconnue'}`
             );
             
-            return;
+            // Passer quand même le groupe en confirmed pour que la carte s'affiche
           }
-          
-          console.log('🔍 DÉBUT recherche bar via API avec position validée:', { searchLatitude, searchLongitude });
-          
-          // Appel à l'API pour trouver un bar avec un rayon adapté à la région
-          const searchRadius = userLocation?.locationName?.toLowerCase().includes('martinique') ? 15000 : 8000;
-          console.log('📏 Rayon de recherche adapté:', searchRadius, 'mètres');
-          
-          const selectedBar = await GooglePlacesService.findNearbyBars(
-            searchLatitude,
-            searchLongitude,
-            searchRadius
-          );
-          
-          console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
-          
-          if (selectedBar && selectedBar.name) {
-            // CORRECTION: Vérifier que ce n'est pas un hôtel
-            const barName = selectedBar.name.toLowerCase();
-            const isHotel = ['hotel', 'hôtel', 'motel', 'resort', 'auberge'].some(hotelWord => 
-              barName.includes(hotelWord)
-            );
-            
-            if (isHotel) {
-              console.error('❌ ERREUR: L\'API a retourné un hôtel au lieu d\'un bar:', selectedBar.name);
-              throw new Error('Résultat invalide: hôtel détecté');
-            }
-            
-            // Bar valide trouvé via API
-            const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-            
-            updateData = {
-              ...updateData,
-              bar_name: selectedBar.name,
-              bar_address: selectedBar.formatted_address,
-              meeting_time: meetingTime.toISOString(),
-              bar_latitude: selectedBar.geometry.location.lat,
-              bar_longitude: selectedBar.geometry.location.lng,
-              bar_place_id: selectedBar.place_id
-            };
-            
-            console.log('🍺 Bar validé et assigné via API:', {
-              name: selectedBar.name,
-              address: selectedBar.formatted_address,
-              meetingTime: meetingTime.toLocaleString('fr-FR'),
-              coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
-            });
-          } else {
-            throw new Error('Aucun bar trouvé via API');
-          }
-        } catch (barError) {
-          console.error('❌ Erreur recherche de bar via API:', barError);
-          
-          // CORRECTION: NE PLUS utiliser de fallback Paris, mais informer l'utilisateur
-          console.error('❌ AUCUN FALLBACK utilisé - recherche de bar échouée');
-          
-          await supabase
-            .from('groups')
-            .update({ 
-              current_participants: realCount,
-              status: 'waiting' // Remettre en attente
-            })
-            .eq('id', groupId);
-          
-          await sendGroupSystemMessage(
-            groupId,
-            `❌ Impossible de trouver un bar dans votre région. Erreur: ${barError instanceof Error ? barError.message : 'Erreur inconnue'}`
-          );
-          
-          return;
         }
 
         // Mettre à jour le groupe
@@ -404,6 +394,11 @@ export const useGroups = () => {
             await sendGroupSystemMessage(
               groupId, 
               `🎉 Le groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure. Bon amusement !`
+            );
+          } else {
+            await sendGroupSystemMessage(
+              groupId, 
+              `🎉 Le groupe est maintenant complet ! La recherche de bar est en cours...`
             );
           }
           

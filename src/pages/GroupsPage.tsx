@@ -24,13 +24,18 @@ const GroupsPage = () => {
   // Pour le moment, on affiche le premier groupe actif
   const currentGroup = activeGroups[0];
 
-  const isGroupComplete = currentGroup?.status === 'confirmed' && currentGroup?.current_participants >= 5;
-  const needsBarAssignment = isGroupComplete && !currentGroup?.bar_name;
+  // CORRECTION: Un groupe est complet s'il a 5 participants, peu importe le statut
+  const isGroupComplete = currentGroup?.current_participants >= 5;
+  // Un groupe a besoin d'assignation de bar s'il est complet ET en statut confirmed mais sans bar
+  const needsBarAssignment = isGroupComplete && currentGroup?.status === 'confirmed' && !currentGroup?.bar_name;
+  // Un groupe peut afficher la carte s'il est complet (même sans bar assigné)
+  const canShowMap = isGroupComplete;
 
   // Debug: Afficher les informations du groupe dans la console
   console.log('🔍 [GroupsPage] Groupe actuel:', currentGroup);
   console.log('🔍 [GroupsPage] Groupe complet?', isGroupComplete);
   console.log('🔍 [GroupsPage] A besoin d\'assignation de bar?', needsBarAssignment);
+  console.log('🔍 [GroupsPage] Peut afficher la carte?', canShowMap);
   console.log('🔍 [GroupsPage] Bar assigné?', {
     name: currentGroup?.bar_name,
     address: currentGroup?.bar_address,
@@ -49,7 +54,7 @@ const GroupsPage = () => {
       return `Coordonnées: ${currentGroup.bar_latitude.toFixed(4)}, ${currentGroup.bar_longitude.toFixed(4)}`;
     }
     // Sinon, afficher un message d'attente
-    return "Adresse en cours de recherche...";
+    return "Recherche de bar en cours...";
   };
 
   return (
@@ -160,10 +165,10 @@ const GroupsPage = () => {
                     </div>
                   )}
 
-                  {/* Afficher la carte seulement si le bar est assigné */}
-                  {isGroupComplete && currentGroup.bar_name && (
+                  {/* Afficher la carte si le groupe est complet */}
+                  {canShowMap && (
                     <GroupMap
-                      barName={currentGroup.bar_name}
+                      barName={currentGroup.bar_name || "Bar en cours de recherche"}
                       barAddress={getBarAddress()}
                       meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
                       isGroupComplete={isGroupComplete}
