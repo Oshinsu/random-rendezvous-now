@@ -27,11 +27,11 @@ const Index = () => {
     <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col">
       <header className="p-4 bg-white/90 backdrop-blur-sm border-b border-amber-200/50 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300">
-              <span className="text-white font-bold text-lg">R</span>
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300">
+              <span className="text-white font-bold text-base sm:text-lg">R</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent tracking-tight">
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent tracking-tight">
               Random
             </span>
           </div>
@@ -42,7 +42,7 @@ const Index = () => {
             </div>
           ) : user ? (
             <div className="flex items-center gap-3">
-              <div className="flex items-center space-x-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
+              <div className="hidden sm:flex items-center space-x-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
                 <Star className="h-4 w-4 text-amber-500" />
                 <span className="text-sm text-amber-700 font-medium">
                   {user.user_metadata?.first_name || user.email}

@@ -1,4 +1,5 @@
-import { Home, Users, User, Sparkles } from 'lucide-react';
+
+import { Home, Users, User, ExternalLink } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -21,6 +22,7 @@ const navigationItems = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
   { title: 'Mes Groupes', url: '/groups', icon: Users },
   { title: 'Profil', url: '/profile', icon: User },
+  { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
 ];
 
 export function AppSidebar() {
