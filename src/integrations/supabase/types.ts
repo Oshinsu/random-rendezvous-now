@@ -9,6 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      group_participants: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          bar_address: string | null
+          bar_name: string | null
+          created_at: string
+          current_participants: number
+          id: string
+          max_participants: number
+          meeting_time: string | null
+          status: string
+        }
+        Insert: {
+          bar_address?: string | null
+          bar_name?: string | null
+          created_at?: string
+          current_participants?: number
+          id?: string
+          max_participants?: number
+          meeting_time?: string | null
+          status?: string
+        }
+        Update: {
+          bar_address?: string | null
+          bar_name?: string | null
+          created_at?: string
+          current_participants?: number
+          id?: string
+          max_participants?: number
+          meeting_time?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
