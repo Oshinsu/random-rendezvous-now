@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dice6, Users, Clock, Sparkles, Zap, Star, Target } from 'lucide-react';
+import { Dice6, Users, Clock, Sparkles, Zap, Star, Target, MapPin, Navigation } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 
 const RandomButton = () => {
-  const { joinRandomGroup, loading } = useGroups();
+  const { joinRandomGroup, loading, userLocation } = useGroups();
   const [isRolling, setIsRolling] = useState(false);
 
   const handleRandomClick = async () => {
@@ -41,6 +41,17 @@ const RandomButton = () => {
         <p className="font-body text-neutral-600 text-xl max-w-2xl font-medium leading-relaxed">
           Rejoins un groupe de 5 aventuriers et découvre un bar parisien secret en 2 heures !
         </p>
+        
+        {/* Statut de géolocalisation */}
+        <div className="flex items-center justify-center space-x-3 p-4 glass-card rounded-2xl border border-neutral-200/50">
+          <Navigation className={`h-6 w-6 ${userLocation ? 'text-emerald-600' : 'text-neutral-400'}`} />
+          <span className="font-heading font-semibold text-neutral-700">
+            {userLocation 
+              ? `📍 Position: ${userLocation.locationName}`
+              : '🔍 Géolocalisation indisponible - matching aléatoire'
+            }
+          </span>
+        </div>
       </div>
 
       <Button
@@ -90,8 +101,12 @@ const RandomButton = () => {
           <div className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl shadow-medium">
             <Target className="h-12 w-12 text-white" />
           </div>
-          <span className="text-4xl font-display font-bold text-purple-600">100%</span>
-          <span className="font-heading font-semibold text-neutral-600">Surprise</span>
+          <span className="text-4xl font-display font-bold text-purple-600">
+            {userLocation ? '📍' : '100%'}
+          </span>
+          <span className="font-heading font-semibold text-neutral-600">
+            {userLocation ? 'Géolocalisé' : 'Surprise'}
+          </span>
         </div>
       </div>
 
@@ -111,6 +126,10 @@ const RandomButton = () => {
             Algorithme intelligent
           </span>
           <span className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-brand-500" />
+            Matching géolocalisé
+          </span>
+          <span className="flex items-center gap-2">
             <Users className="h-5 w-5 text-brand-500" />
             Rencontres authentiques
           </span>
@@ -118,6 +137,11 @@ const RandomButton = () => {
         <p className="font-body text-neutral-500">
           Plus de 50 bars parisiens secrets dans notre sélection premium
         </p>
+        {userLocation && (
+          <p className="font-body text-emerald-600 font-medium">
+            🎯 Groupes prioritaires près de {userLocation.locationName}
+          </p>
+        )}
       </div>
     </div>
   );

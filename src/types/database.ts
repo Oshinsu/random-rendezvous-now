@@ -8,6 +8,10 @@ export interface Group {
   meeting_time?: string;
   max_participants: number;
   current_participants: number;
+  latitude?: number;
+  longitude?: number;
+  location_name?: string;
+  search_radius?: number;
 }
 
 export interface GroupParticipant {
@@ -16,6 +20,9 @@ export interface GroupParticipant {
   user_id: string;
   joined_at: string;
   status: 'pending' | 'confirmed' | 'cancelled';
+  latitude?: number;
+  longitude?: number;
+  location_name?: string;
 }
 
 export interface UserProfile {

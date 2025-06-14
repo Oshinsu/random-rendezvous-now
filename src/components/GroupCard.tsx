@@ -3,8 +3,9 @@ import { Group } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Users, LogOut, Calendar, Star, Crown, Gem } from 'lucide-react';
+import { MapPin, Clock, Users, LogOut, Calendar, Star, Crown, Gem, Navigation } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
+import { GeolocationService } from '@/services/geolocation';
 
 interface GroupCardProps {
   group: Group;
@@ -12,7 +13,7 @@ interface GroupCardProps {
 }
 
 const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
-  const { leaveGroup, loading } = useGroups();
+  const { leaveGroup, loading, userLocation } = useGroups();
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -66,6 +67,23 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
     return (group.current_participants / group.max_participants) * 100;
   };
 
+  const getDistanceToGroup = () => {
+    if (!userLocation || !group.latitude || !group.longitude) {
+      return null;
+    }
+    
+    const distance = GeolocationService.calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      group.latitude,
+      group.longitude
+    );
+    
+    return GeolocationService.formatDistance(distance);
+  };
+
+  const groupDistance = getDistanceToGroup();
+
   return (
     <Card className="w-full glass-luxury border-2 border-yellow-200/50 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 luxury-float">
       <CardHeader className="pb-6">
@@ -78,6 +96,23 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
               <Gem className="h-6 w-6 text-yellow-600" />
               <span className="text-lg text-gray-700 font-elegant font-semibold tracking-wide">Expérience Premium</span>
             </div>
+            
+            {/* Informations de localisation */}
+            {(group.location_name || groupDistance) && (
+              <div className="flex items-center space-x-3 text-sm">
+                <Navigation className="h-5 w-5 text-blue-600" />
+                <div className="space-x-2">
+                  {group.location_name && (
+                    <span className="text-blue-700 font-semibold">{group.location_name}</span>
+                  )}
+                  {groupDistance && (
+                    <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded-full font-medium">
+                      à {groupDistance}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           {getStatusBadge(group.status)}
         </div>
@@ -142,6 +177,11 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
                 <div className="text-yellow-800 text-lg font-elegant">
                   Plus que {group.max_participants - group.current_participants} membre{group.max_participants - group.current_participants > 1 ? 's' : ''} pour compléter ce cercle exclusif !
                 </div>
+                {group.search_radius && (
+                  <div className="text-yellow-700 text-sm font-medium mt-2">
+                    Rayon de recherche: {GeolocationService.formatDistance(group.search_radius)}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -4,22 +4,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Group, GroupParticipant } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
+import { GeolocationService, LocationData } from '@/services/geolocation';
 
 // Liste des bars parisiens pour la sélection aléatoire
 const PARIS_BARS = [
-  { name: "Le Procope", address: "13 Rue de l'Ancienne Comédie, 75006 Paris" },
-  { name: "Harry's Bar", address: "5 Rue Daunou, 75002 Paris" },
-  { name: "Le Mary Celeste", address: "1 Rue Commines, 75003 Paris" },
-  { name: "Candelaria", address: "52 Rue de Saintonge, 75003 Paris" },
-  { name: "Little Red Door", address: "60 Rue Charlot, 75003 Paris" },
-  { name: "Le Syndicat", address: "51 Rue du Faubourg Saint-Antoine, 75011 Paris" },
-  { name: "Hemingway Bar", address: "15 Place Vendôme, 75001 Paris" },
-  { name: "Le Bar du Plaza", address: "25 Avenue Montaigne, 75008 Paris" },
-  { name: "Moonshiner", address: "5 Rue Sedaine, 75011 Paris" },
-  { name: "Glass", address: "7 Rue Frochot, 75009 Paris" }
+  { name: "Le Procope", address: "13 Rue de l'Ancienne Comédie, 75006 Paris", lat: 48.8534, lng: 2.3371 },
+  { name: "Harry's Bar", address: "5 Rue Daunou, 75002 Paris", lat: 48.8699, lng: 2.3314 },
+  { name: "Le Mary Celeste", address: "1 Rue Commines, 75003 Paris", lat: 48.8596, lng: 2.3639 },
+  { name: "Candelaria", address: "52 Rue de Saintonge, 75003 Paris", lat: 48.8625, lng: 2.3639 },
+  { name: "Little Red Door", address: "60 Rue Charlot, 75003 Paris", lat: 48.8630, lng: 2.3652 },
+  { name: "Le Syndicat", address: "51 Rue du Faubourg Saint-Antoine, 75011 Paris", lat: 48.8532, lng: 2.3724 },
+  { name: "Hemingway Bar", address: "15 Place Vendôme, 75001 Paris", lat: 48.8670, lng: 2.3292 },
+  { name: "Le Bar du Plaza", address: "25 Avenue Montaigne, 75008 Paris", lat: 48.8665, lng: 2.3065 },
+  { name: "Moonshiner", address: "5 Rue Sedaine, 75011 Paris", lat: 48.8553, lng: 2.3714 },
+  { name: "Glass", address: "7 Rue Frochot, 75009 Paris", lat: 48.8823, lng: 2.3367 }
 ];
 
-const getRandomBar = () => {
+const getRandomBar = (userLat?: number, userLng?: number) => {
+  if (userLat && userLng) {
+    // Trier les bars par distance si on a la position utilisateur
+    const barsWithDistance = PARIS_BARS.map(bar => ({
+      ...bar,
+      distance: GeolocationService.calculateDistance(userLat, userLng, bar.lat, bar.lng)
+    })).sort((a, b) => a.distance - b.distance);
+    
+    // Prendre un des 5 bars les plus proches au hasard
+    const nearestBars = barsWithDistance.slice(0, 5);
+    const randomIndex = Math.floor(Math.random() * nearestBars.length);
+    return nearestBars[randomIndex];
+  }
+  
+  // Fallback: bar complètement aléatoire
   const randomIndex = Math.floor(Math.random() * PARIS_BARS.length);
   return PARIS_BARS[randomIndex];
 };
@@ -29,8 +44,25 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef<number>(0);
+
+  // Obtenir la géolocalisation de l'utilisateur au montage
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const location = await GeolocationService.getCurrentLocation();
+        setUserLocation(location);
+        console.log('📍 Position utilisateur obtenue:', location);
+      } catch (error) {
+        console.warn('⚠️ Impossible d\'obtenir la position:', error);
+        // On continue sans géolocalisation
+      }
+    };
+
+    getUserLocation();
+  }, []);
 
   const fetchUserGroups = useCallback(async () => {
     if (!user || fetchingRef.current) {
@@ -98,6 +130,77 @@ export const useGroups = () => {
     }
   }, [user]);
 
+  const findCompatibleGroup = async (userLocation: LocationData) => {
+    try {
+      console.log('🔍 Recherche de groupes compatibles près de:', userLocation.locationName);
+      
+      // Rechercher des groupes en attente dans un rayon géographique
+      const { data: nearbyGroups, error } = await supabase
+        .from('groups')
+        .select('*')
+        .eq('status', 'waiting')
+        .lt('current_participants', 5)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (error) {
+        console.error('❌ Erreur recherche groupes:', error);
+        throw error;
+      }
+
+      if (!nearbyGroups || nearbyGroups.length === 0) {
+        console.log('📍 Aucun groupe géolocalisé trouvé');
+        return null;
+      }
+
+      // Filtrer par distance (rayon de 5km par défaut)
+      const compatibleGroups = nearbyGroups.filter(group => {
+        if (!group.latitude || !group.longitude) return false;
+        
+        const distance = GeolocationService.calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          group.latitude,
+          group.longitude
+        );
+        
+        const searchRadius = group.search_radius || 5000; // 5km par défaut
+        return distance <= searchRadius;
+      });
+
+      if (compatibleGroups.length === 0) {
+        console.log('📍 Aucun groupe dans le rayon de recherche');
+        return null;
+      }
+
+      // Trier par distance et prendre le plus proche
+      compatibleGroups.sort((a, b) => {
+        const distanceA = GeolocationService.calculateDistance(
+          userLocation.latitude, userLocation.longitude,
+          a.latitude!, a.longitude!
+        );
+        const distanceB = GeolocationService.calculateDistance(
+          userLocation.latitude, userLocation.longitude,
+          b.latitude!, b.longitude!
+        );
+        return distanceA - distanceB;
+      });
+
+      const selectedGroup = compatibleGroups[0];
+      const distance = GeolocationService.calculateDistance(
+        userLocation.latitude, userLocation.longitude,
+        selectedGroup.latitude!, selectedGroup.longitude!
+      );
+
+      console.log('✅ Groupe compatible trouvé à', GeolocationService.formatDistance(distance));
+      return selectedGroup as Group;
+      
+    } catch (error) {
+      console.error('❌ Erreur recherche groupe compatible:', error);
+      return null;
+    }
+  };
+
   const joinRandomGroup = async () => {
     if (!user) {
       toast({ 
@@ -140,34 +243,54 @@ export const useGroups = () => {
         return false;
       }
 
-      // Chercher un groupe en attente avec de la place
-      const { data: waitingGroups, error: groupError } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('status', 'waiting')
-        .lt('current_participants', 5)
-        .order('created_at', { ascending: true })
-        .limit(1);
+      let targetGroup: Group | null = null;
 
-      if (groupError) {
-        console.error('❌ Erreur de recherche de groupes:', groupError);
-        throw groupError;
+      // 1. Essayer de trouver un groupe compatible géographiquement
+      if (userLocation) {
+        targetGroup = await findCompatibleGroup(userLocation);
       }
 
-      let targetGroup: Group;
+      // 2. Si pas de groupe géolocalisé compatible, chercher un groupe classique
+      if (!targetGroup) {
+        const { data: waitingGroups, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('status', 'waiting')
+          .lt('current_participants', 5)
+          .order('created_at', { ascending: true })
+          .limit(1);
 
-      if (waitingGroups && waitingGroups.length > 0) {
-        targetGroup = waitingGroups[0] as Group;
-        console.log('🔗 Rejoindre le groupe existant:', targetGroup.id);
-      } else {
+        if (groupError) {
+          console.error('❌ Erreur de recherche de groupes:', groupError);
+          throw groupError;
+        }
+
+        if (waitingGroups && waitingGroups.length > 0) {
+          targetGroup = waitingGroups[0] as Group;
+          console.log('🔗 Rejoindre le groupe existant:', targetGroup.id);
+        }
+      }
+
+      // 3. Si toujours aucun groupe, créer un nouveau groupe
+      if (!targetGroup) {
         console.log('🆕 Création d\'un nouveau groupe...');
+        const newGroupData: any = {
+          status: 'waiting',
+          max_participants: 5,
+          current_participants: 0
+        };
+
+        // Ajouter la géolocalisation si disponible
+        if (userLocation) {
+          newGroupData.latitude = userLocation.latitude;
+          newGroupData.longitude = userLocation.longitude;
+          newGroupData.location_name = userLocation.locationName;
+          newGroupData.search_radius = 5000; // 5km par défaut
+        }
+
         const { data: newGroup, error: createError } = await supabase
           .from('groups')
-          .insert({
-            status: 'waiting',
-            max_participants: 5,
-            current_participants: 0
-          })
+          .insert(newGroupData)
           .select()
           .single();
 
@@ -181,13 +304,22 @@ export const useGroups = () => {
       }
 
       // Ajouter l'utilisateur au groupe
+      const participantData: any = {
+        group_id: targetGroup.id,
+        user_id: user.id,
+        status: 'confirmed'
+      };
+
+      // Ajouter la géolocalisation du participant si disponible
+      if (userLocation) {
+        participantData.latitude = userLocation.latitude;
+        participantData.longitude = userLocation.longitude;
+        participantData.location_name = userLocation.locationName;
+      }
+
       const { error: joinError } = await supabase
         .from('group_participants')
-        .insert({
-          group_id: targetGroup.id,
-          user_id: user.id,
-          status: 'confirmed'
-        });
+        .insert(participantData);
 
       if (joinError) {
         console.error('❌ Erreur d\'ajout au groupe:', joinError);
@@ -200,7 +332,10 @@ export const useGroups = () => {
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
-        const randomBar = getRandomBar();
+        const randomBar = getRandomBar(
+          targetGroup.latitude || userLocation?.latitude,
+          targetGroup.longitude || userLocation?.longitude
+        );
         const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
         
         await supabase
@@ -224,9 +359,10 @@ export const useGroups = () => {
           .update({ current_participants: newParticipantCount })
           .eq('id', targetGroup.id);
 
+        const locationInfo = userLocation ? ` près de ${userLocation.locationName}` : '';
         toast({ 
           title: '🚀 Vous êtes dans la course !', 
-          description: `Groupe rejoint ! En attente de ${5 - newParticipantCount} autre${5 - newParticipantCount > 1 ? 's' : ''} participant${5 - newParticipantCount > 1 ? 's' : ''}.`,
+          description: `Groupe rejoint${locationInfo} ! En attente de ${5 - newParticipantCount} autre${5 - newParticipantCount > 1 ? 's' : ''} participant${5 - newParticipantCount > 1 ? 's' : ''}.`,
         });
       }
 
@@ -337,6 +473,7 @@ export const useGroups = () => {
     groups,
     userGroups,
     loading,
+    userLocation,
     joinRandomGroup,
     leaveGroup,
     fetchUserGroups

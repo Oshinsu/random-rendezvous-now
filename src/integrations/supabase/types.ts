@@ -14,6 +14,9 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
           status: string
           user_id: string
         }
@@ -21,6 +24,9 @@ export type Database = {
           group_id: string
           id?: string
           joined_at?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           status?: string
           user_id: string
         }
@@ -28,6 +34,9 @@ export type Database = {
           group_id?: string
           id?: string
           joined_at?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           status?: string
           user_id?: string
         }
@@ -48,8 +57,12 @@ export type Database = {
           created_at: string
           current_participants: number
           id: string
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
           max_participants: number
           meeting_time: string | null
+          search_radius: number | null
           status: string
         }
         Insert: {
@@ -58,8 +71,12 @@ export type Database = {
           created_at?: string
           current_participants?: number
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           max_participants?: number
           meeting_time?: string | null
+          search_radius?: number | null
           status?: string
         }
         Update: {
@@ -68,8 +85,12 @@ export type Database = {
           created_at?: string
           current_participants?: number
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           max_participants?: number
           meeting_time?: string | null
+          search_radius?: number | null
           status?: string
         }
         Relationships: []
@@ -106,7 +127,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_distance: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
