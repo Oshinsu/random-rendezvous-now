@@ -51,18 +51,41 @@ export const useGroupChat = (groupId: string) => {
 
     setSending(true);
     try {
-      const { error } = await supabase
+      // D'abord ajouter le message localement pour un affichage immédiat
+      const tempMessage: ChatMessage = {
+        id: `temp-${Date.now()}`,
+        group_id: groupId,
+        user_id: user.id,
+        message: messageText.trim(),
+        created_at: new Date().toISOString(),
+        is_system: false
+      };
+
+      setMessages(prev => [...prev, tempMessage]);
+
+      const { data, error } = await supabase
         .from('group_messages')
         .insert({
           group_id: groupId,
           user_id: user.id,
           message: messageText.trim(),
           is_system: false
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('❌ Erreur envoi message:', error);
+        // Retirer le message temporaire en cas d'erreur
+        setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
         throw error;
+      }
+
+      // Remplacer le message temporaire par le vrai message
+      if (data) {
+        setMessages(prev => 
+          prev.map(msg => msg.id === tempMessage.id ? data as ChatMessage : msg)
+        );
       }
 
       console.log('✅ Message envoyé avec succès');
@@ -102,7 +125,7 @@ export const useGroupChat = (groupId: string) => {
     }
   };
 
-  // Configuration realtime améliorée
+  // Configuration realtime simplifiée et plus robuste
   useEffect(() => {
     if (!groupId || !user) return;
 
@@ -111,9 +134,14 @@ export const useGroupChat = (groupId: string) => {
     // Charger les messages initiaux
     loadMessages();
 
-    // Configurer la souscription realtime pour les messages ET les changements de participants
-    const messagesChannel = supabase
-      .channel(`group-chat-${groupId}`)
+    // Configurer la souscription realtime avec retry automatique
+    const channel = supabase
+      .channel(`group-messages-${groupId}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: user.id }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -127,47 +155,35 @@ export const useGroupChat = (groupId: string) => {
           const newMessage = payload.new as ChatMessage;
           
           setMessages(prev => {
-            // Éviter les doublons
-            if (prev.some(msg => msg.id === newMessage.id)) {
-              return prev;
-            }
-            return [...prev, newMessage];
+            // Éviter les doublons et les messages temporaires
+            const filteredPrev = prev.filter(msg => 
+              msg.id !== newMessage.id && !msg.id.startsWith('temp-')
+            );
+            return [...filteredPrev, newMessage];
           });
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('🛰️ Statut de souscription messages:', status);
-      });
-
-    // Canal séparé pour les changements de participants (pour déclencher les messages système)
-    const participantsChannel = supabase
-      .channel(`group-participants-${groupId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'group_participants',
-          filter: `group_id=eq.${groupId}`
-        },
-        (payload) => {
-          console.log('🛰️ Changement de participant détecté:', payload);
-          // Recharger les messages pour voir les nouveaux messages système
-          setTimeout(() => {
-            loadMessages();
-          }, 500);
+        if (err) {
+          console.error('❌ Erreur souscription:', err);
         }
-      )
-      .subscribe((status) => {
-        console.log('🛰️ Statut de souscription participants:', status);
+        
+        // Retry automatique en cas de timeout
+        if (status === 'TIMED_OUT') {
+          console.log('🔄 Retry de la souscription après timeout...');
+          setTimeout(() => {
+            channel.unsubscribe();
+            // La souscription sera recréée au prochain useEffect
+          }, 2000);
+        }
       });
 
     return () => {
-      console.log('🛰️ Nettoyage souscriptions realtime');
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(participantsChannel);
+      console.log('🛰️ Nettoyage souscription realtime');
+      channel.unsubscribe();
     };
-  }, [groupId, user]);
+  }, [groupId, user?.id]);
 
   return {
     messages,

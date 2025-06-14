@@ -31,9 +31,13 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
+    console.log('📤 Envoi du message:', newMessage);
     const success = await sendMessage(newMessage);
     if (success) {
       setNewMessage('');
+      console.log('✅ Message envoyé et input vidé');
+    } else {
+      console.error('❌ Échec de l\'envoi du message');
     }
   };
 
@@ -85,7 +89,6 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     );
   }
 
-  // CORRECTION: Le chat est maintenant disponible dès qu'il y a au moins 2 participants
   const canUseChat = groupId && user;
 
   if (!canUseChat) {
@@ -117,7 +120,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
           </div>
           <Badge variant="secondary" className="bg-green-100 text-green-800">
             <Users className="h-3 w-3 mr-1" />
-            {loading ? 'Chargement...' : 'Actif'}
+            {messages.length} messages
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -137,23 +140,25 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
             messages.map((message) => {
               const sender = getMessageSender(message);
               const isOwnMessage = message.user_id === user?.id && !message.is_system;
+              const isTemporary = message.id.startsWith('temp-');
               
               return (
                 <div
                   key={message.id}
-                  className={`p-3 rounded-lg ${
+                  className={`p-3 rounded-lg transition-opacity ${
                     message.is_system
                       ? 'bg-blue-100 border border-blue-200 text-blue-800'
                       : isOwnMessage
                       ? 'bg-brand-100 ml-8 border border-brand-200'
                       : 'bg-white mr-8 border border-gray-200'
-                  }`}
+                  } ${isTemporary ? 'opacity-70' : 'opacity-100'}`}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className={`text-sm font-semibold ${
                       message.is_system ? 'text-blue-700' : 'text-gray-700'
                     }`}>
                       {sender}
+                      {isTemporary && ' (envoi...)'}
                     </span>
                     <span className="text-xs text-gray-500">
                       {formatTime(message.created_at)}
