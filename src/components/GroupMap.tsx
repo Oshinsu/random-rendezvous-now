@@ -61,11 +61,15 @@ const GroupMap = ({
       if (markerRef.current) {
         markerRef.current.setPosition(newPosition);
         
-        // Animation du marqueur (petit bounce)
-        markerRef.current.setAnimation(window.google?.maps?.Animation?.BOUNCE);
-        setTimeout(() => {
-          markerRef.current.setAnimation(null);
-        }, 2000);
+        // Animation du marqueur (petit bounce) - avec vérification de l'existence de l'API
+        if (window.google?.maps?.Animation) {
+          markerRef.current.setAnimation(window.google.maps.Animation.BOUNCE);
+          setTimeout(() => {
+            if (markerRef.current) {
+              markerRef.current.setAnimation(null);
+            }
+          }, 2000);
+        }
       }
       
       setBarLocationUpdated(true);
@@ -130,7 +134,7 @@ const GroupMap = ({
           position: { lat: mapLat, lng: mapLng },
           map: map,
           title: barName,
-          animation: barLatitude && barLongitude ? google.maps.Animation.DROP : null,
+          animation: barLatitude && barLongitude && google.maps.Animation ? google.maps.Animation.DROP : null,
           icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">

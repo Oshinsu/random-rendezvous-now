@@ -20,6 +20,7 @@ declare global {
         setMap(map: Map | null): void;
         getPosition(): any;
         setVisible(visible: boolean): void;
+        setAnimation(animation: Animation | null): void;
         addListener(eventName: string, handler: Function): any;
       }
       
@@ -44,6 +45,11 @@ declare global {
         SATELLITE = 'satellite',
         HYBRID = 'hybrid',
         TERRAIN = 'terrain'
+      }
+
+      enum Animation {
+        BOUNCE = 1,
+        DROP = 2
       }
     }
   }
