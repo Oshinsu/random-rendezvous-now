@@ -22,6 +22,9 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
   const missingMembers = members.filter(member => !member.isConnected);
   const emptySlots = maxParticipants - currentParticipants;
 
+  // Générer les noms masqués "Rander 1", "Rander 2", etc.
+  const getMaskedName = (index: number) => `Rander ${index + 1}`;
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -39,19 +42,22 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
               Connectés ({connectedMembers.length})
             </h4>
             <div className="space-y-2">
-              {connectedMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {member.name.charAt(0).toUpperCase()}
+              {connectedMembers.map((member, index) => {
+                const maskedName = getMaskedName(index);
+                return (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {maskedName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-green-900">{maskedName}</span>
                     </div>
-                    <span className="font-medium text-green-900">{member.name}</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      En ligne
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    En ligne
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -64,19 +70,22 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
               En attente ({missingMembers.length})
             </h4>
             <div className="space-y-2">
-              {missingMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {member.name.charAt(0).toUpperCase()}
+              {missingMembers.map((member, index) => {
+                const maskedName = getMaskedName(connectedMembers.length + index);
+                return (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {maskedName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-orange-900">{maskedName}</span>
                     </div>
-                    <span className="font-medium text-orange-900">{member.name}</span>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                      Hors ligne
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                    Hors ligne
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

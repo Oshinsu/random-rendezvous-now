@@ -87,15 +87,11 @@ export const useGroups = () => {
           id,
           user_id,
           joined_at,
-          status,
-          profiles (
-            first_name,
-            last_name,
-            email
-          )
+          status
         `)
         .eq('group_id', groupId)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .order('joined_at', { ascending: true });
 
       if (participantsError) {
         console.error('❌ Erreur récupération participants:', participantsError);
@@ -110,29 +106,21 @@ export const useGroups = () => {
         return [];
       }
 
-      // Transformer les données pour correspondre à l'interface GroupMember
-      const members: GroupMember[] = participantsData.map((participant: any) => {
-        const profile = participant.profiles;
-        let displayName = 'Utilisateur';
-        
-        if (profile) {
-          if (profile.first_name || profile.last_name) {
-            displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-          } else if (profile.email) {
-            displayName = profile.email.split('@')[0];
-          }
-        }
+      // Transformer les données pour correspondre à l'interface GroupMember avec noms masqués
+      const members: GroupMember[] = participantsData.map((participant: any, index: number) => {
+        // Utiliser des noms masqués "Rander 1", "Rander 2", etc.
+        const maskedName = `Rander ${index + 1}`;
 
         return {
           id: participant.id,
-          name: displayName,
+          name: maskedName,
           isConnected: Math.random() > 0.3, // Simulation de la connexion en temps réel
           joinedAt: participant.joined_at,
           status: participant.status as 'confirmed' | 'pending'
         };
       });
 
-      console.log('👥 Membres transformés:', members);
+      console.log('👥 Membres transformés avec noms masqués:', members);
       setGroupMembers(members);
       return members;
     } catch (error) {
@@ -304,6 +292,7 @@ export const useGroups = () => {
         );
         
         const searchRadius = group.search_radius || 5000; // 5km par défaut
+        console.log(`📏 Distance au groupe ${group.id}: ${GeolocationService.formatDistance(distance)} (rayon: ${GeolocationService.formatDistance(searchRadius)})`);
         return distance <= searchRadius;
       });
 
@@ -425,6 +414,10 @@ export const useGroups = () => {
           newGroupData.longitude = userLocation.longitude;
           newGroupData.location_name = userLocation.locationName;
           newGroupData.search_radius = 5000; // 5km par défaut
+          console.log('📍 Nouveau groupe avec géolocalisation:', {
+            location: userLocation.locationName,
+            coordinates: `${userLocation.latitude}, ${userLocation.longitude}`
+          });
         }
 
         const { data: newGroup, error: createError } = await supabase
@@ -471,11 +464,33 @@ export const useGroups = () => {
       const newParticipantCount = targetGroup.current_participants + 1;
       
       if (newParticipantCount >= 5) {
+        // Sélection du bar basée sur la géolocalisation du groupe et des participants
+        let barSelectionLocation = null;
+        
+        if (targetGroup.latitude && targetGroup.longitude) {
+          barSelectionLocation = {
+            latitude: targetGroup.latitude,
+            longitude: targetGroup.longitude
+          };
+        } else if (userLocation) {
+          barSelectionLocation = {
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude
+          };
+        }
+        
         const randomBar = getRandomBar(
-          targetGroup.latitude || userLocation?.latitude,
-          targetGroup.longitude || userLocation?.longitude
+          barSelectionLocation?.latitude,
+          barSelectionLocation?.longitude
         );
+        
         const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+        
+        console.log('🍺 Bar sélectionné pour le groupe complet:', {
+          bar: randomBar.name,
+          address: randomBar.address,
+          selectionBasedOn: barSelectionLocation ? 'Géolocalisation du groupe/utilisateur' : 'Sélection aléatoire'
+        });
         
         await supabase
           .from('groups')
