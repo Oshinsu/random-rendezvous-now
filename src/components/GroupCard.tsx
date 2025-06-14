@@ -3,7 +3,7 @@ import { Group } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Users, LogOut, Calendar, Star } from 'lucide-react';
+import { MapPin, Clock, Users, LogOut, Calendar, Star, Crown, Gem } from 'lucide-react';
 import { useGroups } from '@/hooks/useGroups';
 
 interface GroupCardProps {
@@ -18,28 +18,28 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
     const variants = {
       waiting: { 
         variant: 'secondary' as const, 
-        text: 'En attente', 
-        className: 'bg-yellow-100 text-yellow-800 border-yellow-300' 
+        text: 'En Attente', 
+        className: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-900 border-2 border-yellow-300 font-elegant font-bold px-4 py-2 text-sm' 
       },
       full: { 
         variant: 'default' as const, 
         text: 'Complet', 
-        className: 'bg-blue-100 text-blue-800 border-blue-300' 
+        className: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 border-2 border-blue-300 font-elegant font-bold px-4 py-2 text-sm' 
       },
       confirmed: { 
         variant: 'default' as const, 
         text: 'Confirmé', 
-        className: 'bg-green-100 text-green-800 border-green-300' 
+        className: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border-2 border-emerald-300 font-elegant font-bold px-4 py-2 text-sm' 
       },
       completed: { 
         variant: 'outline' as const, 
         text: 'Terminé', 
-        className: 'bg-gray-100 text-gray-800 border-gray-300' 
+        className: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 border-2 border-gray-300 font-elegant font-bold px-4 py-2 text-sm' 
       },
       cancelled: { 
         variant: 'destructive' as const, 
         text: 'Annulé', 
-        className: 'bg-red-100 text-red-800 border-red-300' 
+        className: 'bg-gradient-to-r from-red-100 to-red-200 text-red-900 border-2 border-red-300 font-elegant font-bold px-4 py-2 text-sm' 
       }
     };
     
@@ -67,63 +67,63 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
   };
 
   return (
-    <Card className="w-full bg-gradient-to-br from-white to-amber-50/30 border-2 border-amber-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-      <CardHeader className="pb-4">
+    <Card className="w-full glass-luxury border-2 border-yellow-200/50 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 luxury-float">
+      <CardHeader className="pb-6">
         <div className="flex justify-between items-start">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-heading bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
-              Groupe #{group.id.slice(-6)}
+          <div className="space-y-3">
+            <CardTitle className="text-3xl font-luxury font-black bg-gradient-to-r from-yellow-600 to-yellow-800 bg-clip-text text-transparent">
+              Cercle #{group.id.slice(-6)}
             </CardTitle>
-            <div className="flex items-center space-x-2">
-              <Star className="h-4 w-4 text-amber-500" />
-              <span className="text-sm text-gray-600 font-medium">Aventure Random</span>
+            <div className="flex items-center space-x-3">
+              <Gem className="h-6 w-6 text-yellow-600" />
+              <span className="text-lg text-gray-700 font-elegant font-semibold tracking-wide">Expérience Premium</span>
             </div>
           </div>
           {getStatusBadge(group.status)}
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        {/* Progression des participants */}
-        <div className="space-y-3">
+      <CardContent className="space-y-8">
+        {/* Progression des participants luxueuse */}
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-amber-600" />
-              <span className="text-lg font-semibold text-gray-800">
-                {group.current_participants}/{group.max_participants} participants
+            <div className="flex items-center space-x-3">
+              <Users className="h-7 w-7 text-yellow-600" />
+              <span className="text-2xl font-luxury font-bold text-gray-800">
+                {group.current_participants}/{group.max_participants} membres exclusifs
               </span>
             </div>
-            <span className="text-sm text-gray-500">
+            <span className="text-lg text-gray-600 font-elegant font-semibold">
               {Math.round(getProgressPercentage())}%
             </span>
           </div>
           
-          {/* Barre de progression */}
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          {/* Barre de progression luxueuse */}
+          <div className="w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded-full h-4 overflow-hidden shadow-inner">
             <div 
-              className="bg-gradient-to-r from-amber-500 to-yellow-500 h-full rounded-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 h-full rounded-full transition-all duration-700 ease-out gold-glow"
               style={{ width: `${getProgressPercentage()}%` }}
             ></div>
           </div>
         </div>
 
-        {/* Informations du bar */}
+        {/* Informations du bar premium */}
         {(group.status === 'confirmed' || group.status === 'full') && group.bar_name && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 space-y-3">
-            <div className="flex items-start space-x-3">
-              <MapPin className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
+          <div className="glass-gold border-2 border-emerald-300 rounded-2xl p-6 space-y-4">
+            <div className="flex items-start space-x-4">
+              <MapPin className="h-7 w-7 text-emerald-700 mt-1 flex-shrink-0" />
               <div>
-                <div className="font-bold text-green-800 text-lg">{group.bar_name}</div>
-                <div className="text-green-700 text-sm">{group.bar_address}</div>
+                <div className="font-luxury font-bold text-emerald-900 text-2xl">{group.bar_name}</div>
+                <div className="text-emerald-800 text-lg font-elegant">{group.bar_address}</div>
               </div>
             </div>
 
             {group.meeting_time && (
-              <div className="flex items-start space-x-3 pt-2 border-t border-green-200">
-                <Calendar className="h-5 w-5 text-green-600 mt-1" />
+              <div className="flex items-start space-x-4 pt-4 border-t-2 border-emerald-200">
+                <Calendar className="h-7 w-7 text-emerald-700 mt-1" />
                 <div>
-                  <div className="font-semibold text-green-800">Rendez-vous</div>
-                  <div className="text-green-700 capitalize">
+                  <div className="font-luxury font-bold text-emerald-900 text-xl">Rendez-vous Premium</div>
+                  <div className="text-emerald-800 capitalize font-elegant text-lg">
                     {formatDateTime(group.meeting_time)}
                   </div>
                 </div>
@@ -132,32 +132,32 @@ const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
           </div>
         )}
 
-        {/* Message d'attente */}
+        {/* Message d'attente luxueux */}
         {group.status === 'waiting' && (
-          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-xl p-4">
-            <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-yellow-600" />
+          <div className="glass-gold border-2 border-yellow-300 rounded-2xl p-6">
+            <div className="flex items-center space-x-4">
+              <Clock className="h-7 w-7 text-yellow-700" />
               <div>
-                <div className="font-semibold text-yellow-800">En attente</div>
-                <div className="text-yellow-700 text-sm">
-                  Plus que {group.max_participants - group.current_participants} participant{group.max_participants - group.current_participants > 1 ? 's' : ''} pour compléter le groupe !
+                <div className="font-luxury font-bold text-yellow-900 text-xl">Assemblage en cours</div>
+                <div className="text-yellow-800 text-lg font-elegant">
+                  Plus que {group.max_participants - group.current_participants} membre{group.max_participants - group.current_participants > 1 ? 's' : ''} pour compléter ce cercle exclusif !
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Bouton quitter */}
+        {/* Bouton quitter luxueux */}
         {showLeaveButton && group.status !== 'completed' && (
           <Button
             onClick={() => leaveGroup(group.id)}
             disabled={loading}
             variant="outline"
             size="lg"
-            className="w-full border-2 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 transition-all duration-300"
+            className="w-full border-2 border-red-300 text-red-800 hover:bg-red-50 hover:border-red-400 transition-all duration-300 font-elegant font-bold text-lg py-4"
           >
-            <LogOut className="h-5 w-5 mr-2" />
-            Quitter le groupe
+            <LogOut className="h-6 w-6 mr-3" />
+            Quitter le Cercle
           </Button>
         )}
       </CardContent>

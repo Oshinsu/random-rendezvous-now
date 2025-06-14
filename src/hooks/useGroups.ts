@@ -35,7 +35,7 @@ export const useGroups = () => {
     
     setLoading(true);
     try {
-      console.log('Fetching user groups for user:', user.id);
+      console.log('DEBUG: Fetching user groups for user:', user.id);
       
       // Récupérer les participations de l'utilisateur
       const { data: participations, error: participationError } = await supabase
@@ -45,33 +45,36 @@ export const useGroups = () => {
         .eq('status', 'confirmed');
 
       if (participationError) {
-        console.error('Error fetching participations:', participationError);
+        console.error('DEBUG: Error fetching participations:', participationError);
         throw participationError;
       }
 
-      console.log('User participations:', participations);
+      console.log('DEBUG: User participations found:', participations);
 
       if (!participations || participations.length === 0) {
+        console.log('DEBUG: No participations found, setting empty array');
         setUserGroups([]);
         return;
       }
 
       // Récupérer les détails des groupes
       const groupIds = participations.map(p => p.group_id);
+      console.log('DEBUG: Fetching groups with IDs:', groupIds);
+      
       const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select('*')
         .in('id', groupIds);
 
       if (groupsError) {
-        console.error('Error fetching groups:', groupsError);
+        console.error('DEBUG: Error fetching groups:', groupsError);
         throw groupsError;
       }
 
-      console.log('User groups data:', groupsData);
+      console.log('DEBUG: Groups data retrieved:', groupsData);
       setUserGroups((groupsData || []) as Group[]);
     } catch (error) {
-      console.error('Error fetching user groups:', error);
+      console.error('DEBUG: Error in fetchUserGroups:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de récupérer vos groupes.', 
@@ -84,6 +87,7 @@ export const useGroups = () => {
 
   const joinRandomGroup = async () => {
     if (!user) {
+      console.error('DEBUG: No user found for joinRandomGroup');
       toast({ 
         title: 'Erreur', 
         description: 'Vous devez être connecté pour rejoindre un groupe.', 
@@ -92,11 +96,12 @@ export const useGroups = () => {
       return false;
     }
 
+    console.log('DEBUG: Starting joinRandomGroup for user:', user.id);
     setLoading(true);
+    
     try {
-      console.log('Starting joinRandomGroup for user:', user.id);
-
       // Vérifier si l'utilisateur est déjà dans un groupe actif
+      console.log('DEBUG: Checking existing participations...');
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
         .select('*')
@@ -104,15 +109,17 @@ export const useGroups = () => {
         .eq('status', 'confirmed');
 
       if (checkError) {
-        console.error('Error checking existing participation:', checkError);
+        console.error('DEBUG: Error checking existing participation:', checkError);
         throw checkError;
       }
 
-      console.log('Existing participations:', existingParticipation);
+      console.log('DEBUG: Existing participations check result:', existingParticipation);
 
       if (existingParticipation && existingParticipation.length > 0) {
         // Vérifier si ces groupes sont encore actifs
         const groupIds = existingParticipation.map(p => p.group_id);
+        console.log('DEBUG: Checking if groups are still active:', groupIds);
+        
         const { data: activeGroups, error: activeGroupsError } = await supabase
           .from('groups')
           .select('*')
@@ -120,11 +127,14 @@ export const useGroups = () => {
           .in('status', ['waiting', 'confirmed']);
 
         if (activeGroupsError) {
-          console.error('Error checking active groups:', activeGroupsError);
+          console.error('DEBUG: Error checking active groups:', activeGroupsError);
           throw activeGroupsError;
         }
 
+        console.log('DEBUG: Active groups found:', activeGroups);
+
         if (activeGroups && activeGroups.length > 0) {
+          console.log('DEBUG: User already in active group, aborting');
           toast({ 
             title: 'Déjà dans un groupe', 
             description: 'Vous êtes déjà dans un groupe actif !', 
@@ -135,6 +145,7 @@ export const useGroups = () => {
       }
 
       // Chercher un groupe en attente avec de la place
+      console.log('DEBUG: Looking for available waiting groups...');
       const { data: waitingGroups, error: groupError } = await supabase
         .from('groups')
         .select('*')
@@ -144,21 +155,21 @@ export const useGroups = () => {
         .limit(1);
 
       if (groupError) {
-        console.error('Error fetching waiting groups:', groupError);
+        console.error('DEBUG: Error fetching waiting groups:', groupError);
         throw groupError;
       }
 
-      console.log('Available waiting groups:', waitingGroups);
+      console.log('DEBUG: Available waiting groups found:', waitingGroups);
 
       let targetGroup: Group;
 
       if (waitingGroups && waitingGroups.length > 0) {
         // Rejoindre un groupe existant
         targetGroup = waitingGroups[0] as Group;
-        console.log('Joining existing group:', targetGroup.id);
+        console.log('DEBUG: Joining existing group:', targetGroup.id);
       } else {
         // Créer un nouveau groupe
-        console.log('Creating new group');
+        console.log('DEBUG: Creating new group...');
         const { data: newGroup, error: createError } = await supabase
           .from('groups')
           .insert({
@@ -170,15 +181,16 @@ export const useGroups = () => {
           .single();
 
         if (createError) {
-          console.error('Error creating group:', createError);
+          console.error('DEBUG: Error creating group:', createError);
           throw createError;
         }
 
         targetGroup = newGroup as Group;
-        console.log('Created new group:', targetGroup.id);
+        console.log('DEBUG: New group created:', targetGroup.id);
       }
 
       // Ajouter l'utilisateur au groupe
+      console.log('DEBUG: Adding user to group...');
       const { error: joinError } = await supabase
         .from('group_participants')
         .insert({
@@ -188,15 +200,16 @@ export const useGroups = () => {
         });
 
       if (joinError) {
-        console.error('Error joining group:', joinError);
+        console.error('DEBUG: Error joining group:', joinError);
         throw joinError;
       }
 
-      console.log('Successfully joined group');
+      console.log('DEBUG: User successfully added to group');
 
       // Mettre à jour le nombre de participants
       const newParticipantCount = targetGroup.current_participants + 1;
       const newStatus = newParticipantCount >= 5 ? 'confirmed' : 'waiting';
+      console.log('DEBUG: Updating group with new participant count:', newParticipantCount, 'new status:', newStatus);
 
       let updateData: any = { 
         current_participants: newParticipantCount,
@@ -214,6 +227,7 @@ export const useGroups = () => {
           bar_address: randomBar.address,
           meeting_time: meetingTime.toISOString()
         };
+        console.log('DEBUG: Group is full, adding bar info:', randomBar);
       }
 
       const { error: updateError } = await supabase
@@ -222,11 +236,11 @@ export const useGroups = () => {
         .eq('id', targetGroup.id);
 
       if (updateError) {
-        console.error('Error updating group:', updateError);
+        console.error('DEBUG: Error updating group:', updateError);
         throw updateError;
       }
 
-      console.log('Group updated successfully');
+      console.log('DEBUG: Group updated successfully');
 
       // Messages de succès
       if (newStatus === 'confirmed') {
@@ -241,10 +255,11 @@ export const useGroups = () => {
         });
       }
 
+      console.log('DEBUG: Refreshing user groups...');
       await fetchUserGroups();
       return true;
     } catch (error) {
-      console.error('Error in joinRandomGroup:', error);
+      console.error('DEBUG: Error in joinRandomGroup:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de rejoindre un groupe. Veuillez réessayer.', 
