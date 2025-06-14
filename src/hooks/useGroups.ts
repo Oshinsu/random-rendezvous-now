@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -447,12 +448,13 @@ export const useGroups = () => {
     try {
       console.log('🚪 Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
-      // Supprimer la participation
+      // Supprimer la participation avec vérification explicite de l'utilisateur
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
         .eq('group_id', groupId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'confirmed');
 
       if (deleteError) {
         console.error('❌ Erreur pour supprimer la participation:', deleteError);
@@ -505,7 +507,7 @@ export const useGroups = () => {
       console.error('❌ Erreur pour quitter le groupe:', error);
       toast({ 
         title: 'Erreur', 
-        description: 'Impossible de quitter le groupe.', 
+        description: 'Impossible de quitter le groupe. Veuillez réessayer.', 
         variant: 'destructive' 
       });
     } finally {
