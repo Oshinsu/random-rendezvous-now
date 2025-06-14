@@ -21,10 +21,14 @@ export const useGroupChat = (groupId: string) => {
 
   // Charger les messages existants
   const loadMessages = async () => {
-    if (!groupId || !user) return;
+    if (!groupId || !user) {
+      console.log('❌ Impossible de charger messages: groupId ou user manquant');
+      return;
+    }
     
     setLoading(true);
     try {
+      console.log('🔄 Chargement des messages pour groupe:', groupId);
       const { data, error } = await supabase
         .from('group_messages')
         .select('*')
@@ -36,8 +40,7 @@ export const useGroupChat = (groupId: string) => {
         throw error;
       }
 
-      console.log('✅ Messages chargés:', data?.length || 0);
-      console.log('🔍 [useGroupChat] Messages détail:', data);
+      console.log('✅ Messages chargés depuis la DB:', data?.length || 0, data);
       setMessages(data || []);
     } catch (error) {
       console.error('❌ Erreur loadMessages:', error);
@@ -107,7 +110,10 @@ export const useGroupChat = (groupId: string) => {
 
   // Configuration realtime avec gestion robuste des reconnexions
   useEffect(() => {
-    if (!groupId || !user) return;
+    if (!groupId || !user) {
+      console.log('❌ Pas de configuration realtime: groupId ou user manquant');
+      return;
+    }
 
     console.log('🛰️ Configuration realtime pour groupe:', groupId);
     
@@ -130,6 +136,8 @@ export const useGroupChat = (groupId: string) => {
           const newMessage = payload.new as ChatMessage;
           
           setMessages(prev => {
+            console.log('🔍 [useGroupChat] Messages avant ajout:', prev.length);
+            
             // Vérifier si le message existe déjà pour éviter les doublons
             const messageExists = prev.some(msg => msg.id === newMessage.id);
             if (messageExists) {
@@ -137,9 +145,10 @@ export const useGroupChat = (groupId: string) => {
               return prev;
             }
             
-            console.log('✅ Nouveau message ajouté à la liste');
-            console.log('🔍 [useGroupChat] État des messages après ajout:', [...prev, newMessage].length);
-            return [...prev, newMessage];
+            const newMessages = [...prev, newMessage];
+            console.log('✅ Nouveau message ajouté. Total:', newMessages.length);
+            console.log('🔍 [useGroupChat] Nouveau state messages:', newMessages);
+            return newMessages;
           });
         }
       )
@@ -150,7 +159,7 @@ export const useGroupChat = (groupId: string) => {
         }
         
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Souscription realtime active');
+          console.log('✅ Souscription realtime active pour groupe:', groupId);
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.log('⚠️ Problème de connexion realtime, rechargement des messages...');
           // Recharger les messages en cas de problème de connexion
@@ -161,14 +170,17 @@ export const useGroupChat = (groupId: string) => {
       });
 
     return () => {
-      console.log('🛰️ Nettoyage souscription realtime');
+      console.log('🛰️ Nettoyage souscription realtime pour groupe:', groupId);
       supabase.removeChannel(channel);
     };
   }, [groupId, user?.id]);
 
   // Debug: surveiller les changements de messages
   useEffect(() => {
-    console.log('🔍 [useGroupChat] Messages state changé:', messages.length, messages);
+    console.log('🔍 [useGroupChat] Messages state mis à jour:', {
+      count: messages.length,
+      messages: messages.map(m => ({ id: m.id, content: m.message, timestamp: m.created_at }))
+    });
   }, [messages]);
 
   return {
