@@ -57,11 +57,11 @@
   }
 
   h1 {
-    @apply font-display text-3xl md:text-4xl font-bold tracking-tight;
+    @apply font-playfair text-3xl md:text-4xl font-bold tracking-tight;
   }
 
   h2 {
-    @apply font-heading text-xl md:text-2xl font-bold tracking-tight;
+    @apply font-playfair text-2xl md:text-3xl font-bold tracking-tight;
   }
 
   h3 {
@@ -81,37 +81,28 @@
   }
 
   p {
-    @apply font-body text-sm md:text-base leading-6 text-neutral-700;
+    @apply font-body text-base md:text-lg leading-7 text-neutral-700;
   }
 }
 
 @layer components {
   .glass-morphism {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    background: rgba(255,255,255,0.93);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(241, 194, 50, 0.07);
+    box-shadow: 0 8px 32px rgba(245, 208, 73, 0.07), 0 1px 2px rgba(241, 194, 50, 0.04) inset;
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(241, 194, 50, 0.1);
-    box-shadow: 
-      0 20px 40px rgba(0, 0, 0, 0.08),
-      0 8px 16px rgba(241, 194, 50, 0.04),
-      inset 0 1px 2px rgba(255, 255, 255, 0.9);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(241,194,50,0.12);
+    box-shadow: 0 5px 28px 0 rgba(241,194,50,0.10), 0 2px 10px 0 rgba(0,0,0,0.03) inset;
+    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
   }
 
   .glass-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 25px 50px rgba(0, 0, 0, 0.12),
-      0 12px 20px rgba(241, 194, 50, 0.08),
-      inset 0 1px 2px rgba(255, 255, 255, 0.9);
+    box-shadow:0 6px 36px rgba(241,194,50,0.16);
+    transform: translateY(-1px) scale(1.015);
   }
 
   .gradient-brand {
@@ -142,6 +133,12 @@
     @apply hover:scale-105 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
     @apply hover:bg-white hover:border-brand-300;
     @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-3 text-lg font-playfair rounded-3xl bg-gradient-to-r from-amber-400 to-brand-500 text-white shadow-glow transition-all duration-300;
+    @apply border-0 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2;
+    @apply hover:scale-105 hover:-translate-y-0.5 hover:from-brand-500 hover:to-brand-600 active:scale-95 active:translate-y-0;
   }
 
   .card-modern {
@@ -178,6 +175,10 @@
   /* Golden glow utility for strong gold shadow effect */
   .drop-shadow-glow-gold {
     filter: drop-shadow(0 0 12px #f1c23288) drop-shadow(0 0 4px #fffacd25);
+  }
+
+  .font-playfair {
+    font-family: 'Playfair Display', serif;
   }
 }
 

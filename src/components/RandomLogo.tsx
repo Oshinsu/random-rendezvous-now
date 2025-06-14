@@ -5,7 +5,6 @@ interface RandomLogoProps {
   size?: number;
   withAura?: boolean;
   className?: string;
-  // withTitle : utile pour le menu principal
   withTitle?: boolean;
   rounded?: boolean;
 }
@@ -19,7 +18,7 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
   withTitle = false,
   rounded = true,
 }) => (
-  <span className={`inline-flex items-center gap-3 ${className}`}>
+  <span className={`inline-flex items-center gap-2 ${className}`}>
     <span
       className={`relative`}
       style={{
@@ -29,9 +28,11 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
         borderRadius: rounded ? '20%' : undefined,
         overflow: 'hidden',
         boxShadow: withAura
-          ? '0 0 28px 10px rgba(241,194,50,0.22), 0 0 6px 2px rgba(255,255,255,0.28)'
+          ? '0 0 18px 4px rgba(241,194,50,0.16), 0 0 2px 1px rgba(255,255,255,0.10)'
           : undefined,
-        background: 'linear-gradient(135deg,#f1c232 0%,#fff0 50%,#fff 100%)',
+        // Flat (no gradient)
+        background: '#fffbe8',
+        border: '1.5px solid #f1c23255',
       }}
     >
       <img
@@ -52,10 +53,10 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
     </span>
     {withTitle && (
       <span
-        className="font-display font-bold text-2xl bg-gradient-to-r from-amber-400 via-amber-600 to-yellow-900 bg-clip-text text-transparent drop-shadow-glow-gold"
+        className="font-playfair font-bold text-3xl bg-clip-text text-[#c8a42d] drop-shadow-glow-gold"
         style={{
-          letterSpacing: '0.03em',
-          filter: 'drop-shadow(0 1px 6px #ffe7b244)',
+          letterSpacing: '0.01em',
+          filter: 'drop-shadow(0 1px 6px #ffd70040)',
         }}
       >
         Random
