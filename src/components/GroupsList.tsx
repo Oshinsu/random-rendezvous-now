@@ -1,15 +1,27 @@
 
 import { Group } from '@/types/database';
 import GroupCard from './GroupCard';
+import { LocationData } from '@/services/geolocation';
 
 interface GroupsListProps {
   groups: Group[];
   title: string;
   emptyMessage: string;
   showLeaveButton?: boolean;
+  leaveGroup: (groupId: string) => Promise<void>;
+  loading: boolean;
+  userLocation: LocationData | null;
 }
 
-const GroupsList = ({ groups, title, emptyMessage, showLeaveButton = true }: GroupsListProps) => {
+const GroupsList = ({ 
+  groups, 
+  title, 
+  emptyMessage, 
+  showLeaveButton = true,
+  leaveGroup,
+  loading,
+  userLocation
+}: GroupsListProps) => {
   return (
     <div className="space-y-6">
       {title && (
@@ -28,6 +40,9 @@ const GroupsList = ({ groups, title, emptyMessage, showLeaveButton = true }: Gro
               key={group.id} 
               group={group} 
               showLeaveButton={showLeaveButton}
+              leaveGroup={leaveGroup}
+              loading={loading}
+              userLocation={userLocation}
             />
           ))}
         </div>
