@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, Users, User, LogOut, Menu, ExternalLink } from 'lucide-react';
+import RandomLogo from './RandomLogo';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
@@ -42,13 +42,10 @@ const AppNavigation = () => {
     <header className="bg-background border-b border-border/40 sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Nouveau logo Random */}
           <div className="flex items-center">
             <NavLink to="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="font-display font-bold text-xl bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">Random</span>
+              <RandomLogo size={38} withTitle={true} className="drop-shadow-lg" />
             </NavLink>
           </div>
 

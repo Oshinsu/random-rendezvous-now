@@ -1,4 +1,3 @@
-
 import { Home, Users, User, Sparkles } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import RandomLogo from './RandomLogo';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/dashboard', icon: Home },
@@ -45,9 +45,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="p-6 border-b border-neutral-200/50">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center shadow-medium">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
+          <RandomLogo size={48} withAura className="shadow-lg" />
           {!isCollapsed && (
             <div>
               <span className="font-display text-2xl font-bold gradient-text">Random</span>
