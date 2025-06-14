@@ -4,16 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Users, LogOut, Calendar, Navigation } from 'lucide-react';
-import { useGroups } from '@/hooks/useGroups';
-import { GeolocationService } from '@/services/geolocation';
+import { GeolocationService, LocationData } from '@/services/geolocation';
 
 interface GroupCardProps {
   group: Group;
   showLeaveButton?: boolean;
+  leaveGroup: (groupId: string) => Promise<void>;
+  loading: boolean;
+  userLocation: LocationData | null;
 }
 
-const GroupCard = ({ group, showLeaveButton = true }: GroupCardProps) => {
-  const { leaveGroup, loading, userLocation } = useGroups();
+const GroupCard = ({ group, showLeaveButton = true, leaveGroup, loading, userLocation }: GroupCardProps) => {
 
   const getStatusBadge = (status: string) => {
     const variants = {

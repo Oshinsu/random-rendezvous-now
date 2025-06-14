@@ -1,6 +1,5 @@
 
 import { useGroups } from '@/hooks/useGroups';
-import GroupsList from '@/components/GroupsList';
 import GroupCard from '@/components/GroupCard';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { RefreshCw, Users, Trophy, Clock } from 'lucide-react';
 import RandomButton from '@/components/RandomButton';
 
 const GroupsPage = () => {
-  const { userGroups, loading, fetchUserGroups } = useGroups();
+  const { userGroups, loading, fetchUserGroups, leaveGroup, userLocation } = useGroups();
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
@@ -116,6 +115,9 @@ const GroupsPage = () => {
                           key={group.id} 
                           group={group} 
                           showLeaveButton={true}
+                          leaveGroup={leaveGroup}
+                          loading={loading}
+                          userLocation={userLocation}
                         />
                       ))}
                     </div>
@@ -135,6 +137,9 @@ const GroupsPage = () => {
                           key={group.id} 
                           group={group} 
                           showLeaveButton={false}
+                          leaveGroup={leaveGroup}
+                          loading={loading}
+                          userLocation={userLocation}
                         />
                       ))}
                     </div>
