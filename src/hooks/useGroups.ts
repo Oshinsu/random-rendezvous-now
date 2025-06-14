@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Group, GroupParticipant } from '@/types/database';
+import { Group } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 
@@ -525,6 +525,34 @@ export const useGroups = () => {
       setUserGroups([]);
     }
   }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
+
+  // ➜ Nouveau: Souscription en temps réel aux changements de participations utilisateur
+  useEffect(() => {
+    if (!user) return;
+
+    // On écoute tous les INSERT et DELETE sur la table group_participants pour cet utilisateur
+    const channel = supabase
+      .channel(`realtime:user-participation:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'group_participants',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('🛰️ [Realtime] Changement detecté sur group_participants:', payload);
+          // Rafraîchit les groupes pour l'utilisateur connecté
+          fetchUserGroups();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchUserGroups]);
 
   return {
     groups,
