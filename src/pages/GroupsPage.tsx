@@ -10,9 +10,7 @@ import RandomButton from '@/components/RandomButton';
 const GroupsPage = () => {
   const { userGroups, loading, fetchUserGroups } = useGroups();
 
-  useEffect(() => {
-    fetchUserGroups();
-  }, []);
+  // Supprimer l'effet automatique - le hook useGroups gère déjà le chargement
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
@@ -21,6 +19,11 @@ const GroupsPage = () => {
   const completedGroups = userGroups.filter(group => 
     group.status === 'completed'
   );
+
+  const handleRefresh = () => {
+    console.log('🔄 Refresh manuel des groupes (page Groups)');
+    fetchUserGroups();
+  };
 
   return (
     <AppLayout>
@@ -31,7 +34,7 @@ const GroupsPage = () => {
             <p className="text-xl text-gray-600 mt-2">Gérez vos aventures passées et à venir</p>
           </div>
           <Button
-            onClick={fetchUserGroups}
+            onClick={handleRefresh}
             disabled={loading}
             variant="outline"
             size="lg"

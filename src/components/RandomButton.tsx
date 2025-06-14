@@ -9,22 +9,24 @@ const RandomButton = () => {
   const [isRolling, setIsRolling] = useState(false);
 
   const handleRandomClick = async () => {
-    if (loading || isRolling) return;
+    if (loading || isRolling) {
+      console.log('🚫 Bouton désactivé - loading:', loading, 'rolling:', isRolling);
+      return;
+    }
     
     console.log('🎲 Bouton Random cliqué');
     setIsRolling(true);
     
-    // Animation de roulette pour l'effet
-    setTimeout(async () => {
-      try {
-        const success = await joinRandomGroup();
-        console.log('✅ Résultat rejoindre groupe:', success);
-      } catch (error) {
-        console.error('❌ Erreur dans handleRandomClick:', error);
-      } finally {
-        setIsRolling(false);
-      }
-    }, 800); // Réduit le délai pour une meilleure réactivité
+    try {
+      // Animation de roulette pour l'effet
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const success = await joinRandomGroup();
+      console.log('✅ Résultat rejoindre groupe:', success);
+    } catch (error) {
+      console.error('❌ Erreur dans handleRandomClick:', error);
+    } finally {
+      setIsRolling(false);
+    }
   };
 
   const isDisabled = loading || isRolling;

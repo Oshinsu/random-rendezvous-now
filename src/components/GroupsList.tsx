@@ -12,14 +12,15 @@ interface GroupsListProps {
 const GroupsList = ({ groups, title, emptyMessage, showLeaveButton = true }: GroupsListProps) => {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-heading font-bold">{title}</h2>
+      {title && <h2 className="text-2xl font-bold text-gray-800">{title}</h2>}
       
       {groups.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          {emptyMessage}
+        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+          <div className="text-4xl mb-4">📭</div>
+          <p className="text-lg">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
           {groups.map((group) => (
             <GroupCard 
               key={group.id} 

@@ -29,18 +29,28 @@ export const useGroups = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
-  const isLoadingRef = useRef(false);
+  const fetchingRef = useRef(false);
+  const lastFetchRef = useRef<number>(0);
 
   const fetchUserGroups = useCallback(async () => {
-    if (!user || isLoadingRef.current) {
-      if (!user) setUserGroups([]);
+    if (!user || fetchingRef.current) {
+      console.log('🚫 Fetch bloqué - utilisateur:', !!user, 'en cours:', fetchingRef.current);
       return;
     }
     
-    isLoadingRef.current = true;
+    // Éviter les appels trop fréquents
+    const now = Date.now();
+    if (now - lastFetchRef.current < 1000) {
+      console.log('🚫 Fetch trop fréquent, ignoré');
+      return;
+    }
+    
+    fetchingRef.current = true;
+    lastFetchRef.current = now;
+    setLoading(true);
     
     try {
-      console.log('🔄 Récupération des groupes utilisateur pour:', user.id);
+      console.log('🔄 Récupération des groupes pour:', user.id);
       
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -49,7 +59,7 @@ export const useGroups = () => {
         .eq('status', 'confirmed');
 
       if (participationError) {
-        console.error('❌ Erreur lors de la récupération des participations:', participationError);
+        console.error('❌ Erreur participations:', participationError);
         throw participationError;
       }
 
@@ -69,21 +79,22 @@ export const useGroups = () => {
         .order('created_at', { ascending: false });
 
       if (groupsError) {
-        console.error('❌ Erreur lors de la récupération des groupes:', groupsError);
+        console.error('❌ Erreur groupes:', groupsError);
         throw groupsError;
       }
 
       console.log('✅ Groupes récupérés:', groupsData?.length || 0);
       setUserGroups((groupsData || []) as Group[]);
     } catch (error) {
-      console.error('❌ Erreur dans fetchUserGroups:', error);
+      console.error('❌ Erreur fetchUserGroups:', error);
       toast({ 
         title: 'Erreur', 
         description: 'Impossible de récupérer vos groupes.', 
         variant: 'destructive' 
       });
     } finally {
-      isLoadingRef.current = false;
+      setLoading(false);
+      fetchingRef.current = false;
     }
   }, [user]);
 
@@ -102,7 +113,7 @@ export const useGroups = () => {
       return false;
     }
 
-    console.log('🎲 Démarrage de joinRandomGroup pour:', user.id);
+    console.log('🎲 Démarrage joinRandomGroup pour:', user.id);
     setLoading(true);
     
     try {
@@ -219,7 +230,11 @@ export const useGroups = () => {
         });
       }
 
-      await fetchUserGroups();
+      // Attendre un peu avant de rafraîchir pour éviter les conflits
+      setTimeout(() => {
+        fetchUserGroups();
+      }, 500);
+      
       return true;
     } catch (error) {
       console.error('❌ Erreur dans joinRandomGroup:', error);
@@ -291,7 +306,10 @@ export const useGroups = () => {
         description: 'Vous avez quitté le groupe avec succès.' 
       });
       
-      await fetchUserGroups();
+      // Attendre un peu avant de rafraîchir
+      setTimeout(() => {
+        fetchUserGroups();
+      }, 500);
     } catch (error) {
       console.error('❌ Erreur pour quitter le groupe:', error);
       toast({ 
@@ -304,13 +322,16 @@ export const useGroups = () => {
     }
   };
 
+  // Effect pour charger les groupes au montage et quand l'utilisateur change
   useEffect(() => {
     if (user) {
+      console.log('🔄 Utilisateur détecté, chargement des groupes...');
       fetchUserGroups();
     } else {
+      console.log('🚫 Pas d\'utilisateur, reset des groupes');
       setUserGroups([]);
     }
-  }, [user, fetchUserGroups]);
+  }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
 
   return {
     groups,

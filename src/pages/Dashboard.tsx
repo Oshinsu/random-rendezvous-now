@@ -13,11 +13,8 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { userGroups, loading, fetchUserGroups } = useGroups();
 
-  useEffect(() => {
-    if (user) {
-      fetchUserGroups();
-    }
-  }, [user]);
+  // Supprimer l'effet qui cause des appels répétés
+  // Le hook useGroups gère déjà le chargement initial
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
@@ -26,6 +23,11 @@ const Dashboard = () => {
   const completedGroups = userGroups.filter(group => 
     group.status === 'completed'
   );
+
+  const handleRefresh = () => {
+    console.log('🔄 Refresh manuel des groupes');
+    fetchUserGroups();
+  };
 
   return (
     <AppLayout>
@@ -114,7 +116,7 @@ const Dashboard = () => {
               </div>
               <div className="flex space-x-3">
                 <Button
-                  onClick={fetchUserGroups}
+                  onClick={handleRefresh}
                   disabled={loading}
                   variant="outline"
                   size="sm"
