@@ -5,10 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./contexts/AuthContext";
-import { useEffect } from "react"; // Corrected import
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -18,30 +19,25 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const location = useLocation();
 
   if (loading) {
-    // Afficher un indicateur de chargement pendant que l'état d'authentification est vérifié
     return <div className="flex justify-center items-center h-screen"><p>Chargement...</p></div>;
   }
 
   if (!user) {
-    // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
-    // en conservant l'URL de provenance pour une redirection après connexion
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
   return children;
 };
 
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      {/* BrowserRouter est déplacé dans main.tsx */}
       <Routes>
-        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} /> {/* Index est maintenant protégé */}
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/auth" element={<AuthPage />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>

@@ -1,8 +1,21 @@
 
 import { Button } from "@/components/ui/button";
 import { Download, Zap } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleMainAction = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <section className="py-20 md:py-32 bg-background text-foreground animate-fade-in">
       <div className="container mx-auto px-6 text-center">
@@ -14,14 +27,26 @@ const HeroSection = () => {
           Des groupes de 5, au pif, dans un bar près de toi. L'anti-app de rencontre. Juste du hasard, de vraies rencontres.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg w-full sm:w-auto">
-            <Download className="mr-2 h-5 w-5" /> Télécharger l'App (Bientôt!)
+          <Button 
+            onClick={handleMainAction}
+            size="lg" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-6 text-lg w-full sm:w-auto"
+          >
+            <Zap className="mr-2 h-5 w-5" />
+            {user ? 'Aller au Dashboard' : 'Commencer l\'Aventure'}
           </Button>
-          <Button variant="outline" size="lg" className="text-primary-foreground border-primary hover:bg-primary/10 font-semibold px-8 py-6 text-lg w-full sm:w-auto">
-             <Zap className="mr-2 h-5 w-5" /> Rejoindre la Révolution
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="text-primary-foreground border-primary hover:bg-primary/10 font-semibold px-8 py-6 text-lg w-full sm:w-auto"
+          >
+             <Download className="mr-2 h-5 w-5" /> 
+             {user ? 'Inviter des Amis' : 'Rejoindre la Révolution'}
           </Button>
         </div>
-        <p className="mt-8 text-sm text-muted-foreground">Disponible prochainement sur iOS & Android.</p>
+        <p className="mt-8 text-sm text-muted-foreground">
+          {user ? 'Prêt pour votre prochaine aventure Random ?' : 'Créez votre compte et lancez-vous !'}
+        </p>
       </div>
     </section>
   );
