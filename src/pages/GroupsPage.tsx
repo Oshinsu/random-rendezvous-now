@@ -3,7 +3,6 @@ import { useGroups } from '@/hooks/useGroups';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ArrowLeft, UserX } from 'lucide-react';
-import RandomButton from '@/components/RandomButton';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
 import GroupChat from '@/components/GroupChat';
@@ -67,7 +66,7 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Message quand pas de groupe actif - SEULEMENT AFFICHER CECI si pas de groupe */}
+            {/* Message quand pas de groupe actif - SANS RandomButton */}
             {!loading && !currentGroup && (
               <div className="text-center py-20">
                 <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-8">
@@ -81,9 +80,8 @@ const GroupsPage = () => {
                 </p>
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 max-w-md mx-auto mb-8">
                   <p className="text-amber-800 font-medium mb-4">
-                    💡 Pour accéder à cette page, vous devez d'abord rejoindre un groupe d'aventure !
+                    💡 Pour accéder à cette page, vous devez d'abord rejoindre un groupe d'aventure depuis le tableau de bord !
                   </p>
-                  <RandomButton size="lg" />
                 </div>
                 <Button
                   variant="outline"
