@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Group, GroupParticipant } from '@/types/database';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 // Liste des bars parisiens pour la sélection aléatoire
 const PARIS_BARS = [
@@ -80,7 +80,7 @@ export const useGroups = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, loading]);
+  }, [user]);
 
   const joinRandomGroup = async () => {
     if (!user) {
@@ -323,7 +323,7 @@ export const useGroups = () => {
   };
 
   useEffect(() => {
-    if (user && !loading) {
+    if (user) {
       fetchUserGroups();
     }
   }, [user, fetchUserGroups]);
