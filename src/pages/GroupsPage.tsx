@@ -2,7 +2,7 @@
 import { useGroups } from '@/hooks/useGroups';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Users, ArrowLeft, UserX } from 'lucide-react';
+import { RefreshCw, ArrowLeft, UserX } from 'lucide-react';
 import RandomButton from '@/components/RandomButton';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
@@ -55,41 +55,43 @@ const GroupsPage = () => {
       <div className="min-h-full bg-gradient-to-br from-white via-brand-50/30 to-brand-100/20">
         <div className="px-4 md:px-8 py-8">
           <div className="max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 hover:text-neutral-800"
-                  onClick={() => window.history.back()}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Retour
-                </Button>
-                <div>
-                  <h1 className="text-3xl font-display font-bold text-neutral-800">
-                    Mon Groupe
-                  </h1>
-                  <p className="text-neutral-600 font-body">
-                    Suivez l'évolution de votre aventure en temps réel
-                  </p>
+            {/* Header - seulement si on a un groupe actif */}
+            {currentGroup && (
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-neutral-600 hover:text-neutral-800"
+                    onClick={() => window.history.back()}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Retour
+                  </Button>
+                  <div>
+                    <h1 className="text-3xl font-display font-bold text-neutral-800">
+                      Mon Groupe
+                    </h1>
+                    <p className="text-neutral-600 font-body">
+                      Suivez l'évolution de votre aventure en temps réel
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleRefresh}
+                    disabled={loading}
+                    variant="outline"
+                    size="sm"
+                    className="bg-white/50 backdrop-blur-sm border-brand-300 text-brand-700 hover:bg-brand-50"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Actualiser
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleRefresh}
-                  disabled={loading}
-                  variant="outline"
-                  size="sm"
-                  className="bg-white/50 backdrop-blur-sm border-brand-300 text-brand-700 hover:bg-brand-50"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Actualiser
-                </Button>
-              </div>
-            </div>
+            )}
 
             {/* État de chargement */}
             {loading && userGroups.length === 0 && (
@@ -131,7 +133,7 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Affichage du groupe actif */}
+            {/* Affichage du groupe actif - SEULEMENT si il y a un groupe */}
             {currentGroup && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Colonne gauche - Membres */}
