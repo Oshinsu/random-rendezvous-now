@@ -99,36 +99,44 @@ const GroupsPage = () => {
               </div>
             )}
 
-            {/* Affichage des groupes */}
+            {/* Affichage des groupes - SANS DUPLICATION */}
             {userGroups.length > 0 && (
               <div className="space-y-12">
-                {/* Groupes actifs */}
+                {/* Groupes actifs uniquement */}
                 {activeGroups.length > 0 && (
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <Clock className="h-5 w-5 text-blue-600" />
                       Groupes Actifs ({activeGroups.length})
                     </h2>
-                    <GroupsList
-                      groups={activeGroups}
-                      title=""
-                      emptyMessage=""
-                    />
+                    <div className="grid gap-6 lg:grid-cols-2">
+                      {activeGroups.map((group) => (
+                        <GroupCard 
+                          key={group.id} 
+                          group={group} 
+                          showLeaveButton={true}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {/* Aventures terminées */}
+                {/* Aventures terminées uniquement */}
                 {completedGroups.length > 0 && (
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                       <Trophy className="h-5 w-5 text-green-600" />
                       Aventures Terminées ({completedGroups.length})
                     </h2>
-                    <GroupsList
-                      groups={completedGroups}
-                      title=""
-                      emptyMessage=""
-                    />
+                    <div className="grid gap-6 lg:grid-cols-2">
+                      {completedGroups.map((group) => (
+                        <GroupCard 
+                          key={group.id} 
+                          group={group} 
+                          showLeaveButton={false}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
