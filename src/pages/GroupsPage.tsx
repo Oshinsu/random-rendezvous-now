@@ -39,6 +39,19 @@ const GroupsPage = () => {
       `${currentGroup.bar_latitude}, ${currentGroup.bar_longitude}` : 'Non défini'
   });
 
+  // Fonction pour obtenir l'adresse du bar ou une adresse par défaut
+  const getBarAddress = () => {
+    if (currentGroup?.bar_address) {
+      return currentGroup.bar_address;
+    }
+    // Si on a des coordonnées mais pas d'adresse, afficher les coordonnées
+    if (currentGroup?.bar_latitude && currentGroup?.bar_longitude) {
+      return `Coordonnées: ${currentGroup.bar_latitude.toFixed(4)}, ${currentGroup.bar_longitude.toFixed(4)}`;
+    }
+    // Sinon, afficher un message d'attente
+    return "Adresse en cours de recherche...";
+  };
+
   return (
     <AppLayout>
       <div className="min-h-full bg-gradient-to-br from-white via-brand-50/30 to-brand-100/20">
@@ -151,7 +164,7 @@ const GroupsPage = () => {
                   {isGroupComplete && currentGroup.bar_name && (
                     <GroupMap
                       barName={currentGroup.bar_name}
-                      barAddress={currentGroup.bar_address || "Adresse en cours de recherche..."}
+                      barAddress={getBarAddress()}
                       meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
                       isGroupComplete={isGroupComplete}
                       barLatitude={currentGroup.bar_latitude}
@@ -202,11 +215,11 @@ const GroupsPage = () => {
                               {currentGroup.bar_name}
                             </span>
                           </div>
-                          {currentGroup.bar_address && (
+                          {(currentGroup.bar_address || (currentGroup.bar_latitude && currentGroup.bar_longitude)) && (
                             <div className="flex justify-between">
                               <span className="text-neutral-600">Adresse :</span>
                               <span className="font-medium text-neutral-800 text-right max-w-48 truncate">
-                                {currentGroup.bar_address}
+                                {getBarAddress()}
                               </span>
                             </div>
                           )}

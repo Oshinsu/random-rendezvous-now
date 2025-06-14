@@ -9,7 +9,8 @@ const corsHeaders = {
 interface PlaceResult {
   place_id: string;
   name: string;
-  formatted_address: string;
+  formatted_address?: string;
+  vicinity?: string;
   geometry: {
     location: {
       lat: number;
@@ -92,15 +93,27 @@ serve(async (req) => {
 
     const selectedBar = goodBars[0] || data.results[0];
     
-    console.log('🍺 Bar sélectionné:', {
+    // Améliorer la gestion de l'adresse
+    const barAddress = selectedBar.formatted_address || selectedBar.vicinity || `Coordonnées: ${selectedBar.geometry.location.lat.toFixed(4)}, ${selectedBar.geometry.location.lng.toFixed(4)}`;
+    
+    const result = {
+      place_id: selectedBar.place_id,
       name: selectedBar.name,
-      address: selectedBar.formatted_address,
+      formatted_address: barAddress,
+      geometry: selectedBar.geometry,
       rating: selectedBar.rating,
-      location: selectedBar.geometry.location
+      price_level: selectedBar.price_level
+    };
+    
+    console.log('🍺 Bar sélectionné avec adresse améliorée:', {
+      name: result.name,
+      address: result.formatted_address,
+      rating: result.rating,
+      location: result.geometry.location
     });
 
     return new Response(
-      JSON.stringify(selectedBar),
+      JSON.stringify(result),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
