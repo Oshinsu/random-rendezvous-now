@@ -70,7 +70,8 @@ export const useGroups = () => {
       }
 
       console.log('User groups data:', groupsData);
-      setUserGroups(groupsData || []);
+      // Type cast the data to match our Group interface
+      setUserGroups((groupsData || []) as Group[]);
     } catch (error) {
       console.error('Error fetching user groups:', error);
       toast({ 
@@ -197,7 +198,7 @@ export const useGroups = () => {
 
       // Mettre à jour le nombre de participants
       const newParticipantCount = targetGroup.current_participants + 1;
-      const newStatus = newParticipantCount >= 5 ? 'full' : 'waiting';
+      const newStatus = newParticipantCount >= 5 ? 'confirmed' : 'waiting';
 
       let updateData: any = { 
         current_participants: newParticipantCount,
@@ -205,7 +206,7 @@ export const useGroups = () => {
       };
 
       // Si le groupe est complet, assigner un bar et une heure
-      if (newStatus === 'full') {
+      if (newStatus === 'confirmed') {
         const randomBar = getRandomBar();
         const meetingTime = new Date(Date.now() + 2 * 60 * 60 * 1000); // Dans 2h
         
@@ -213,8 +214,7 @@ export const useGroups = () => {
           ...updateData,
           bar_name: randomBar.name,
           bar_address: randomBar.address,
-          meeting_time: meetingTime.toISOString(),
-          status: 'confirmed'
+          meeting_time: meetingTime.toISOString()
         };
       }
 
