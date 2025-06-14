@@ -1,6 +1,7 @@
 
 import { useGroups } from '@/hooks/useGroups';
 import GroupsList from '@/components/GroupsList';
+import GroupCard from '@/components/GroupCard';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Users, Trophy, Clock } from 'lucide-react';
