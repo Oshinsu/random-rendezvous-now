@@ -34,7 +34,7 @@ const GroupMap = ({
   }
 
   // Vérifier si on a des coordonnées précises ou si on utilise les coordonnées par défaut
-  const hasExactLocation = barLatitude && barLongitude;
+  const hasExactLocation = !!(barLatitude && barLongitude);
 
   const handleOpenInGoogleMaps = () => {
     openInGoogleMaps(barLatitude, barLongitude, barName, barAddress);
