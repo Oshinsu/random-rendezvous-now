@@ -73,6 +73,26 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     return userIndex >= 0 ? `Rander ${userIndex + 1}` : 'Utilisateur';
   };
 
+  // Ne pas afficher le chat si l'utilisateur n'est pas connecté
+  if (!user) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-600">
+            <MessageCircle className="h-5 w-5" />
+            Chat du groupe
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>Connectez-vous pour accéder au chat</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!isGroupComplete) {
     return (
       <Card className="w-full">

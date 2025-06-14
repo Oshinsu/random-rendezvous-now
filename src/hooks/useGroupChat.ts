@@ -21,7 +21,7 @@ export const useGroupChat = (groupId: string) => {
 
   // Charger les messages existants
   const loadMessages = async () => {
-    if (!groupId) return;
+    if (!groupId || !user) return;
     
     setLoading(true);
     try {
@@ -104,7 +104,7 @@ export const useGroupChat = (groupId: string) => {
 
   // Configuration realtime
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId || !user) return;
 
     console.log('🛰️ Configuration realtime pour groupe:', groupId);
     
@@ -135,13 +135,15 @@ export const useGroupChat = (groupId: string) => {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🛰️ Statut de souscription:', status);
+      });
 
     return () => {
       console.log('🛰️ Nettoyage souscription realtime');
       supabase.removeChannel(channel);
     };
-  }, [groupId]);
+  }, [groupId, user]);
 
   return {
     messages,
