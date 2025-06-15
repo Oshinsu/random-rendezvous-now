@@ -31,17 +31,28 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Rechargement simple quand on change de groupe - sans timers
+  // Nettoyage agressif lors du changement de groupe
   useEffect(() => {
     if (groupId && user) {
-      console.log('🔄 Changement de groupe détecté:', groupId);
+      console.log('🔄 Changement de groupe détecté, nettoyage complet:', groupId);
+      // Forcer un nettoyage complet et un rechargement
       invalidateMessages();
+      // Attendre un tick pour s'assurer que le cache est nettoyé
+      setTimeout(() => {
+        refreshMessages();
+      }, 100);
     }
   }, [groupId, user?.id]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     if (!groupId || !user) {
       console.error('❌ Impossible d\'envoyer un message sans groupe ou utilisateur');
+      return false;
+    }
+
+    // Vérification supplémentaire avant envoi
+    if (!messageText.trim()) {
+      console.error('❌ Message vide, envoi annulé');
       return false;
     }
 
