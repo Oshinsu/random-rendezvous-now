@@ -40,7 +40,7 @@ const Dashboard = () => {
           <button
             onClick={handleButtonClick}
             disabled={loading}
-            className={`
+            className="
               relative w-40 h-40 rounded-full 
               bg-gradient-to-br from-brand-400 to-brand-600 
               shadow-glow hover:shadow-glow-strong
@@ -48,15 +48,19 @@ const Dashboard = () => {
               hover:scale-105 active:scale-95
               focus:outline-none focus:ring-4 focus:ring-brand-300
               disabled:opacity-50 disabled:cursor-not-allowed
-              ${isSearching ? 'animate-spin' : ''}
-            `}
-            style={{
-              animationDuration: isSearching ? '2s' : undefined,
-              animationTimingFunction: 'linear',
-              animationIterationCount: 'infinite'
-            }}
+            "
           >
-            <div className="absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm">
+            <div 
+              className={`
+                absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm
+                ${isSearching ? 'animate-spin' : ''}
+              `}
+              style={{
+                animationDuration: isSearching ? '2s' : undefined,
+                animationTimingFunction: 'linear',
+                animationIterationCount: 'infinite'
+              }}
+            >
               <div className="flex items-center justify-center w-full h-full">
                 <RandomLogo 
                   size={80} 
