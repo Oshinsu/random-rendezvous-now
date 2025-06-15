@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -17,32 +16,12 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Récupérer les participations de l'utilisateur avec les détails des groupes
+      // D'abord récupérer les participations de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
-        .select(`
-          group_id,
-          groups!inner (
-            id,
-            created_at,
-            status,
-            bar_name,
-            bar_address,
-            meeting_time,
-            max_participants,
-            current_participants,
-            latitude,
-            longitude,
-            location_name,
-            search_radius,
-            bar_latitude,
-            bar_longitude,
-            bar_place_id
-          )
-        `)
+        .select('group_id')
         .eq('user_id', userId)
-        .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed', 'full']);
+        .eq('status', 'confirmed');
 
       if (participationError) {
         console.error('❌ Erreur récupération participations:', participationError);
@@ -54,11 +33,21 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Extraire les groupes des participations
-      const groups = participations.map(p => p.groups).filter(Boolean) as Group[];
+      // Ensuite récupérer les détails des groupes
+      const groupIds = participations.map(p => p.group_id);
+      const { data: groups, error: groupsError } = await supabase
+        .from('groups')
+        .select('*')
+        .in('id', groupIds)
+        .in('status', ['waiting', 'confirmed', 'full']);
 
-      console.log('✅ Groupes récupérés:', groups.length);
-      return groups;
+      if (groupsError) {
+        console.error('❌ Erreur récupération groupes:', groupsError);
+        return [];
+      }
+
+      console.log('✅ Groupes récupérés:', groups?.length || 0);
+      return (groups || []) as Group[];
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
       return [];

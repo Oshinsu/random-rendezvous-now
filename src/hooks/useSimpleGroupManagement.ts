@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
@@ -51,23 +51,29 @@ export const useSimpleGroupManagement = () => {
     }
   };
 
-  // Récupérer les membres du groupe actuel
-  useEffect(() => {
-    const fetchGroupMembers = async () => {
-      if (userGroups.length > 0) {
-        const members = await SimpleGroupService.getGroupMembers(userGroups[0].id);
-        setGroupMembers(members);
-        
-        if (user) {
-          await SimpleGroupService.updateUserActivity(userGroups[0].id, user.id);
-        }
-      } else {
-        setGroupMembers([]);
+  // Récupérer les membres du groupe actuel - avec useCallback pour éviter la boucle infinie
+  const fetchGroupMembers = useCallback(async (groupId: string) => {
+    try {
+      const members = await SimpleGroupService.getGroupMembers(groupId);
+      setGroupMembers(members);
+      
+      if (user) {
+        await SimpleGroupService.updateUserActivity(groupId, user.id);
       }
-    };
+    } catch (error) {
+      console.error('❌ Erreur fetchGroupMembers:', error);
+      setGroupMembers([]);
+    }
+  }, [user]);
 
-    fetchGroupMembers();
-  }, [userGroups, user]);
+  // Effect pour récupérer les membres quand les groupes changent
+  useEffect(() => {
+    if (userGroups.length > 0) {
+      fetchGroupMembers(userGroups[0].id);
+    } else {
+      setGroupMembers([]);
+    }
+  }, [userGroups, fetchGroupMembers]);
 
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
