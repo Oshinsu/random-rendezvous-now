@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -295,4 +294,4 @@ export const useGroups = () => {
   };
 };
 
-export { GroupMember } from '@/types/groups';
+export type { GroupMember } from '@/types/groups';
