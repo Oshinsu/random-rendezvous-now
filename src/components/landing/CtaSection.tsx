@@ -1,8 +1,21 @@
 
 import { Button } from "@/components/ui/button";
 import { Rocket } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const CtaSection = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleMainAction = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return (
     <section className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-6 text-center">
@@ -13,12 +26,16 @@ const CtaSection = () => {
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
           Rejoins l'aventure Random. Les premiers à tenter l'expérience ne le regrettent jamais.
         </p>
-        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-10 py-6 text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group">
+        <Button 
+          onClick={handleMainAction}
+          size="lg" 
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-10 py-6 text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
+        >
           <Rocket className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-          Rejoindre l'Aventure
+          {user ? 'Chercher un groupe' : 'Rejoindre l\'Aventure'}
         </Button>
         <p className="mt-6 text-sm text-muted-foreground">
-          Promis, on ne spam pas. Juste l'annonce du lancement et quelques surprises... aléatoires, évidemment.
+          Gratuit et sans engagement. Juste l'envie de vivre quelque chose d'unique.
         </p>
       </div>
     </section>

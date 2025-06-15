@@ -24,7 +24,7 @@ const HeroSection = () => {
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
           Marre des swipes sans fin et des plans foireux ? Random te connecte à 4 inconnus dans un bar surprise. 
-          <span className="font-semibold text-foreground"> 1€, 1 clic, 1 aventure.</span>
+          <span className="font-semibold text-foreground"> 1 clic, 1 aventure, 100% gratuit.</span>
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
           <Button 

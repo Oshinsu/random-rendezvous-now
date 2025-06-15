@@ -19,8 +19,8 @@ const benefits = [
   },
   {
     icon: <ShieldCheck className="w-8 h-8 text-primary" />,
-    title: "Sécurisé & Fiable",
-    description: "1€ pour filtrer les motivés. Bars partenaires sélectionnés. Ta sécurité, notre priorité absolue.",
+    title: "Gratuit & Fiable",
+    description: "Expérience 100% gratuite pour commencer. Bars partenaires sélectionnés. Ta sécurité, notre priorité absolue.",
   },
 ];
 

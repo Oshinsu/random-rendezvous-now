@@ -15,7 +15,7 @@ const steps = [
   {
     icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
     title: "3. Destination révélée",
-    description: "Le bar s'affiche une fois le groupe complet. 1€ symbolique pour valider ton engagement.",
+    description: "Le bar s'affiche une fois le groupe complet. Totalement gratuit pour découvrir l'expérience.",
   },
   {
     icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,

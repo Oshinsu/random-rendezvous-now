@@ -9,10 +9,10 @@ import {
 const faqs = [
   {
     question: "Vraiment 100% random ? Et si je tombe avec des gens bizarres ?",
-    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote pour 1€. Le risque fait partie du charme, non ?",
+    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote à raconter. Le risque fait partie du charme, non ?",
   },
   {
-    question: "Pourquoi je ne vois pas le bar avant de payer ?",
+    question: "Pourquoi je ne vois pas le bar avant de confirmer ?",
     answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection croissante de bars partenaires.",
   },
   {
@@ -20,12 +20,12 @@ const faqs = [
     answer: "Random n'est pas Tinder en groupe. L'objectif : passer un bon moment et élargir ton cercle social. Reste ouvert, la magie opère souvent quand on s'y attend le moins !",
   },
   {
-    question: "Pourquoi payer 1€ ?",
-    answer: "Pour s'assurer que tout le monde est motivé (fini les lapins !), éviter les faux profils, et nous permettre d'améliorer constamment l'expérience sans pub intrusive.",
+    question: "C'est vraiment gratuit ?",
+    answer: "Oui, complètement ! On veut que tu découvres l'expérience Random sans barrière. Notre mission : révolutionner tes soirées, pas vider ton portefeuille.",
   },
   {
     question: "C'est sécurisé ?",
-    answer: "Totalement. Paiement sécurisé, lieux publics uniquement, et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit = notre obsession."
+    answer: "Totalement. Lieux publics uniquement, et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit = notre obsession."
   }
 ];
 
