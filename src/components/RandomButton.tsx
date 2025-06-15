@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dice6, Users, Clock, Sparkles, Zap, Star, Target, MapPin, Navigation } from 'lucide-react';
@@ -22,7 +23,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
       console.log('🚫 Bouton désactivé - loading:', loading, 'rolling:', isRolling);
       return;
     }
-    console.log('🎲 Bouton Random cliqué');
+    console.log('🎲 Bouton Random cliqué - géolocalisation sera demandée maintenant');
     setIsRolling(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -86,7 +87,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
           <span className="font-heading font-semibold text-neutral-700">
             {userLocation 
               ? `Position: ${userLocation.locationName}`
-              : 'Géolocalisation indisponible - matching universel'
+              : 'Cliquez pour démarrer et localiser'
             }
           </span>
         </div>

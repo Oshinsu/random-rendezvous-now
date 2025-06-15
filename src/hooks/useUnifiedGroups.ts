@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
@@ -100,11 +100,7 @@ export const useUnifiedGroups = () => {
     staleTime: 5000,
   });
 
-  useEffect(() => {
-    if (user && !userLocation && !isGettingLocation.current) {
-      getUserLocation();
-    }
-  }, [user, userLocation]);
+  // Suppression de l'useEffect qui déclenchait la géolocalisation automatiquement
 
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
@@ -130,6 +126,8 @@ export const useUnifiedGroups = () => {
       return false;
     }
 
+    // SEULEMENT maintenant on demande la géolocalisation
+    console.log('🎯 Demande de géolocalisation déclenchée par le bouton');
     const location = await getUserLocation();
     if (!location) {
       toast({ 
