@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +26,7 @@ export interface GroupMember {
   isConnected: boolean;
   joinedAt: string;
   status: 'confirmed' | 'pending';
+  lastSeen?: string; // Ajout du champ last_seen
 }
 
 // Global channel reference to prevent multiple subscriptions
@@ -47,6 +47,37 @@ export const useGroups = () => {
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef<number>(0);
   const syncingGroupsRef = useRef(new Set<string>()); // Track des groupes en cours de synchronisation
+
+  // Fonction pour mettre à jour le last_seen de l'utilisateur actuel
+  const updateUserLastSeen = useCallback(async (groupId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('group_participants')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('❌ Erreur mise à jour last_seen:', error);
+      } else {
+        console.log('✅ Last_seen mis à jour pour le groupe:', groupId);
+      }
+    } catch (error) {
+      console.error('❌ Erreur updateUserLastSeen:', error);
+    }
+  }, [user]);
+
+  // Fonction pour déterminer si un utilisateur est "connecté" basé sur last_seen
+  const isUserConnected = (lastSeen: string): boolean => {
+    const lastSeenDate = new Date(lastSeen);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+    
+    // Considérer un utilisateur comme connecté s'il a été vu dans les 10 dernières minutes
+    return diffMinutes <= 10;
+  };
 
   // Obtenir la géolocalisation de l'utilisateur au montage
   useEffect(() => {
@@ -115,19 +146,20 @@ export const useGroups = () => {
     }
   };
 
-  // Fonction pour récupérer les membres d'un groupe AVEC CORRECTION DU COMPTAGE
+  // Fonction pour récupérer les membres d'un groupe AVEC NOUVEAU SYSTÈME last_seen
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     try {
-      console.log('👥 [CORRECTION] Récupération des VRAIS membres du groupe:', groupId);
+      console.log('👥 [LAST_SEEN] Récupération des membres avec statut de connexion:', groupId);
       
-      // ÉTAPE 1: Récupérer TOUS les participants confirmés
+      // ÉTAPE 1: Récupérer TOUS les participants confirmés avec last_seen
       const { data: participantsData, error: participantsError } = await supabase
         .from('group_participants')
         .select(`
           id,
           user_id,
           joined_at,
-          status
+          status,
+          last_seen
         `)
         .eq('group_id', groupId)
         .eq('status', 'confirmed')
@@ -139,7 +171,7 @@ export const useGroups = () => {
       }
 
       const realParticipantCount = participantsData?.length || 0;
-      console.log('🔍 [CORRECTION] Nombre RÉEL de participants confirmés:', realParticipantCount);
+      console.log('🔍 [LAST_SEEN] Nombre RÉEL de participants confirmés:', realParticipantCount);
 
       // ÉTAPE 2: Vérifier le comptage dans la table groups
       const { data: currentGroup, error: groupError } = await supabase
@@ -151,11 +183,11 @@ export const useGroups = () => {
       if (groupError) {
         console.error('❌ Erreur récupération groupe:', groupError);
       } else {
-        console.log('📊 [CORRECTION] Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
+        console.log('📊 [LAST_SEEN] Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
         
         // ÉTAPE 3: FORCER la correction si les comptages ne correspondent pas
         if (currentGroup.current_participants !== realParticipantCount) {
-          console.log('🚨 [CORRECTION] INCOHÉRENCE DÉTECTÉE ! Correction forcée...');
+          console.log('🚨 [LAST_SEEN] INCOHÉRENCE DÉTECTÉE ! Correction forcée...');
           
           // Déterminer le nouveau statut
           let newStatus = currentGroup.status;
@@ -176,7 +208,7 @@ export const useGroups = () => {
               bar_longitude: null,
               bar_place_id: null
             };
-            console.log('⏳ [CORRECTION] Remise en waiting et suppression du bar');
+            console.log('⏳ [LAST_SEEN] Remise en waiting et suppression du bar');
           }
 
           // Appliquer la correction
@@ -186,9 +218,9 @@ export const useGroups = () => {
             .eq('id', groupId);
 
           if (correctionError) {
-            console.error('❌ [CORRECTION] Erreur lors de la correction:', correctionError);
+            console.error('❌ [LAST_SEEN] Erreur lors de la correction:', correctionError);
           } else {
-            console.log('✅ [CORRECTION] Comptage corrigé avec succès:', realParticipantCount);
+            console.log('✅ [LAST_SEEN] Comptage corrigé avec succès:', realParticipantCount);
           }
         }
       }
@@ -198,20 +230,23 @@ export const useGroups = () => {
         return [];
       }
 
-      // ÉTAPE 4: Transformer les données avec noms masqués
+      // ÉTAPE 4: Transformer les données avec noms masqués ET statut de connexion
       const members: GroupMember[] = participantsData.map((participant: any, index: number) => {
         const maskedName = `Rander ${index + 1}`;
+        const lastSeenValue = participant.last_seen || participant.joined_at;
+        const isConnected = isUserConnected(lastSeenValue);
 
         return {
           id: participant.id,
           name: maskedName,
-          isConnected: true, // Tous connectés pour le test
+          isConnected: isConnected,
           joinedAt: participant.joined_at,
-          status: participant.status as 'confirmed' | 'pending'
+          status: participant.status as 'confirmed' | 'pending',
+          lastSeen: lastSeenValue
         };
       });
 
-      console.log('✅ [CORRECTION] Membres finaux avec comptage corrigé:', members.length);
+      console.log('✅ [LAST_SEEN] Membres finaux avec statut de connexion:', members.map(m => ({ name: m.name, connected: m.isConnected })));
       setGroupMembers(members);
       return members;
     } catch (error) {
@@ -247,7 +282,7 @@ export const useGroups = () => {
     setLoading(true);
     
     try {
-      console.log('🔄 [CORRECTION] Récupération des groupes pour:', user.id);
+      console.log('🔄 [LAST_SEEN] Récupération des groupes pour:', user.id);
       
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -281,13 +316,15 @@ export const useGroups = () => {
         throw groupsError;
       }
 
-      console.log('✅ [CORRECTION] Groupes récupérés avant correction:', groupsData?.length || 0);
+      console.log('✅ [LAST_SEEN] Groupes récupérés avant correction:', groupsData?.length || 0);
 
       // CORRECTION OBLIGATOIRE: Vérifier et corriger CHAQUE groupe
       if (groupsData && groupsData.length > 0) {
         for (const group of groupsData) {
-          console.log(`🔍 [CORRECTION] Vérification du groupe ${group.id}...`);
+          console.log(`🔍 [LAST_SEEN] Vérification du groupe ${group.id}...`);
           await fetchGroupMembers(group.id);
+          // Mettre à jour le last_seen de l'utilisateur pour ce groupe
+          await updateUserLastSeen(group.id);
         }
         
         // Re-fetch les groupes après toutes les corrections
@@ -298,7 +335,7 @@ export const useGroups = () => {
           .order('created_at', { ascending: false });
         
         const finalGroups = (correctedGroups || []) as Group[];
-        console.log('📊 [CORRECTION] Groupes après correction complète:', finalGroups);
+        console.log('📊 [LAST_SEEN] Groupes après correction complète:', finalGroups);
         setUserGroups(finalGroups);
 
         // Charger les membres du premier groupe actif (après correction)
@@ -320,7 +357,7 @@ export const useGroups = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user, fetchGroupMembers, clearUserGroupsState]);
+  }, [user, fetchGroupMembers, clearUserGroupsState, updateUserLastSeen]);
 
   // Fonction améliorée pour synchroniser le comptage des participants (SIMPLIFIÉE)
   const syncGroupParticipantCount = async (groupId: string) => {
@@ -417,7 +454,7 @@ export const useGroups = () => {
     return R * c;
   };
 
-  // Fonction pour rejoindre un groupe aléatoire
+  // Fonction pour rejoindre un groupe aléatoire - MISE À JOUR avec last_seen
   const joinRandomGroup = async () => {
     if (!user) {
       toast({ 
@@ -433,7 +470,7 @@ export const useGroups = () => {
       return false;
     }
 
-    console.log('🎲 Démarrage joinRandomGroup pour:', user.id);
+    console.log('🎲 [LAST_SEEN] Démarrage joinRandomGroup pour:', user.id);
     setLoading(true);
     
     try {
@@ -525,11 +562,12 @@ export const useGroups = () => {
         console.log('✅ Nouveau groupe créé:', targetGroup.id);
       }
 
-      // Ajouter l'utilisateur au groupe
+      // Ajouter l'utilisateur au groupe avec last_seen initialisé
       const participantData: any = {
         group_id: targetGroup.id,
         user_id: user.id,
-        status: 'confirmed'
+        status: 'confirmed',
+        last_seen: new Date().toISOString() // Initialiser last_seen
       };
 
       // Ajouter la géolocalisation du participant si disponible
@@ -548,7 +586,7 @@ export const useGroups = () => {
         throw joinError;
       }
 
-      console.log('✅ Utilisateur ajouté au groupe avec succès');
+      console.log('✅ [LAST_SEEN] Utilisateur ajouté au groupe avec last_seen initialisé');
 
       // Attendre un peu avant de rafraîchir pour éviter les conflits
       setTimeout(() => {
@@ -578,7 +616,7 @@ export const useGroups = () => {
 
     setLoading(true);
     try {
-      console.log('🚪 [CORRECTION] Quitter le groupe:', groupId, 'utilisateur:', user.id);
+      console.log('🚪 [LAST_SEEN] Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
       // ÉTAPE 1: Nettoyer immédiatement l'état local pour un feedback visuel instantané
       console.log('🧹 Nettoyage immédiat de l\'état local');
@@ -597,15 +635,15 @@ export const useGroups = () => {
         throw deleteError;
       }
 
-      console.log('✅ [CORRECTION] Participation supprimée avec succès');
+      console.log('✅ [LAST_SEEN] Participation supprimée avec succès');
 
       // ÉTAPE 3: FORCER la correction du comptage immédiatement
       const realCount = await getCurrentParticipantCount(groupId);
-      console.log('📊 [CORRECTION] Participants restants après départ:', realCount);
+      console.log('📊 [LAST_SEEN] Participants restants après départ:', realCount);
 
       if (realCount === 0) {
         // Supprimer le groupe s'il est vide
-        console.log('🗑️ [CORRECTION] Suppression du groupe vide');
+        console.log('🗑️ [LAST_SEEN] Suppression du groupe vide');
         await supabase
           .from('groups')
           .delete()
@@ -627,7 +665,7 @@ export const useGroups = () => {
             bar_longitude: null,
             bar_place_id: null
           };
-          console.log('⏳ [CORRECTION] Remise en waiting et suppression du bar');
+          console.log('⏳ [LAST_SEEN] Remise en waiting et suppression du bar');
         }
 
         await supabase
@@ -695,7 +733,7 @@ export const useGroups = () => {
             table: 'group_participants',
           },
           (payload) => {
-            console.log('🛰️ [Realtime] Changement détecté sur group_participants:', payload);
+            console.log('🛰️ [LAST_SEEN] Changement détecté sur group_participants:', payload);
             
             // Débounce plus court pour plus de réactivité
             const debounceKey = 'realtime-participants-update';
@@ -713,7 +751,7 @@ export const useGroups = () => {
             table: 'groups',
           },
           (payload) => {
-            console.log('🛰️ [Realtime] Changement détecté sur groups:', payload);
+            console.log('🛰️ [LAST_SEEN] Changement détecté sur groups:', payload);
             
             // Débounce encore plus court pour les mises à jour de groupes (assignation de bar)
             const debounceKey = 'realtime-groups-update';
@@ -739,6 +777,22 @@ export const useGroups = () => {
       }
     };
   }, [user?.id, fetchUserGroups]);
+
+  // Effect pour mettre à jour périodiquement le last_seen de l'utilisateur
+  useEffect(() => {
+    if (!user || userGroups.length === 0) return;
+
+    const updateLastSeenPeriodically = () => {
+      userGroups.forEach(group => {
+        updateUserLastSeen(group.id);
+      });
+    };
+
+    // Mettre à jour le last_seen toutes les 2 minutes
+    const interval = setInterval(updateLastSeenPeriodically, 2 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user, userGroups, updateUserLastSeen]);
 
   return {
     groups,

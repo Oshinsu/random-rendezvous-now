@@ -26,6 +26,7 @@ export interface GroupParticipant {
   latitude?: number;
   longitude?: number;
   location_name?: string;
+  last_seen?: string; // Nouveau champ pour tracker l'activité
 }
 
 export interface UserProfile {

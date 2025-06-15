@@ -49,6 +49,7 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
+          last_seen: string | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
@@ -59,6 +60,7 @@ export type Database = {
           group_id: string
           id?: string
           joined_at?: string
+          last_seen?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
@@ -69,6 +71,7 @@ export type Database = {
           group_id?: string
           id?: string
           joined_at?: string
+          last_seen?: string | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
@@ -216,6 +219,10 @@ export type Database = {
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
+      }
+      dissolve_old_groups: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
