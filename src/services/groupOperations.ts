@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
@@ -27,7 +26,17 @@ export class GroupOperationsService {
       return false;
     }
 
-    console.log('🎲 [LAST_SEEN] Démarrage joinRandomGroup pour:', user.id);
+    // GÉOLOCALISATION OBLIGATOIRE
+    if (!userLocation) {
+      toast({ 
+        title: 'Géolocalisation requise', 
+        description: 'Votre position est nécessaire pour rejoindre un groupe dans votre zone (10km).', 
+        variant: 'destructive' 
+      });
+      return false;
+    }
+
+    console.log('🎲 [GEOLOC_OBLIGATOIRE] Démarrage joinRandomGroup pour:', user.id);
     setLoading(true);
     
     try {
@@ -54,55 +63,22 @@ export class GroupOperationsService {
         return false;
       }
 
-      let targetGroup: Group | null = null;
+      // RECHERCHE STRICTEMENT GÉOGRAPHIQUE - PAS DE FALLBACK
+      console.log('🌍 Recherche exclusive dans un rayon de 10km...');
+      const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
 
-      // 1. Essayer de trouver un groupe compatible géographiquement
-      if (userLocation) {
-        targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
-      }
-
-      // 2. Si pas de groupe géolocalisé compatible, chercher un groupe classique
       if (!targetGroup) {
-        const { data: waitingGroups, error: groupError } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('status', 'waiting')
-          .lt('current_participants', 5)
-          .order('created_at', { ascending: true })
-          .limit(1);
-
-        if (groupError) {
-          console.error('❌ Erreur de recherche de groupes:', groupError);
-          throw groupError;
-        }
-
-        if (waitingGroups && waitingGroups.length > 0) {
-          targetGroup = waitingGroups[0] as Group;
-          console.log('🔗 Rejoindre le groupe existant:', targetGroup.id);
-        }
-      }
-
-      // 3. Si toujours aucun groupe, créer un nouveau groupe
-      if (!targetGroup) {
-        console.log('🆕 Création d\'un nouveau groupe...');
+        // PLUS DE FALLBACK - Création d'un nouveau groupe géolocalisé
+        console.log('🆕 Création d\'un nouveau groupe géolocalisé...');
         const newGroupData: any = {
           status: 'waiting',
           max_participants: 5,
-          current_participants: 0
+          current_participants: 0,
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName,
+          search_radius: 10000 // 10km strict
         };
-
-        // Ajouter la géolocalisation si disponible avec rayon de 10km par défaut
-        if (userLocation) {
-          newGroupData.latitude = userLocation.latitude;
-          newGroupData.longitude = userLocation.longitude;
-          newGroupData.location_name = userLocation.locationName;
-          newGroupData.search_radius = 10000; // 10km par défaut
-          console.log('📍 Nouveau groupe avec géolocalisation:', {
-            location: userLocation.locationName,
-            coordinates: `${userLocation.latitude}, ${userLocation.longitude}`,
-            radius: '10km'
-          });
-        }
 
         const { data: newGroup, error: createError } = await supabase
           .from('groups')
@@ -115,41 +91,71 @@ export class GroupOperationsService {
           throw createError;
         }
 
-        targetGroup = newGroup as Group;
-        console.log('✅ Nouveau groupe créé:', targetGroup.id);
+        console.log('✅ Nouveau groupe géolocalisé créé (rayon 10km):', newGroup.id);
+        
+        // Ajouter l'utilisateur au nouveau groupe
+        const participantData: any = {
+          group_id: newGroup.id,
+          user_id: user.id,
+          status: 'confirmed',
+          last_seen: new Date().toISOString(),
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName
+        };
+
+        const { error: joinError } = await supabase
+          .from('group_participants')
+          .insert(participantData);
+
+        if (joinError) {
+          console.error('❌ Erreur d\'ajout au groupe:', joinError);
+          throw joinError;
+        }
+
+        toast({ 
+          title: '🎉 Nouveau groupe créé', 
+          description: `Groupe créé dans votre zone (${userLocation.locationName}). En attente d'autres participants.`, 
+        });
+        
+        console.log('✅ [GEOLOC_OBLIGATOIRE] Utilisateur ajouté au nouveau groupe géolocalisé');
+        return true;
+      } else {
+        // Rejoindre le groupe trouvé
+        console.log('🔗 Rejoindre le groupe géolocalisé existant:', targetGroup.id);
+        
+        const participantData: any = {
+          group_id: targetGroup.id,
+          user_id: user.id,
+          status: 'confirmed',
+          last_seen: new Date().toISOString(),
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName
+        };
+
+        const { error: joinError } = await supabase
+          .from('group_participants')
+          .insert(participantData);
+
+        if (joinError) {
+          console.error('❌ Erreur d\'ajout au groupe:', joinError);
+          throw joinError;
+        }
+
+        toast({ 
+          title: '✅ Groupe rejoint', 
+          description: `Vous avez rejoint un groupe dans votre zone (${userLocation.locationName}).`, 
+        });
+
+        console.log('✅ [GEOLOC_OBLIGATOIRE] Utilisateur ajouté au groupe géolocalisé existant');
+        return true;
       }
-
-      // Ajouter l'utilisateur au groupe avec last_seen initialisé
-      const participantData: any = {
-        group_id: targetGroup.id,
-        user_id: user.id,
-        status: 'confirmed',
-        last_seen: new Date().toISOString() // Initialiser last_seen
-      };
-
-      // Ajouter la géolocalisation du participant si disponible
-      if (userLocation) {
-        participantData.latitude = userLocation.latitude;
-        participantData.longitude = userLocation.longitude;
-        participantData.location_name = userLocation.locationName;
-      }
-
-      const { error: joinError } = await supabase
-        .from('group_participants')
-        .insert(participantData);
-
-      if (joinError) {
-        console.error('❌ Erreur d\'ajout au groupe:', joinError);
-        throw joinError;
-      }
-
-      console.log('✅ [LAST_SEEN] Utilisateur ajouté au groupe avec last_seen initialisé');
-      return true;
     } catch (error) {
       console.error('❌ Erreur dans joinRandomGroup:', error);
       toast({ 
-        title: 'Erreur', 
-        description: 'Impossible de rejoindre un groupe. Veuillez réessayer.', 
+        title: 'Erreur de recherche', 
+        description: 'Impossible de trouver ou créer un groupe dans votre zone (10km). Vérifiez votre connexion.', 
         variant: 'destructive' 
       });
       return false;

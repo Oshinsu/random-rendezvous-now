@@ -22,18 +22,23 @@ export const useGroups = () => {
   const fetchingRef = useRef(false);
   const lastFetchRef = useRef<number>(0);
 
-  // Obtenir la géolocalisation de l'utilisateur au montage
+  // GÉOLOCALISATION OBLIGATOIRE au montage
   useEffect(() => {
     const getUserLocation = async () => {
       try {
+        console.log('📍 Récupération OBLIGATOIRE de la géolocalisation...');
         const location = await GeolocationService.getCurrentLocation();
         setUserLocation(location);
-        console.log('📍 Position utilisateur obtenue:', location);
-      } catch (error) {
-        console.warn('⚠️ Impossible d\'obtenir la position:', error);
+        console.log('✅ Position utilisateur obtenue:', location);
         toast({
-          title: '⚠️ Géolocalisation non disponible',
-          description: 'La recherche de bars sera moins précise sans votre position.',
+          title: '📍 Position détectée',
+          description: `Localisation: ${location.locationName}. Recherche dans un rayon de 10km.`,
+        });
+      } catch (error) {
+        console.error('❌ ERREUR CRITIQUE - Géolocalisation obligatoire refusée:', error);
+        toast({
+          title: '🚫 Géolocalisation requise',
+          description: 'Votre position est obligatoire pour rejoindre des groupes dans votre zone (10km). Veuillez autoriser la géolocalisation.',
           variant: 'destructive'
         });
       }
@@ -152,7 +157,7 @@ export const useGroups = () => {
     }
   }, [user, fetchGroupMembers, clearUserGroupsState]);
 
-  // Fonction pour rejoindre un groupe aléatoire
+  // Fonction pour rejoindre un groupe aléatoire avec géolocalisation OBLIGATOIRE
   const joinRandomGroup = async () => {
     const success = await GroupOperationsService.joinRandomGroup(
       user,
