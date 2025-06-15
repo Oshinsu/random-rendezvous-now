@@ -7,10 +7,20 @@ export class GroupMessagingService {
 
   static async sendGroupSystemMessage(groupId: string, message: string): Promise<void> {
     try {
+      // Filtrer les messages système - ne garder que les plus importants
+      const isImportantMessage = message.includes('Rendez-vous au') || 
+                                message.includes('bar assigné') ||
+                                message.includes('groupe complet');
+
+      if (!isImportantMessage) {
+        console.log('🚫 Message système non important, ignoré:', message);
+        return;
+      }
+
       // Créer une clé unique pour ce message et groupe
       const messageKey = `${groupId}:${message}`;
       
-      // Vérifier si ce message a déjà été envoyé récemment (plus strict)
+      // Vérifier si ce message a déjà été envoyé récemment
       if (this.sentSystemMessages.has(messageKey)) {
         console.log('🚫 Message système déjà envoyé récemment, ignoré:', message);
         return;
@@ -20,7 +30,7 @@ export class GroupMessagingService {
       if (message.includes('Rendez-vous au')) {
         const lastTime = this.lastBarAssignmentTime.get(groupId) || 0;
         const now = Date.now();
-        if (now - lastTime < 60000) { // 1 minute minimum entre les messages d'assignation
+        if (now - lastTime < 120000) { // 2 minutes minimum entre les messages d'assignation
           console.log('🚫 Message d\'assignation de bar trop récent, ignoré');
           return;
         }
@@ -39,12 +49,12 @@ export class GroupMessagingService {
       if (error) {
         console.error('❌ Erreur envoi message système groupe:', error);
       } else {
-        console.log('✅ Message système envoyé au groupe:', message);
-        // Ajouter au cache et supprimer après 2 minutes (plus long)
+        console.log('✅ Message système important envoyé au groupe:', message);
+        // Ajouter au cache et supprimer après 5 minutes
         this.sentSystemMessages.add(messageKey);
         setTimeout(() => {
           this.sentSystemMessages.delete(messageKey);
-        }, 120000);
+        }, 300000);
       }
     } catch (error) {
       console.error('❌ Erreur sendGroupSystemMessage:', error);

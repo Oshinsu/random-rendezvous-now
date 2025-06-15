@@ -22,7 +22,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
 
-  // Query pour récupérer les messages avec validation de sécurité
+  // Query pour récupérer SEULEMENT les messages de CE groupe
   const { 
     data: messages = [], 
     isLoading: loading,
@@ -42,11 +42,10 @@ export const useUnifiedGroupChat = (groupId: string) => {
           .select('*')
           .eq('group_id', groupId)
           .order('created_at', { ascending: true })
-          .limit(100);
+          .limit(50); // Réduire la limite pour de meilleures performances
 
         if (error) {
           ErrorHandler.logError('FETCH_MESSAGES', error);
-          // Gestion spécifique des erreurs de sécurité RLS
           if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
             toast({
               title: 'Accès refusé',
@@ -60,8 +59,19 @@ export const useUnifiedGroupChat = (groupId: string) => {
           return [];
         }
 
-        console.log('✅ Messages chargés:', data.length);
-        return data || [];
+        // Filtrer pour réduire les messages système
+        const filteredMessages = (data || []).filter(msg => {
+          // Garder tous les messages des utilisateurs
+          if (!msg.is_system) return true;
+          
+          // Pour les messages système, ne garder que les plus importants
+          return msg.message.includes('Rendez-vous au') || 
+                 msg.message.includes('bar assigné') ||
+                 msg.message.includes('groupe complet');
+        });
+
+        console.log('✅ Messages chargés et filtrés:', filteredMessages.length);
+        return filteredMessages;
       } catch (error) {
         ErrorHandler.logError('FETCH_MESSAGES', error);
         const appError = ErrorHandler.handleGenericError(error as Error);
@@ -70,18 +80,17 @@ export const useUnifiedGroupChat = (groupId: string) => {
       }
     },
     enabled: !!groupId && !!user,
-    refetchInterval: 10000,
-    staleTime: 5000,
+    refetchInterval: 15000, // Réduire la fréquence de refetch
+    staleTime: 10000,
   });
 
-  // Mutation pour envoyer un message avec validation de sécurité
+  // Mutation pour envoyer un message
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string): Promise<ChatMessage> => {
       if (!user || !messageText.trim()) {
         throw new Error('Message invalide');
       }
 
-      // Le message sera automatiquement validé et nettoyé par le trigger
       const { data, error } = await supabase
         .from('group_messages')
         .insert({
@@ -96,7 +105,6 @@ export const useUnifiedGroupChat = (groupId: string) => {
       if (error) {
         ErrorHandler.logError('SEND_MESSAGE', error);
         
-        // Gestion spécifique des erreurs de validation
         if (error.message.includes('Message cannot be empty')) {
           throw new Error('Le message ne peut pas être vide.');
         } else if (error.message.includes('Message too long')) {
@@ -112,9 +120,9 @@ export const useUnifiedGroupChat = (groupId: string) => {
       return data;
     },
     onSuccess: (newMessage) => {
-      console.log('✅ Message envoyé avec succès (validation sécurisée):', newMessage);
+      console.log('✅ Message envoyé au groupe:', groupId);
       
-      // Mettre à jour optimistiquement le cache
+      // Mettre à jour optimistiquement le cache pour CE groupe seulement
       queryClient.setQueryData(['groupMessages', groupId], (oldMessages: ChatMessage[] = []) => {
         const messageExists = oldMessages.some(msg => msg.id === newMessage.id);
         if (messageExists) {
@@ -133,7 +141,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
     }
   });
 
-  // Configuration realtime avec cleanup automatique
+  // Configuration realtime spécifique au groupe avec cleanup automatique
   useEffect(() => {
     if (!groupId || !user) {
       return;
@@ -141,14 +149,14 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
     console.log('🛰️ Configuration realtime pour groupe:', groupId);
     
-    // Nettoyer l'ancienne souscription si elle existe
+    // Nettoyer l'ancienne souscription
     if (channelRef.current) {
       console.log('🧹 Nettoyage de l\'ancienne souscription');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
-    // Configurer la nouvelle souscription
+    // Configurer la nouvelle souscription SPÉCIFIQUE à ce groupe
     const channel = supabase
       .channel(`group-chat-${groupId}`)
       .on(
@@ -157,31 +165,47 @@ export const useUnifiedGroupChat = (groupId: string) => {
           event: 'INSERT',
           schema: 'public',
           table: 'group_messages',
-          filter: `group_id=eq.${groupId}`
+          filter: `group_id=eq.${groupId}` // IMPORTANT: Filtrer par groupe
         },
         (payload) => {
-          console.log('🛰️ Nouveau message reçu via realtime:', payload.new);
           const newMessage = payload.new as ChatMessage;
+          
+          // Vérifier que le message appartient bien à ce groupe
+          if (newMessage.group_id !== groupId) {
+            console.log('⚠️ Message pour un autre groupe, ignoré');
+            return;
+          }
+
+          // Filtrer les messages système moins importants en temps réel aussi
+          if (newMessage.is_system) {
+            const isImportantSystemMessage = newMessage.message.includes('Rendez-vous au') || 
+                                           newMessage.message.includes('bar assigné') ||
+                                           newMessage.message.includes('groupe complet');
+            
+            if (!isImportantSystemMessage) {
+              console.log('⚠️ Message système non important, ignoré');
+              return;
+            }
+          }
+
+          console.log('🛰️ Nouveau message reçu pour groupe:', groupId);
           
           queryClient.setQueryData(['groupMessages', groupId], (oldMessages: ChatMessage[] = []) => {
             const messageExists = oldMessages.some(msg => msg.id === newMessage.id);
             if (messageExists) {
-              console.log('⚠️ Message déjà présent, ignoré:', newMessage.id);
               return oldMessages;
             }
-            
-            console.log('✅ Nouveau message ajouté via realtime');
             return [...oldMessages, newMessage];
           });
         }
       )
       .subscribe((status) => {
-        console.log('🛰️ Statut souscription realtime:', status);
+        console.log('🛰️ Statut souscription realtime pour groupe', groupId, ':', status);
       });
 
     channelRef.current = channel;
 
-    // Fonction de nettoyage pour useEffect
+    // Fonction de nettoyage
     return () => {
       console.log('🛰️ Nettoyage souscription realtime pour groupe:', groupId);
       if (channelRef.current) {
@@ -190,6 +214,15 @@ export const useUnifiedGroupChat = (groupId: string) => {
       }
     };
   }, [groupId, user, queryClient]);
+
+  // Nettoyer le cache quand on change de groupe
+  useEffect(() => {
+    if (groupId) {
+      console.log('🔄 Nouveau groupe détecté, réinitialisation du cache:', groupId);
+      // Invalider et refetch les messages pour ce nouveau groupe
+      queryClient.invalidateQueries({ queryKey: ['groupMessages', groupId] });
+    }
+  }, [groupId, queryClient]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     try {
