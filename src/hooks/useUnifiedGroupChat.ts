@@ -31,21 +31,13 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Nettoyer COMPLÈTEMENT et recharger quand on change de groupe
+  // Rechargement simple quand on change de groupe - sans timers
   useEffect(() => {
     if (groupId && user) {
-      console.log('🔄 Changement de groupe détecté - NETTOYAGE COMPLET pour:', groupId);
-      
-      // Invalidation IMMÉDIATE et COMPLÈTE
+      console.log('🔄 Changement de groupe détecté:', groupId);
       invalidateMessages();
-      
-      // Rechargement forcé après un court délai
-      setTimeout(() => {
-        console.log('🔄 Rechargement forcé des messages pour groupe:', groupId);
-        refreshMessages();
-      }, 200);
     }
-  }, [groupId, user?.id, invalidateMessages, refreshMessages]);
+  }, [groupId, user?.id]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     if (!groupId || !user) {
@@ -54,7 +46,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
     }
 
     try {
-      console.log('📤 Envoi message STRICT pour groupe:', groupId);
+      console.log('📤 Envoi message pour groupe:', groupId);
       await sendMessageMutation.mutateAsync(messageText);
       return true;
     } catch (error) {

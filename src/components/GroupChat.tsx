@@ -19,12 +19,19 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   const { messages, loading, sending, sendMessage, refreshMessages } = useUnifiedGroupChat(groupId);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus sur l'input quand le composant se charge
+  // Auto-focus moins agressif - seulement au premier chargement
   useEffect(() => {
-    if (inputRef.current && !loading) {
-      inputRef.current.focus();
+    if (inputRef.current && !loading && messages.length === 0) {
+      // Délai pour éviter les conflits avec Lovable
+      const timer = setTimeout(() => {
+        if (inputRef.current && document.activeElement === document.body) {
+          inputRef.current.focus();
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [loading, groupId]);
+  }, [loading, groupId]); // Retirer messages.length des dépendances
 
   const handleRefresh = () => {
     console.log('🔄 Actualisation manuelle du chat');

@@ -19,9 +19,7 @@ const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
     const success = await onSendMessage(newMessage);
     if (success) {
       setNewMessage('');
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
+      // Retirer l'auto-focus agressif qui interfère avec Lovable
     }
   };
 
@@ -29,6 +27,20 @@ const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleFocus = () => {
+    // Ne pas capturer le focus si l'utilisateur utilise l'interface Lovable
+    const lovableElements = document.querySelectorAll('[data-lovable], .lovable-input, .lovable-textarea');
+    if (lovableElements.length > 0) {
+      const activeElement = document.activeElement;
+      const isLovableActive = Array.from(lovableElements).some(el => 
+        el === activeElement || el.contains(activeElement)
+      );
+      if (isLovableActive) {
+        return;
+      }
     }
   };
 
@@ -41,6 +53,7 @@ const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Tapez votre message..."
           onKeyPress={handleKeyPress}
+          onFocus={handleFocus}
           disabled={sending}
           className="flex-1"
           maxLength={500}
