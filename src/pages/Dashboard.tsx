@@ -20,7 +20,7 @@ const Dashboard = () => {
 
     // Démarrer la recherche
     setIsSearching(true)
-    console.log('🎲 Recherche démarrée')
+    console.log('🎲 Recherche démarrée - animation devrait commencer')
     
     try {
       await joinRandomGroup()
@@ -28,6 +28,7 @@ const Dashboard = () => {
       console.error('❌ Erreur lors de la recherche:', error)
     } finally {
       setIsSearching(false)
+      console.log('🛑 Recherche terminée - animation devrait s\'arrêter')
     }
   }
 
@@ -51,6 +52,8 @@ const Dashboard = () => {
             `}
             style={{
               animationDuration: isSearching ? '2s' : undefined,
+              animationTimingFunction: 'linear',
+              animationIterationCount: 'infinite'
             }}
           >
             <div className="absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm">
