@@ -284,14 +284,6 @@ export type Database = {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      user_can_access_group_participants: {
-        Args: { target_group_id: string }
-        Returns: boolean
-      }
-      user_can_access_groups: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       validate_and_clean_message: {
         Args: { input_message: string }
         Returns: string
