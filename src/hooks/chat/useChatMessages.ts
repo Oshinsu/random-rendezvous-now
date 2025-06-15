@@ -15,19 +15,20 @@ export const useChatMessages = (groupId: string) => {
     isLoading: loading,
     refetch: refreshMessages 
   } = useQuery({
-    queryKey: ['groupMessages', groupId],
+    queryKey: ['groupMessages', groupId, user?.id], // Inclure user.id pour isoler par utilisateur
     queryFn: async (): Promise<ChatMessage[]> => {
       if (!groupId || !user) {
+        console.log('🚫 Pas de groupe ou utilisateur, retour tableau vide');
         return [];
       }
 
-      console.log('🔄 Chargement des messages pour groupe:', groupId);
+      console.log('🔄 Chargement STRICT des messages pour groupe:', groupId, 'utilisateur:', user.id);
       
       try {
         const { data, error } = await supabase
           .from('group_messages')
           .select('*')
-          .eq('group_id', groupId)
+          .eq('group_id', groupId) // FILTRAGE STRICT par groupe
           .order('created_at', { ascending: true })
           .limit(50);
 
@@ -46,8 +47,11 @@ export const useChatMessages = (groupId: string) => {
           return [];
         }
 
+        // Vérification supplémentaire côté client
+        const groupSpecificMessages = (data || []).filter(msg => msg.group_id === groupId);
+
         // Filtrer pour réduire les messages système
-        const filteredMessages = (data || []).filter(msg => {
+        const filteredMessages = groupSpecificMessages.filter(msg => {
           // Garder tous les messages des utilisateurs
           if (!msg.is_system) return true;
           
@@ -57,7 +61,9 @@ export const useChatMessages = (groupId: string) => {
                  msg.message.includes('groupe complet');
         });
 
-        console.log('✅ Messages chargés et filtrés:', filteredMessages.length);
+        console.log('✅ Messages chargés et filtrés pour groupe', groupId, ':', filteredMessages.length);
+        console.log('📊 Détail des messages:', filteredMessages.map(m => ({ id: m.id, group: m.group_id, text: m.message.substring(0, 50) })));
+        
         return filteredMessages;
       } catch (error) {
         ErrorHandler.logError('FETCH_MESSAGES', error);
@@ -72,18 +78,32 @@ export const useChatMessages = (groupId: string) => {
   });
 
   const updateMessagesCache = (newMessage: ChatMessage) => {
-    queryClient.setQueryData(['groupMessages', groupId], (oldMessages: ChatMessage[] = []) => {
+    // VÉRIFICATION CRITIQUE : le message doit appartenir au bon groupe
+    if (newMessage.group_id !== groupId) {
+      console.log('🚫 Tentative d\'ajout d\'un message d\'un autre groupe, REJETÉ:', {
+        messageGroup: newMessage.group_id,
+        currentGroup: groupId
+      });
+      return;
+    }
+
+    queryClient.setQueryData(['groupMessages', groupId, user?.id], (oldMessages: ChatMessage[] = []) => {
+      // Vérifier que le message n'existe pas déjà
       const messageExists = oldMessages.some(msg => msg.id === newMessage.id);
       if (messageExists) {
+        console.log('⚠️ Message déjà existant dans le cache, ignoré');
         return oldMessages;
       }
+
+      console.log('✅ Ajout du nouveau message au cache pour groupe:', groupId);
       return [...oldMessages, newMessage];
     });
   };
 
   const invalidateMessages = () => {
+    console.log('🔄 Invalidation du cache pour groupe:', groupId);
     queryClient.invalidateQueries({ 
-      queryKey: ['groupMessages', groupId],
+      queryKey: ['groupMessages', groupId, user?.id],
       exact: true 
     });
   };

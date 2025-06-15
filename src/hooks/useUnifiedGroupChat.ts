@@ -1,6 +1,5 @@
 
 import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatMessages } from './chat/useChatMessages';
 import { useChatMutation } from './chat/useChatMutation';
@@ -19,7 +18,6 @@ export interface ChatMessage {
 
 export const useUnifiedGroupChat = (groupId: string) => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const {
     messages,
@@ -33,17 +31,27 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Nettoyer le cache quand on change de groupe avec invalidation immédiate
+  // Nettoyer et recharger quand on change de groupe
   useEffect(() => {
-    if (groupId) {
-      console.log('🔄 Nouveau groupe détecté, invalidation immédiate du cache:', groupId);
+    if (groupId && user) {
+      console.log('🔄 Changement de groupe détecté, nettoyage du cache pour:', groupId);
+      // Invalidation immédiate pour s'assurer qu'on part d'une base propre
       invalidateMessages();
-      refreshMessages();
+      // Rechargement forcé des messages du nouveau groupe
+      setTimeout(() => {
+        refreshMessages();
+      }, 100);
     }
-  }, [groupId, invalidateMessages, refreshMessages]);
+  }, [groupId, user?.id, invalidateMessages, refreshMessages]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
+    if (!groupId || !user) {
+      console.error('❌ Impossible d\'envoyer un message sans groupe ou utilisateur');
+      return false;
+    }
+
     try {
+      console.log('📤 Envoi message pour groupe:', groupId);
       await sendMessageMutation.mutateAsync(messageText);
       return true;
     } catch (error) {
