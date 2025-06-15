@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -9,6 +10,13 @@ export class SimpleGroupService {
     try {
       console.log('🔍 Récupération des groupes utilisateur');
       
+      // Vérifier l'authentification en premier
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ Utilisateur non authentifié');
+        return [];
+      }
+
       // Récupérer les participations de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -22,6 +30,7 @@ export class SimpleGroupService {
       }
 
       if (!participations || participations.length === 0) {
+        console.log('ℹ️ Aucune participation trouvée');
         return [];
       }
 
@@ -48,6 +57,15 @@ export class SimpleGroupService {
 
   static async getGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
+      console.log('👥 Récupération des membres du groupe:', groupId);
+
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ Utilisateur non authentifié');
+        return [];
+      }
+
       const { data: participants, error } = await supabase
         .from('group_participants')
         .select(`
@@ -68,12 +86,14 @@ export class SimpleGroupService {
         return [];
       }
 
+      console.log('✅ Membres récupérés:', participants?.length || 0);
+
       return (participants || []).map((participant, index) => ({
         id: participant.id,
-        name: `Rander ${index + 1}`, // Map to 'name' property
+        name: `Rander ${index + 1}`,
         isConnected: participant.last_seen ? 
-          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false, // Map to 'isConnected'
-        joinedAt: participant.joined_at, // Map to 'joinedAt'
+          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false,
+        joinedAt: participant.joined_at,
         status: participant.status as 'confirmed' | 'pending',
         lastSeen: participant.last_seen
       })) as GroupMember[];
@@ -87,6 +107,18 @@ export class SimpleGroupService {
     try {
       console.log('🆕 Création de groupe');
       
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        console.error('❌ Utilisateur non authentifié ou ID incorrect');
+        toast({ 
+          title: 'Erreur d\'authentification', 
+          description: 'Veuillez vous reconnecter.', 
+          variant: 'destructive' 
+        });
+        return false;
+      }
+
       const newGroupData = {
         status: 'waiting' as const,
         max_participants: 5,
@@ -105,7 +137,12 @@ export class SimpleGroupService {
 
       if (createError) {
         console.error('❌ Erreur création groupe:', createError);
-        throw createError;
+        toast({ 
+          title: 'Erreur de création', 
+          description: 'Impossible de créer le groupe. Vérifiez votre connexion.', 
+          variant: 'destructive' 
+        });
+        return false;
       }
 
       console.log('✅ Groupe créé:', newGroup.id);
@@ -125,6 +162,8 @@ export class SimpleGroupService {
 
       if (joinError) {
         console.error('❌ Erreur ajout participant:', joinError);
+        // Nettoyer le groupe créé en cas d'erreur
+        await supabase.from('groups').delete().eq('id', newGroup.id);
         return false;
       }
 
@@ -148,6 +187,13 @@ export class SimpleGroupService {
   static async joinGroup(groupId: string, userId: string, location: LocationData): Promise<boolean> {
     try {
       console.log('👥 Rejoindre groupe:', groupId);
+
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        console.error('❌ Utilisateur non authentifié');
+        return false;
+      }
 
       // Vérifier si le groupe existe et n'est pas plein
       const { data: group, error: groupError } = await supabase
@@ -185,6 +231,11 @@ export class SimpleGroupService {
 
       if (joinError) {
         console.error('❌ Erreur rejoindre groupe:', joinError);
+        toast({ 
+          title: 'Impossible de rejoindre', 
+          description: 'Vous ne pouvez rejoindre qu\'un seul groupe à la fois.', 
+          variant: 'destructive' 
+        });
         return false;
       }
 
@@ -199,6 +250,10 @@ export class SimpleGroupService {
       }
 
       console.log('✅ Groupe rejoint avec succès');
+      toast({ 
+        title: '✅ Groupe rejoint', 
+        description: 'Vous avez rejoint un groupe avec succès.'
+      });
       return true;
     } catch (error) {
       console.error('❌ Erreur joinGroup:', error);
@@ -209,6 +264,13 @@ export class SimpleGroupService {
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
       console.log('🚪 Quitter groupe:', groupId);
+
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        console.error('❌ Utilisateur non authentifié');
+        return false;
+      }
 
       // Supprimer la participation
       const { error: deleteError } = await supabase
@@ -252,6 +314,13 @@ export class SimpleGroupService {
     try {
       console.log('🔍 Recherche groupes à proximité');
 
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('❌ Utilisateur non authentifié');
+        return [];
+      }
+
       const { data: groups, error } = await supabase
         .from('groups')
         .select('*')
@@ -264,6 +333,7 @@ export class SimpleGroupService {
         return [];
       }
 
+      console.log('✅ Groupes trouvés:', groups?.length || 0);
       return (groups || []) as Group[];
     } catch (error) {
       console.error('❌ Erreur findNearbyGroups:', error);
@@ -273,6 +343,12 @@ export class SimpleGroupService {
 
   static async updateUserActivity(groupId: string, userId: string): Promise<void> {
     try {
+      // Vérifier l'authentification
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.id !== userId) {
+        return;
+      }
+
       const { error } = await supabase
         .from('group_participants')
         .update({ last_seen: new Date().toISOString() })
