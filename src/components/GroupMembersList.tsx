@@ -25,16 +25,6 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
   const actualParticipants = members.length;
   const emptySlots = Math.max(0, maxParticipants - actualParticipants);
   
-  // Diagnostic d'affichage
-  console.log('👥 DIAGNOSTIC AFFICHAGE GroupMembersList:');
-  console.log('  - members.length:', members.length);
-  console.log('  - Tous connectés:', connectedMembers.length);
-  console.log('  - maxParticipants:', maxParticipants);
-  console.log('  - currentParticipants (DB):', currentParticipants);
-  console.log('  - actualParticipants (calculé):', actualParticipants);
-  console.log('  - emptySlots (calculé):', emptySlots);
-  console.log('  - Cohérence DB:', actualParticipants === currentParticipants ? '✅' : '❌');
-
   // Utiliser les données réelles plutôt que la DB pour l'affichage
   const displayParticipants = actualParticipants;
 
@@ -47,11 +37,6 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />
           Membres du Groupe ({displayParticipants}/{maxParticipants})
-          {actualParticipants !== currentParticipants && (
-            <Badge variant="destructive" className="text-xs">
-              Incohérence DB: {currentParticipants}
-            </Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -102,11 +87,6 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
             </div>
           </div>
         )}
-        
-        {/* Debug info - à supprimer en production */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          <strong>Debug:</strong> Membres actifs={actualParticipants}, DB={currentParticipants}, Libres={emptySlots}
-        </div>
       </CardContent>
     </Card>
   );
