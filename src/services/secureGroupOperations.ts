@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
@@ -73,7 +72,14 @@ export class SecureGroupOperationsService {
       }
 
       console.log('✅ Groupe créé et utilisateur ajouté avec succès');
-      return newGroup;
+      
+      // Cast the status to the proper type to match our Group interface
+      const typedGroup: Group = {
+        ...newGroup,
+        status: newGroup.status as Group['status']
+      };
+      
+      return typedGroup;
     } catch (error) {
       ErrorHandler.logError('CREATE_SECURE_GROUP', error);
       const appError = ErrorHandler.handleGenericError(error as Error);
