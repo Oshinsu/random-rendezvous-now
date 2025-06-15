@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -115,12 +114,12 @@ export const useGroups = () => {
     }
   };
 
-  // Fonction pour récupérer les membres d'un groupe
+  // Fonction pour récupérer les membres d'un groupe AVEC CORRECTION DU COMPTAGE
   const fetchGroupMembers = useCallback(async (groupId: string) => {
     try {
-      console.log('👥 Récupération des membres du groupe:', groupId);
+      console.log('👥 [CORRECTION] Récupération des VRAIS membres du groupe:', groupId);
       
-      // Récupérer les participants avec leurs profils en utilisant la clé étrangère
+      // ÉTAPE 1: Récupérer TOUS les participants confirmés
       const { data: participantsData, error: participantsError } = await supabase
         .from('group_participants')
         .select(`
@@ -138,16 +137,68 @@ export const useGroups = () => {
         throw participantsError;
       }
 
-      console.log('✅ Participants récupérés:', participantsData?.length || 0);
+      const realParticipantCount = participantsData?.length || 0;
+      console.log('🔍 [CORRECTION] Nombre RÉEL de participants confirmés:', realParticipantCount);
+
+      // ÉTAPE 2: Vérifier le comptage dans la table groups
+      const { data: currentGroup, error: groupError } = await supabase
+        .from('groups')
+        .select('current_participants, status')
+        .eq('id', groupId)
+        .single();
+
+      if (groupError) {
+        console.error('❌ Erreur récupération groupe:', groupError);
+      } else {
+        console.log('📊 [CORRECTION] Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
+        
+        // ÉTAPE 3: FORCER la correction si les comptages ne correspondent pas
+        if (currentGroup.current_participants !== realParticipantCount) {
+          console.log('🚨 [CORRECTION] INCOHÉRENCE DÉTECTÉE ! Correction forcée...');
+          
+          // Déterminer le nouveau statut
+          let newStatus = currentGroup.status;
+          let updateData: any = {
+            current_participants: realParticipantCount
+          };
+
+          // Si moins de 5 participants, remettre en waiting et supprimer le bar
+          if (realParticipantCount < 5 && currentGroup.status === 'confirmed') {
+            newStatus = 'waiting';
+            updateData = {
+              ...updateData,
+              status: 'waiting',
+              bar_name: null,
+              bar_address: null,
+              meeting_time: null,
+              bar_latitude: null,
+              bar_longitude: null,
+              bar_place_id: null
+            };
+            console.log('⏳ [CORRECTION] Remise en waiting et suppression du bar');
+          }
+
+          // Appliquer la correction
+          const { error: correctionError } = await supabase
+            .from('groups')
+            .update(updateData)
+            .eq('id', groupId);
+
+          if (correctionError) {
+            console.error('❌ [CORRECTION] Erreur lors de la correction:', correctionError);
+          } else {
+            console.log('✅ [CORRECTION] Comptage corrigé avec succès:', realParticipantCount);
+          }
+        }
+      }
 
       if (!participantsData) {
         setGroupMembers([]);
         return [];
       }
 
-      // Transformer les données pour correspondre à l'interface GroupMember avec noms masqués
+      // ÉTAPE 4: Transformer les données avec noms masqués
       const members: GroupMember[] = participantsData.map((participant: any, index: number) => {
-        // Utiliser des noms masqués "Rander 1", "Rander 2", etc.
         const maskedName = `Rander ${index + 1}`;
 
         return {
@@ -159,7 +210,7 @@ export const useGroups = () => {
         };
       });
 
-      console.log('👥 Membres transformés avec noms masqués (tous connectés):', members);
+      console.log('✅ [CORRECTION] Membres finaux avec comptage corrigé:', members.length);
       setGroupMembers(members);
       return members;
     } catch (error) {
@@ -195,7 +246,7 @@ export const useGroups = () => {
     setLoading(true);
     
     try {
-      console.log('🔄 Récupération des groupes pour:', user.id);
+      console.log('🔄 [CORRECTION] Récupération des groupes pour:', user.id);
       
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -229,18 +280,16 @@ export const useGroups = () => {
         throw groupsError;
       }
 
-      console.log('✅ Groupes récupérés:', groupsData?.length || 0);
+      console.log('✅ [CORRECTION] Groupes récupérés avant correction:', groupsData?.length || 0);
 
-      // Vérifier et corriger le comptage des participants pour chaque groupe (sans spam)
+      // CORRECTION OBLIGATOIRE: Vérifier et corriger CHAQUE groupe
       if (groupsData && groupsData.length > 0) {
         for (const group of groupsData) {
-          // Éviter la synchronisation si déjà en cours pour ce groupe
-          if (!syncingGroupsRef.current.has(group.id)) {
-            await syncGroupParticipantCount(group.id);
-          }
+          console.log(`🔍 [CORRECTION] Vérification du groupe ${group.id}...`);
+          await fetchGroupMembers(group.id);
         }
         
-        // Re-fetch les groupes après correction
+        // Re-fetch les groupes après toutes les corrections
         const { data: correctedGroups } = await supabase
           .from('groups')
           .select('*')
@@ -248,10 +297,10 @@ export const useGroups = () => {
           .order('created_at', { ascending: false });
         
         const finalGroups = (correctedGroups || []) as Group[];
-        console.log('📊 Groupes après synchronisation:', finalGroups);
+        console.log('📊 [CORRECTION] Groupes après correction complète:', finalGroups);
         setUserGroups(finalGroups);
 
-        // Charger les membres du premier groupe actif
+        // Charger les membres du premier groupe actif (après correction)
         if (finalGroups.length > 0) {
           await fetchGroupMembers(finalGroups[0].id);
         }
@@ -272,197 +321,11 @@ export const useGroups = () => {
     }
   }, [user, fetchGroupMembers, clearUserGroupsState]);
 
-  // Fonction améliorée pour synchroniser le comptage des participants (OPTIMISÉE)
+  // Fonction améliorée pour synchroniser le comptage des participants (SIMPLIFIÉE)
   const syncGroupParticipantCount = async (groupId: string) => {
-    // Éviter les synchronisations parallèles pour le même groupe
-    if (syncingGroupsRef.current.has(groupId)) {
-      console.log('🚫 Synchronisation déjà en cours pour le groupe:', groupId);
-      return;
-    }
-
-    syncingGroupsRef.current.add(groupId);
-
-    try {
-      console.log('🔄 Synchronisation du comptage pour le groupe:', groupId);
-      
-      // Compter les vrais participants
-      const { data: realParticipants, error: countError } = await supabase
-        .from('group_participants')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('status', 'confirmed');
-
-      if (countError) {
-        console.error('❌ Erreur de comptage:', countError);
-        return;
-      }
-
-      const realCount = realParticipants?.length || 0;
-      console.log('📊 Nombre réel de participants:', realCount);
-
-      // Vérifier l'état actuel du groupe
-      const { data: currentGroup, error: groupError } = await supabase
-        .from('groups')
-        .select('status, bar_name, bar_address, meeting_time, bar_latitude, bar_longitude, latitude, longitude, current_participants')
-        .eq('id', groupId)
-        .single();
-
-      if (groupError) {
-        console.error('❌ Erreur récupération groupe:', groupError);
-        return;
-      }
-
-      console.log('📋 État actuel du groupe:', currentGroup);
-
-      // AMÉLIORATION: Éviter les mises à jour inutiles ET détecter les changements de bar
-      const needsCountUpdate = currentGroup.current_participants !== realCount;
-      const needsStatusUpdate = realCount >= 5 && currentGroup.status !== 'confirmed';
-      const needsBarSearch = realCount >= 5 && !currentGroup.bar_name;
-
-      if (!needsCountUpdate && !needsStatusUpdate && !needsBarSearch) {
-        console.log('✅ Groupe déjà synchronisé, pas de mise à jour nécessaire');
-        return;
-      }
-
-      // Si on a 5 participants, passer en confirmed ET rechercher un bar si nécessaire
-      if (realCount >= 5) {
-        console.log('🎯 Groupe complet détecté, passage en confirmed...');
-        
-        let updateData: any = {
-          current_participants: realCount,
-          status: 'confirmed'
-        };
-
-        // Si pas de bar assigné, en rechercher un
-        if (!currentGroup.bar_name) {
-          console.log('🍺 Recherche de bar nécessaire...');
-          
-          try {
-            // Utiliser obligatoirement la position utilisateur actuelle ou échouer
-            let searchLatitude: number | null = null;
-            let searchLongitude: number | null = null;
-            
-            // 1. Priorité à la position utilisateur actuelle
-            if (userLocation) {
-              searchLatitude = userLocation.latitude;
-              searchLongitude = userLocation.longitude;
-              console.log('📍 Utilisation position utilisateur actuelle:', { searchLatitude, searchLongitude, location: userLocation.locationName });
-            }
-            // 2. Sinon, position du groupe si elle existe
-            else if (currentGroup.latitude && currentGroup.longitude) {
-              searchLatitude = currentGroup.latitude;
-              searchLongitude = currentGroup.longitude;
-              console.log('📍 Utilisation position du groupe:', { searchLatitude, searchLongitude });
-            }
-            
-            // Si aucune position valide disponible, passer quand même en confirmed sans bar
-            if (!searchLatitude || !searchLongitude) {
-              console.error('❌ ERREUR: Aucune position géographique fiable disponible pour la recherche de bar');
-              
-              await supabase
-                .from('groups')
-                .update({ 
-                  current_participants: realCount,
-                  status: 'confirmed'
-                })
-                .eq('id', groupId);
-              
-              return;
-            }
-            
-            console.log('🔍 DÉBUT recherche bar via API avec position validée:', { searchLatitude, searchLongitude });
-            
-            // Appel à l'API pour trouver un bar avec un rayon adapté à la région
-            const searchRadius = userLocation?.locationName?.toLowerCase().includes('martinique') ? 15000 : 8000;
-            console.log('📏 Rayon de recherche adapté:', searchRadius, 'mètres');
-            
-            const selectedBar = await GooglePlacesService.findNearbyBars(
-              searchLatitude,
-              searchLongitude,
-              searchRadius
-            );
-            
-            console.log('🔍 RÉSULTAT recherche bar:', selectedBar);
-            
-            if (selectedBar && selectedBar.name) {
-              // Vérifier que ce n'est pas un hôtel
-              const barName = selectedBar.name.toLowerCase();
-              const isHotel = ['hotel', 'hôtel', 'motel', 'resort', 'auberge'].some(hotelWord => 
-                barName.includes(hotelWord)
-              );
-              
-              if (isHotel) {
-                console.error('❌ ERREUR: L\'API a retourné un hôtel au lieu d\'un bar:', selectedBar.name);
-                throw new Error('Résultat invalide: hôtel détecté');
-              }
-              
-              // Bar valide trouvé via API
-              const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
-              
-              updateData = {
-                ...updateData,
-                bar_name: selectedBar.name,
-                bar_address: selectedBar.formatted_address,
-                meeting_time: meetingTime.toISOString(),
-                bar_latitude: selectedBar.geometry.location.lat,
-                bar_longitude: selectedBar.geometry.location.lng,
-                bar_place_id: selectedBar.place_id
-              };
-              
-              console.log('🍺 Bar validé et assigné via API:', {
-                name: selectedBar.name,
-                address: selectedBar.formatted_address,
-                meetingTime: meetingTime.toLocaleString('fr-FR'),
-                coordinates: `${selectedBar.geometry.location.lat}, ${selectedBar.geometry.location.lng}`
-              });
-            } else {
-              throw new Error('Aucun bar trouvé via API');
-            }
-          } catch (barError) {
-            console.error('❌ Erreur recherche de bar via API:', barError);
-            // Passer quand même le groupe en confirmed pour que la carte s'affiche, sans message
-          }
-        }
-
-        // Mettre à jour le groupe
-        console.log('💾 Mise à jour du groupe avec:', updateData);
-        const { error: updateError } = await supabase
-          .from('groups')
-          .update(updateData)
-          .eq('id', groupId);
-
-        if (updateError) {
-          console.error('❌ Erreur de mise à jour du groupe:', updateError);
-        } else {
-          console.log('✅ Groupe mis à jour avec succès');
-          
-          // Envoyer seulement UN message système quand un bar est trouvé ET seulement si pas déjà envoyé
-          if (updateData.bar_name) {
-            await sendGroupSystemMessage(
-              groupId, 
-              `🎉 Votre groupe est maintenant complet ! Rendez-vous au ${updateData.bar_name} dans environ 1 heure.`
-            );
-          }
-        }
-      } else {
-        // Juste mettre à jour le comptage sans message système
-        const { error: updateError } = await supabase
-          .from('groups')
-          .update({ current_participants: realCount })
-          .eq('id', groupId);
-
-        if (updateError) {
-          console.error('❌ Erreur de mise à jour du comptage:', updateError);
-        } else {
-          console.log('✅ Comptage synchronisé:', realCount);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erreur de synchronisation:', error);
-    } finally {
-      // Libérer le verrou de synchronisation
-      syncingGroupsRef.current.delete(groupId);
-    }
+    // Cette fonction est maintenant intégrée dans fetchGroupMembers
+    // pour éviter les doublons et assurer une correction systématique
+    console.log('🔄 [SYNC] Synchronisation déléguée à fetchGroupMembers pour:', groupId);
   };
 
   // Fonction helper pour obtenir le nombre actuel de participants
@@ -483,78 +346,6 @@ export const useGroups = () => {
     } catch (error) {
       console.error('❌ Erreur getCurrentParticipantCount:', error);
       return 0;
-    }
-  };
-
-  const findCompatibleGroup = async (userLocation: LocationData) => {
-    try {
-      console.log('🔍 Recherche de groupes compatibles près de:', userLocation.locationName);
-      
-      // Rechercher des groupes en attente dans un rayon géographique
-      const { data: nearbyGroups, error } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('status', 'waiting')
-        .lt('current_participants', 5)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
-
-      if (error) {
-        console.error('❌ Erreur recherche groupes:', error);
-        throw error;
-      }
-
-      if (!nearbyGroups || nearbyGroups.length === 0) {
-        console.log('📍 Aucun groupe géolocalisé trouvé');
-        return null;
-      }
-
-      // Filtrer par distance (rayon de 10km par défaut)
-      const compatibleGroups = nearbyGroups.filter(group => {
-        if (!group.latitude || !group.longitude) return false;
-        
-        const distance = GeolocationService.calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          group.latitude,
-          group.longitude
-        );
-        
-        const searchRadius = group.search_radius || 10000; // 10km par défaut
-        console.log(`📏 Distance au groupe ${group.id}: ${GeolocationService.formatDistance(distance)} (rayon: ${GeolocationService.formatDistance(searchRadius)})`);
-        return distance <= searchRadius;
-      });
-
-      if (compatibleGroups.length === 0) {
-        console.log('📍 Aucun groupe dans le rayon de recherche');
-        return null;
-      }
-
-      // Trier par distance et prendre le plus proche
-      compatibleGroups.sort((a, b) => {
-        const distanceA = GeolocationService.calculateDistance(
-          userLocation.latitude, userLocation.longitude,
-          a.latitude!, a.longitude!
-        );
-        const distanceB = GeolocationService.calculateDistance(
-          userLocation.latitude, userLocation.longitude,
-          b.latitude!, b.longitude!
-        );
-        return distanceA - distanceB;
-      });
-
-      const selectedGroup = compatibleGroups[0];
-      const distance = GeolocationService.calculateDistance(
-        userLocation.latitude, userLocation.longitude,
-        selectedGroup.latitude!, selectedGroup.longitude!
-      );
-
-      console.log('✅ Groupe compatible trouvé à', GeolocationService.formatDistance(distance));
-      return selectedGroup as Group;
-      
-    } catch (error) {
-      console.error('❌ Erreur recherche groupe compatible:', error);
-      return null;
     }
   };
 
@@ -719,17 +510,13 @@ export const useGroups = () => {
 
     setLoading(true);
     try {
-      console.log('🚪 Quitter le groupe:', groupId, 'utilisateur:', user.id);
+      console.log('🚪 [CORRECTION] Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
       // ÉTAPE 1: Nettoyer immédiatement l'état local pour un feedback visuel instantané
       console.log('🧹 Nettoyage immédiat de l\'état local');
       clearUserGroupsState();
 
-      // ÉTAPE 2: Obtenir le nombre de participants avant de quitter
-      const participantsBeforeLeaving = await getCurrentParticipantCount(groupId);
-      console.log('📊 Participants avant départ:', participantsBeforeLeaving);
-
-      // ÉTAPE 3: Supprimer la participation avec vérification explicite de l'utilisateur
+      // ÉTAPE 2: Supprimer la participation avec vérification explicite de l'utilisateur
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -742,44 +529,43 @@ export const useGroups = () => {
         throw deleteError;
       }
 
-      console.log('✅ Participation supprimée avec succès');
+      console.log('✅ [CORRECTION] Participation supprimée avec succès');
 
-      // ÉTAPE 4: Synchroniser le comptage après suppression
-      await syncGroupParticipantCount(groupId);
+      // ÉTAPE 3: FORCER la correction du comptage immédiatement
+      const realCount = await getCurrentParticipantCount(groupId);
+      console.log('📊 [CORRECTION] Participants restants après départ:', realCount);
 
-      // ÉTAPE 5: Vérifier s'il reste des participants
-      const { data: remainingParticipants, error: checkError } = await supabase
-        .from('group_participants')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('status', 'confirmed');
+      if (realCount === 0) {
+        // Supprimer le groupe s'il est vide
+        console.log('🗑️ [CORRECTION] Suppression du groupe vide');
+        await supabase
+          .from('groups')
+          .delete()
+          .eq('id', groupId);
+      } else {
+        // Mettre à jour le comptage et remettre en waiting si nécessaire
+        let updateData: any = {
+          current_participants: realCount
+        };
 
-      if (!checkError && remainingParticipants) {
-        console.log('👥 Participants restants:', remainingParticipants.length);
-        
-        if (remainingParticipants.length === 0) {
-          // Supprimer le groupe s'il est vide
-          console.log('🗑️ Suppression du groupe vide');
-          await supabase
-            .from('groups')
-            .delete()
-            .eq('id', groupId);
-        } else if (remainingParticipants.length < 5) {
-          // Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
-          console.log('⏳ Remise du groupe en attente et suppression des infos bar');
-          await supabase
-            .from('groups')
-            .update({
-              status: 'waiting',
-              bar_name: null,
-              bar_address: null,
-              meeting_time: null,
-              bar_latitude: null,
-              bar_longitude: null,
-              bar_place_id: null
-            })
-            .eq('id', groupId);
+        if (realCount < 5) {
+          updateData = {
+            ...updateData,
+            status: 'waiting',
+            bar_name: null,
+            bar_address: null,
+            meeting_time: null,
+            bar_latitude: null,
+            bar_longitude: null,
+            bar_place_id: null
+          };
+          console.log('⏳ [CORRECTION] Remise en waiting et suppression du bar');
         }
+
+        await supabase
+          .from('groups')
+          .update(updateData)
+          .eq('id', groupId);
       }
 
       toast({ 
@@ -787,7 +573,7 @@ export const useGroups = () => {
         description: 'Vous avez quitté le groupe avec succès.' 
       });
       
-      // ÉTAPE 6: Forcer une vérification finale après un délai
+      // ÉTAPE 4: Forcer une vérification finale après un délai
       setTimeout(() => {
         console.log('🔄 Vérification finale des groupes utilisateur');
         fetchUserGroups();
@@ -818,7 +604,7 @@ export const useGroups = () => {
       console.log('🚫 Pas d\'utilisateur, reset des groupes');
       clearUserGroupsState();
     }
-  }, [user?.id, fetchUserGroups, clearUserGroupsState]); // Ajouter clearUserGroupsState dans les dépendances
+  }, [user?.id, fetchUserGroups, clearUserGroupsState]);
 
   // ➜ Souscription en temps réel aux changements de participations utilisateur ET de groupes (AMÉLIORÉE)
   useEffect(() => {
