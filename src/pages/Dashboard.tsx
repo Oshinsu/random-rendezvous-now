@@ -24,12 +24,14 @@ const Dashboard = () => {
     
     try {
       await joinRandomGroup()
+      // Ne pas arrêter l'animation ici - elle continue jusqu'à ce que l'utilisateur clique pour annuler
+      console.log('✅ Groupe rejoint - animation continue')
     } catch (error) {
       console.error('❌ Erreur lors de la recherche:', error)
-    } finally {
+      // En cas d'erreur, arrêter l'animation
       setIsSearching(false)
-      console.log('🛑 Recherche terminée - animation devrait s\'arrêter')
     }
+    // Pas de finally ici - l'animation continue
   }
 
   return (
@@ -56,9 +58,9 @@ const Dashboard = () => {
                 ${isSearching ? 'animate-spin' : ''}
               `}
               style={{
-                animationDuration: isSearching ? '4s' : undefined,
+                animationDuration: '4s',
                 animationTimingFunction: 'linear',
-                animationIterationCount: isSearching ? 'infinite' : undefined
+                animationIterationCount: 'infinite'
               }}
             >
               <div className="flex items-center justify-center w-full h-full">
