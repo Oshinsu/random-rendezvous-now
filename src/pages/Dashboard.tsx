@@ -5,6 +5,7 @@ import { useGroups } from '@/hooks/useGroups'
 import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
+import { clearActiveToasts } from '@/utils/toastUtils'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -13,11 +14,17 @@ const Dashboard = () => {
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
 
+  // Nettoyer les toasts au montage du composant
+  useEffect(() => {
+    clearActiveToasts()
+  }, [])
+
   const handleButtonClick = async () => {
     if (isSearching) {
       // Annuler la recherche
       setIsSearching(false)
       setRedirectCountdown(0)
+      clearActiveToasts() // Nettoyer les toasts lors de l'annulation
       console.log('🛑 Recherche annulée')
       return
     }
@@ -52,6 +59,7 @@ const Dashboard = () => {
         setRedirectCountdown(prev => {
           if (prev <= 1) {
             console.log('🔄 Redirection automatique vers /groups')
+            clearActiveToasts() // Nettoyer avant la redirection
             navigate('/groups')
             setIsSearching(false)
             return 0
@@ -162,6 +170,7 @@ const Dashboard = () => {
             <button
               onClick={() => {
                 console.log('🔄 Redirection manuelle vers /groups')
+                clearActiveToasts() // Nettoyer avant la redirection
                 navigate('/groups')
                 setIsSearching(false)
                 setRedirectCountdown(0)
