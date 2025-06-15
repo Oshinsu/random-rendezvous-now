@@ -16,6 +16,9 @@ export class SimpleGroupService {
         return [];
       }
 
+      // Nettoyer automatiquement les participants inactifs avant de récupérer les groupes
+      await this.cleanupInactiveParticipants();
+
       // Récupération directe des groupes de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
@@ -77,40 +80,71 @@ export class SimpleGroupService {
 
       console.log('✅ Groupes récupérés:', groups.length);
       
-      // Diagnostic de cohérence pour chaque groupe
-      for (const group of groups) {
-        console.log(`📊 Groupe ${group.id}:`);
-        console.log(`  - DB current_participants: ${group.current_participants}`);
-        console.log(`  - Max participants: ${group.max_participants}`);
-        
-        // Vérifier la cohérence en comptant les participants réels
-        const { data: realParticipants } = await supabase
-          .from('group_participants')
-          .select('id')
-          .eq('group_id', group.id)
-          .eq('status', 'confirmed');
-          
-        const realCount = realParticipants?.length || 0;
-        console.log(`  - Participants réels: ${realCount}`);
-        console.log(`  - Cohérence: ${realCount === group.current_participants ? '✅' : '❌'}`);
-        
-        // Corriger automatiquement si incohérent
-        if (realCount !== group.current_participants) {
-          console.log(`🔧 Correction automatique du compteur pour groupe ${group.id}`);
-          await supabase
-            .from('groups')
-            .update({ current_participants: realCount })
-            .eq('id', group.id);
-          
-          // Mettre à jour l'objet local
-          group.current_participants = realCount;
-        }
-      }
-      
       return groups;
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
       return [];
+    }
+  }
+
+  static async cleanupInactiveParticipants(): Promise<void> {
+    try {
+      console.log('🧹 Nettoyage des participants inactifs (>5min)');
+      
+      // Supprimer les participants inactifs depuis plus de 5 minutes
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
+      const { data: inactiveParticipants, error: selectError } = await supabase
+        .from('group_participants')
+        .select('group_id, user_id')
+        .lt('last_seen', fiveMinutesAgo);
+
+      if (selectError) {
+        console.error('❌ Erreur sélection participants inactifs:', selectError);
+        return;
+      }
+
+      if (!inactiveParticipants || inactiveParticipants.length === 0) {
+        console.log('✅ Aucun participant inactif à nettoyer');
+        return;
+      }
+
+      console.log(`🗑️ ${inactiveParticipants.length} participants inactifs trouvés`);
+
+      // Supprimer les participants inactifs
+      const { error: deleteError } = await supabase
+        .from('group_participants')
+        .delete()
+        .lt('last_seen', fiveMinutesAgo);
+
+      if (deleteError) {
+        console.error('❌ Erreur suppression participants inactifs:', deleteError);
+        return;
+      }
+
+      // Mettre à jour le compteur current_participants pour chaque groupe affecté
+      const affectedGroups = [...new Set(inactiveParticipants.map(p => p.group_id))];
+      
+      for (const groupId of affectedGroups) {
+        const { data: activeParticipants } = await supabase
+          .from('group_participants')
+          .select('id')
+          .eq('group_id', groupId)
+          .eq('status', 'confirmed');
+
+        const activeCount = activeParticipants?.length || 0;
+        
+        await supabase
+          .from('groups')
+          .update({ current_participants: activeCount })
+          .eq('id', groupId);
+
+        console.log(`🔄 Groupe ${groupId}: ${activeCount} participants actifs`);
+      }
+
+      console.log('✅ Nettoyage des participants inactifs terminé');
+    } catch (error) {
+      console.error('❌ Erreur cleanupInactiveParticipants:', error);
     }
   }
 
@@ -124,6 +158,9 @@ export class SimpleGroupService {
         console.error('❌ Utilisateur non authentifié');
         return [];
       }
+
+      // Nettoyer les participants inactifs avant de récupérer la liste
+      await this.cleanupInactiveParticipants();
 
       const { data: participants, error } = await supabase
         .from('group_participants')
@@ -146,21 +183,16 @@ export class SimpleGroupService {
         return [];
       }
 
-      console.log('✅ Membres récupérés:', participants?.length || 0);
+      console.log('✅ Membres actifs récupérés:', participants?.length || 0);
 
+      // Tous les membres retournés sont maintenant connectés par définition
       const members = (participants || []).map((participant, index) => {
-        const isConnected = participant.last_seen ? 
-          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false;
-          
-        console.log(`👤 Membre ${index + 1}:`);
-        console.log(`  - ID: ${participant.id}`);
-        console.log(`  - Last seen: ${participant.last_seen}`);
-        console.log(`  - Is connected: ${isConnected}`);
+        console.log(`👤 Membre ${index + 1}: connecté (last_seen: ${participant.last_seen})`);
         
         return {
           id: participant.id,
           name: `Rander ${index + 1}`,
-          isConnected,
+          isConnected: true, // Tous les membres sont connectés maintenant
           joinedAt: participant.joined_at,
           status: participant.status as 'confirmed' | 'pending',
           lastSeen: participant.last_seen
@@ -169,8 +201,7 @@ export class SimpleGroupService {
 
       console.log('📊 RÉSUMÉ MEMBRES:');
       console.log(`  - Total: ${members.length}`);
-      console.log(`  - Connectés: ${members.filter(m => m.isConnected).length}`);
-      console.log(`  - Déconnectés: ${members.filter(m => !m.isConnected).length}`);
+      console.log(`  - Tous connectés: ${members.length}`);
 
       return members;
     } catch (error) {

@@ -1,5 +1,5 @@
 
-import { Users, UserCheck, UserX, Clock } from 'lucide-react';
+import { Users, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -18,8 +18,8 @@ interface GroupMembersListProps {
 }
 
 const GroupMembersList = ({ members, maxParticipants, currentParticipants }: GroupMembersListProps) => {
-  const connectedMembers = members.filter(member => member.isConnected);
-  const missingMembers = members.filter(member => !member.isConnected);
+  // Maintenant tous les membres affichés sont connectés par définition
+  const connectedMembers = members; // Tous sont connectés
   
   // Calcul correct des places libres basé sur les membres réels
   const actualParticipants = members.length;
@@ -28,8 +28,7 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
   // Diagnostic d'affichage
   console.log('👥 DIAGNOSTIC AFFICHAGE GroupMembersList:');
   console.log('  - members.length:', members.length);
-  console.log('  - connectedMembers:', connectedMembers.length);
-  console.log('  - missingMembers:', missingMembers.length);
+  console.log('  - Tous connectés:', connectedMembers.length);
   console.log('  - maxParticipants:', maxParticipants);
   console.log('  - currentParticipants (DB):', currentParticipants);
   console.log('  - actualParticipants (calculé):', actualParticipants);
@@ -56,7 +55,7 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Membres connectés */}
+        {/* Membres connectés (tous les membres sont connectés maintenant) */}
         {connectedMembers.length > 0 && (
           <div>
             <h4 className="flex items-center gap-2 text-green-700 font-semibold mb-3">
@@ -76,34 +75,6 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
                     </div>
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
                       En ligne
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Membres en attente/manquants */}
-        {missingMembers.length > 0 && (
-          <div>
-            <h4 className="flex items-center gap-2 text-orange-700 font-semibold mb-3">
-              <Clock className="h-4 w-4" />
-              En attente ({missingMembers.length})
-            </h4>
-            <div className="space-y-2">
-              {missingMembers.map((member, index) => {
-                const maskedName = getMaskedName(connectedMembers.length + index);
-                return (
-                  <div key={member.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {maskedName.charAt(0)}
-                      </div>
-                      <span className="font-medium text-orange-900">{maskedName}</span>
-                    </div>
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                      Hors ligne
                     </Badge>
                   </div>
                 );
@@ -134,7 +105,7 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
         
         {/* Debug info - à supprimer en production */}
         <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          <strong>Debug:</strong> API={actualParticipants}, DB={currentParticipants}, Connectés={connectedMembers.length}, Déconnectés={missingMembers.length}, Libres={emptySlots}
+          <strong>Debug:</strong> Membres actifs={actualParticipants}, DB={currentParticipants}, Libres={emptySlots}
         </div>
       </CardContent>
     </Card>
