@@ -56,9 +56,9 @@ const Dashboard = () => {
                 ${isSearching ? 'animate-spin' : ''}
               `}
               style={{
-                animationDuration: isSearching ? '2s' : undefined,
+                animationDuration: isSearching ? '4s' : undefined,
                 animationTimingFunction: 'linear',
-                animationIterationCount: 'infinite'
+                animationIterationCount: isSearching ? 'infinite' : undefined
               }}
             >
               <div className="flex items-center justify-center w-full h-full">
