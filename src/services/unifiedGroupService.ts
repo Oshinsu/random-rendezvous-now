@@ -1,10 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { GroupMember } from '@/types/groups';
-import { Group } from '@/types/database';
-import { LocationData } from '@/services/geolocation';
+import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
+import { SystemMessagingService } from './systemMessaging';
 import { toast } from '@/hooks/use-toast';
+import type { Group, GroupParticipant } from '@/types/database';
+import type { GroupMember } from '@/types/groups';
 
 export class UnifiedGroupService {
   static isUserConnected(lastSeen: string): boolean {
