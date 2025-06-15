@@ -11,6 +11,7 @@ export interface ChatMessage {
   created_at: string;
   is_system: boolean;
   sender_name?: string;
+  reactions?: any;
 }
 
 export const useGroupChat = (groupId: string) => {

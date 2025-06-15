@@ -36,7 +36,7 @@ export const useMessageReactions = () => {
         return false;
       }
 
-      const currentReactions: MessageReactions = message.reactions || {};
+      const currentReactions: MessageReactions = (message.reactions as MessageReactions) || {};
       const emojiReactions = currentReactions[emoji] || [];
       
       let newReactions: MessageReactions;
