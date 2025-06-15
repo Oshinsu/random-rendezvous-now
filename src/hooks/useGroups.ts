@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -168,6 +169,14 @@ export const useGroups = () => {
     }
   }, []);
 
+  // FONCTION AMÉLIORÉE pour nettoyer complètement l'état après avoir quitté un groupe
+  const clearUserGroupsState = useCallback(() => {
+    console.log('🧹 Nettoyage complet de l\'état des groupes utilisateur');
+    setUserGroups([]);
+    setGroupMembers([]);
+    setGroups([]);
+  }, []);
+
   const fetchUserGroups = useCallback(async () => {
     if (!user || fetchingRef.current) {
       console.log('🚫 Fetch bloqué - utilisateur:', !!user, 'en cours:', fetchingRef.current);
@@ -202,8 +211,8 @@ export const useGroups = () => {
       console.log('✅ Participations trouvées:', participations?.length || 0);
 
       if (!participations || participations.length === 0) {
-        setUserGroups([]);
-        setGroupMembers([]);
+        console.log('📭 Aucune participation trouvée - nettoyage de l\'état');
+        clearUserGroupsState();
         return;
       }
 
@@ -247,8 +256,8 @@ export const useGroups = () => {
           await fetchGroupMembers(finalGroups[0].id);
         }
       } else {
-        setUserGroups([]);
-        setGroupMembers([]);
+        console.log('📭 Aucun groupe valide trouvé après récupération');
+        clearUserGroupsState();
       }
     } catch (error) {
       console.error('❌ Erreur fetchUserGroups:', error);
@@ -261,7 +270,7 @@ export const useGroups = () => {
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [user, fetchGroupMembers]);
+  }, [user, fetchGroupMembers, clearUserGroupsState]);
 
   // Fonction améliorée pour synchroniser le comptage des participants (OPTIMISÉE)
   const syncGroupParticipantCount = async (groupId: string) => {
@@ -476,8 +485,6 @@ export const useGroups = () => {
       return 0;
     }
   };
-
-  // ... keep existing code (findCompatibleGroup function)
 
   const findCompatibleGroup = async (userLocation: LocationData) => {
     try {
@@ -703,7 +710,7 @@ export const useGroups = () => {
     }
   };
 
-  // Fonction pour quitter un groupe
+  // FONCTION AMÉLIORÉE pour quitter un groupe avec nettoyage complet
   const leaveGroup = async (groupId: string) => {
     if (!user || loading) {
       console.log('🚫 Impossible de quitter - pas d\'utilisateur ou chargement en cours');
@@ -714,10 +721,15 @@ export const useGroups = () => {
     try {
       console.log('🚪 Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
-      // Obtenir le nombre de participants avant de quitter
-      const participantsBeforeLeaving = await getCurrentParticipantCount(groupId);
+      // ÉTAPE 1: Nettoyer immédiatement l'état local pour un feedback visuel instantané
+      console.log('🧹 Nettoyage immédiat de l\'état local');
+      clearUserGroupsState();
 
-      // Supprimer la participation avec vérification explicite de l'utilisateur
+      // ÉTAPE 2: Obtenir le nombre de participants avant de quitter
+      const participantsBeforeLeaving = await getCurrentParticipantCount(groupId);
+      console.log('📊 Participants avant départ:', participantsBeforeLeaving);
+
+      // ÉTAPE 3: Supprimer la participation avec vérification explicite de l'utilisateur
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -730,40 +742,44 @@ export const useGroups = () => {
         throw deleteError;
       }
 
-      console.log('✅ Participation supprimée');
+      console.log('✅ Participation supprimée avec succès');
 
-      // Synchroniser le comptage après suppression
+      // ÉTAPE 4: Synchroniser le comptage après suppression
       await syncGroupParticipantCount(groupId);
 
-      // Vérifier s'il reste des participants
+      // ÉTAPE 5: Vérifier s'il reste des participants
       const { data: remainingParticipants, error: checkError } = await supabase
         .from('group_participants')
         .select('id')
         .eq('group_id', groupId)
         .eq('status', 'confirmed');
 
-      if (!checkError && remainingParticipants && remainingParticipants.length === 0) {
-        // Supprimer le groupe s'il est vide
-        console.log('🗑️ Suppression du groupe vide');
-        await supabase
-          .from('groups')
-          .delete()
-          .eq('id', groupId);
-      } else if (!checkError && remainingParticipants && remainingParticipants.length < 5) {
-        // Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
-        console.log('⏳ Remise du groupe en attente et suppression des infos bar');
-        await supabase
-          .from('groups')
-          .update({
-            status: 'waiting',
-            bar_name: null,
-            bar_address: null,
-            meeting_time: null,
-            bar_latitude: null,
-            bar_longitude: null,
-            bar_place_id: null
-          })
-          .eq('id', groupId);
+      if (!checkError && remainingParticipants) {
+        console.log('👥 Participants restants:', remainingParticipants.length);
+        
+        if (remainingParticipants.length === 0) {
+          // Supprimer le groupe s'il est vide
+          console.log('🗑️ Suppression du groupe vide');
+          await supabase
+            .from('groups')
+            .delete()
+            .eq('id', groupId);
+        } else if (remainingParticipants.length < 5) {
+          // Remettre le groupe en attente ET supprimer les infos du bar s'il y a moins de 5 participants
+          console.log('⏳ Remise du groupe en attente et suppression des infos bar');
+          await supabase
+            .from('groups')
+            .update({
+              status: 'waiting',
+              bar_name: null,
+              bar_address: null,
+              meeting_time: null,
+              bar_latitude: null,
+              bar_longitude: null,
+              bar_place_id: null
+            })
+            .eq('id', groupId);
+        }
       }
 
       toast({ 
@@ -771,10 +787,12 @@ export const useGroups = () => {
         description: 'Vous avez quitté le groupe avec succès.' 
       });
       
-      // Attendre un peu avant de rafraîchir
+      // ÉTAPE 6: Forcer une vérification finale après un délai
       setTimeout(() => {
+        console.log('🔄 Vérification finale des groupes utilisateur');
         fetchUserGroups();
-      }, 1000);
+      }, 2000);
+      
     } catch (error) {
       console.error('❌ Erreur pour quitter le groupe:', error);
       toast({ 
@@ -782,6 +800,10 @@ export const useGroups = () => {
         description: 'Impossible de quitter le groupe. Veuillez réessayer.', 
         variant: 'destructive' 
       });
+      // En cas d'erreur, re-fetch pour s'assurer de l'état correct
+      setTimeout(() => {
+        fetchUserGroups();
+      }, 1000);
     } finally {
       setLoading(false);
     }
@@ -794,10 +816,9 @@ export const useGroups = () => {
       fetchUserGroups();
     } else {
       console.log('🚫 Pas d\'utilisateur, reset des groupes');
-      setUserGroups([]);
-      setGroupMembers([]);
+      clearUserGroupsState();
     }
-  }, [user?.id]); // Utiliser user.id plutôt que user pour éviter les re-renders
+  }, [user?.id, fetchUserGroups, clearUserGroupsState]); // Ajouter clearUserGroupsState dans les dépendances
 
   // ➜ Souscription en temps réel aux changements de participations utilisateur ET de groupes (AMÉLIORÉE)
   useEffect(() => {
