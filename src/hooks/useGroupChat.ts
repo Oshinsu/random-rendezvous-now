@@ -20,18 +20,15 @@ export const useGroupChat = (groupId: string) => {
   const [sending, setSending] = useState(false);
   const channelRef = useRef<any>(null);
   const loadingRef = useRef(false);
-  const lastSystemMessageRef = useRef<string>('');
 
-  // Fonction pour déduplication des messages
+  // Fonction pour déduplication des messages (simplifiée)
   const deduplicateMessages = useCallback((messagesList: ChatMessage[]) => {
     const seen = new Set();
     const uniqueMessages = messagesList.filter(msg => {
-      // Pour les messages système, on vérifie aussi le contenu pour éviter les doublons
-      const key = msg.is_system ? `${msg.message}_${msg.created_at}` : msg.id;
-      if (seen.has(key)) {
+      if (seen.has(msg.id)) {
         return false;
       }
-      seen.add(key);
+      seen.add(msg.id);
       return true;
     });
 
@@ -41,32 +38,9 @@ export const useGroupChat = (groupId: string) => {
     );
   }, []);
 
-  // Fonction pour nettoyer les messages anciens et redondants
-  const cleanupMessages = useCallback((messagesList: ChatMessage[]) => {
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    // Garder les messages récents et limiter les messages système répétitifs
-    const cleanedMessages = messagesList.filter(msg => {
-      const msgDate = new Date(msg.created_at);
-      
-      // Garder tous les messages récents (moins de 24h)
-      if (msgDate > oneDayAgo) {
-        return true;
-      }
-      
-      // Pour les anciens messages, garder seulement les non-système
-      return !msg.is_system;
-    });
-
-    // Limiter le nombre total de messages pour éviter l'accumulation
-    return cleanedMessages.slice(-50); // Garder les 50 derniers messages
-  }, []);
-
-  // Charger les messages existants avec debouncing
+  // Charger les messages existants
   const loadMessages = useCallback(async () => {
     if (!groupId || !user || loadingRef.current) {
-      console.log('❌ Impossible de charger messages: conditions non remplies');
       return;
     }
     
@@ -79,7 +53,8 @@ export const useGroupChat = (groupId: string) => {
         .from('group_messages')
         .select('*')
         .eq('group_id', groupId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(100); // Limiter à 100 messages récents
 
       if (error) {
         console.error('❌ Erreur chargement messages:', error);
@@ -89,9 +64,8 @@ export const useGroupChat = (groupId: string) => {
       if (data) {
         console.log('✅ Messages bruts chargés:', data.length);
         const deduplicatedMessages = deduplicateMessages(data);
-        const cleanedMessages = cleanupMessages(deduplicatedMessages);
-        console.log('✅ Messages finaux après nettoyage:', cleanedMessages.length);
-        setMessages(cleanedMessages);
+        console.log('✅ Messages après déduplication:', deduplicatedMessages.length);
+        setMessages(deduplicatedMessages);
       }
     } catch (error) {
       console.error('❌ Erreur loadMessages:', error);
@@ -99,9 +73,9 @@ export const useGroupChat = (groupId: string) => {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [groupId, user?.id, deduplicateMessages, cleanupMessages]);
+  }, [groupId, user?.id, deduplicateMessages]);
 
-  // Envoyer un message avec vérification anti-spam
+  // Envoyer un message
   const sendMessage = useCallback(async (messageText: string) => {
     if (!user || !messageText.trim() || sending) return false;
 
@@ -124,6 +98,15 @@ export const useGroupChat = (groupId: string) => {
       }
 
       console.log('✅ Message envoyé avec succès:', data);
+      
+      // Ajouter immédiatement le message à la liste locale pour un feedback instantané
+      if (data) {
+        setMessages(prev => {
+          const newMessages = [...prev, data];
+          return deduplicateMessages(newMessages);
+        });
+      }
+      
       return true;
     } catch (error) {
       console.error('❌ Erreur sendMessage:', error);
@@ -131,55 +114,11 @@ export const useGroupChat = (groupId: string) => {
     } finally {
       setSending(false);
     }
-  }, [user, groupId, sending]);
+  }, [user, groupId, sending, deduplicateMessages]);
 
-  // Envoyer un message système avec protection anti-spam
-  const sendSystemMessage = useCallback(async (messageText: string) => {
-    if (!messageText.trim()) return false;
-
-    // Vérifier si le même message système a été envoyé récemment
-    if (lastSystemMessageRef.current === messageText) {
-      console.log('⚠️ Message système identique ignoré (anti-spam):', messageText);
-      return false;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('group_messages')
-        .insert({
-          group_id: groupId,
-          user_id: '00000000-0000-0000-0000-000000000000',
-          message: messageText.trim(),
-          is_system: true
-        });
-
-      if (error) {
-        console.error('❌ Erreur envoi message système:', error);
-        throw error;
-      }
-
-      // Mémoriser le dernier message système pour éviter les doublons
-      lastSystemMessageRef.current = messageText;
-      
-      // Reset de la protection après 30 secondes
-      setTimeout(() => {
-        if (lastSystemMessageRef.current === messageText) {
-          lastSystemMessageRef.current = '';
-        }
-      }, 30000);
-
-      console.log('✅ Message système envoyé avec protection anti-spam');
-      return true;
-    } catch (error) {
-      console.error('❌ Erreur sendSystemMessage:', error);
-      return false;
-    }
-  }, [groupId]);
-
-  // Configuration realtime améliorée avec debouncing
+  // Configuration realtime simplifiée
   useEffect(() => {
     if (!groupId || !user) {
-      console.log('❌ Pas de configuration realtime: groupId ou user manquant');
       return;
     }
 
@@ -188,12 +127,12 @@ export const useGroupChat = (groupId: string) => {
     // Charger les messages initiaux
     loadMessages();
 
-    // Nettoyer l'ancienne souscription si elle existe
+    // Nettoyer l'ancienne souscription
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
 
-    // Configurer la nouvelle souscription realtime avec debouncing amélioré
+    // Configurer la nouvelle souscription realtime
     const channel = supabase
       .channel(`group-chat-${groupId}`)
       .on(
@@ -208,41 +147,23 @@ export const useGroupChat = (groupId: string) => {
           console.log('🛰️ Nouveau message reçu via realtime:', payload.new);
           const newMessage = payload.new as ChatMessage;
           
-          // Debouncing : attendre un peu avant d'ajouter le message
-          setTimeout(() => {
-            setMessages(prev => {
-              // Vérifier si le message existe déjà
-              const messageExists = prev.some(msg => msg.id === newMessage.id);
-              if (messageExists) {
-                console.log('⚠️ Message déjà présent, ignoré:', newMessage.id);
-                return prev;
-              }
-              
-              const newMessages = [...prev, newMessage];
-              const deduplicatedMessages = deduplicateMessages(newMessages);
-              const cleanedMessages = cleanupMessages(deduplicatedMessages);
-              
-              console.log('✅ Nouveau message ajouté après nettoyage. Total:', cleanedMessages.length);
-              return cleanedMessages;
-            });
-          }, 100); // Debouncing de 100ms
+          setMessages(prev => {
+            // Vérifier si le message existe déjà
+            const messageExists = prev.some(msg => msg.id === newMessage.id);
+            if (messageExists) {
+              console.log('⚠️ Message déjà présent, ignoré:', newMessage.id);
+              return prev;
+            }
+            
+            const newMessages = [...prev, newMessage];
+            const deduplicatedMessages = deduplicateMessages(newMessages);
+            console.log('✅ Nouveau message ajouté. Total:', deduplicatedMessages.length);
+            return deduplicatedMessages;
+          });
         }
       )
-      .subscribe((status, err) => {
+      .subscribe((status) => {
         console.log('🛰️ Statut souscription realtime:', status);
-        if (err) {
-          console.error('❌ Erreur souscription realtime:', err);
-        }
-        
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Souscription realtime active pour groupe:', groupId);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log('⚠️ Problème de connexion realtime, rechargement des messages...');
-          // Recharger les messages en cas de problème avec debouncing
-          setTimeout(() => {
-            loadMessages();
-          }, 3000); // Augmenté à 3 secondes
-        }
       });
 
     channelRef.current = channel;
@@ -254,29 +175,13 @@ export const useGroupChat = (groupId: string) => {
         channelRef.current = null;
       }
     };
-  }, [groupId, user?.id, loadMessages, deduplicateMessages, cleanupMessages]);
-
-  // Nettoyage périodique des messages (toutes les 5 minutes)
-  useEffect(() => {
-    const cleanupInterval = setInterval(() => {
-      setMessages(prev => {
-        const cleaned = cleanupMessages(prev);
-        if (cleaned.length !== prev.length) {
-          console.log('🧹 Nettoyage automatique:', prev.length, '->', cleaned.length);
-        }
-        return cleaned;
-      });
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(cleanupInterval);
-  }, [cleanupMessages]);
+  }, [groupId, user?.id, loadMessages, deduplicateMessages]);
 
   return {
     messages,
     loading,
     sending,
     sendMessage,
-    sendSystemMessage,
     refreshMessages: loadMessages
   };
 };

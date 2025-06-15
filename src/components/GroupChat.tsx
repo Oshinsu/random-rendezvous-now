@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, Users, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, Users, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Scroll automatique seulement pour les nouveaux messages
+  // Scroll automatique pour les nouveaux messages
   useEffect(() => {
     if (messages.length > lastMessageCountRef.current) {
       scrollToBottom();
@@ -65,20 +65,28 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     });
   };
 
-  const getMessageSender = (message: any) => {
+  // Fonction améliorée pour obtenir le nom de l'expéditeur
+  const getMessageSender = (message: any, index: number) => {
     if (message.is_system) {
       return 'Système';
     }
     if (message.user_id === user?.id) {
       return 'Vous';
     }
-    // Pour les autres utilisateurs, utiliser un nom anonyme basé sur l'ID
-    const userId = message.user_id;
-    const userIndex = userId ? userId.slice(-4) : 'Anon';
-    return `Aventurier ${userIndex}`;
+    
+    // Créer une liste des utilisateurs uniques pour assigner des numéros cohérents
+    const uniqueUserIds = [...new Set(
+      messages
+        .filter(m => !m.is_system && m.user_id !== user?.id)
+        .map(m => m.user_id)
+    )];
+    
+    const userIndex = uniqueUserIds.indexOf(message.user_id);
+    const userNumber = userIndex + 1;
+    
+    return `Aventurier ${userNumber}`;
   };
 
-  // Fonction pour rafraîchir manuellement les messages
   const handleRefresh = () => {
     console.log('🔄 Actualisation manuelle du chat');
     refreshMessages();
@@ -125,12 +133,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
     );
   }
 
-  // Filtrer les messages pour éviter l'affichage de doublons côté UI aussi
-  const uniqueMessages = messages.filter((message, index, self) => 
-    index === self.findIndex(m => m.id === message.id)
-  );
-
-  console.log('🔍 [GroupChat] Rendu avec messages uniques:', uniqueMessages.length);
+  console.log('🔍 [GroupChat] Rendu avec messages:', messages.length);
 
   return (
     <Card className="w-full">
@@ -143,7 +146,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-green-100 text-green-800">
               <Users className="h-3 w-3 mr-1" />
-              {uniqueMessages.length}
+              {messages.length}
             </Badge>
             <Button
               onClick={handleRefresh}
@@ -152,7 +155,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
               size="sm"
               className="h-8 w-8 p-0"
             >
-              <Trash2 className="h-3 w-3" />
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardTitle>
@@ -160,12 +163,12 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
       <CardContent className="space-y-4">
         {/* Zone des messages */}
         <div className="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50 space-y-3">
-          {loading && uniqueMessages.length === 0 ? (
+          {loading && messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
               <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
               <p>Chargement des messages...</p>
             </div>
-          ) : uniqueMessages.length === 0 ? (
+          ) : messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <p className="text-blue-800 font-medium">💬 Bienvenue dans le chat !</p>
@@ -177,13 +180,13 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
             </div>
           ) : (
             <>
-              {uniqueMessages.map((message, index) => {
-                const sender = getMessageSender(message);
+              {messages.map((message, index) => {
+                const sender = getMessageSender(message, index);
                 const isOwnMessage = message.user_id === user?.id && !message.is_system;
                 
                 return (
                   <div
-                    key={`${message.id}-${index}`}
+                    key={message.id}
                     className={`p-3 rounded-lg transition-all duration-200 ${
                       message.is_system
                         ? 'bg-blue-100 border border-blue-200 text-blue-800'
@@ -215,7 +218,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Zone de saisie améliorée */}
+        {/* Zone de saisie */}
         <div className="flex gap-2">
           <Input
             ref={inputRef}
