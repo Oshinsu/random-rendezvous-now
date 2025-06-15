@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -108,17 +108,19 @@ export const useUnifiedGroupChat = (groupId: string) => {
     }
   });
 
-  // Configuration realtime avec cleanup automatique
-  useState(() => {
+  // Configuration realtime avec cleanup automatique - FIXED: Using useEffect instead of useState
+  useEffect(() => {
     if (!groupId || !user) {
       return;
     }
 
     console.log('🛰️ Configuration realtime pour groupe:', groupId);
     
-    // Nettoyer l'ancienne souscription
+    // Nettoyer l'ancienne souscription si elle existe
     if (channelRef.current) {
+      console.log('🧹 Nettoyage de l\'ancienne souscription');
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
     // Configurer la nouvelle souscription
@@ -154,6 +156,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
     channelRef.current = channel;
 
+    // Fonction de nettoyage pour useEffect
     return () => {
       console.log('🛰️ Nettoyage souscription realtime pour groupe:', groupId);
       if (channelRef.current) {
@@ -161,7 +164,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
         channelRef.current = null;
       }
     };
-  });
+  }, [groupId, user, queryClient]); // Dependencies pour useEffect
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     try {
