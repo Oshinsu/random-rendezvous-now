@@ -12,30 +12,38 @@ export const useChatRealtime = (
   const { user } = useAuth();
   const channelRef = useRef<any>(null);
   const currentGroupIdRef = useRef<string>('');
+  const isActiveRef = useRef<boolean>(true);
 
   useEffect(() => {
     if (!groupId || !user) {
       return;
     }
 
-    // Nettoyage immédiat et complet de l'ancienne souscription
+    // Marquer comme actif
+    isActiveRef.current = true;
+
+    // Nettoyage BRUTAL de l'ancienne souscription
     if (channelRef.current) {
-      console.log('🧹 Nettoyage immédiat de l\'ancienne souscription');
-      supabase.removeChannel(channelRef.current);
+      console.log('🧹 SUPPRESSION BRUTALE de l\'ancienne souscription');
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (error) {
+        console.warn('Erreur lors de la suppression du canal:', error);
+      }
       channelRef.current = null;
     }
 
-    // Si on change de groupe, nettoyer le cache
+    // Détecter changement de groupe et nettoyer
     if (currentGroupIdRef.current && currentGroupIdRef.current !== groupId) {
-      console.log('🧹 Changement de groupe détecté, nettoyage du cache');
+      console.log('🧹 CHANGEMENT DE GROUPE - nettoyage immédiat du cache');
       invalidateMessages();
     }
 
-    console.log('🛰️ Configuration realtime pour groupe:', groupId);
+    console.log('🛰️ Configuration STRICTE realtime pour groupe:', groupId);
     currentGroupIdRef.current = groupId;
 
-    // Canal unique et spécifique pour ce groupe et cet utilisateur
-    const channelName = `group-messages-strict-${groupId}-${user.id}-${Date.now()}`;
+    // Canal avec timestamp pour garantir l'unicité
+    const channelName = `strict-group-${groupId}-${user.id}-${Date.now()}-${Math.random()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -45,59 +53,78 @@ export const useChatRealtime = (
           event: 'INSERT',
           schema: 'public',
           table: 'group_messages',
-          filter: `group_id=eq.${groupId}` // Filtrage au niveau de la souscription
+          filter: `group_id=eq.${groupId}` // Filtrage au niveau serveur
         },
         (payload) => {
+          // Vérifier si le hook est toujours actif
+          if (!isActiveRef.current) {
+            console.log('🚫 Hook inactif, message ignoré');
+            return;
+          }
+
           const newMessage = payload.new as ChatMessage;
           
-          // Triple vérification du groupe
-          if (newMessage.group_id !== groupId) {
-            console.error('🚨 Message étranger rejeté en realtime:', {
-              messageGroup: newMessage.group_id,
+          // TRIPLE vérification ultra stricte
+          if (!newMessage || newMessage.group_id !== groupId) {
+            console.error('🚨 Message ÉTRANGER REJETÉ:', {
+              messageGroup: newMessage?.group_id,
               expectedGroup: groupId,
-              messageId: newMessage.id
+              currentGroup: currentGroupIdRef.current,
+              messageId: newMessage?.id
             });
             return;
           }
 
-          // Vérifier que c'est bien le groupe actuel
+          // Vérifier que c'est toujours le groupe actuel
           if (currentGroupIdRef.current !== groupId) {
-            console.error('🚨 Message pour ancien groupe rejeté:', {
+            console.error('🚨 Message pour ANCIEN groupe rejeté:', {
               messageGroup: newMessage.group_id,
               currentGroup: currentGroupIdRef.current
             });
             return;
           }
 
-          console.log('✅ Nouveau message reçu en realtime pour groupe:', groupId);
+          console.log('✅ Message VALIDÉ et accepté pour groupe:', groupId);
           updateMessagesCache(newMessage);
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Souscription realtime active pour:', groupId);
+          console.log('✅ Souscription STRICTE active pour:', groupId);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Erreur de souscription realtime pour:', groupId);
+          console.error('❌ Erreur souscription STRICTE pour:', groupId);
         }
       });
 
     channelRef.current = channel;
 
     return () => {
+      // Marquer comme inactif
+      isActiveRef.current = false;
+      
       if (channelRef.current) {
-        console.log('🛰️ Nettoyage souscription realtime pour:', groupId);
-        supabase.removeChannel(channelRef.current);
+        console.log('🛰️ Nettoyage souscription STRICTE pour:', groupId);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.warn('Erreur lors du nettoyage:', error);
+        }
         channelRef.current = null;
       }
     };
-  }, [groupId, user?.id]); // Dépendances strictes
+  }, [groupId, user?.id, updateMessagesCache, invalidateMessages]);
 
-  // Nettoyage final au démontage du composant
+  // Nettoyage final BRUTAL au démontage
   useEffect(() => {
     return () => {
+      isActiveRef.current = false;
       if (channelRef.current) {
-        console.log('🛰️ Nettoyage final au démontage');
-        supabase.removeChannel(channelRef.current);
+        console.log('🛰️ Nettoyage FINAL BRUTAL');
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (error) {
+          console.warn('Erreur nettoyage final:', error);
+        }
         channelRef.current = null;
       }
       currentGroupIdRef.current = '';

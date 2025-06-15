@@ -2,9 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from '@/services/geolocation';
-import { SimpleGroupService } from '@/services/simpleGroupService';
-import { showUniqueToast } from '@/utils/toastUtils';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
@@ -16,202 +15,179 @@ export const useSimpleGroupManagement = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
+  // Récupération des groupes avec nettoyage automatique
   const { 
     data: userGroups = [], 
     isLoading: groupsLoading,
     refetch: refetchGroups 
   } = useQuery({
-    queryKey: ['userGroups', user?.id],
+    queryKey: ['simpleUserGroups', user?.id],
     queryFn: async (): Promise<Group[]> => {
-      if (!user) {
-        console.log('⚠️ Pas d\'utilisateur connecté');
+      if (!user) return [];
+      
+      console.log('🔍 Récupération STRICTE des groupes utilisateur pour:', user.id);
+      
+      try {
+        // Nettoyage automatique d'abord
+        console.log('🧹 Nettoyage des participants inactifs (>5min)');
+        
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        
+        // Supprimer les participants inactifs
+        await supabase
+          .from('group_participants')
+          .delete()
+          .lt('last_seen', fiveMinutesAgo);
+
+        // Récupérer les participations ACTIVES uniquement
+        const { data: participations, error: participationsError } = await supabase
+          .from('group_participants')
+          .select(`
+            group_id,
+            groups!inner(*)
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'confirmed')
+          .in('groups.status', ['waiting', 'confirmed'])
+          .gte('last_seen', fiveMinutesAgo); // Seulement les participants récents
+
+        if (participationsError) {
+          console.error('❌ Erreur récupération participations:', participationsError);
+          throw participationsError;
+        }
+
+        if (!participations || participations.length === 0) {
+          console.log('ℹ️ Aucune participation active trouvée');
+          setGroupMembers([]);
+          return [];
+        }
+
+        // Extraire les groupes ET mettre à jour les compteurs
+        const groups: Group[] = [];
+        for (const participation of participations) {
+          const group = participation.groups as Group;
+          
+          // Recalculer le nombre RÉEL de participants pour ce groupe
+          const { data: activeParticipants } = await supabase
+            .from('group_participants')
+            .select('id')
+            .eq('group_id', group.id)
+            .eq('status', 'confirmed')
+            .gte('last_seen', fiveMinutesAgo);
+
+          const realCount = activeParticipants?.length || 0;
+          
+          // Corriger le compteur si nécessaire
+          if (group.current_participants !== realCount) {
+            console.log('🔧 Correction compteur groupe:', group.id, 'de', group.current_participants, 'à', realCount);
+            
+            await supabase
+              .from('groups')
+              .update({ current_participants: realCount })
+              .eq('id', group.id);
+            
+            // Mettre à jour l'objet local
+            group.current_participants = realCount;
+          }
+          
+          groups.push(group);
+        }
+
+        console.log('✅ Groupes récupérés:', groups.length);
+        
+        // Récupérer les membres du premier groupe actif
+        if (groups.length > 0) {
+          const firstGroup = groups[0];
+          const { data: membersData } = await supabase
+            .from('group_participants')
+            .select('*')
+            .eq('group_id', firstGroup.id)
+            .eq('status', 'confirmed')
+            .gte('last_seen', fiveMinutesAgo)
+            .order('joined_at', { ascending: true });
+
+          if (membersData) {
+            const members: GroupMember[] = membersData.map((participant, index) => ({
+              id: participant.id,
+              name: `Rander ${index + 1}`,
+              isConnected: true, // Tous sont connectés par définition (filtrés par last_seen)
+              joinedAt: participant.joined_at,
+              status: 'confirmed' as const,
+              lastSeen: participant.last_seen || participant.joined_at
+            }));
+            
+            setGroupMembers(members);
+            console.log('✅ Membres récupérés:', members.length);
+          }
+        }
+
+        return groups;
+      } catch (error) {
+        console.error('❌ Erreur récupération groupes:', error);
+        setGroupMembers([]);
         return [];
       }
-      console.log('🔄 Récupération des groupes pour:', user.id);
-      const groups = await SimpleGroupService.getUserGroups(user.id);
-      console.log('📊 Groupes récupérés:', groups.length);
-      return groups;
     },
     enabled: !!user,
-    refetchInterval: 15000,
-    staleTime: 10000,
+    refetchInterval: 10000, // Refresh toutes les 10 secondes
+    staleTime: 5000,
   });
 
-  const getUserLocation = async (): Promise<LocationData | null> => {
-    if (userLocation) return userLocation;
-
-    try {
-      const location = await GeolocationService.getCurrentLocation();
-      setUserLocation(location);
-      showUniqueToast(
-        `Position: ${location.locationName}`,
-        "📍 Position détectée"
-      );
-      return location;
-    } catch (error) {
-      showUniqueToast(
-        'Géolocalisation indisponible - mode universel activé.',
-        "📍 Géolocalisation indisponible"
-      );
-      return null;
-    }
-  };
-
+  // Récupération de la géolocalisation
   useEffect(() => {
-    const fetchGroupMembers = async () => {
-      if (userGroups.length > 0 && user) {
-        try {
-          const activeGroup = userGroups[0];
-          console.log('👥 Récupération des membres pour le groupe:', activeGroup.id);
-          
-          const members = await SimpleGroupService.getGroupMembers(activeGroup.id);
-          console.log('✅ Membres récupérés:', members.length);
-          
-          setGroupMembers(members);
-          
-          await SimpleGroupService.updateUserActivity(activeGroup.id, user.id);
-        } catch (error) {
-          console.error('❌ Erreur fetchGroupMembers:', error);
-          setGroupMembers([]);
-        }
-      } else {
-        console.log('ℹ️ Aucun groupe actif, reset des membres');
-        setGroupMembers([]);
-      }
-    };
-
-    fetchGroupMembers();
-  }, [userGroups.length, user?.id]);
-
-  const joinRandomGroup = async (): Promise<boolean> => {
-    if (!user) {
-      toast({ 
-        title: 'Erreur', 
-        description: 'Vous devez être connecté pour rejoindre un groupe.', 
-        variant: 'destructive' 
-      });
-      return false;
+    if (user && !userLocation) {
+      GeolocationService.getCurrentLocation()
+        .then(setUserLocation)
+        .catch(() => console.log('Géolocalisation non disponible'));
     }
-
-    if (loading) return false;
-
-    setLoading(true);
-    
-    try {
-      console.log('🎲 Début du processus de recherche/création de groupe');
-      
-      const isAuth = await SimpleGroupService.verifyAuth();
-      if (!isAuth) {
-        toast({ 
-          title: 'Session expirée', 
-          description: 'Veuillez vous reconnecter.', 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      const location = await getUserLocation();
-      if (!location) {
-        toast({ 
-          title: 'Géolocalisation requise', 
-          description: 'Votre position est nécessaire pour rejoindre un groupe.', 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      console.log('📍 Position obtenue:', location.locationName);
-
-      const nearbyGroups = await SimpleGroupService.findNearbyGroups(location);
-      console.log('🔍 Groupes trouvés à proximité:', nearbyGroups.length);
-      
-      if (nearbyGroups.length > 0) {
-        const targetGroup = nearbyGroups[0];
-        console.log('👥 Tentative de rejoindre le groupe:', targetGroup.id);
-        const success = await SimpleGroupService.joinGroup(targetGroup.id, user.id, location);
-        
-        if (success) {
-          console.log('✅ Groupe rejoint avec succès');
-          toast({ 
-            title: '✅ Groupe rejoint', 
-            description: `Vous avez rejoint un groupe dans votre zone.`, 
-          });
-          await refetchGroups();
-        }
-        return success;
-      } else {
-        console.log('🆕 Aucun groupe trouvé, création d\'un nouveau groupe');
-        const success = await SimpleGroupService.createGroup(location, user.id);
-        
-        if (success) {
-          console.log('✅ Nouveau groupe créé avec succès');
-          await refetchGroups();
-        }
-        return success;
-      }
-    } catch (error) {
-      console.error('❌ Erreur joinRandomGroup:', error);
-      toast({ 
-        title: 'Erreur', 
-        description: 'Impossible de rejoindre un groupe pour le moment.', 
-        variant: 'destructive' 
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, userLocation]);
 
   const leaveGroup = async (groupId: string): Promise<void> => {
     if (!user || loading) return;
 
     setLoading(true);
     try {
-      console.log('🚪 Tentative de quitter le groupe:', groupId);
+      console.log('🚪 Quitter le groupe:', groupId);
       
+      // Nettoyer l'état local immédiatement
       setGroupMembers([]);
-      queryClient.setQueryData(['userGroups', user.id], []);
-
-      const success = await SimpleGroupService.leaveGroup(groupId, user.id);
       
-      if (success) {
-        console.log('✅ Groupe quitté avec succès');
-        toast({ 
-          title: '✅ Groupe quitté', 
-          description: 'Vous avez quitté le groupe avec succès.' 
-        });
-        await refetchGroups();
+      // Supprimer la participation
+      const { error } = await supabase
+        .from('group_participants')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('❌ Erreur quitter groupe:', error);
+        throw error;
       }
+
+      toast({
+        title: '✅ Groupe quitté',
+        description: 'Vous avez quitté le groupe avec succès.'
+      });
+
+      // Rafraîchir la liste
+      await refetchGroups();
     } catch (error) {
       console.error('❌ Erreur leaveGroup:', error);
-      toast({ 
-        title: 'Erreur', 
-        description: 'Erreur lors de la sortie du groupe.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de quitter le groupe.',
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const currentGroup = userGroups[0];
-  const connectedMembers = groupMembers.filter(m => m.isConnected);
-  
-  console.log('📊 STATS TEMPS RÉEL:');
-  console.log('  - Groupe actif:', !!currentGroup);
-  console.log('  - Membres API:', groupMembers.length);
-  console.log('  - Connectés:', connectedMembers.length);
-  if (currentGroup) {
-    console.log('  - DB participants:', currentGroup.current_participants);
-    console.log('  - Max participants:', currentGroup.max_participants);
-  }
-
   return {
     userGroups,
     groupMembers,
     loading: loading || groupsLoading,
     userLocation,
-    joinRandomGroup,
     leaveGroup,
     refetchGroups
   };

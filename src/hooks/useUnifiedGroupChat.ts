@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatMessages } from './chat/useChatMessages';
 import { useChatMutation } from './chat/useChatMutation';
@@ -18,6 +18,7 @@ export interface ChatMessage {
 
 export const useUnifiedGroupChat = (groupId: string) => {
   const { user } = useAuth();
+  const previousGroupIdRef = useRef<string>('');
 
   const {
     messages,
@@ -31,18 +32,30 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Nettoyage agressif lors du changement de groupe
+  // Nettoyage ULTRA agressif lors du changement de groupe
   useEffect(() => {
-    if (groupId && user) {
-      console.log('🔄 Changement de groupe détecté, nettoyage complet:', groupId);
-      // Forcer un nettoyage complet et un rechargement
+    if (!groupId || !user) return;
+
+    // Détecter le changement de groupe
+    if (previousGroupIdRef.current && previousGroupIdRef.current !== groupId) {
+      console.log('🔄 CHANGEMENT DE GROUPE détecté:', {
+        ancien: previousGroupIdRef.current,
+        nouveau: groupId
+      });
+      
+      // Nettoyage immédiat et complet
       invalidateMessages();
-      // Attendre un tick pour s'assurer que le cache est nettoyé
+      
+      // Attendre un cycle complet avant de recharger
       setTimeout(() => {
+        console.log('🔄 Rechargement forcé après nettoyage pour:', groupId);
         refreshMessages();
-      }, 100);
+      }, 200);
     }
-  }, [groupId, user?.id]);
+
+    // Mémoriser le groupe actuel
+    previousGroupIdRef.current = groupId;
+  }, [groupId, user?.id, invalidateMessages, refreshMessages]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     if (!groupId || !user) {
@@ -50,14 +63,20 @@ export const useUnifiedGroupChat = (groupId: string) => {
       return false;
     }
 
-    // Vérification supplémentaire avant envoi
+    // Vérification STRICTE avant envoi
     if (!messageText.trim()) {
       console.error('❌ Message vide, envoi annulé');
       return false;
     }
 
+    // Vérifier que nous sommes toujours sur le bon groupe
+    if (previousGroupIdRef.current !== groupId) {
+      console.error('❌ Changement de groupe détecté, envoi annulé');
+      return false;
+    }
+
     try {
-      console.log('📤 Envoi message pour groupe:', groupId);
+      console.log('📤 Envoi message pour groupe STRICT:', groupId);
       await sendMessageMutation.mutateAsync(messageText);
       return true;
     } catch (error) {
