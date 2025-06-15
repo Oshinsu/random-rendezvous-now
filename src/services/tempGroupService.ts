@@ -24,7 +24,8 @@ export class TempGroupService {
       }
 
       console.log('✅ Groupes récupérés:', groups?.length || 0);
-      return groups || [];
+      // Type assertion to ensure compatibility with Group interface
+      return (groups || []) as Group[];
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
       return [];
@@ -36,7 +37,7 @@ export class TempGroupService {
       console.log('🆕 Création de groupe simple');
       
       const newGroupData = {
-        status: 'waiting',
+        status: 'waiting' as const,
         max_participants: 5,
         current_participants: 1,
         latitude: location.latitude,
@@ -64,7 +65,7 @@ export class TempGroupService {
         .insert({
           group_id: newGroup.id,
           user_id: userId,
-          status: 'confirmed',
+          status: 'confirmed' as const,
           last_seen: new Date().toISOString(),
           latitude: location.latitude,
           longitude: location.longitude,
