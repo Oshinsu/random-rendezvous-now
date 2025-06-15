@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
@@ -60,7 +59,11 @@ export class GroupOperationsService {
     setLoading(true);
     
     try {
-      // Vérifier les participations existantes
+      // ÉTAPE 0: FORCER le nettoyage des vieux groupes AVANT de vérifier les participations
+      console.log('🧹 [JOIN] Nettoyage forcé des groupes anciens avant recherche...');
+      await GroupMembersService.forceCleanupOldGroups();
+
+      // Vérifier les participations existantes APRÈS le nettoyage
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
         .select('group_id, groups!inner(status)')
@@ -74,7 +77,7 @@ export class GroupOperationsService {
       }
 
       if (existingParticipation && existingParticipation.length > 0) {
-        console.log('⚠️ Utilisateur déjà dans un groupe actif');
+        console.log('⚠️ Utilisateur encore dans un groupe actif après nettoyage');
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif !', 
@@ -82,6 +85,8 @@ export class GroupOperationsService {
         });
         return false;
       }
+
+      console.log('✅ [JOIN] Utilisateur libre après nettoyage, recherche d\'un groupe...');
 
       // RECHERCHE STRICTEMENT GÉOGRAPHIQUE - PAS DE FALLBACK
       console.log('🌍 Recherche exclusive dans un rayon de 10km...');

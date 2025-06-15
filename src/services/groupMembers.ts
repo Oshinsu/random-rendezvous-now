@@ -30,8 +30,30 @@ export class GroupMembersService {
     }
   }
 
+  static async forceCleanupOldGroups(): Promise<void> {
+    try {
+      console.log('🧹 [CLEANUP] Nettoyage forcé des groupes anciens...');
+      
+      // Appeler la fonction de nettoyage automatique
+      const { error } = await supabase.rpc('dissolve_old_groups');
+      
+      if (error) {
+        console.error('❌ [CLEANUP] Erreur lors du nettoyage:', error);
+      } else {
+        console.log('✅ [CLEANUP] Nettoyage des groupes anciens effectué');
+      }
+    } catch (error) {
+      console.error('❌ [CLEANUP] Erreur forceCleanupOldGroups:', error);
+    }
+  }
+
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
+      // ÉTAPE 1: FORCER le nettoyage des vieux groupes avant de récupérer les participations
+      await this.forceCleanupOldGroups();
+      
+      console.log('📋 [CLEANUP] Récupération des participations après nettoyage pour:', userId);
+      
       const { data, error } = await supabase
         .from('group_participants')
         .select(`
