@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -69,16 +68,14 @@ export class SimpleGroupService {
         return [];
       }
 
-      return (participants || []).map(participant => ({
+      return (participants || []).map((participant, index) => ({
         id: participant.id,
-        user_id: participant.user_id,
-        status: participant.status,
-        joined_at: participant.joined_at,
-        last_seen: participant.last_seen,
-        latitude: participant.latitude,
-        longitude: participant.longitude,
-        location_name: participant.location_name,
-        display_name: `Membre ${participant.user_id.slice(0, 8)}`
+        name: `Rander ${index + 1}`, // Map to 'name' property
+        isConnected: participant.last_seen ? 
+          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false, // Map to 'isConnected'
+        joinedAt: participant.joined_at, // Map to 'joinedAt'
+        status: participant.status as 'confirmed' | 'pending',
+        lastSeen: participant.last_seen
       })) as GroupMember[];
     } catch (error) {
       console.error('❌ Erreur getGroupMembers:', error);
