@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Download, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -33,15 +33,7 @@ const HeroSection = () => {
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-base w-full sm:w-auto transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
           >
             <Zap className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-            {user ? 'Mon Dashboard' : 'Tenter l\'Aventure'}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="text-primary-foreground border-primary hover:bg-primary/10 font-semibold px-8 py-4 text-base w-full sm:w-auto transform hover:scale-105 transition-all duration-300 hover:shadow-lg group"
-          >
-             <Download className="mr-2 h-5 w-5 group-hover:animate-bounce" /> 
-             {user ? 'Partager Random' : 'Découvrir le Concept'}
+            {user ? 'Chercher un groupe' : 'Tenter l\'Aventure'}
           </Button>
         </div>
         <div className="max-w-2xl mx-auto">

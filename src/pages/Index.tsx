@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
+import RandomLogo from "@/components/RandomLogo";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -28,9 +29,7 @@ const Index = () => {
       <header className="p-4 bg-white/90 backdrop-blur-sm border-b border-amber-200/50 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300">
-              <span className="text-white font-bold text-base sm:text-lg">R</span>
-            </div>
+            <RandomLogo size={40} />
             <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent tracking-tight">
               Random
             </span>
@@ -54,7 +53,7 @@ const Index = () => {
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Dashboard
+                Chercher un groupe
               </Button>
               <Button 
                 onClick={handleSignOut} 
