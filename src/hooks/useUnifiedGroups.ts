@@ -4,15 +4,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
-import { SecureGroupOperationsService } from '@/services/secureGroupOperations';
-import { SecureGroupMembersService } from '@/services/secureGroupMembers';
+import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { showUniqueToast } from '@/utils/toastUtils';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
-export const useSecureGroups = () => {
+export const useUnifiedGroups = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -58,15 +57,13 @@ export const useSecureGroups = () => {
     return locationPromise.current;
   };
 
-  const fetchSecureUserGroups = async (): Promise<Group[]> => {
+  const fetchUserGroups = async (): Promise<Group[]> => {
     if (!user) {
       return [];
     }
 
-    console.log('🔐 Récupération sécurisée des groupes pour:', user.id);
-
     try {
-      const participations = await SecureGroupMembersService.getUserSecureParticipations(user.id);
+      const participations = await UnifiedGroupService.getUserParticipations(user.id);
       
       if (participations.length === 0) {
         setGroupMembers([]);
@@ -76,16 +73,18 @@ export const useSecureGroups = () => {
       const groups: Group[] = participations.map(participation => participation.groups);
       
       if (groups.length > 0) {
-        const members = await SecureGroupMembersService.getSecureGroupMembers(groups[0].id);
+        const members = await UnifiedGroupService.getGroupMembers(groups[0].id);
         setGroupMembers(members);
         
-        await SecureGroupOperationsService.updateUserActivity(groups[0].id, user.id);
+        await UnifiedGroupService.updateUserActivity(groups[0].id, user.id);
       }
 
       return groups;
     } catch (error) {
-      ErrorHandler.logError('FETCH_SECURE_USER_GROUPS', error);
-      throw error;
+      ErrorHandler.logError('FETCH_USER_GROUPS', error);
+      const appError = ErrorHandler.handleGenericError(error as Error);
+      ErrorHandler.showErrorToast(appError);
+      return [];
     }
   };
 
@@ -94,8 +93,8 @@ export const useSecureGroups = () => {
     isLoading: groupsLoading,
     refetch: refetchGroups 
   } = useQuery({
-    queryKey: ['secureUserGroups', user?.id],
-    queryFn: fetchSecureUserGroups,
+    queryKey: ['userGroups', user?.id],
+    queryFn: fetchUserGroups,
     enabled: !!user,
     refetchInterval: 10000,
     staleTime: 5000,
@@ -121,8 +120,7 @@ export const useSecureGroups = () => {
       return false;
     }
 
-    // Vérifier l'authentification
-    const isAuthenticated = await SecureGroupOperationsService.verifyUserAuthentication();
+    const isAuthenticated = await UnifiedGroupService.verifyUserAuthentication();
     if (!isAuthenticated) {
       toast({ 
         title: 'Session expirée', 
@@ -145,11 +143,9 @@ export const useSecureGroups = () => {
     setLoading(true);
     
     try {
-      // Nettoyage sécurisé
-      await SecureGroupMembersService.forceSecureCleanup();
+      await UnifiedGroupService.forceCleanupOldGroups();
 
-      // Vérifier les participations existantes
-      const participations = await SecureGroupMembersService.getUserSecureParticipations(user.id);
+      const participations = await UnifiedGroupService.getUserParticipations(user.id);
       
       if (participations.length > 0) {
         toast({ 
@@ -160,12 +156,10 @@ export const useSecureGroups = () => {
         return false;
       }
 
-      // Rechercher un groupe compatible
       const targetGroup = await GroupGeolocationService.findCompatibleGroup(location);
 
       if (!targetGroup) {
-        // Créer un nouveau groupe
-        const newGroup = await SecureGroupOperationsService.createSecureGroup(location, user.id);
+        const newGroup = await UnifiedGroupService.createGroup(location, user.id);
         
         if (newGroup) {
           toast({ 
@@ -176,8 +170,7 @@ export const useSecureGroups = () => {
         }
         return false;
       } else {
-        // Rejoindre le groupe existant
-        const success = await SecureGroupOperationsService.joinSecureGroup(targetGroup.id, user.id, location);
+        const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
         
         if (success) {
           toast({ 
@@ -205,9 +198,9 @@ export const useSecureGroups = () => {
     setLoading(true);
     try {
       setGroupMembers([]);
-      queryClient.setQueryData(['secureUserGroups', user.id], []);
+      queryClient.setQueryData(['userGroups', user.id], []);
 
-      const success = await SecureGroupOperationsService.leaveSecureGroup(groupId, user.id);
+      const success = await UnifiedGroupService.leaveGroup(groupId, user.id);
       
       if (success) {
         toast({ 
@@ -232,7 +225,7 @@ export const useSecureGroups = () => {
     userLocation,
     joinRandomGroup,
     leaveGroup,
-    fetchUserGroups: fetchSecureUserGroups,
+    fetchUserGroups,
     refetchGroups
   };
 };
