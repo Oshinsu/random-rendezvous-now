@@ -30,6 +30,12 @@ export const useSimpleGroupManagement = () => {
       console.log('🔄 Récupération des groupes pour:', user.id);
       const groups = await SimpleGroupService.getUserGroups(user.id);
       console.log('📊 Groupes récupérés:', groups.length);
+      console.log('📊 Détails des groupes:', groups.map(g => ({
+        id: g.id,
+        current_participants: g.current_participants,
+        max_participants: g.max_participants,
+        status: g.status
+      })));
       return groups;
     },
     enabled: !!user,
@@ -57,18 +63,41 @@ export const useSimpleGroupManagement = () => {
     }
   };
 
-  // Effect pour récupérer les membres du groupe actif
+  // Effect pour récupérer les membres du groupe actif avec diagnostic
   useEffect(() => {
     const fetchGroupMembers = async () => {
       if (userGroups.length > 0 && user) {
         try {
-          console.log('👥 Récupération des membres pour le groupe:', userGroups[0].id);
-          const members = await SimpleGroupService.getGroupMembers(userGroups[0].id);
+          const activeGroup = userGroups[0];
+          console.log('👥 Récupération des membres pour le groupe:', activeGroup.id);
+          console.log('📊 DB current_participants:', activeGroup.current_participants);
+          
+          const members = await SimpleGroupService.getGroupMembers(activeGroup.id);
           console.log('✅ Membres récupérés:', members.length);
+          console.log('📊 Détails des membres:', members.map(m => ({
+            id: m.id,
+            name: m.name,
+            isConnected: m.isConnected,
+            status: m.status
+          })));
+          
+          // Diagnostic de cohérence
+          const connectedCount = members.filter(m => m.isConnected).length;
+          const disconnectedCount = members.filter(m => !m.isConnected).length;
+          const totalMembersFromAPI = members.length;
+          const dbParticipants = activeGroup.current_participants;
+          
+          console.log('🔍 DIAGNOSTIC COMPTAGE:');
+          console.log('  - Connectés:', connectedCount);
+          console.log('  - Déconnectés:', disconnectedCount);
+          console.log('  - Total calculé:', totalMembersFromAPI);
+          console.log('  - DB current_participants:', dbParticipants);
+          console.log('  - Cohérence:', totalMembersFromAPI === dbParticipants ? '✅' : '❌');
+          
           setGroupMembers(members);
           
           // Mise à jour de l'activité utilisateur
-          await SimpleGroupService.updateUserActivity(userGroups[0].id, user.id);
+          await SimpleGroupService.updateUserActivity(activeGroup.id, user.id);
         } catch (error) {
           console.error('❌ Erreur fetchGroupMembers:', error);
           setGroupMembers([]);
@@ -196,6 +225,21 @@ export const useSimpleGroupManagement = () => {
       setLoading(false);
     }
   };
+
+  // Calcul des stats en temps réel pour diagnostic
+  const currentGroup = userGroups[0];
+  const connectedMembers = groupMembers.filter(m => m.isConnected);
+  const disconnectedMembers = groupMembers.filter(m => !m.isConnected);
+  
+  console.log('📊 STATS TEMPS RÉEL:');
+  console.log('  - Groupe actif:', !!currentGroup);
+  console.log('  - Membres API:', groupMembers.length);
+  console.log('  - Connectés:', connectedMembers.length);
+  console.log('  - Déconnectés:', disconnectedMembers.length);
+  if (currentGroup) {
+    console.log('  - DB participants:', currentGroup.current_participants);
+    console.log('  - Max participants:', currentGroup.max_participants);
+  }
 
   return {
     userGroups,

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -77,6 +76,37 @@ export class SimpleGroupService {
         })) as Group[];
 
       console.log('✅ Groupes récupérés:', groups.length);
+      
+      // Diagnostic de cohérence pour chaque groupe
+      for (const group of groups) {
+        console.log(`📊 Groupe ${group.id}:`);
+        console.log(`  - DB current_participants: ${group.current_participants}`);
+        console.log(`  - Max participants: ${group.max_participants}`);
+        
+        // Vérifier la cohérence en comptant les participants réels
+        const { data: realParticipants } = await supabase
+          .from('group_participants')
+          .select('id')
+          .eq('group_id', group.id)
+          .eq('status', 'confirmed');
+          
+        const realCount = realParticipants?.length || 0;
+        console.log(`  - Participants réels: ${realCount}`);
+        console.log(`  - Cohérence: ${realCount === group.current_participants ? '✅' : '❌'}`);
+        
+        // Corriger automatiquement si incohérent
+        if (realCount !== group.current_participants) {
+          console.log(`🔧 Correction automatique du compteur pour groupe ${group.id}`);
+          await supabase
+            .from('groups')
+            .update({ current_participants: realCount })
+            .eq('id', group.id);
+          
+          // Mettre à jour l'objet local
+          group.current_participants = realCount;
+        }
+      }
+      
       return groups;
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
@@ -108,7 +138,8 @@ export class SimpleGroupService {
           location_name
         `)
         .eq('group_id', groupId)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .order('joined_at', { ascending: true });
 
       if (error) {
         console.error('❌ Erreur récupération membres:', error);
@@ -117,15 +148,31 @@ export class SimpleGroupService {
 
       console.log('✅ Membres récupérés:', participants?.length || 0);
 
-      return (participants || []).map((participant, index) => ({
-        id: participant.id,
-        name: `Rander ${index + 1}`,
-        isConnected: participant.last_seen ? 
-          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false,
-        joinedAt: participant.joined_at,
-        status: participant.status as 'confirmed' | 'pending',
-        lastSeen: participant.last_seen
-      })) as GroupMember[];
+      const members = (participants || []).map((participant, index) => {
+        const isConnected = participant.last_seen ? 
+          new Date(participant.last_seen).getTime() > Date.now() - 5 * 60 * 1000 : false;
+          
+        console.log(`👤 Membre ${index + 1}:`);
+        console.log(`  - ID: ${participant.id}`);
+        console.log(`  - Last seen: ${participant.last_seen}`);
+        console.log(`  - Is connected: ${isConnected}`);
+        
+        return {
+          id: participant.id,
+          name: `Rander ${index + 1}`,
+          isConnected,
+          joinedAt: participant.joined_at,
+          status: participant.status as 'confirmed' | 'pending',
+          lastSeen: participant.last_seen
+        };
+      }) as GroupMember[];
+
+      console.log('📊 RÉSUMÉ MEMBRES:');
+      console.log(`  - Total: ${members.length}`);
+      console.log(`  - Connectés: ${members.filter(m => m.isConnected).length}`);
+      console.log(`  - Déconnectés: ${members.filter(m => !m.isConnected).length}`);
+
+      return members;
     } catch (error) {
       console.error('❌ Erreur getGroupMembers:', error);
       return [];
@@ -411,6 +458,8 @@ export class SimpleGroupService {
 
       if (error) {
         console.error('❌ Erreur mise à jour activité:', error);
+      } else {
+        console.log('✅ Activité utilisateur mise à jour');
       }
     } catch (error) {
       console.error('❌ Erreur updateUserActivity:', error);
