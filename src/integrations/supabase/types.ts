@@ -268,9 +268,21 @@ export type Database = {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
       }
+      check_user_participation_limit: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       dissolve_old_groups: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      validate_and_clean_message: {
+        Args: { input_message: string }
+        Returns: string
+      }
+      validate_coordinates: {
+        Args: { lat: number; lng: number }
+        Returns: boolean
       }
     }
     Enums: {

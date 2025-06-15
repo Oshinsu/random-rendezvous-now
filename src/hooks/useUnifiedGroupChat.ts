@@ -1,9 +1,10 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorHandler } from '@/utils/errorHandling';
+import { toast } from '@/hooks/use-toast';
 
 export interface ChatMessage {
   id: string;
@@ -21,7 +22,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
 
-  // Query pour récupérer les messages
+  // Query pour récupérer les messages avec validation de sécurité
   const { 
     data: messages = [], 
     isLoading: loading,
@@ -45,8 +46,17 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
         if (error) {
           ErrorHandler.logError('FETCH_MESSAGES', error);
-          const appError = ErrorHandler.handleSupabaseError(error);
-          ErrorHandler.showErrorToast(appError);
+          // Gestion spécifique des erreurs de sécurité RLS
+          if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
+            toast({
+              title: 'Accès refusé',
+              description: 'Vous n\'avez pas accès aux messages de ce groupe.',
+              variant: 'destructive'
+            });
+          } else {
+            const appError = ErrorHandler.handleSupabaseError(error);
+            ErrorHandler.showErrorToast(appError);
+          }
           return [];
         }
 
@@ -64,13 +74,14 @@ export const useUnifiedGroupChat = (groupId: string) => {
     staleTime: 5000,
   });
 
-  // Mutation pour envoyer un message
+  // Mutation pour envoyer un message avec validation de sécurité
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText: string): Promise<ChatMessage> => {
       if (!user || !messageText.trim()) {
         throw new Error('Message invalide');
       }
 
+      // Le message sera automatiquement validé et nettoyé par le trigger
       const { data, error } = await supabase
         .from('group_messages')
         .insert({
@@ -84,15 +95,24 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
       if (error) {
         ErrorHandler.logError('SEND_MESSAGE', error);
-        const appError = ErrorHandler.handleSupabaseError(error);
-        ErrorHandler.showErrorToast(appError);
-        throw appError;
+        
+        // Gestion spécifique des erreurs de validation
+        if (error.message.includes('Message cannot be empty')) {
+          throw new Error('Le message ne peut pas être vide.');
+        } else if (error.message.includes('Message too long')) {
+          throw new Error('Le message est trop long (maximum 500 caractères).');
+        } else if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
+          throw new Error('Vous n\'avez pas le droit d\'envoyer des messages dans ce groupe.');
+        } else {
+          const appError = ErrorHandler.handleSupabaseError(error);
+          throw appError;
+        }
       }
 
       return data;
     },
     onSuccess: (newMessage) => {
-      console.log('✅ Message envoyé avec succès:', newMessage);
+      console.log('✅ Message envoyé avec succès (validation sécurisée):', newMessage);
       
       // Mettre à jour optimistiquement le cache
       queryClient.setQueryData(['groupMessages', groupId], (oldMessages: ChatMessage[] = []) => {
@@ -105,10 +125,15 @@ export const useUnifiedGroupChat = (groupId: string) => {
     },
     onError: (error) => {
       ErrorHandler.logError('SEND_MESSAGE_MUTATION', error);
+      toast({
+        title: 'Erreur d\'envoi',
+        description: error.message || 'Impossible d\'envoyer le message.',
+        variant: 'destructive'
+      });
     }
   });
 
-  // Configuration realtime avec cleanup automatique - FIXED: Using useEffect instead of useState
+  // Configuration realtime avec cleanup automatique
   useEffect(() => {
     if (!groupId || !user) {
       return;
@@ -164,7 +189,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
         channelRef.current = null;
       }
     };
-  }, [groupId, user, queryClient]); // Dependencies pour useEffect
+  }, [groupId, user, queryClient]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     try {

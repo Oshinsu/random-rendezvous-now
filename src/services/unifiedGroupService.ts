@@ -200,12 +200,24 @@ export class UnifiedGroupService {
 
   static async createGroup(userLocation: LocationData, userId: string): Promise<Group | null> {
     try {
-      console.log('🔐 Création d\'un nouveau groupe');
+      console.log('🔐 Création d\'un nouveau groupe avec validation de sécurité');
       
+      // Vérifier d'abord si l'utilisateur peut créer un groupe (sécurité)
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast({
+          title: 'Erreur d\'authentification',
+          description: 'Vous devez être connecté pour créer un groupe.',
+          variant: 'destructive'
+        });
+        return null;
+      }
+
+      // Données du groupe conformes aux nouvelles contraintes
       const groupData = {
         status: 'waiting' as const,
-        max_participants: 5,
-        current_participants: 0,
+        max_participants: 5, // Contrainte: <= 5
+        current_participants: 0, // Contrainte: = 0 pour création
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
         location_name: userLocation.locationName,
@@ -219,11 +231,22 @@ export class UnifiedGroupService {
         .single();
 
       if (createError) {
-        const appError = ErrorHandler.handleSupabaseError(createError);
-        ErrorHandler.showErrorToast(appError);
+        console.error('❌ Erreur création groupe:', createError);
+        // Gestion spécifique des erreurs de validation
+        if (createError.message.includes('check_max_participants')) {
+          toast({
+            title: 'Erreur de validation',
+            description: 'Le nombre maximum de participants doit être entre 1 et 5.',
+            variant: 'destructive'
+          });
+        } else {
+          const appError = ErrorHandler.handleSupabaseError(createError);
+          ErrorHandler.showErrorToast(appError);
+        }
         return null;
       }
 
+      // Données participant conformes aux nouvelles contraintes
       const participantData = {
         group_id: newGroup.id,
         user_id: userId,
@@ -239,14 +262,31 @@ export class UnifiedGroupService {
         .insert(participantData);
 
       if (joinError) {
+        console.error('❌ Erreur ajout participant:', joinError);
+        // Nettoyer le groupe créé en cas d'erreur
         await supabase.from('groups').delete().eq('id', newGroup.id);
         
-        const appError = ErrorHandler.handleSupabaseError(joinError);
-        ErrorHandler.showErrorToast(appError);
+        // Gestion spécifique des erreurs de validation
+        if (joinError.message.includes('User is already in an active group')) {
+          toast({
+            title: 'Participation non autorisée',
+            description: 'Vous êtes déjà dans un groupe actif.',
+            variant: 'destructive'
+          });
+        } else if (joinError.message.includes('Invalid coordinates')) {
+          toast({
+            title: 'Coordonnées invalides',
+            description: 'Les coordonnées de géolocalisation sont invalides.',
+            variant: 'destructive'
+          });
+        } else {
+          const appError = ErrorHandler.handleSupabaseError(joinError);
+          ErrorHandler.showErrorToast(appError);
+        }
         return null;
       }
 
-      console.log('✅ Groupe créé et utilisateur ajouté avec succès');
+      console.log('✅ Groupe créé et utilisateur ajouté avec succès (validation sécurisée)');
       
       const typedGroup: Group = {
         ...newGroup,
@@ -264,8 +304,19 @@ export class UnifiedGroupService {
 
   static async joinGroup(groupId: string, userId: string, userLocation: LocationData): Promise<boolean> {
     try {
-      console.log('🔐 Adhésion au groupe:', groupId);
+      console.log('🔐 Adhésion au groupe avec validation de sécurité:', groupId);
       
+      // Vérifier l'authentification
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast({
+          title: 'Erreur d\'authentification',
+          description: 'Vous devez être connecté pour rejoindre un groupe.',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
         .select('id')
@@ -289,6 +340,7 @@ export class UnifiedGroupService {
         return false;
       }
 
+      // Données participant conformes aux contraintes de validation
       const participantData = {
         group_id: groupId,
         user_id: userId,
@@ -304,12 +356,28 @@ export class UnifiedGroupService {
         .insert(participantData);
 
       if (joinError) {
-        const appError = ErrorHandler.handleSupabaseError(joinError);
-        ErrorHandler.showErrorToast(appError);
+        console.error('❌ Erreur adhésion:', joinError);
+        // Gestion spécifique des erreurs de validation du trigger
+        if (joinError.message.includes('User is already in an active group')) {
+          toast({
+            title: 'Participation limitée',
+            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.',
+            variant: 'destructive'
+          });
+        } else if (joinError.message.includes('Invalid coordinates')) {
+          toast({
+            title: 'Coordonnées invalides',
+            description: 'Les coordonnées de géolocalisation sont invalides.',
+            variant: 'destructive'
+          });
+        } else {
+          const appError = ErrorHandler.handleSupabaseError(joinError);
+          ErrorHandler.showErrorToast(appError);
+        }
         return false;
       }
 
-      console.log('✅ Adhésion réussie');
+      console.log('✅ Adhésion réussie avec validation sécurisée');
       return true;
     } catch (error) {
       ErrorHandler.logError('JOIN_GROUP', error);
@@ -321,8 +389,19 @@ export class UnifiedGroupService {
 
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
-      console.log('🔐 Quitter le groupe:', groupId);
+      console.log('🔐 Quitter le groupe avec validation de sécurité:', groupId);
       
+      // Vérifier l'authentification
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast({
+          title: 'Erreur d\'authentification',
+          description: 'Vous devez être connecté pour quitter un groupe.',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
       const { error: leaveError } = await supabase
         .from('group_participants')
         .delete()
@@ -336,7 +415,7 @@ export class UnifiedGroupService {
         return false;
       }
 
-      console.log('✅ Groupe quitté avec succès');
+      console.log('✅ Groupe quitté avec succès (validation sécurisée)');
       return true;
     } catch (error) {
       ErrorHandler.logError('LEAVE_GROUP', error);
