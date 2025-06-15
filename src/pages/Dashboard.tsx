@@ -1,19 +1,23 @@
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useGroups } from '@/hooks/useGroups'
+import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
 
 const Dashboard = () => {
   const { user } = useAuth()
-  const { joinRandomGroup, loading } = useGroups()
+  const { joinRandomGroup, loading, userGroups } = useGroups()
   const [isSearching, setIsSearching] = useState(false)
+  const [redirectCountdown, setRedirectCountdown] = useState(0)
+  const navigate = useNavigate()
 
   const handleButtonClick = async () => {
     if (isSearching) {
       // Annuler la recherche
       setIsSearching(false)
+      setRedirectCountdown(0)
       console.log('🛑 Recherche annulée')
       return
     }
@@ -23,16 +27,52 @@ const Dashboard = () => {
     console.log('🎲 Recherche démarrée - animation devrait commencer')
     
     try {
-      await joinRandomGroup()
-      // Ne pas arrêter l'animation ici - elle continue jusqu'à ce que l'utilisateur clique pour annuler
-      console.log('✅ Groupe rejoint - animation continue')
+      const success = await joinRandomGroup()
+      if (success) {
+        console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
+        // Démarrer le countdown de 15 secondes
+        setRedirectCountdown(15)
+      } else {
+        // En cas d'échec, arrêter l'animation
+        setIsSearching(false)
+      }
     } catch (error) {
       console.error('❌ Erreur lors de la recherche:', error)
       // En cas d'erreur, arrêter l'animation
       setIsSearching(false)
     }
-    // Pas de finally ici - l'animation continue
   }
+
+  // Effect pour gérer le countdown et la redirection automatique
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+
+    if (redirectCountdown > 0) {
+      interval = setInterval(() => {
+        setRedirectCountdown(prev => {
+          if (prev <= 1) {
+            console.log('🔄 Redirection automatique vers /groups')
+            navigate('/groups')
+            setIsSearching(false)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [redirectCountdown, navigate])
+
+  // Effect pour surveiller si l'utilisateur a déjà un groupe et arrêter l'animation
+  useEffect(() => {
+    if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
+      console.log('🎯 Groupe détecté, démarrage du countdown')
+      setRedirectCountdown(15)
+    }
+  }, [userGroups, isSearching, redirectCountdown])
 
   return (
     <AppLayout>
@@ -82,18 +122,55 @@ const Dashboard = () => {
             </div>
           </button>
 
-          {/* Texte d'état */}
+          {/* Texte d'état avec countdown */}
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-gray-800">
-              {isSearching ? 'Recherche en cours...' : 'Prêt pour l\'aventure'}
+              {redirectCountdown > 0 
+                ? 'Groupe créé avec succès !' 
+                : isSearching 
+                ? 'Recherche en cours...' 
+                : 'Prêt pour l\'aventure'
+              }
             </h1>
             <p className="text-gray-600">
-              {isSearching 
+              {redirectCountdown > 0
+                ? `Redirection vers votre groupe dans ${redirectCountdown}s`
+                : isSearching 
                 ? 'Cliquez à nouveau pour annuler' 
                 : 'Cliquez sur le bouton pour démarrer'
               }
             </p>
+            
+            {/* Barre de progression pour le countdown */}
+            {redirectCountdown > 0 && (
+              <div className="w-64 mx-auto mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-brand-500 h-2 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${((15 - redirectCountdown) / 15) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Ou cliquez pour accéder immédiatement à votre groupe
+                </p>
+              </div>
+            )}
           </div>
+
+          {/* Bouton d'accès rapide pendant le countdown */}
+          {redirectCountdown > 0 && (
+            <button
+              onClick={() => {
+                console.log('🔄 Redirection manuelle vers /groups')
+                navigate('/groups')
+                setIsSearching(false)
+                setRedirectCountdown(0)
+              }}
+              className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors"
+            >
+              Voir mon groupe maintenant
+            </button>
+          )}
         </div>
       </div>
     </AppLayout>
