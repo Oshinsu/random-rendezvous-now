@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, Users, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useGroupChat } from '@/hooks/useGroupChat';
 import { useAuth } from '@/contexts/AuthContext';
+import MessageReactions from '@/components/MessageReactions';
 
 interface GroupChatProps {
   groupId: string;
@@ -205,11 +205,20 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
                         {formatTime(message.created_at)}
                       </span>
                     </div>
-                    <p className={`text-sm ${
+                    <p className={`text-sm mb-2 ${
                       message.is_system ? 'text-blue-800' : 'text-gray-800'
                     }`}>
                       {message.message}
                     </p>
+                    
+                    {/* Réactions aux messages */}
+                    {!message.is_system && (
+                      <MessageReactions
+                        messageId={message.id}
+                        reactions={message.reactions || {}}
+                        className="mt-2"
+                      />
+                    )}
                   </div>
                 );
               })}

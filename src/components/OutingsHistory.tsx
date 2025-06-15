@@ -2,9 +2,11 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, Users, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Calendar, Users, Clock, Star } from 'lucide-react';
 import { useOutingsHistory } from '@/hooks/useOutingsHistory';
 import { formatMeetingTime } from '@/components/map/utils';
+import BarRatingDialog from '@/components/BarRatingDialog';
 
 const OutingsHistory = () => {
   const { data: outings, isLoading, error } = useOutingsHistory();
@@ -85,12 +87,14 @@ const OutingsHistory = () => {
                     </h4>
                     <p className="text-xs text-gray-600 mt-1">{outing.bar_address}</p>
                   </div>
-                  <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50 text-xs">
-                    Terminée
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50 text-xs">
+                      Terminée
+                    </Badge>
+                  </div>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
@@ -104,6 +108,40 @@ const OutingsHistory = () => {
                   <span className="text-amber-600 font-medium">
                     {new Date(outing.completed_at).toLocaleDateString('fr-FR')}
                   </span>
+                </div>
+
+                {/* Section de notation */}
+                <div className="flex items-center justify-between pt-2 border-t border-amber-200/50">
+                  {outing.user_rating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${
+                              i < outing.user_rating! 
+                                ? 'fill-yellow-400 text-yellow-400' 
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-600">Votre note</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-500">Pas encore noté</span>
+                  )}
+                  
+                  <BarRatingDialog outing={outing}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 py-1 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      {outing.user_rating ? 'Modifier' : 'Noter'}
+                    </Button>
+                  </BarRatingDialog>
                 </div>
               </div>
             ))}

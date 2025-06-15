@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bar_ratings: {
+        Row: {
+          average_rating: number
+          bar_address: string
+          bar_name: string
+          bar_place_id: string
+          created_at: string
+          id: string
+          sum_ratings: number
+          total_ratings: number
+          updated_at: string
+        }
+        Insert: {
+          average_rating?: number
+          bar_address: string
+          bar_name: string
+          bar_place_id: string
+          created_at?: string
+          id?: string
+          sum_ratings?: number
+          total_ratings?: number
+          updated_at?: string
+        }
+        Update: {
+          average_rating?: number
+          bar_address?: string
+          bar_name?: string
+          bar_place_id?: string
+          created_at?: string
+          id?: string
+          sum_ratings?: number
+          total_ratings?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_messages: {
         Row: {
           created_at: string
@@ -16,6 +52,7 @@ export type Database = {
           id: string
           is_system: boolean
           message: string
+          reactions: Json | null
           user_id: string
         }
         Insert: {
@@ -24,6 +61,7 @@ export type Database = {
           id?: string
           is_system?: boolean
           message: string
+          reactions?: Json | null
           user_id: string
         }
         Update: {
@@ -32,6 +70,7 @@ export type Database = {
           id?: string
           is_system?: boolean
           message?: string
+          reactions?: Json | null
           user_id?: string
         }
         Relationships: [
@@ -181,7 +220,10 @@ export type Database = {
           id: string
           meeting_time: string
           participants_count: number
+          rated_at: string | null
           user_id: string
+          user_rating: number | null
+          user_review: string | null
         }
         Insert: {
           bar_address: string
@@ -194,7 +236,10 @@ export type Database = {
           id?: string
           meeting_time: string
           participants_count?: number
+          rated_at?: string | null
           user_id: string
+          user_rating?: number | null
+          user_review?: string | null
         }
         Update: {
           bar_address?: string
@@ -207,7 +252,10 @@ export type Database = {
           id?: string
           meeting_time?: string
           participants_count?: number
+          rated_at?: string | null
           user_id?: string
+          user_rating?: number | null
+          user_review?: string | null
         }
         Relationships: []
       }

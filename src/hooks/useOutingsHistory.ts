@@ -13,6 +13,10 @@ export interface OutingHistory {
   participants_count: number;
   bar_latitude?: number;
   bar_longitude?: number;
+  bar_place_id?: string;
+  user_rating?: number;
+  user_review?: string;
+  rated_at?: string;
   created_at: string;
 }
 
@@ -29,6 +33,7 @@ export const useOutingsHistory = () => {
       const { data, error } = await supabase
         .from('user_outings_history')
         .select('*')
+        .eq('user_id', user.id)
         .order('completed_at', { ascending: false });
 
       if (error) {
