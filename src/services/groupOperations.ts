@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
@@ -6,6 +7,25 @@ import { GroupMembersService } from './groupMembers';
 import { toast } from '@/hooks/use-toast';
 
 export class GroupOperationsService {
+  static async updateGroupParticipantCount(groupId: string, count: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .update({ current_participants: count })
+        .eq('id', groupId);
+      
+      if (error) {
+        console.error('❌ Erreur mise à jour comptage participants:', error);
+        throw error;
+      }
+      
+      console.log('✅ Comptage participants mis à jour:', count);
+    } catch (error) {
+      console.error('❌ Erreur updateGroupParticipantCount:', error);
+      throw error;
+    }
+  }
+
   static async joinRandomGroup(
     user: any,
     userLocation: LocationData | null,

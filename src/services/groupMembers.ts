@@ -30,6 +30,37 @@ export class GroupMembersService {
     }
   }
 
+  static async getUserParticipations(userId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('group_participants')
+        .select(`
+          id,
+          group_id,
+          joined_at,
+          status,
+          groups!inner(*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'confirmed')
+        .in('groups.status', ['waiting', 'confirmed']);
+
+      if (error) {
+        console.error('❌ Erreur récupération participations:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('❌ Erreur getUserParticipations:', error);
+      return [];
+    }
+  }
+
+  static async getGroupMembersWithConnectionStatus(groupId: string): Promise<GroupMember[]> {
+    return this.fetchGroupMembers(groupId);
+  }
+
   static async fetchGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
       console.log('👥 [LAST_SEEN] Récupération des membres avec statut de connexion:', groupId);

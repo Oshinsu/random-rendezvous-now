@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -5,13 +6,15 @@ import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupOperationsService } from '@/services/groupOperations';
 import { GroupMembersService } from '@/services/groupMembers';
 import { showUniqueToast, clearActiveToasts } from '@/utils/toastUtils';
-import type { Group } from '@/types/groups';
+import type { Group } from '@/types/database';
+import type { GroupMember } from '@/types/groups';
 
 export const useGroups = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   
   // Refs pour éviter les appels multiples
   const isGettingLocation = useRef(false);
@@ -73,64 +76,28 @@ export const useGroups = () => {
     console.log('🔄 [LAST_SEEN] Récupération des groupes pour:', user.id);
 
     try {
-      const participations = await GroupMembersService.getUserParticipations(user.id);
-      console.log('✅ Participations trouvées:', participations.length);
+      const groups = await GroupMembersService.fetchGroupMembers(user.id);
+      console.log('✅ Groupes trouvés:', groups.length);
 
-      if (participations.length === 0) {
+      if (groups.length === 0) {
+        setGroupMembers([]);
         return [];
       }
 
-      const groupsWithDetails = await Promise.all(
-        participations.map(async (participation) => {
-          const group = participation.groups;
-          if (!group) return null;
-
-          console.log(`🔍 [LAST_SEEN] Vérification du groupe ${group.id}...`);
-          
-          // Récupérer les membres avec leur statut de connexion
-          console.log(`👥 [LAST_SEEN] Récupération des membres avec statut de connexion: ${group.id}`);
-          const members = await GroupMembersService.getGroupMembersWithConnectionStatus(group.id);
-          
-          // Compter le nombre réel de participants confirmés
-          const realParticipantCount = members.filter(member => member.connected).length;
-          console.log(`🔍 [LAST_SEEN] Nombre RÉEL de participants confirmés: ${realParticipantCount}`);
-          
-          // Vérifier et corriger si nécessaire
-          console.log(`📊 [LAST_SEEN] Comptage actuel en BDD: ${group.current_participants} vs réel: ${realParticipantCount}`);
-          
-          if (group.current_participants !== realParticipantCount) {
-            await GroupOperationsService.updateGroupParticipantCount(group.id, realParticipantCount);
-            group.current_participants = realParticipantCount;
-          }
-
-          console.log(`✅ [LAST_SEEN] Membres finaux avec statut de connexion:`, members.map(m => ({ name: m.name, connected: m.connected })));
-
-          // Mise à jour du last_seen pour ce groupe
-          await GroupMembersService.updateUserLastSeen(user.id, group.id);
-          console.log(`✅ Last_seen mis à jour pour le groupe: ${group.id}`);
-
-          return {
-            ...group,
-            members
-          };
-        })
-      );
-
-      const validGroups = groupsWithDetails.filter((group): group is Group => group !== null);
-      console.log('📊 [LAST_SEEN] Groupes après correction complète:', validGroups);
-
-      // Récupérer les membres pour chaque groupe
+      // Pour chaque groupe, récupérer les membres
       const groupsWithMembers = await Promise.all(
-        validGroups.map(async (group) => {
-          console.log(`👥 [LAST_SEEN] Récupération des membres avec statut de connexion: ${group.id}`);
-          const members = await GroupMembersService.getGroupMembersWithConnectionStatus(group.id);
+        groups.map(async (group) => {
+          console.log(`👥 [LAST_SEEN] Récupération des membres: ${group.id}`);
+          const members = await GroupMembersService.fetchGroupMembers(group.id);
           
-          const realParticipantCount = members.filter(member => member.connected).length;
-          console.log(`🔍 [LAST_SEEN] Nombre RÉEL de participants confirmés: ${realParticipantCount}`);
+          // Mettre à jour les membres du premier groupe (groupe actuel)
+          if (groups.indexOf(group) === 0) {
+            setGroupMembers(members);
+          }
           
-          console.log(`📊 [LAST_SEEN] Comptage actuel en BDD: ${group.current_participants} vs réel: ${realParticipantCount}`);
-          
-          console.log(`✅ [LAST_SEEN] Membres finaux avec statut de connexion:`, members.map(m => ({ name: m.name, connected: m.connected })));
+          // Mise à jour du last_seen pour ce groupe
+          await GroupMembersService.updateUserLastSeen(group.id, user.id);
+          console.log(`✅ Last_seen mis à jour pour le groupe: ${group.id}`);
 
           return {
             ...group,
@@ -169,65 +136,35 @@ export const useGroups = () => {
 
   // Fonction pour rejoindre un groupe aléatoire
   const joinRandomGroup = async (): Promise<boolean> => {
-    if (loading) {
-      console.log('🚫 Action bloquée - opération en cours');
-      return false;
-    }
+    if (!user) return false;
+    
+    // Récupérer la position utilisateur
+    const location = await getUserLocation();
+    
+    return await GroupOperationsService.joinRandomGroup(user, location, loading, setLoading);
+  };
 
-    setLoading(true);
-    clearActiveToasts(); // Nettoyer les anciens toasts
-
-    try {
-      // Récupérer la position utilisateur
-      const location = await getUserLocation();
-
-      console.log('🎲 Tentative de rejoindre un groupe aléatoire...');
-      const success = await GroupOperationsService.joinRandomGroup(user!.id, location);
-
-      if (success) {
-        console.log('✅ Groupe rejoint avec succès !');
-        showUniqueToast(
-          'Votre groupe est en cours de formation. Vous serez redirigé automatiquement.',
-          '🎉 Groupe trouvé !',
-          'default'
-        );
-        
-        // Rafraîchir les données
-        await refetchGroups();
-        return true;
-      } else {
-        console.log('❌ Aucun groupe disponible');
-        showUniqueToast(
-          'Aucun groupe disponible pour le moment. Un nouveau groupe sera créé automatiquement.',
-          '⏳ Création en cours...',
-          'default'
-        );
-        
-        // Rafraîchir les données après un court délai
-        setTimeout(async () => {
-          await refetchGroups();
-        }, 2000);
-        
-        return true;
-      }
-    } catch (error) {
-      console.error('❌ Erreur lors de la recherche de groupe:', error);
-      showUniqueToast(
-        'Une erreur est survenue. Veuillez réessayer.',
-        '❌ Erreur',
-        'destructive'
-      );
-      return false;
-    } finally {
-      setLoading(false);
-    }
+  // Fonction pour quitter un groupe
+  const leaveGroup = async (groupId: string): Promise<void> => {
+    if (!user) return;
+    
+    const clearUserGroupsState = () => {
+      setGroupMembers([]);
+      queryClient.setQueryData(['userGroups', user.id], []);
+    };
+    
+    await GroupOperationsService.leaveGroup(groupId, user, loading, setLoading, clearUserGroupsState);
+    await refetchGroups();
   };
 
   return {
     userGroups,
+    groupMembers,
     loading: loading || groupsLoading,
     userLocation,
     joinRandomGroup,
+    leaveGroup,
+    fetchUserGroups,
     refetchGroups
   };
 };
