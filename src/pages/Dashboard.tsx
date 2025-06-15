@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUnifiedGroups } from '@/hooks/useUnifiedGroups'
+import { useSimpleGroups } from '@/hooks/useSimpleGroups'
 import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
@@ -8,7 +9,7 @@ import { clearActiveToasts } from '@/utils/toastUtils'
 
 const Dashboard = () => {
   const { user } = useAuth()
-  const { joinRandomGroup, loading, userGroups } = useUnifiedGroups()
+  const { joinRandomGroup, loading, userGroups } = useSimpleGroups()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
@@ -23,7 +24,7 @@ const Dashboard = () => {
       // Annuler la recherche
       setIsSearching(false)
       setRedirectCountdown(0)
-      clearActiveToasts() // Nettoyer les toasts lors de l'annulation
+      clearActiveToasts()
       console.log('🛑 Recherche annulée')
       return
     }
@@ -36,15 +37,12 @@ const Dashboard = () => {
       const success = await joinRandomGroup()
       if (success) {
         console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
-        // Démarrer le countdown de 15 secondes
         setRedirectCountdown(15)
       } else {
-        // En cas d'échec, arrêter l'animation
         setIsSearching(false)
       }
     } catch (error) {
       console.error('❌ Erreur lors de la recherche:', error)
-      // En cas d'erreur, arrêter l'animation
       setIsSearching(false)
     }
   }
@@ -58,7 +56,7 @@ const Dashboard = () => {
         setRedirectCountdown(prev => {
           if (prev <= 1) {
             console.log('🔄 Redirection automatique vers /groups')
-            clearActiveToasts() // Nettoyer avant la redirection
+            clearActiveToasts()
             navigate('/groups')
             setIsSearching(false)
             return 0
@@ -169,7 +167,7 @@ const Dashboard = () => {
             <button
               onClick={() => {
                 console.log('🔄 Redirection manuelle vers /groups')
-                clearActiveToasts() // Nettoyer avant la redirection
+                clearActiveToasts()
                 navigate('/groups')
                 setIsSearching(false)
                 setRedirectCountdown(0)
