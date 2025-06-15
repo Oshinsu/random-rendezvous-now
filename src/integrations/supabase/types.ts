@@ -268,6 +268,10 @@ export type Database = {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
       }
+      can_view_group: {
+        Args: { group_uuid: string }
+        Returns: boolean
+      }
       check_user_participation_limit: {
         Args: { user_uuid: string }
         Returns: boolean
@@ -275,6 +279,10 @@ export type Database = {
       dissolve_old_groups: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      is_group_member: {
+        Args: { group_uuid: string; user_uuid: string }
+        Returns: boolean
       }
       validate_and_clean_message: {
         Args: { input_message: string }

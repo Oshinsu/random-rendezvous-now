@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useSimpleGroups } from '@/hooks/useSimpleGroups'
+import { useSimpleGroupManagement } from '@/hooks/useSimpleGroupManagement'
 import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
@@ -9,7 +9,7 @@ import { clearActiveToasts } from '@/utils/toastUtils'
 
 const Dashboard = () => {
   const { user } = useAuth()
-  const { joinRandomGroup, loading, userGroups } = useSimpleGroups()
+  const { joinRandomGroup, loading, userGroups } = useSimpleGroupManagement()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
