@@ -23,8 +23,14 @@ export const useSimpleGroupManagement = () => {
   } = useQuery({
     queryKey: ['userGroups', user?.id],
     queryFn: async (): Promise<Group[]> => {
-      if (!user) return [];
-      return SimpleGroupService.getUserGroups(user.id);
+      if (!user) {
+        console.log('⚠️ Pas d\'utilisateur connecté');
+        return [];
+      }
+      console.log('🔄 Récupération des groupes pour:', user.id);
+      const groups = await SimpleGroupService.getUserGroups(user.id);
+      console.log('📊 Groupes récupérés:', groups.length);
+      return groups;
     },
     enabled: !!user,
     refetchInterval: 15000,
@@ -51,13 +57,14 @@ export const useSimpleGroupManagement = () => {
     }
   };
 
-  // Simplifier drastiquement la récupération des membres - pas d'effet complexe
+  // Effect pour récupérer les membres du groupe actif
   useEffect(() => {
-    if (userGroups.length > 0 && user) {
-      const fetchMembers = async () => {
+    const fetchGroupMembers = async () => {
+      if (userGroups.length > 0 && user) {
         try {
-          console.log('👥 Récupération des membres du groupe:', userGroups[0].id);
+          console.log('👥 Récupération des membres pour le groupe:', userGroups[0].id);
           const members = await SimpleGroupService.getGroupMembers(userGroups[0].id);
+          console.log('✅ Membres récupérés:', members.length);
           setGroupMembers(members);
           
           // Mise à jour de l'activité utilisateur
@@ -66,13 +73,14 @@ export const useSimpleGroupManagement = () => {
           console.error('❌ Erreur fetchGroupMembers:', error);
           setGroupMembers([]);
         }
-      };
-      
-      fetchMembers();
-    } else {
-      setGroupMembers([]);
-    }
-  }, [userGroups.length, user?.id]); // Dépendances simplifiées pour éviter la boucle
+      } else {
+        console.log('ℹ️ Aucun groupe actif, reset des membres');
+        setGroupMembers([]);
+      }
+    };
+
+    fetchGroupMembers();
+  }, [userGroups.length, user?.id]);
 
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
@@ -89,6 +97,8 @@ export const useSimpleGroupManagement = () => {
     setLoading(true);
     
     try {
+      console.log('🎲 Début du processus de recherche/création de groupe');
+      
       const isAuth = await SimpleGroupService.verifyAuth();
       if (!isAuth) {
         toast({ 
@@ -109,15 +119,20 @@ export const useSimpleGroupManagement = () => {
         return false;
       }
 
+      console.log('📍 Position obtenue:', location.locationName);
+
       // Chercher des groupes à proximité
       const nearbyGroups = await SimpleGroupService.findNearbyGroups(location);
+      console.log('🔍 Groupes trouvés à proximité:', nearbyGroups.length);
       
       if (nearbyGroups.length > 0) {
         // Rejoindre le premier groupe disponible
         const targetGroup = nearbyGroups[0];
+        console.log('👥 Tentative de rejoindre le groupe:', targetGroup.id);
         const success = await SimpleGroupService.joinGroup(targetGroup.id, user.id, location);
         
         if (success) {
+          console.log('✅ Groupe rejoint avec succès');
           toast({ 
             title: '✅ Groupe rejoint', 
             description: `Vous avez rejoint un groupe dans votre zone.`, 
@@ -127,9 +142,11 @@ export const useSimpleGroupManagement = () => {
         return success;
       } else {
         // Créer un nouveau groupe
+        console.log('🆕 Aucun groupe trouvé, création d\'un nouveau groupe');
         const success = await SimpleGroupService.createGroup(location, user.id);
         
         if (success) {
+          console.log('✅ Nouveau groupe créé avec succès');
           await refetchGroups();
         }
         return success;
@@ -152,12 +169,16 @@ export const useSimpleGroupManagement = () => {
 
     setLoading(true);
     try {
+      console.log('🚪 Tentative de quitter le groupe:', groupId);
+      
+      // Reset immédiat de l'état local
       setGroupMembers([]);
       queryClient.setQueryData(['userGroups', user.id], []);
 
       const success = await SimpleGroupService.leaveGroup(groupId, user.id);
       
       if (success) {
+        console.log('✅ Groupe quitté avec succès');
         toast({ 
           title: '✅ Groupe quitté', 
           description: 'Vous avez quitté le groupe avec succès.' 

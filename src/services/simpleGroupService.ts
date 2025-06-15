@@ -17,10 +17,29 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Requête simplifiée sans JOIN pour éviter la récursion RLS
+      // Récupération directe des groupes de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
-        .select('group_id')
+        .select(`
+          group_id,
+          groups (
+            id,
+            created_at,
+            status,
+            bar_name,
+            bar_address,
+            meeting_time,
+            max_participants,
+            current_participants,
+            latitude,
+            longitude,
+            location_name,
+            search_radius,
+            bar_latitude,
+            bar_longitude,
+            bar_place_id
+          )
+        `)
         .eq('user_id', userId)
         .eq('status', 'confirmed');
 
@@ -34,21 +53,31 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Requête séparée pour les groupes
-      const groupIds = participations.map(p => p.group_id);
-      const { data: groups, error: groupsError } = await supabase
-        .from('groups')
-        .select('*')
-        .in('id', groupIds)
-        .in('status', ['waiting', 'confirmed', 'full']);
+      // Extraire les groupes des participations
+      const groups = participations
+        .map(p => p.groups)
+        .filter(group => group && ['waiting', 'confirmed', 'full'].includes(group.status))
+        .map(group => ({
+          ...group,
+          id: group.id,
+          created_at: group.created_at,
+          status: group.status,
+          bar_name: group.bar_name,
+          bar_address: group.bar_address,
+          meeting_time: group.meeting_time,
+          max_participants: group.max_participants,
+          current_participants: group.current_participants,
+          latitude: group.latitude,
+          longitude: group.longitude,
+          location_name: group.location_name,
+          search_radius: group.search_radius,
+          bar_latitude: group.bar_latitude,
+          bar_longitude: group.bar_longitude,
+          bar_place_id: group.bar_place_id
+        })) as Group[];
 
-      if (groupsError) {
-        console.error('❌ Erreur récupération groupes:', groupsError);
-        return [];
-      }
-
-      console.log('✅ Groupes récupérés:', groups?.length || 0);
-      return (groups || []) as Group[];
+      console.log('✅ Groupes récupérés:', groups.length);
+      return groups;
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
       return [];
@@ -105,7 +134,7 @@ export class SimpleGroupService {
 
   static async createGroup(location: LocationData, userId: string): Promise<boolean> {
     try {
-      console.log('🆕 Création de groupe');
+      console.log('🆕 Création de groupe pour utilisateur:', userId);
       
       // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
@@ -114,6 +143,23 @@ export class SimpleGroupService {
         toast({ 
           title: 'Erreur d\'authentification', 
           description: 'Veuillez vous reconnecter.', 
+          variant: 'destructive' 
+        });
+        return false;
+      }
+
+      // Vérifier si l'utilisateur n'est pas déjà dans un groupe actif
+      const { data: existingParticipations } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'confirmed');
+
+      if (existingParticipations && existingParticipations.length > 0) {
+        console.log('ℹ️ Utilisateur déjà dans un groupe actif');
+        toast({ 
+          title: 'Déjà dans un groupe', 
+          description: 'Vous êtes déjà dans un groupe actif.', 
           variant: 'destructive' 
         });
         return false;
@@ -129,6 +175,8 @@ export class SimpleGroupService {
         search_radius: 10000
       };
 
+      console.log('📝 Données du nouveau groupe:', newGroupData);
+
       const { data: newGroup, error: createError } = await supabase
         .from('groups')
         .insert(newGroupData)
@@ -139,13 +187,13 @@ export class SimpleGroupService {
         console.error('❌ Erreur création groupe:', createError);
         toast({ 
           title: 'Erreur de création', 
-          description: 'Impossible de créer le groupe. Vérifiez votre connexion.', 
+          description: 'Impossible de créer le groupe.', 
           variant: 'destructive' 
         });
         return false;
       }
 
-      console.log('✅ Groupe créé:', newGroup.id);
+      console.log('✅ Groupe créé avec ID:', newGroup.id);
       
       // Ajouter l'utilisateur au groupe
       const { error: joinError } = await supabase
@@ -164,9 +212,15 @@ export class SimpleGroupService {
         console.error('❌ Erreur ajout participant:', joinError);
         // Nettoyer le groupe créé en cas d'erreur
         await supabase.from('groups').delete().eq('id', newGroup.id);
+        toast({ 
+          title: 'Erreur', 
+          description: 'Impossible de rejoindre le groupe créé.', 
+          variant: 'destructive' 
+        });
         return false;
       }
 
+      console.log('✅ Utilisateur ajouté au groupe avec succès');
       toast({ 
         title: '🎉 Groupe créé', 
         description: `Nouveau groupe créé dans votre zone.`
@@ -186,7 +240,7 @@ export class SimpleGroupService {
 
   static async joinGroup(groupId: string, userId: string, location: LocationData): Promise<boolean> {
     try {
-      console.log('👥 Rejoindre groupe:', groupId);
+      console.log('👥 Rejoindre groupe:', groupId, 'par utilisateur:', userId);
 
       // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
@@ -233,7 +287,7 @@ export class SimpleGroupService {
         console.error('❌ Erreur rejoindre groupe:', joinError);
         toast({ 
           title: 'Impossible de rejoindre', 
-          description: 'Vous ne pouvez rejoindre qu\'un seul groupe à la fois.', 
+          description: 'Erreur lors de la participation au groupe.', 
           variant: 'destructive' 
         });
         return false;

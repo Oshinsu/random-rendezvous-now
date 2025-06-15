@@ -43,6 +43,7 @@ const Dashboard = () => {
         console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
         setRedirectCountdown(15)
       } else {
+        console.log('❌ Échec de la recherche/création de groupe')
         setIsSearching(false)
       }
     } catch (error) {
@@ -75,13 +76,15 @@ const Dashboard = () => {
     }
   }, [redirectCountdown, navigate])
 
-  // Effect simplifié pour surveiller les groupes - éviter la boucle infinie
+  // Effect pour surveiller les groupes et déclencher le countdown
   useEffect(() => {
+    console.log('📊 Groupes actuels:', userGroups.length, 'isSearching:', isSearching, 'countdown:', redirectCountdown);
+    
     if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
       console.log('🎯 Groupe détecté, démarrage du countdown')
       setRedirectCountdown(15)
     }
-  }, [userGroups.length, isSearching]) // Dépendances simplifiées
+  }, [userGroups, isSearching, redirectCountdown])
 
   return (
     <AppLayout>
@@ -135,7 +138,7 @@ const Dashboard = () => {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-gray-800">
               {redirectCountdown > 0 
-                ? 'Groupe créé avec succès !' 
+                ? 'Groupe trouvé !' 
                 : isSearching 
                 ? 'Recherche en cours...' 
                 : 'Prêt pour l\'aventure'
