@@ -1,5 +1,5 @@
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUnifiedGroupChat } from '@/hooks/useUnifiedGroupChat';
@@ -18,6 +18,13 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   const { user } = useAuth();
   const { messages, loading, sending, sendMessage, refreshMessages } = useUnifiedGroupChat(groupId);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus sur l'input quand le composant se charge
+  useEffect(() => {
+    if (inputRef.current && !loading) {
+      inputRef.current.focus();
+    }
+  }, [loading, groupId]);
 
   const handleRefresh = () => {
     console.log('🔄 Actualisation manuelle du chat');

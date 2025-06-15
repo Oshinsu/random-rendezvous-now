@@ -42,7 +42,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
           .select('*')
           .eq('group_id', groupId)
           .order('created_at', { ascending: true })
-          .limit(50); // Réduire la limite pour de meilleures performances
+          .limit(50);
 
         if (error) {
           ErrorHandler.logError('FETCH_MESSAGES', error);
@@ -80,8 +80,8 @@ export const useUnifiedGroupChat = (groupId: string) => {
       }
     },
     enabled: !!groupId && !!user,
-    refetchInterval: 15000, // Réduire la fréquence de refetch
-    staleTime: 10000,
+    refetchInterval: 5000, // Réduit à 5 secondes pour plus de réactivité
+    staleTime: 2000, // Données considérées comme périmées après 2 secondes
   });
 
   // Mutation pour envoyer un message
@@ -141,13 +141,13 @@ export const useUnifiedGroupChat = (groupId: string) => {
     }
   });
 
-  // Configuration realtime spécifique au groupe avec cleanup automatique
+  // Configuration realtime optimisée avec reconnexion automatique
   useEffect(() => {
     if (!groupId || !user) {
       return;
     }
 
-    console.log('🛰️ Configuration realtime pour groupe:', groupId);
+    console.log('🛰️ Configuration realtime optimisée pour groupe:', groupId);
     
     // Nettoyer l'ancienne souscription
     if (channelRef.current) {
@@ -156,9 +156,14 @@ export const useUnifiedGroupChat = (groupId: string) => {
       channelRef.current = null;
     }
 
-    // Configurer la nouvelle souscription SPÉCIFIQUE à ce groupe
+    // Configurer la nouvelle souscription SPÉCIFIQUE à ce groupe avec options optimisées
     const channel = supabase
-      .channel(`group-chat-${groupId}`)
+      .channel(`group-chat-${groupId}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: user.id }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -188,8 +193,9 @@ export const useUnifiedGroupChat = (groupId: string) => {
             }
           }
 
-          console.log('🛰️ Nouveau message reçu pour groupe:', groupId);
+          console.log('🛰️ Nouveau message reçu en temps réel pour groupe:', groupId);
           
+          // Mise à jour immédiate du cache
           queryClient.setQueryData(['groupMessages', groupId], (oldMessages: ChatMessage[] = []) => {
             const messageExists = oldMessages.some(msg => msg.id === newMessage.id);
             if (messageExists) {
@@ -197,10 +203,30 @@ export const useUnifiedGroupChat = (groupId: string) => {
             }
             return [...oldMessages, newMessage];
           });
+
+          // Forcer une invalidation pour s'assurer que les données sont à jour
+          queryClient.invalidateQueries({ 
+            queryKey: ['groupMessages', groupId],
+            exact: true 
+          });
         }
       )
       .subscribe((status) => {
         console.log('🛰️ Statut souscription realtime pour groupe', groupId, ':', status);
+        
+        // Gérer les reconnexions automatiques
+        if (status === 'CHANNEL_ERROR') {
+          console.log('❌ Erreur de canal, tentative de reconnexion...');
+          setTimeout(() => {
+            if (channelRef.current) {
+              channelRef.current.subscribe();
+            }
+          }, 2000);
+        }
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Souscription realtime active pour le groupe', groupId);
+        }
       });
 
     channelRef.current = channel;
@@ -215,14 +241,19 @@ export const useUnifiedGroupChat = (groupId: string) => {
     };
   }, [groupId, user, queryClient]);
 
-  // Nettoyer le cache quand on change de groupe
+  // Nettoyer le cache quand on change de groupe avec invalidation immédiate
   useEffect(() => {
     if (groupId) {
-      console.log('🔄 Nouveau groupe détecté, réinitialisation du cache:', groupId);
+      console.log('🔄 Nouveau groupe détecté, invalidation immédiate du cache:', groupId);
       // Invalider et refetch les messages pour ce nouveau groupe
-      queryClient.invalidateQueries({ queryKey: ['groupMessages', groupId] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['groupMessages', groupId],
+        exact: true 
+      });
+      // Refetch immédiat pour les nouvelles données
+      refreshMessages();
     }
-  }, [groupId, queryClient]);
+  }, [groupId, queryClient, refreshMessages]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
     try {
