@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -76,37 +75,29 @@ export const useGroups = () => {
     console.log('🔄 [LAST_SEEN] Récupération des groupes pour:', user.id);
 
     try {
-      const groups = await GroupMembersService.fetchGroupMembers(user.id);
-      console.log('✅ Groupes trouvés:', groups.length);
+      const participations = await GroupMembersService.getUserParticipations(user.id);
+      console.log('✅ Participations trouvées:', participations.length);
 
-      if (groups.length === 0) {
+      if (participations.length === 0) {
         setGroupMembers([]);
         return [];
       }
 
-      // Pour chaque groupe, récupérer les membres
-      const groupsWithMembers = await Promise.all(
-        groups.map(async (group) => {
-          console.log(`👥 [LAST_SEEN] Récupération des membres: ${group.id}`);
-          const members = await GroupMembersService.fetchGroupMembers(group.id);
-          
-          // Mettre à jour les membres du premier groupe (groupe actuel)
-          if (groups.indexOf(group) === 0) {
-            setGroupMembers(members);
-          }
-          
-          // Mise à jour du last_seen pour ce groupe
-          await GroupMembersService.updateUserLastSeen(group.id, user.id);
-          console.log(`✅ Last_seen mis à jour pour le groupe: ${group.id}`);
+      // Transformer les participations en groupes et récupérer les membres
+      const groups: Group[] = participations.map(participation => participation.groups);
+      
+      // Pour le premier groupe, récupérer les membres
+      if (groups.length > 0) {
+        console.log(`👥 [LAST_SEEN] Récupération des membres: ${groups[0].id}`);
+        const members = await GroupMembersService.fetchGroupMembers(groups[0].id);
+        setGroupMembers(members);
+        
+        // Mise à jour du last_seen pour ce groupe
+        await GroupMembersService.updateUserLastSeen(groups[0].id, user.id);
+        console.log(`✅ Last_seen mis à jour pour le groupe: ${groups[0].id}`);
+      }
 
-          return {
-            ...group,
-            members
-          };
-        })
-      );
-
-      return groupsWithMembers;
+      return groups;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des groupes:', error);
       throw error;
