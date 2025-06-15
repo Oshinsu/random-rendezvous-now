@@ -20,7 +20,7 @@ export const useChatRealtime = (
       return;
     }
 
-    console.log('🛰️ Configuration realtime pour groupe SPÉCIFIQUE:', groupId);
+    console.log('🛰️ Configuration realtime ULTRA-STRICT pour groupe:', groupId);
     
     // Nettoyer l'ancienne souscription si elle existe
     if (channelRef.current) {
@@ -32,14 +32,14 @@ export const useChatRealtime = (
     // Mettre à jour la référence du groupe actuel
     currentGroupIdRef.current = groupId;
 
-    // Créer un canal UNIQUE et SPÉCIFIQUE à ce groupe
-    const uniqueChannelName = `group-messages-${groupId}-${user.id}`;
+    // Créer un canal ULTRA-UNIQUE pour ce groupe ET cet utilisateur
+    const ultraUniqueChannelName = `group-messages-STRICT-${groupId}-user-${user.id}-${Date.now()}`;
     
     const channel = supabase
-      .channel(uniqueChannelName, {
+      .channel(ultraUniqueChannelName, {
         config: {
           broadcast: { self: false },
-          presence: { key: user.id }
+          presence: { key: `${user.id}-${groupId}` }
         }
       })
       .on(
@@ -48,55 +48,47 @@ export const useChatRealtime = (
           event: 'INSERT',
           schema: 'public',
           table: 'group_messages',
-          filter: `group_id=eq.${groupId}` // FILTRAGE STRICT par groupe
+          filter: `group_id=eq.${groupId}` // FILTRAGE ULTRA-STRICT par groupe
         },
         (payload) => {
           const newMessage = payload.new as ChatMessage;
           
-          console.log('🛰️ Message reçu en temps réel:', {
+          console.log('🛰️ Message reçu en temps réel - VÉRIFICATION ULTRA-STRICTE:', {
+            messageId: newMessage.id,
             messageGroupId: newMessage.group_id,
             currentGroupId: currentGroupIdRef.current,
-            groupId: groupId
+            expectedGroupId: groupId,
+            messageText: newMessage.message.substring(0, 50)
           });
 
-          // TRIPLE VÉRIFICATION que le message appartient au bon groupe
+          // QUADRUPLE VÉRIFICATION que le message appartient EXACTEMENT au bon groupe
           if (newMessage.group_id !== groupId || 
-              newMessage.group_id !== currentGroupIdRef.current) {
-            console.log('⚠️ Message pour un autre groupe, REJETÉ:', {
+              newMessage.group_id !== currentGroupIdRef.current ||
+              currentGroupIdRef.current !== groupId) {
+            console.error('🚨 MESSAGE ÉTRANGER DÉTECTÉ ET REJETÉ EN REALTIME:', {
               messageGroup: newMessage.group_id,
               expectedGroup: groupId,
-              currentGroup: currentGroupIdRef.current
+              currentGroup: currentGroupIdRef.current,
+              messageId: newMessage.id
             });
             return;
           }
 
-          // Filtrer les messages système non importants
-          if (newMessage.is_system) {
-            const isImportantSystemMessage = newMessage.message.includes('Rendez-vous au') || 
-                                           newMessage.message.includes('bar assigné') ||
-                                           newMessage.message.includes('groupe complet');
-            
-            if (!isImportantSystemMessage) {
-              console.log('⚠️ Message système non important, ignoré');
-              return;
-            }
-          }
-
-          console.log('✅ Message valide reçu pour le groupe:', groupId);
+          console.log('✅ Message VALIDÉ reçu pour le groupe:', groupId);
           
           // Mise à jour du cache SEULEMENT pour ce groupe
           updateMessagesCache(newMessage);
         }
       )
       .subscribe((status) => {
-        console.log('🛰️ Statut souscription realtime groupe', groupId, ':', status);
+        console.log('🛰️ Statut souscription realtime ULTRA-STRICT groupe', groupId, ':', status);
         
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Souscription realtime ACTIVE pour groupe:', groupId);
+          console.log('✅ Souscription realtime ULTRA-ACTIVE pour groupe:', groupId);
         }
         
         if (status === 'CHANNEL_ERROR') {
-          console.log('❌ Erreur canal realtime pour groupe:', groupId);
+          console.error('❌ Erreur canal realtime pour groupe:', groupId);
         }
       });
 
@@ -104,12 +96,12 @@ export const useChatRealtime = (
 
     // Fonction de nettoyage
     return () => {
-      console.log('🛰️ Nettoyage souscription realtime pour groupe:', groupId);
+      console.log('🛰️ Nettoyage souscription realtime ULTRA-STRICT pour groupe:', groupId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
       currentGroupIdRef.current = '';
     };
-  }, [groupId, user?.id, updateMessagesCache]); // Ajouter user.id comme dépendance
+  }, [groupId, user?.id, updateMessagesCache]); // Dépendances strictes
 };

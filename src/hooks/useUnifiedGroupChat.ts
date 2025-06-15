@@ -31,16 +31,19 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Nettoyer et recharger quand on change de groupe
+  // Nettoyer COMPLÈTEMENT et recharger quand on change de groupe
   useEffect(() => {
     if (groupId && user) {
-      console.log('🔄 Changement de groupe détecté, nettoyage du cache pour:', groupId);
-      // Invalidation immédiate pour s'assurer qu'on part d'une base propre
+      console.log('🔄 Changement de groupe détecté - NETTOYAGE COMPLET pour:', groupId);
+      
+      // Invalidation IMMÉDIATE et COMPLÈTE
       invalidateMessages();
-      // Rechargement forcé des messages du nouveau groupe
+      
+      // Rechargement forcé après un court délai
       setTimeout(() => {
+        console.log('🔄 Rechargement forcé des messages pour groupe:', groupId);
         refreshMessages();
-      }, 100);
+      }, 200);
     }
   }, [groupId, user?.id, invalidateMessages, refreshMessages]);
 
@@ -51,7 +54,7 @@ export const useUnifiedGroupChat = (groupId: string) => {
     }
 
     try {
-      console.log('📤 Envoi message pour groupe:', groupId);
+      console.log('📤 Envoi message STRICT pour groupe:', groupId);
       await sendMessageMutation.mutateAsync(messageText);
       return true;
     } catch (error) {

@@ -15,22 +15,22 @@ export const useChatMessages = (groupId: string) => {
     isLoading: loading,
     refetch: refreshMessages 
   } = useQuery({
-    queryKey: ['groupMessages', groupId, user?.id], // Inclure user.id pour isoler par utilisateur
+    queryKey: ['groupMessages', groupId, user?.id], // Clé unique par groupe ET utilisateur
     queryFn: async (): Promise<ChatMessage[]> => {
       if (!groupId || !user) {
         console.log('🚫 Pas de groupe ou utilisateur, retour tableau vide');
         return [];
       }
 
-      console.log('🔄 Chargement STRICT des messages pour groupe:', groupId, 'utilisateur:', user.id);
+      console.log('🔄 Chargement ULTRA-STRICT des messages pour groupe UNIQUE:', groupId, 'utilisateur:', user.id);
       
       try {
         const { data, error } = await supabase
           .from('group_messages')
           .select('*')
-          .eq('group_id', groupId) // FILTRAGE STRICT par groupe
+          .eq('group_id', groupId) // FILTRAGE ULTRA-STRICT par groupe UNIQUEMENT
           .order('created_at', { ascending: true })
-          .limit(50);
+          .limit(100); // Augmenter la limite pour voir s'il y a vraiment trop de messages
 
         if (error) {
           ErrorHandler.logError('FETCH_MESSAGES', error);
@@ -47,24 +47,61 @@ export const useChatMessages = (groupId: string) => {
           return [];
         }
 
-        // Vérification supplémentaire côté client
-        const groupSpecificMessages = (data || []).filter(msg => msg.group_id === groupId);
+        if (!data) {
+          console.log('✅ Aucun message trouvé pour le groupe:', groupId);
+          return [];
+        }
 
-        // Filtrer pour réduire les messages système
-        const filteredMessages = groupSpecificMessages.filter(msg => {
-          // Garder tous les messages des utilisateurs
-          if (!msg.is_system) return true;
-          
-          // Pour les messages système, ne garder que les plus importants
-          return msg.message.includes('Rendez-vous au') || 
-                 msg.message.includes('bar assigné') ||
-                 msg.message.includes('groupe complet');
+        // VÉRIFICATION ULTRA-STRICTE : Tous les messages DOIVENT appartenir au groupe actuel
+        const strictGroupMessages = data.filter(msg => {
+          const belongsToGroup = msg.group_id === groupId;
+          if (!belongsToGroup) {
+            console.error('🚨 MESSAGE ÉTRANGER DÉTECTÉ ET REJETÉ:', {
+              messageId: msg.id,
+              messageGroup: msg.group_id,
+              expectedGroup: groupId,
+              messageText: msg.message.substring(0, 50)
+            });
+          }
+          return belongsToGroup;
         });
 
-        console.log('✅ Messages chargés et filtrés pour groupe', groupId, ':', filteredMessages.length);
-        console.log('📊 Détail des messages:', filteredMessages.map(m => ({ id: m.id, group: m.group_id, text: m.message.substring(0, 50) })));
+        // Déduplication des messages système identiques
+        const uniqueMessages = strictGroupMessages.reduce((acc: ChatMessage[], current) => {
+          if (current.is_system) {
+            // Pour les messages système, vérifier s'il existe déjà un message identique
+            const existingSystemMessage = acc.find(msg => 
+              msg.is_system && 
+              msg.message === current.message &&
+              Math.abs(new Date(msg.created_at).getTime() - new Date(current.created_at).getTime()) < 60000 // 1 minute
+            );
+            
+            if (existingSystemMessage) {
+              console.log('🗑️ Message système dupliqué ignoré:', current.message.substring(0, 50));
+              return acc;
+            }
+          }
+          
+          // Vérifier qu'on n'a pas déjà ce message exact (par ID)
+          const existingMessage = acc.find(msg => msg.id === current.id);
+          if (existingMessage) {
+            console.log('🗑️ Message dupliqué (même ID) ignoré:', current.id);
+            return acc;
+          }
+          
+          return [...acc, current];
+        }, []);
+
+        console.log('✅ Messages ULTRA-FILTRÉS pour groupe', groupId, ':', uniqueMessages.length);
+        console.log('📊 Détail des messages finaux:', uniqueMessages.map(m => ({ 
+          id: m.id, 
+          group: m.group_id, 
+          text: m.message.substring(0, 30),
+          time: m.created_at,
+          isSystem: m.is_system
+        })));
         
-        return filteredMessages;
+        return uniqueMessages;
       } catch (error) {
         ErrorHandler.logError('FETCH_MESSAGES', error);
         const appError = ErrorHandler.handleGenericError(error as Error);
@@ -74,15 +111,17 @@ export const useChatMessages = (groupId: string) => {
     },
     enabled: !!groupId && !!user,
     refetchInterval: 5000,
-    staleTime: 2000,
+    staleTime: 1000, // Réduire le stale time pour forcer plus de rafraîchissements
   });
 
   const updateMessagesCache = (newMessage: ChatMessage) => {
-    // VÉRIFICATION CRITIQUE : le message doit appartenir au bon groupe
+    // VÉRIFICATION ULTRA-CRITIQUE : le message doit appartenir EXACTEMENT au bon groupe
     if (newMessage.group_id !== groupId) {
-      console.log('🚫 Tentative d\'ajout d\'un message d\'un autre groupe, REJETÉ:', {
+      console.error('🚨 TENTATIVE D\'INTRUSION DE MESSAGE ÉTRANGER BLOQUÉE:', {
         messageGroup: newMessage.group_id,
-        currentGroup: groupId
+        currentGroup: groupId,
+        messageId: newMessage.id,
+        messageText: newMessage.message.substring(0, 50)
       });
       return;
     }
@@ -95,17 +134,25 @@ export const useChatMessages = (groupId: string) => {
         return oldMessages;
       }
 
-      console.log('✅ Ajout du nouveau message au cache pour groupe:', groupId);
+      console.log('✅ Ajout du nouveau message VALIDÉ au cache pour groupe:', groupId);
       return [...oldMessages, newMessage];
     });
   };
 
   const invalidateMessages = () => {
-    console.log('🔄 Invalidation du cache pour groupe:', groupId);
-    queryClient.invalidateQueries({ 
+    console.log('🔄 Invalidation COMPLÈTE du cache pour groupe:', groupId);
+    // Invalider ET supprimer complètement le cache
+    queryClient.removeQueries({ 
       queryKey: ['groupMessages', groupId, user?.id],
       exact: true 
     });
+    // Forcer un nouveau fetch
+    setTimeout(() => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['groupMessages', groupId, user?.id],
+        exact: true 
+      });
+    }, 100);
   };
 
   return {
