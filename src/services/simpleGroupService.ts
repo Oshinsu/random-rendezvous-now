@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -16,7 +17,7 @@ export class SimpleGroupService {
         return [];
       }
 
-      // D'abord récupérer les participations de l'utilisateur
+      // Requête simplifiée sans JOIN pour éviter la récursion RLS
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
         .select('group_id')
@@ -33,7 +34,7 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Ensuite récupérer les détails des groupes
+      // Requête séparée pour les groupes
       const groupIds = participations.map(p => p.group_id);
       const { data: groups, error: groupsError } = await supabase
         .from('groups')

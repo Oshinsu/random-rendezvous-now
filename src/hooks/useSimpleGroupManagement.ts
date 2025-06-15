@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
@@ -27,8 +27,8 @@ export const useSimpleGroupManagement = () => {
       return SimpleGroupService.getUserGroups(user.id);
     },
     enabled: !!user,
-    refetchInterval: 10000,
-    staleTime: 5000,
+    refetchInterval: 15000,
+    staleTime: 10000,
   });
 
   const getUserLocation = async (): Promise<LocationData | null> => {
@@ -51,29 +51,28 @@ export const useSimpleGroupManagement = () => {
     }
   };
 
-  // Récupérer les membres du groupe actuel - avec useCallback pour éviter la boucle infinie
-  const fetchGroupMembers = useCallback(async (groupId: string) => {
-    try {
-      const members = await SimpleGroupService.getGroupMembers(groupId);
-      setGroupMembers(members);
-      
-      if (user) {
-        await SimpleGroupService.updateUserActivity(groupId, user.id);
-      }
-    } catch (error) {
-      console.error('❌ Erreur fetchGroupMembers:', error);
-      setGroupMembers([]);
-    }
-  }, [user]);
-
-  // Effect pour récupérer les membres quand les groupes changent
+  // Simplifier drastiquement la récupération des membres - pas d'effet complexe
   useEffect(() => {
-    if (userGroups.length > 0) {
-      fetchGroupMembers(userGroups[0].id);
+    if (userGroups.length > 0 && user) {
+      const fetchMembers = async () => {
+        try {
+          console.log('👥 Récupération des membres du groupe:', userGroups[0].id);
+          const members = await SimpleGroupService.getGroupMembers(userGroups[0].id);
+          setGroupMembers(members);
+          
+          // Mise à jour de l'activité utilisateur
+          await SimpleGroupService.updateUserActivity(userGroups[0].id, user.id);
+        } catch (error) {
+          console.error('❌ Erreur fetchGroupMembers:', error);
+          setGroupMembers([]);
+        }
+      };
+      
+      fetchMembers();
     } else {
       setGroupMembers([]);
     }
-  }, [userGroups, fetchGroupMembers]);
+  }, [userGroups.length, user?.id]); // Dépendances simplifiées pour éviter la boucle
 
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSimpleGroupManagement } from '@/hooks/useSimpleGroupManagement'
 import { useNavigate } from 'react-router-dom'
@@ -13,10 +13,14 @@ const Dashboard = () => {
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
+  const hasInitialized = useRef(false)
 
-  // Nettoyer les toasts au montage du composant
+  // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
   useEffect(() => {
-    clearActiveToasts()
+    if (!hasInitialized.current) {
+      clearActiveToasts()
+      hasInitialized.current = true
+    }
   }, [])
 
   const handleButtonClick = async () => {
@@ -71,13 +75,13 @@ const Dashboard = () => {
     }
   }, [redirectCountdown, navigate])
 
-  // Effect pour surveiller si l'utilisateur a déjà un groupe et arrêter l'animation
+  // Effect simplifié pour surveiller les groupes - éviter la boucle infinie
   useEffect(() => {
     if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
       console.log('🎯 Groupe détecté, démarrage du countdown')
       setRedirectCountdown(15)
     }
-  }, [userGroups, isSearching, redirectCountdown])
+  }, [userGroups.length, isSearching]) // Dépendances simplifiées
 
   return (
     <AppLayout>
