@@ -8,7 +8,7 @@ import type { GroupMember } from '@/types/groups';
 export class SimpleGroupService {
   static async getUserGroups(userId: string): Promise<Group[]> {
     try {
-      console.log('🔍 Récupération des groupes utilisateur');
+      console.log('🔍 Récupération des groupes utilisateur pour:', userId);
       
       // Vérifier l'authentification en premier
       const { data: { user } } = await supabase.auth.getUser();
@@ -17,12 +17,32 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Récupérer les participations de l'utilisateur
+      // Récupérer les participations de l'utilisateur avec les détails des groupes
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
-        .select('group_id')
+        .select(`
+          group_id,
+          groups!inner (
+            id,
+            created_at,
+            status,
+            bar_name,
+            bar_address,
+            meeting_time,
+            max_participants,
+            current_participants,
+            latitude,
+            longitude,
+            location_name,
+            search_radius,
+            bar_latitude,
+            bar_longitude,
+            bar_place_id
+          )
+        `)
         .eq('user_id', userId)
-        .eq('status', 'confirmed');
+        .eq('status', 'confirmed')
+        .in('groups.status', ['waiting', 'confirmed', 'full']);
 
       if (participationError) {
         console.error('❌ Erreur récupération participations:', participationError);
@@ -30,25 +50,15 @@ export class SimpleGroupService {
       }
 
       if (!participations || participations.length === 0) {
-        console.log('ℹ️ Aucune participation trouvée');
+        console.log('ℹ️ Aucune participation trouvée pour l\'utilisateur');
         return [];
       }
 
-      // Récupérer les détails des groupes
-      const groupIds = participations.map(p => p.group_id);
-      const { data: groups, error: groupsError } = await supabase
-        .from('groups')
-        .select('*')
-        .in('id', groupIds)
-        .in('status', ['waiting', 'confirmed']);
+      // Extraire les groupes des participations
+      const groups = participations.map(p => p.groups).filter(Boolean) as Group[];
 
-      if (groupsError) {
-        console.error('❌ Erreur récupération groupes:', groupsError);
-        return [];
-      }
-
-      console.log('✅ Groupes récupérés:', groups?.length || 0);
-      return (groups || []) as Group[];
+      console.log('✅ Groupes récupérés:', groups.length);
+      return groups;
     } catch (error) {
       console.error('❌ Erreur getUserGroups:', error);
       return [];
