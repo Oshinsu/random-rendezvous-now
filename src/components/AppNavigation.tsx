@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,7 +67,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Home className="h-4 w-4" />
-                      <span>Dashboard</span>
+                      <span>Chercher un groupe</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -84,7 +85,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Users className="h-4 w-4" />
-                      <span>Mes Groupes</span>
+                      <span>Mon groupe</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -163,7 +164,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Home className="h-4 w-4" />
-                <span>Dashboard</span>
+                <span>Chercher un groupe</span>
               </NavLink>
               
               <NavLink 
@@ -178,7 +179,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Users className="h-4 w-4" />
-                <span>Mes Groupes</span>
+                <span>Mon groupe</span>
               </NavLink>
 
               <NavLink 

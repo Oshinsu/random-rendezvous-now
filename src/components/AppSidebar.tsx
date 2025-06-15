@@ -19,8 +19,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import RandomLogo from './RandomLogo';
 
 const navigationItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: Home },
-  { title: 'Mes Groupes', url: '/groups', icon: Users },
+  { title: 'Chercher un groupe', url: '/dashboard', icon: Home },
+  { title: 'Mon groupe', url: '/groups', icon: Users },
   { title: 'Profil', url: '/profile', icon: User },
   { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
 ];
