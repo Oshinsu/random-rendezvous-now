@@ -1,8 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
-import { GroupMembersService } from './groupMembers';
 import { toast } from '@/hooks/use-toast';
 
 export class GroupOperationsService {
@@ -22,6 +22,73 @@ export class GroupOperationsService {
     } catch (error) {
       console.error('❌ Erreur updateGroupParticipantCount:', error);
       throw error;
+    }
+  }
+
+  static async getCurrentParticipantCount(groupId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('group_participants')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('status', 'confirmed');
+
+      if (error) {
+        console.error('❌ Erreur comptage participants:', error);
+        throw error;
+      }
+
+      return data ? data.length : 0;
+    } catch (error) {
+      console.error('❌ Erreur getCurrentParticipantCount:', error);
+      throw error;
+    }
+  }
+
+  static async forceCleanupOldGroups(): Promise<void> {
+    try {
+      const cutoffTime = new Date();
+      cutoffTime.setHours(cutoffTime.getHours() - 6);
+
+      console.log('🧹 [CLEANUP] Suppression des groupes inactifs depuis:', cutoffTime.toISOString());
+
+      const { data: oldParticipants, error: selectError } = await supabase
+        .from('group_participants')
+        .select('group_id, last_seen')
+        .lt('last_seen', cutoffTime.toISOString());
+
+      if (selectError) {
+        console.error('❌ Erreur lors de la sélection des participants inactifs:', selectError);
+        return;
+      }
+
+      if (oldParticipants && oldParticipants.length > 0) {
+        const groupIdsToClean = [...new Set(oldParticipants.map(p => p.group_id))];
+        
+        for (const groupId of groupIdsToClean) {
+          await supabase
+            .from('group_participants')
+            .delete()
+            .eq('group_id', groupId)
+            .lt('last_seen', cutoffTime.toISOString());
+
+          const currentCount = await GroupOperationsService.getCurrentParticipantCount(groupId);
+          
+          if (currentCount === 0) {
+            await supabase
+              .from('groups')
+              .delete()
+              .eq('id', groupId);
+            console.log('🗑️ [CLEANUP] Groupe vide supprimé:', groupId);
+          } else {
+            await GroupOperationsService.updateGroupParticipantCount(groupId, currentCount);
+          }
+        }
+      }
+
+      console.log('✅ [CLEANUP] Nettoyage terminé');
+    } catch (error) {
+      console.error('❌ Erreur lors du nettoyage forcé:', error);
     }
   }
 
@@ -61,7 +128,7 @@ export class GroupOperationsService {
     try {
       // ÉTAPE 0: FORCER le nettoyage des vieux groupes AVANT de vérifier les participations
       console.log('🧹 [JOIN] Nettoyage forcé des groupes anciens avant recherche...');
-      await GroupMembersService.forceCleanupOldGroups();
+      await GroupOperationsService.forceCleanupOldGroups();
 
       // Vérifier les participations existantes APRÈS le nettoyage
       const { data: existingParticipation, error: checkError } = await supabase
@@ -225,7 +292,7 @@ export class GroupOperationsService {
       console.log('✅ [LAST_SEEN] Participation supprimée avec succès');
 
       // ÉTAPE 3: FORCER la correction du comptage immédiatement
-      const realCount = await GroupMembersService.getCurrentParticipantCount(groupId);
+      const realCount = await GroupOperationsService.getCurrentParticipantCount(groupId);
       console.log('📊 [LAST_SEEN] Participants restants après départ:', realCount);
 
       if (realCount === 0) {

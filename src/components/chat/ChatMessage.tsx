@@ -1,6 +1,5 @@
-
 import MessageReactions from '@/components/MessageReactions';
-import { ChatMessage as ChatMessageType } from '@/hooks/useGroupChat';
+import { ChatMessage as ChatMessageType } from '@/hooks/useUnifiedGroupChat';
 
 interface ChatMessageProps {
   message: ChatMessageType;

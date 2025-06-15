@@ -1,7 +1,6 @@
-
 import { useEffect, useRef } from 'react';
 import ChatMessage from './ChatMessage';
-import { ChatMessage as ChatMessageType } from '@/hooks/useGroupChat';
+import { ChatMessage as ChatMessageType } from '@/hooks/useUnifiedGroupChat';
 
 interface ChatMessagesProps {
   messages: ChatMessageType[];

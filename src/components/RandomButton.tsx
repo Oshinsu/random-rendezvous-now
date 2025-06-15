@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dice6, Users, Clock, Sparkles, Zap, Star, Target, MapPin, Navigation } from 'lucide-react';
-import { useGroups } from '@/hooks/useGroups';
+import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 
 interface RandomButtonProps {
   size?: 'sm' | 'lg';
@@ -14,7 +13,7 @@ const iconSizes = {
 };
 
 const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
-  const { joinRandomGroup, loading, userLocation } = useGroups();
+  const { joinRandomGroup, loading, userLocation } = useUnifiedGroups();
   const [isRolling, setIsRolling] = useState(false);
   const isCompact = size === 'sm';
 
