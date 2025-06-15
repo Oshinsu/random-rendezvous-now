@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { GroupService } from './groupService';
 import type { Group } from '@/types/database';
 import type { LocationData } from '@/services/geolocation';
 import type { GroupMember } from '@/types/groups';
@@ -9,17 +10,14 @@ export class SimpleGroupService {
     try {
       console.log('🔍 Récupération des groupes utilisateur pour:', userId);
       
-      // Vérifier l'authentification en premier
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('❌ Utilisateur non authentifié');
         return [];
       }
 
-      // Nettoyer automatiquement les participants inactifs avant de récupérer les groupes
-      await this.cleanupInactiveParticipants();
+      await GroupService.cleanupInactiveParticipants();
 
-      // Récupération directe des groupes de l'utilisateur
       const { data: participations, error: participationError } = await supabase
         .from('group_participants')
         .select(`
@@ -55,7 +53,6 @@ export class SimpleGroupService {
         return [];
       }
 
-      // Extraire les groupes des participations
       const groups = participations
         .map(p => p.groups)
         .filter(group => group && ['waiting', 'confirmed', 'full'].includes(group.status))
@@ -87,80 +84,17 @@ export class SimpleGroupService {
     }
   }
 
-  static async cleanupInactiveParticipants(): Promise<void> {
-    try {
-      console.log('🧹 Nettoyage des participants inactifs (>5min)');
-      
-      // Supprimer les participants inactifs depuis plus de 5 minutes
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      
-      const { data: inactiveParticipants, error: selectError } = await supabase
-        .from('group_participants')
-        .select('group_id, user_id')
-        .lt('last_seen', fiveMinutesAgo);
-
-      if (selectError) {
-        console.error('❌ Erreur sélection participants inactifs:', selectError);
-        return;
-      }
-
-      if (!inactiveParticipants || inactiveParticipants.length === 0) {
-        console.log('✅ Aucun participant inactif à nettoyer');
-        return;
-      }
-
-      console.log(`🗑️ ${inactiveParticipants.length} participants inactifs trouvés`);
-
-      // Supprimer les participants inactifs
-      const { error: deleteError } = await supabase
-        .from('group_participants')
-        .delete()
-        .lt('last_seen', fiveMinutesAgo);
-
-      if (deleteError) {
-        console.error('❌ Erreur suppression participants inactifs:', deleteError);
-        return;
-      }
-
-      // Mettre à jour le compteur current_participants pour chaque groupe affecté
-      const affectedGroups = [...new Set(inactiveParticipants.map(p => p.group_id))];
-      
-      for (const groupId of affectedGroups) {
-        const { data: activeParticipants } = await supabase
-          .from('group_participants')
-          .select('id')
-          .eq('group_id', groupId)
-          .eq('status', 'confirmed');
-
-        const activeCount = activeParticipants?.length || 0;
-        
-        await supabase
-          .from('groups')
-          .update({ current_participants: activeCount })
-          .eq('id', groupId);
-
-        console.log(`🔄 Groupe ${groupId}: ${activeCount} participants actifs`);
-      }
-
-      console.log('✅ Nettoyage des participants inactifs terminé');
-    } catch (error) {
-      console.error('❌ Erreur cleanupInactiveParticipants:', error);
-    }
-  }
-
   static async getGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
       console.log('👥 Récupération des membres du groupe:', groupId);
 
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('❌ Utilisateur non authentifié');
         return [];
       }
 
-      // Nettoyer les participants inactifs avant de récupérer la liste
-      await this.cleanupInactiveParticipants();
+      await GroupService.cleanupInactiveParticipants();
 
       const { data: participants, error } = await supabase
         .from('group_participants')
@@ -185,14 +119,13 @@ export class SimpleGroupService {
 
       console.log('✅ Membres actifs récupérés:', participants?.length || 0);
 
-      // Tous les membres retournés sont maintenant connectés par définition
       const members = (participants || []).map((participant, index) => {
         console.log(`👤 Membre ${index + 1}: connecté (last_seen: ${participant.last_seen})`);
         
         return {
           id: participant.id,
           name: `Rander ${index + 1}`,
-          isConnected: true, // Tous les membres sont connectés maintenant
+          isConnected: true,
           joinedAt: participant.joined_at,
           status: participant.status as 'confirmed' | 'pending',
           lastSeen: participant.last_seen
@@ -214,7 +147,6 @@ export class SimpleGroupService {
     try {
       console.log('🆕 Création de groupe pour utilisateur:', userId);
       
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.id !== userId) {
         console.error('❌ Utilisateur non authentifié ou ID incorrect');
@@ -226,7 +158,6 @@ export class SimpleGroupService {
         return false;
       }
 
-      // Vérifier si l'utilisateur n'est pas déjà dans un groupe actif
       const { data: existingParticipations } = await supabase
         .from('group_participants')
         .select('id')
@@ -273,7 +204,6 @@ export class SimpleGroupService {
 
       console.log('✅ Groupe créé avec ID:', newGroup.id);
       
-      // Ajouter l'utilisateur au groupe
       const { error: joinError } = await supabase
         .from('group_participants')
         .insert({
@@ -288,7 +218,6 @@ export class SimpleGroupService {
 
       if (joinError) {
         console.error('❌ Erreur ajout participant:', joinError);
-        // Nettoyer le groupe créé en cas d'erreur
         await supabase.from('groups').delete().eq('id', newGroup.id);
         toast({ 
           title: 'Erreur', 
@@ -320,14 +249,12 @@ export class SimpleGroupService {
     try {
       console.log('👥 Rejoindre groupe:', groupId, 'par utilisateur:', userId);
 
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.id !== userId) {
         console.error('❌ Utilisateur non authentifié');
         return false;
       }
 
-      // Vérifier si le groupe existe et n'est pas plein
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('current_participants, max_participants, status')
@@ -348,7 +275,6 @@ export class SimpleGroupService {
         return false;
       }
 
-      // Ajouter l'utilisateur au groupe
       const { error: joinError } = await supabase
         .from('group_participants')
         .insert({
@@ -371,7 +297,6 @@ export class SimpleGroupService {
         return false;
       }
 
-      // Mettre à jour le nombre de participants
       const { error: updateError } = await supabase
         .from('groups')
         .update({ current_participants: group.current_participants + 1 })
@@ -397,14 +322,12 @@ export class SimpleGroupService {
     try {
       console.log('🚪 Quitter groupe:', groupId);
 
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.id !== userId) {
         console.error('❌ Utilisateur non authentifié');
         return false;
       }
 
-      // Supprimer la participation
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -416,7 +339,6 @@ export class SimpleGroupService {
         return false;
       }
 
-      // Mettre à jour le nombre de participants
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('current_participants')
@@ -446,7 +368,6 @@ export class SimpleGroupService {
     try {
       console.log('🔍 Recherche groupes à proximité');
 
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('❌ Utilisateur non authentifié');
@@ -475,7 +396,6 @@ export class SimpleGroupService {
 
   static async updateUserActivity(groupId: string, userId: string): Promise<void> {
     try {
-      // Vérifier l'authentification
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.id !== userId) {
         return;
@@ -498,11 +418,6 @@ export class SimpleGroupService {
   }
 
   static async verifyAuth(): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      return !!user;
-    } catch {
-      return false;
-    }
+    return GroupService.verifyAuth();
   }
 }

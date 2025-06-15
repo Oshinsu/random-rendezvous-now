@@ -3,48 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
+import { GroupService } from './groupService';
 import { toast } from '@/hooks/use-toast';
 
 export class GroupOperationsService {
-  static async updateGroupParticipantCount(groupId: string, count: number): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('groups')
-        .update({ current_participants: count })
-        .eq('id', groupId);
-      
-      if (error) {
-        console.error('❌ Erreur mise à jour comptage participants:', error);
-        throw error;
-      }
-      
-      console.log('✅ Comptage participants mis à jour:', count);
-    } catch (error) {
-      console.error('❌ Erreur updateGroupParticipantCount:', error);
-      throw error;
-    }
-  }
-
-  static async getCurrentParticipantCount(groupId: string): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from('group_participants')
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('status', 'confirmed');
-
-      if (error) {
-        console.error('❌ Erreur comptage participants:', error);
-        throw error;
-      }
-
-      return data ? data.length : 0;
-    } catch (error) {
-      console.error('❌ Erreur getCurrentParticipantCount:', error);
-      throw error;
-    }
-  }
-
   static async forceCleanupOldGroups(): Promise<void> {
     try {
       const cutoffTime = new Date();
@@ -72,7 +34,7 @@ export class GroupOperationsService {
             .eq('group_id', groupId)
             .lt('last_seen', cutoffTime.toISOString());
 
-          const currentCount = await GroupOperationsService.getCurrentParticipantCount(groupId);
+          const currentCount = await GroupService.getCurrentParticipantCount(groupId);
           
           if (currentCount === 0) {
             await supabase
@@ -81,7 +43,7 @@ export class GroupOperationsService {
               .eq('id', groupId);
             console.log('🗑️ [CLEANUP] Groupe vide supprimé:', groupId);
           } else {
-            await GroupOperationsService.updateGroupParticipantCount(groupId, currentCount);
+            await GroupService.updateGroupParticipantCount(groupId, currentCount);
           }
         }
       }
@@ -112,7 +74,6 @@ export class GroupOperationsService {
       return false;
     }
 
-    // GÉOLOCALISATION OBLIGATOIRE
     if (!userLocation) {
       toast({ 
         title: 'Géolocalisation requise', 
@@ -126,7 +87,6 @@ export class GroupOperationsService {
     setLoading(true);
     
     try {
-      // ÉTAPE 0: FORCER le nettoyage des vieux groupes AVANT de vérifier les participations
       console.log('🧹 [JOIN] Nettoyage forcé des groupes anciens avant recherche...');
       await GroupOperationsService.forceCleanupOldGroups();
 
@@ -155,12 +115,10 @@ export class GroupOperationsService {
 
       console.log('✅ [JOIN] Utilisateur libre après nettoyage, recherche d\'un groupe...');
 
-      // RECHERCHE STRICTEMENT GÉOGRAPHIQUE - PAS DE FALLBACK
       console.log('🌍 Recherche exclusive dans un rayon de 10km...');
       const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
 
       if (!targetGroup) {
-        // PLUS DE FALLBACK - Création d'un nouveau groupe géolocalisé
         console.log('🆕 Création d\'un nouveau groupe géolocalisé...');
         const newGroupData: any = {
           status: 'waiting',
@@ -169,7 +127,7 @@ export class GroupOperationsService {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
           location_name: userLocation.locationName,
-          search_radius: 10000 // 10km strict
+          search_radius: 10000
         };
 
         const { data: newGroup, error: createError } = await supabase
@@ -185,7 +143,6 @@ export class GroupOperationsService {
 
         console.log('✅ Nouveau groupe géolocalisé créé (rayon 10km):', newGroup.id);
         
-        // Ajouter l'utilisateur au nouveau groupe
         const participantData: any = {
           group_id: newGroup.id,
           user_id: user.id,
@@ -213,7 +170,6 @@ export class GroupOperationsService {
         console.log('✅ [GEOLOC_OBLIGATOIRE] Utilisateur ajouté au nouveau groupe géolocalisé');
         return true;
       } else {
-        // Rejoindre le groupe trouvé
         console.log('🔗 Rejoindre le groupe géolocalisé existant:', targetGroup.id);
         
         const participantData: any = {
@@ -272,11 +228,9 @@ export class GroupOperationsService {
     try {
       console.log('🚪 [LAST_SEEN] Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
-      // ÉTAPE 1: Nettoyer immédiatement l'état local pour un feedback visuel instantané
       console.log('🧹 Nettoyage immédiat de l\'état local');
       clearUserGroupsState();
 
-      // ÉTAPE 2: Supprimer la participation avec vérification explicite de l'utilisateur
       const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
@@ -291,19 +245,16 @@ export class GroupOperationsService {
 
       console.log('✅ [LAST_SEEN] Participation supprimée avec succès');
 
-      // ÉTAPE 3: FORCER la correction du comptage immédiatement
-      const realCount = await GroupOperationsService.getCurrentParticipantCount(groupId);
+      const realCount = await GroupService.getCurrentParticipantCount(groupId);
       console.log('📊 [LAST_SEEN] Participants restants après départ:', realCount);
 
       if (realCount === 0) {
-        // Supprimer le groupe s'il est vide
         console.log('🗑️ [LAST_SEEN] Suppression du groupe vide');
         await supabase
           .from('groups')
           .delete()
           .eq('id', groupId);
       } else {
-        // Mettre à jour le comptage et remettre en waiting si nécessaire
         let updateData: any = {
           current_participants: realCount
         };
