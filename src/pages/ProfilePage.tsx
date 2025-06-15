@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/AppLayout';
@@ -9,9 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Mail, Calendar, Settings, Star, Trophy } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import OutingsHistory from '@/components/OutingsHistory';
+import { useOutingsHistory } from '@/hooks/useOutingsHistory';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
+  const { data: outings } = useOutingsHistory();
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
@@ -33,6 +35,11 @@ const ProfilePage = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Calculate user stats from real data
+  const totalAdventures = outings?.length || 0;
+  const totalParticipants = outings?.reduce((sum, outing) => sum + outing.participants_count, 0) || 0;
+  const averageGroupSize = totalAdventures > 0 ? Math.round(totalParticipants / totalAdventures) : 0;
 
   return (
     <AppLayout>
@@ -73,14 +80,14 @@ const ProfilePage = () => {
                     <Star className="h-4 w-4 text-amber-600" />
                     <span className="text-xs font-medium text-amber-800">Aventures</span>
                   </div>
-                  <span className="text-amber-700 font-bold text-sm">0</span>
+                  <span className="text-amber-700 font-bold text-sm">{totalAdventures}</span>
                 </div>
                 <div className="flex items-center justify-between bg-green-50 rounded-lg p-2.5">
                   <div className="flex items-center space-x-1.5">
                     <Trophy className="h-4 w-4 text-green-600" />
-                    <span className="text-xs font-medium text-green-800">Score</span>
+                    <span className="text-xs font-medium text-green-800">Groupe moyen</span>
                   </div>
-                  <span className="text-green-700 font-bold text-sm">0</span>
+                  <span className="text-green-700 font-bold text-sm">{averageGroupSize || '-'}</span>
                 </div>
               </CardContent>
             </Card>
@@ -176,6 +183,9 @@ const ProfilePage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Outings History */}
+            <OutingsHistory />
           </div>
         </div>
       </div>

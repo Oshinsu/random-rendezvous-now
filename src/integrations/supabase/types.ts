@@ -166,6 +166,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_outings_history: {
+        Row: {
+          bar_address: string
+          bar_latitude: number | null
+          bar_longitude: number | null
+          bar_name: string
+          completed_at: string
+          created_at: string
+          group_id: string
+          id: string
+          meeting_time: string
+          participants_count: number
+          user_id: string
+        }
+        Insert: {
+          bar_address: string
+          bar_latitude?: number | null
+          bar_longitude?: number | null
+          bar_name: string
+          completed_at?: string
+          created_at?: string
+          group_id: string
+          id?: string
+          meeting_time: string
+          participants_count?: number
+          user_id: string
+        }
+        Update: {
+          bar_address?: string
+          bar_latitude?: number | null
+          bar_longitude?: number | null
+          bar_name?: string
+          completed_at?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          meeting_time?: string
+          participants_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

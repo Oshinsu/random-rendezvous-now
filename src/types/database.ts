@@ -1,3 +1,4 @@
+
 export interface Group {
   id: string;
   created_at: string;
@@ -34,4 +35,18 @@ export interface UserProfile {
   email: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserOutingHistory {
+  id: string;
+  user_id: string;
+  group_id: string;
+  bar_name: string;
+  bar_address: string;
+  meeting_time: string;
+  completed_at: string;
+  participants_count: number;
+  bar_latitude?: number;
+  bar_longitude?: number;
+  created_at: string;
 }
