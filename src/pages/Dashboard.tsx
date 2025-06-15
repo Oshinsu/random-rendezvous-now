@@ -50,7 +50,7 @@ const Dashboard = () => {
               ${isSearching ? 'animate-spin' : ''}
             `}
             style={{
-              animationDuration: isSearching ? '3s' : undefined,
+              animationDuration: isSearching ? '2s' : undefined,
             }}
           >
             <div className="absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm">
