@@ -32,27 +32,92 @@ export class UnifiedGroupService {
     }
   }
 
+  // AMÉLIORATION: Nettoyage ULTRA agressif des anciens groupes
   static async forceCleanupOldGroups(): Promise<void> {
     try {
-      console.log('🧹 Nettoyage forcé des groupes anciens...');
+      console.log('🧹 NETTOYAGE ULTRA AGRESSIF des groupes anciens...');
       
-      const { error } = await supabase.rpc('dissolve_old_groups');
+      // 1. Supprimer les participants inactifs (last_seen > 30 minutes)
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       
-      if (error) {
-        ErrorHandler.logError('FORCE_CLEANUP', error);
+      const { error: cleanupParticipantsError } = await supabase
+        .from('group_participants')
+        .delete()
+        .lt('last_seen', thirtyMinutesAgo);
+
+      if (cleanupParticipantsError) {
+        console.error('❌ Erreur nettoyage participants:', cleanupParticipantsError);
       } else {
-        console.log('✅ Nettoyage des groupes anciens effectué');
+        console.log('✅ Participants inactifs supprimés');
       }
+
+      // 2. Supprimer les groupes en attente anciens (> 2 heures)
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      
+      const { error: cleanupWaitingError } = await supabase
+        .from('groups')
+        .delete()
+        .eq('status', 'waiting')
+        .lt('created_at', twoHoursAgo);
+
+      if (cleanupWaitingError) {
+        console.error('❌ Erreur nettoyage groupes en attente:', cleanupWaitingError);
+      } else {
+        console.log('✅ Groupes en attente anciens supprimés');
+      }
+
+      // 3. Supprimer les groupes confirmés sans bar (situation impossible)
+      const { error: cleanupConfirmedError } = await supabase
+        .from('groups')
+        .delete()
+        .eq('status', 'confirmed')
+        .is('bar_name', null);
+
+      if (cleanupConfirmedError) {
+        console.error('❌ Erreur nettoyage groupes confirmés sans bar:', cleanupConfirmedError);
+      } else {
+        console.log('✅ Groupes confirmés sans bar supprimés');
+      }
+
+      // 4. Supprimer les groupes terminés (meeting_time + 3h)
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      
+      const { error: cleanupCompletedError } = await supabase
+        .from('groups')
+        .delete()
+        .eq('status', 'confirmed')
+        .not('meeting_time', 'is', null)
+        .lt('meeting_time', threeHoursAgo);
+
+      if (cleanupCompletedError) {
+        console.error('❌ Erreur nettoyage groupes terminés:', cleanupCompletedError);
+      } else {
+        console.log('✅ Groupes terminés supprimés');
+      }
+
+      // 5. Appeler la fonction de nettoyage de la base de données
+      const { error: rpcError } = await supabase.rpc('dissolve_old_groups');
+      
+      if (rpcError) {
+        ErrorHandler.logError('FORCE_CLEANUP_RPC', rpcError);
+      } else {
+        console.log('✅ Nettoyage RPC effectué');
+      }
+
+      console.log('✅ NETTOYAGE ULTRA AGRESSIF terminé avec succès');
     } catch (error) {
       ErrorHandler.logError('FORCE_CLEANUP_OLD_GROUPS', error);
+      console.error('❌ Erreur dans le nettoyage ultra agressif:', error);
     }
   }
 
+  // AMÉLIORATION: Recherche de participations avec validation stricte
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
+      // D'abord nettoyer
       await this.forceCleanupOldGroups();
       
-      console.log('📋 Récupération des participations après nettoyage pour:', userId);
+      console.log('📋 Recherche STRICTE des participations actives pour:', userId);
       
       const { data, error } = await supabase
         .from('group_participants')
@@ -61,11 +126,29 @@ export class UnifiedGroupService {
           group_id,
           joined_at,
           status,
-          groups!inner(*)
+          last_seen,
+          groups!inner(
+            id,
+            status,
+            created_at,
+            current_participants,
+            max_participants,
+            latitude,
+            longitude,
+            location_name,
+            search_radius,
+            bar_name,
+            bar_address,
+            meeting_time,
+            bar_latitude,
+            bar_longitude,
+            bar_place_id
+          )
         `)
         .eq('user_id', userId)
         .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed']);
+        .in('groups.status', ['waiting', 'confirmed'])
+        .gt('last_seen', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // Actif dans la dernière heure
 
       if (error) {
         ErrorHandler.logError('FETCH_USER_PARTICIPATIONS', error);
@@ -74,7 +157,25 @@ export class UnifiedGroupService {
         return [];
       }
 
-      return data || [];
+      // Validation supplémentaire côté client
+      const validParticipations = (data || []).filter(participation => {
+        const group = participation.groups;
+        if (!group) return false;
+        
+        // Vérifier que le groupe n'est pas trop ancien
+        const groupAge = Date.now() - new Date(group.created_at).getTime();
+        const maxAge = 24 * 60 * 60 * 1000; // 24 heures max
+        
+        if (groupAge > maxAge) {
+          console.log('🗑️ Groupe trop ancien filtré:', group.id);
+          return false;
+        }
+        
+        return true;
+      });
+
+      console.log('✅ Participations valides trouvées:', validParticipations.length);
+      return validParticipations;
     } catch (error) {
       ErrorHandler.logError('GET_USER_PARTICIPATIONS', error);
       return [];

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dice6, Users, Clock, Sparkles, Zap, Star, Target, MapPin, Navigation } from 'lucide-react';
@@ -23,12 +22,12 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
       console.log('🚫 Bouton désactivé - loading:', loading, 'rolling:', isRolling);
       return;
     }
-    console.log('🎲 Bouton Random cliqué - géolocalisation sera demandée maintenant');
+    console.log('🎲 NOUVEAU GROUPE FRAIS - Démarrage du processus complet');
     setIsRolling(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1200));
       const success = await joinRandomGroup();
-      console.log('✅ Résultat rejoindre groupe:', success);
+      console.log('✅ Résultat création groupe frais:', success);
     } catch (error) {
       console.error('❌ Erreur dans handleRandomClick:', error);
     } finally {
@@ -65,7 +64,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             : "p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg"}>
             <Zap size={iconSize} className="text-white animate-glow" />
           </div>
-          <span>{isCompact ? "Aventure" : "Aventure Spontanée"}</span>
+          <span>{isCompact ? "Groupe Frais" : "Nouveau Groupe Frais"}</span>
           <div className={isCompact
             ? "p-1.5 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow"
             : "p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg"}>
@@ -74,8 +73,8 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
         </h2>
         <p className={descClass}>
           {isCompact
-            ? "Rejoignez un groupe de 5 aventuriers près de chez vous."
-            : "Rejoignez un groupe de 5 aventuriers près de chez vous et découvrez ensemble un lieu secret de votre région."
+            ? "Créez un groupe totalement frais de 5 aventuriers près de votre position actuelle."
+            : "Créez un groupe totalement frais de 5 aventuriers près de votre position actuelle et découvrez ensemble un lieu secret de votre région."
           }
         </p>
         <div className={geoClass}>
@@ -87,7 +86,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
           <span className="font-heading font-semibold text-neutral-700">
             {userLocation 
               ? `Position: ${userLocation.locationName}`
-              : 'Cliquez pour démarrer et localiser'
+              : 'Cliquez pour localiser et démarrer'
             }
           </span>
         </div>
@@ -111,7 +110,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             className={`text-white ${isRolling ? 'animate-spin' : isDisabled ? '' : 'group-hover:rotate-12'} transition-transform duration-500`} 
           />
           <span className="text-white whitespace-nowrap text-xs md:text-base">
-            {isRolling ? 'Recherche...' : loading ? 'Chargement...' : 'DÉMARRER'}
+            {isRolling ? 'Création...' : loading ? 'Chargement...' : 'GROUPE FRAIS'}
           </span>
           <Sparkles size={iconSize - 4} className={`text-white ${isRolling ? 'animate-pulse' : ''}`} />
         </div>
@@ -143,8 +142,8 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             : "p-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl shadow-medium"}>
             <Clock size={iconSize} className="text-white" />
           </div>
-          <span className={isCompact ? "text-xl font-display font-bold text-emerald-600" : "text-4xl font-display font-bold text-emerald-600"}>2h</span>
-          <span className={isCompact ? "font-heading font-semibold text-neutral-600 text-xs" : "font-heading font-semibold text-neutral-600"}>D'exploration</span>
+          <span className={isCompact ? "text-xl font-display font-bold text-emerald-600" : "text-4xl font-display font-bold text-emerald-600"}>FRAIS</span>
+          <span className={isCompact ? "font-heading font-semibold text-neutral-600 text-xs" : "font-heading font-semibold text-neutral-600"}>100% Nouveau</span>
         </div>
         
         <div className={isCompact 
@@ -157,10 +156,10 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             <Target size={iconSize} className="text-white" />
           </div>
           <span className={isCompact ? "text-xl font-display font-bold text-purple-600" : "text-4xl font-display font-bold text-purple-600"}>
-            {userLocation ? 'LOCAL' : 'SURPRISE'}
+            {userLocation ? 'LOCAL' : 'FRESH'}
           </span>
           <span className={isCompact ? "font-heading font-semibold text-neutral-600 text-xs" : "font-heading font-semibold text-neutral-600"}>
-            {userLocation ? 'Géolocalisé' : 'Partout'}
+            {userLocation ? 'Géolocalisé' : 'Totalement neuf'}
           </span>
         </div>
       </div>
@@ -175,7 +174,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             : "w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"
           }></div>
           <span className={isCompact ? "font-heading font-semibold text-xs" : "font-heading font-semibold text-lg"}>
-            {isRolling ? 'Recherche du groupe...' : 'Traitement...'}
+            {isRolling ? 'Création groupe frais...' : 'Traitement...'}
           </span>
         </div>
       )}
@@ -191,7 +190,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
               : "p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded"}>
               <Star size={isCompact ? 14 : 20} className="text-white" />
             </div>
-            Algorithme
+            Nettoyage
           </span>
           <span className="flex items-center gap-1">
             <div className={isCompact
@@ -199,7 +198,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
               : "p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded"}>
               <MapPin size={isCompact ? 14 : 20} className="text-white" />
             </div>
-            Matching
+            Géolocalisation
           </span>
           <span className="flex items-center gap-1">
             <div className={isCompact
@@ -207,20 +206,22 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
               : "p-1 bg-gradient-to-br from-amber-500 to-amber-600 rounded"}>
               <Users size={isCompact ? 14 : 20} className="text-white" />
             </div>
-            Rencontre
+            Création
           </span>
         </div>
         <p className={isCompact ? "font-body text-neutral-500 text-xs" : "font-body text-neutral-500"}>
-          Découvrez des lieux secrets {isCompact ? "proches." : "près de chez vous grâce à notre sélection experte"}
+          {isCompact 
+            ? "Groupes 100% frais créés à votre position actuelle" 
+            : "Chaque groupe est 100% frais et créé spécialement pour votre position actuelle"
+          }
         </p>
-        {userLocation && (
-          <p className={isCompact 
-            ? "font-body text-emerald-600 font-medium text-xs"
-            : "font-body text-emerald-600 font-medium"
-          }>
-            Groupes prioritaires près de {userLocation.locationName}
-          </p>
-        )}
+        <div className={isCompact 
+          ? "inline-flex items-center px-2 py-1 bg-gradient-to-r from-emerald-100 to-emerald-200 rounded-full text-xs font-semibold text-emerald-800"
+          : "inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-200 rounded-full font-semibold text-emerald-800"
+        }>
+          <Sparkles size={isCompact ? 12 : 16} className="mr-1" />
+          Données toujours fraîches garanties
+        </div>
       </div>
     </div>
   );
