@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { SystemMessagingService } from './systemMessaging';
+import { AutomaticBarAssignmentService } from './automaticBarAssignment';
 import { toast } from '@/hooks/use-toast';
 import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
@@ -211,7 +212,7 @@ export class UnifiedGroupService {
 
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
-        .select('current_participants, status')
+        .select('current_participants, status, bar_name')
         .eq('id', groupId)
         .single();
 
@@ -241,6 +242,14 @@ export class UnifiedGroupService {
               bar_place_id: null
             };
             console.log('⏳ Remise en waiting et suppression du bar');
+          } else if (realParticipantCount === 5 && currentGroup.status === 'waiting') {
+            // 🔥 ATTRIBUTION AUTOMATIQUE DE BAR !
+            newStatus = 'confirmed';
+            updateData = {
+              ...updateData,
+              status: 'confirmed'
+            };
+            console.log('🎉 Groupe complet ! Passage en confirmed et attribution automatique de bar');
           }
 
           const { error: correctionError } = await supabase
@@ -252,6 +261,14 @@ export class UnifiedGroupService {
             ErrorHandler.logError('GROUP_COUNT_CORRECTION', correctionError);
           } else {
             console.log('✅ Comptage corrigé avec succès:', realParticipantCount);
+            
+            // 🚀 DÉCLENCHEMENT AUTOMATIQUE DE L'ATTRIBUTION DE BAR
+            if (realParticipantCount === 5 && newStatus === 'confirmed' && !currentGroup.bar_name) {
+              console.log('🤖 Déclenchement attribution automatique de bar...');
+              setTimeout(async () => {
+                await AutomaticBarAssignmentService.assignBarToGroup(groupId);
+              }, 1000); // Délai pour s'assurer que la mise à jour du statut est propagée
+            }
           }
         }
       }
@@ -479,6 +496,23 @@ export class UnifiedGroupService {
       }
 
       console.log('✅ Adhésion réussie avec validation sécurisée');
+      
+      // 🔥 VÉRIFICATION POST-AJOUT POUR ATTRIBUTION AUTOMATIQUE
+      setTimeout(async () => {
+        console.log('🔍 Vérification attribution automatique après ajout...');
+        const { data: updatedGroup } = await supabase
+          .from('groups')
+          .select('current_participants, status, bar_name')
+          .eq('id', groupId)
+          .single();
+          
+        if (updatedGroup && updatedGroup.current_participants === 5 && 
+            updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
+          console.log('🤖 Déclenchement attribution automatique après ajout participant...');
+          await AutomaticBarAssignmentService.assignBarToGroup(groupId);
+        }
+      }, 2000); // Délai pour permettre la propagation complète
+      
       return true;
     } catch (error) {
       ErrorHandler.logError('JOIN_GROUP', error);
