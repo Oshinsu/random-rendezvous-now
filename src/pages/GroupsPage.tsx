@@ -1,5 +1,5 @@
 
-import { useSimpleGroupManagement } from '@/hooks/useSimpleGroupManagement';
+import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
@@ -12,7 +12,7 @@ import GroupMudra from '@/components/groups/GroupMudra';
 import LoadingState from '@/components/groups/LoadingState';
 
 const GroupsPage = () => {
-  const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useSimpleGroupManagement();
+  const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useUnifiedGroups();
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
