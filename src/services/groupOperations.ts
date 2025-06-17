@@ -72,7 +72,7 @@ export class GroupOperationsService {
     userLocation: LocationData | null,
     loading: boolean,
     setLoading: (loading: boolean) => void
-  ): Promise<boolean> => {
+  ): Promise<boolean> {
     if (!user) {
       toast({ 
         title: 'Erreur', 
@@ -233,7 +233,7 @@ export class GroupOperationsService {
     loading: boolean,
     setLoading: (loading: boolean) => void,
     clearUserGroupsState: () => void
-  ): Promise<void> => {
+  ): Promise<void> {
     if (!user || loading) {
       console.log('🚫 Impossible de quitter - pas d\'utilisateur ou chargement en cours');
       return;

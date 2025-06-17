@@ -4,7 +4,7 @@ import { ErrorHandler } from '@/utils/errorHandling';
 
 export class PeriodicCleanupService {
   // Service de nettoyage périodique RÉALISTE pour usage normal
-  static async runPeriodicCleanup(): Promise<void> => {
+  static async runPeriodicCleanup(): Promise<void> {
     try {
       console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique RÉALISTE...');
       
