@@ -2,8 +2,12 @@
 // Centralized group management constants
 export const GROUP_CONSTANTS = {
   // Inactivity thresholds (in milliseconds)
-  PARTICIPANT_INACTIVE_THRESHOLD: 3 * 60 * 60 * 1000, // 3 hours
-  PERIODIC_CLEANUP_THRESHOLD: 6 * 60 * 60 * 1000, // 6 hours
+  PARTICIPANT_INACTIVE_THRESHOLD: 3 * 60 * 60 * 1000, // 3 hours - for client-side filtering only
+  PERIODIC_CLEANUP_THRESHOLD: 6 * 60 * 60 * 1000, // 6 hours - for actual cleanup
+  CONNECTION_THRESHOLD: 30 * 60 * 1000, // 30 minutes - for "connected" status display
+  
+  // Activity heartbeat settings
+  HEARTBEAT_INTERVAL: 30 * 1000, // 30 seconds - how often to update last_seen
   
   // Group settings
   MAX_PARTICIPANTS: 5,

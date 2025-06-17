@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
+import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -17,7 +18,7 @@ export const useSimpleGroupManagement = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
-  // Unified group retrieval without automatic cleaning
+  // Unified group retrieval with improved filtering
   const { 
     data: userGroups = [], 
     isLoading: groupsLoading,
@@ -27,25 +28,37 @@ export const useSimpleGroupManagement = () => {
     queryFn: async (): Promise<Group[]> => {
       if (!user) return [];
       
-      console.log('📋 [SIMPLE] Récupération UNIFIÉE des groupes pour:', user.id);
+      console.log('📋 [SIMPLE] Récupération UNIFIÉE avec nouveau filtrage pour:', user.id);
       
       try {
-        // Use unified service without any cleaning
-        const participations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
-        const groups = UnifiedGroupRetrievalService.extractValidGroups(participations);
+        // 1. Retrieve ALL participations (no DB-level filtering)
+        const allParticipations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
+        console.log('📋 [SIMPLE] Participations récupérées (total):', allParticipations.length);
         
-        // Update user activity for the first group (to stay "active")
+        // 2. Apply client-side filtering for active participations
+        const activeParticipations = UnifiedGroupRetrievalService.filterActiveParticipations(allParticipations);
+        console.log('📋 [SIMPLE] Participations actives après filtrage:', activeParticipations.length);
+        
+        // 3. Extract valid groups
+        const groups = UnifiedGroupRetrievalService.extractValidGroups(activeParticipations);
+        
+        // 4. Update user activity and get members for the first group
         if (groups.length > 0) {
-          await UnifiedGroupRetrievalService.updateUserActivity(groups[0].id, user.id);
+          const firstGroup = groups[0];
+          console.log('🎯 [SIMPLE] Groupe principal trouvé:', firstGroup.id);
+          
+          // Update activity immediately
+          await UnifiedGroupRetrievalService.updateUserActivity(firstGroup.id, user.id);
           
           // Get members for the first group
-          const members = await UnifiedGroupRetrievalService.getGroupMembers(groups[0].id);
+          const members = await UnifiedGroupRetrievalService.getGroupMembers(firstGroup.id);
           setGroupMembers(members);
         } else {
+          console.log('📋 [SIMPLE] Aucun groupe actif trouvé');
           setGroupMembers([]);
         }
 
-        console.log('✅ [SIMPLE] Groupes récupérés via service unifié:', groups.length);
+        console.log('✅ [SIMPLE] Groupes finaux avec nouveau système:', groups.length);
         return groups;
       } catch (error) {
         console.error('❌ [SIMPLE] Erreur récupération groupes:', error);
@@ -56,6 +69,20 @@ export const useSimpleGroupManagement = () => {
     enabled: !!user,
     refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
     staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
+  });
+
+  // Activity heartbeat - activate when user has an active group
+  const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
+  const { isActive: isHeartbeatActive } = useActivityHeartbeat({
+    groupId: activeGroupId,
+    enabled: !!activeGroupId,
+    intervalMs: 30000 // 30 seconds
+  });
+
+  console.log('💓 [SIMPLE] Heartbeat status:', { 
+    activeGroupId, 
+    isHeartbeatActive, 
+    hasGroups: userGroups.length > 0 
   });
 
   // Géolocalisation
@@ -115,6 +142,9 @@ export const useSimpleGroupManagement = () => {
     loading: loading || groupsLoading,
     userLocation,
     leaveGroup,
-    refetchGroups
+    refetchGroups,
+    // Debug info
+    isHeartbeatActive,
+    activeGroupId
   };
 };

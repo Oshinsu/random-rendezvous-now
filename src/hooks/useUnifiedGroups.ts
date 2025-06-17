@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +5,7 @@ import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
+import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { showUniqueToast } from '@/utils/toastUtils';
@@ -68,20 +68,27 @@ export const useUnifiedGroups = () => {
     return locationPromise.current;
   };
 
-  // Unified group fetching using the same service as useSimpleGroupManagement
+  // Unified group fetching with improved filtering
   const fetchUserGroups = async (): Promise<Group[]> => {
     if (!user) {
       return [];
     }
 
     try {
-      console.log('📋 [UNIFIED] Recherche des groupes utilisateur avec service unifié');
+      console.log('📋 [UNIFIED] Recherche des groupes avec nouveau système de filtrage');
       
-      // Use the same unified service
-      const participations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
-      const validGroups = UnifiedGroupRetrievalService.extractValidGroups(participations);
+      // 1. Retrieve ALL participations (no automatic filtering)
+      const allParticipations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
+      console.log('📋 [UNIFIED] Participations récupérées (total):', allParticipations.length);
+      
+      // 2. Apply client-side filtering for active participations
+      const activeParticipations = UnifiedGroupRetrievalService.filterActiveParticipations(allParticipations);
+      console.log('📋 [UNIFIED] Participations actives après filtrage:', activeParticipations.length);
+      
+      // 3. Extract valid groups
+      const validGroups = UnifiedGroupRetrievalService.extractValidGroups(activeParticipations);
 
-      // Update user activity and get members
+      // 4. Update user activity and get members
       if (validGroups.length > 0) {
         await UnifiedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
         const members = await UnifiedGroupRetrievalService.getGroupMembers(validGroups[0].id);
@@ -90,7 +97,7 @@ export const useUnifiedGroups = () => {
         setGroupMembers([]);
       }
 
-      console.log('✅ [UNIFIED] Groupes valides trouvés:', validGroups.length);
+      console.log('✅ [UNIFIED] Groupes valides avec nouveau système:', validGroups.length);
       return validGroups;
     } catch (error) {
       ErrorHandler.logError('FETCH_USER_GROUPS', error);
@@ -112,6 +119,20 @@ export const useUnifiedGroups = () => {
     staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+  });
+
+  // Activity heartbeat - activate when user has an active group
+  const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
+  const { isActive: isHeartbeatActive } = useActivityHeartbeat({
+    groupId: activeGroupId,
+    enabled: !!activeGroupId,
+    intervalMs: 30000 // 30 seconds
+  });
+
+  console.log('💓 [UNIFIED] Heartbeat status:', { 
+    activeGroupId, 
+    isHeartbeatActive, 
+    hasGroups: userGroups.length > 0 
   });
 
   // Fonction de création de groupe
@@ -142,7 +163,7 @@ export const useUnifiedGroups = () => {
     setLoading(true);
     
     try {
-      console.log('🎯 DÉBUT - Recherche/Création de groupe avec seuils UNIFIÉS');
+      console.log('🎯 DÉBUT - Recherche/Création de groupe avec nouveau système');
       
       // 1. Géolocalisation fraîche
       console.log('📍 Géolocalisation...');
@@ -156,12 +177,13 @@ export const useUnifiedGroups = () => {
         return false;
       }
 
-      // 2. Vérification UNIFIÉE des participations existantes
-      console.log('🔍 Vérification des participations avec service unifié...');
-      const participations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
+      // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
+      console.log('🔍 Vérification des participations avec nouveau système...');
+      const allParticipations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
+      const activeParticipations = UnifiedGroupRetrievalService.filterActiveParticipations(allParticipations);
       
-      if (participations.length > 0) {
-        console.log('⚠️ Participation active détectée');
+      if (activeParticipations.length > 0) {
+        console.log('⚠️ Participation active détectée avec nouveau système');
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif.', 
@@ -262,6 +284,9 @@ export const useUnifiedGroups = () => {
     joinRandomGroup,
     leaveGroup,
     fetchUserGroups,
-    refetchGroups
+    refetchGroups,
+    // Debug info
+    isHeartbeatActive,
+    activeGroupId
   };
 };
