@@ -2,34 +2,41 @@
 import { useEffect, useRef } from 'react';
 import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
 import { useAuth } from '@/contexts/AuthContext';
+import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
 interface ActivityHeartbeatOptions {
   groupId: string | null;
   enabled: boolean;
-  intervalMs?: number; // Default: 30 seconds
+  intervalMs?: number;
 }
 
 export const useActivityHeartbeat = ({ 
   groupId, 
   enabled, 
-  intervalMs = 30000 
+  intervalMs = GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Now 20 seconds by default
 }: ActivityHeartbeatOptions) => {
   const { user } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(true);
 
-  // Track page visibility
+  // Track page visibility with enhanced logging
   useEffect(() => {
     const handleVisibilityChange = () => {
       isActiveRef.current = !document.hidden;
       console.log('👁️ [HEARTBEAT] Visibilité page:', isActiveRef.current ? 'visible' : 'cachée');
+      
+      // Immediate update when page becomes visible
+      if (isActiveRef.current && groupId && user) {
+        console.log('👁️ [HEARTBEAT] Page visible - mise à jour immédiate');
+        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [groupId, user]);
 
-  // Activity heartbeat
+  // Enhanced activity heartbeat
   useEffect(() => {
     if (!enabled || !groupId || !user) {
       console.log('💓 [HEARTBEAT] Désactivé:', { enabled, groupId: !!groupId, user: !!user });
@@ -40,15 +47,15 @@ export const useActivityHeartbeat = ({
       return;
     }
 
-    console.log('💓 [HEARTBEAT] Activation pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
+    console.log('💓 [HEARTBEAT] Activation RENFORCÉE pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
 
-    // Initial update
+    // Immediate initial update
     UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
 
-    // Set up interval
+    // Set up more frequent interval
     intervalRef.current = setInterval(() => {
       if (isActiveRef.current) {
-        console.log('💓 [HEARTBEAT] Pulse - mise à jour activité');
+        console.log('💓 [HEARTBEAT] Pulse RENFORCÉ - mise à jour activité');
         UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
       } else {
         console.log('💓 [HEARTBEAT] Pulse ignoré - page non visible');

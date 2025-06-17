@@ -7,13 +7,15 @@ import type { GroupMember } from '@/types/groups';
 
 export class UnifiedGroupRetrievalService {
   /**
-   * Get user participations WITHOUT automatic filtering - retrieve all active participations
+   * Get user participations with MINIMAL filtering - retrieve almost ALL participations
    */
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
-      console.log('🔍 [UNIFIED] Récupération des participations pour:', userId);
+      console.log('🔍 [UNIFIED] Récupération TRÈS LARGE des participations pour:', userId);
       
-      // REMOVED: Automatic filtering by last_seen - we retrieve ALL active participations
+      // EXTREME: Retrieve ALL participations, only filter out VERY old ones (7 days)
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      
       const { data, error } = await supabase
         .from('group_participants')
         .select(`
@@ -42,15 +44,15 @@ export class UnifiedGroupRetrievalService {
         `)
         .eq('user_id', userId)
         .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed']);
-        // REMOVED: .gte('last_seen', thresholdTime) - No more automatic filtering!
+        .in('groups.status', ['waiting', 'confirmed'])
+        .gte('last_seen', sevenDaysAgo); // Only filter out VERY old ones
 
       if (error) {
         ErrorHandler.logError('UNIFIED_GET_USER_PARTICIPATIONS', error);
         return [];
       }
 
-      console.log('✅ [UNIFIED] Participations trouvées (sans filtrage automatique):', data?.length || 0);
+      console.log('✅ [UNIFIED] Participations trouvées (filtrage minimal):', data?.length || 0);
       
       // Log details about each participation for debugging
       if (data && data.length > 0) {
@@ -74,42 +76,61 @@ export class UnifiedGroupRetrievalService {
   }
 
   /**
-   * Client-side filtering for display purposes - separate from retrieval
+   * VERY LENIENT client-side filtering for display purposes
    */
   static filterActiveParticipations(participations: any[]): any[] {
+    // Use the new 24-hour threshold instead of 3 hours
     const thresholdTime = new Date(Date.now() - GROUP_CONSTANTS.PARTICIPANT_INACTIVE_THRESHOLD);
     
     const activeParticipations = participations.filter(participation => {
       const lastSeen = participation.last_seen;
-      if (!lastSeen) return true; // Keep if no last_seen (shouldn't happen but be safe)
+      if (!lastSeen) return true; // Keep if no last_seen
       
       const lastSeenDate = new Date(lastSeen);
       const isActive = lastSeenDate >= thresholdTime;
       
       if (!isActive) {
-        console.log('🚫 [UNIFIED] Participation filtrée (inactive):', {
+        console.log('🚫 [UNIFIED] Participation filtrée (inactive depuis 24h+):', {
           groupId: participation.group_id,
           lastSeen: lastSeen,
           thresholdTime: thresholdTime.toISOString(),
-          minutesSinceLastSeen: Math.round((Date.now() - lastSeenDate.getTime()) / (1000 * 60))
+          hoursSinceLastSeen: Math.round((Date.now() - lastSeenDate.getTime()) / (1000 * 60 * 60))
         });
       }
       
       return isActive;
     });
     
-    console.log('✅ [UNIFIED] Participations actives après filtrage client:', activeParticipations.length);
+    console.log('✅ [UNIFIED] Participations actives après filtrage LENIENT:', activeParticipations.length);
     return activeParticipations;
   }
 
   /**
-   * Get group members with connection status
+   * Auto-recovery: Update last_seen for user when they access groups
+   */
+  static async recoverUserActivity(userId: string, participations: any[]): Promise<void> {
+    try {
+      console.log('🔄 [UNIFIED] Auto-récupération - mise à jour last_seen pour:', userId);
+      
+      const now = new Date().toISOString();
+      
+      for (const participation of participations) {
+        await this.updateUserActivity(participation.group_id, userId);
+      }
+      
+      console.log('✅ [UNIFIED] Auto-récupération terminée');
+    } catch (error) {
+      ErrorHandler.logError('UNIFIED_RECOVER_USER_ACTIVITY', error);
+    }
+  }
+
+  /**
+   * Get group members with LENIENT connection status
    */
   static async getGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
       console.log('👥 [UNIFIED] Récupération des membres pour:', groupId);
       
-      // Get all confirmed participants (no filtering by last_seen at DB level)
       const { data: participantsData, error } = await supabase
         .from('group_participants')
         .select('id, user_id, joined_at, status, last_seen')
@@ -129,8 +150,8 @@ export class UnifiedGroupRetrievalService {
         const now = Date.now();
         const inactiveTime = now - lastSeenTime;
         
-        // More lenient connection detection - 30 minutes instead of 10
-        const isConnected = inactiveTime < (30 * 60 * 1000);
+        // Much more lenient connection detection - 1 hour instead of 30 minutes
+        const isConnected = inactiveTime < GROUP_CONSTANTS.CONNECTION_THRESHOLD;
 
         console.log(`👤 [UNIFIED] Membre ${maskedName}:`, {
           lastSeen: lastSeenValue,
@@ -157,12 +178,12 @@ export class UnifiedGroupRetrievalService {
   }
 
   /**
-   * Update user activity (last_seen) with detailed logging
+   * Update user activity (last_seen) with enhanced logging
    */
   static async updateUserActivity(groupId: string, userId: string): Promise<void> {
     try {
       const now = new Date().toISOString();
-      console.log('⏰ [UNIFIED] Mise à jour last_seen:', { groupId, userId, timestamp: now });
+      console.log('⏰ [UNIFIED] Mise à jour FORTE last_seen:', { groupId, userId, timestamp: now });
       
       const { error } = await supabase
         .from('group_participants')
@@ -173,7 +194,7 @@ export class UnifiedGroupRetrievalService {
       if (error) {
         ErrorHandler.logError('UNIFIED_UPDATE_USER_ACTIVITY', error);
       } else {
-        console.log('✅ [UNIFIED] Activité mise à jour avec succès:', userId);
+        console.log('✅ [UNIFIED] Activité FORTE mise à jour:', userId);
       }
     } catch (error) {
       ErrorHandler.logError('UNIFIED_UPDATE_USER_ACTIVITY', error);

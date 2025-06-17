@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
@@ -13,6 +14,13 @@ import LoadingState from '@/components/groups/LoadingState';
 
 const GroupsPage = () => {
   const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useUnifiedGroups();
+
+  // IMMEDIATE recovery trigger when accessing GroupsPage
+  useEffect(() => {
+    console.log('🔄 [GROUPS PAGE] Déclenchement récupération immédiate');
+    // Force an immediate refetch to trigger auto-recovery
+    refetchGroups();
+  }, []); // Only on mount
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
