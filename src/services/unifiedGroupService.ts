@@ -33,62 +33,64 @@ export class UnifiedGroupService {
     }
   }
 
-  // AMÉLIORATION: Nettoyage ULTRA agressif des anciens groupes
+  // CORRIGÉ: Nettoyage PLUS CONSERVATEUR et CONDITIONNEL
   static async forceCleanupOldGroups(): Promise<void> {
     try {
-      console.log('🧹 NETTOYAGE ULTRA AGRESSIF des groupes anciens...');
+      console.log('🧹 NETTOYAGE CONSERVATEUR des groupes anciens...');
       
-      // 1. Supprimer les participants inactifs (last_seen > 30 minutes)
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      // 1. Supprimer SEULEMENT les participants vraiment inactifs (24 heures au lieu de 30 minutes)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupParticipantsError } = await supabase
         .from('group_participants')
         .delete()
-        .lt('last_seen', thirtyMinutesAgo);
+        .lt('last_seen', twentyFourHoursAgo);
 
       if (cleanupParticipantsError) {
         console.error('❌ Erreur nettoyage participants:', cleanupParticipantsError);
       } else {
-        console.log('✅ Participants inactifs supprimés');
+        console.log('✅ Participants inactifs depuis 24h supprimés');
       }
 
-      // 2. Supprimer les groupes en attente anciens (> 2 heures)
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      // 2. Supprimer SEULEMENT les groupes en attente TRÈS anciens (48 heures au lieu de 2 heures)
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupWaitingError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'waiting')
-        .lt('created_at', twoHoursAgo);
+        .eq('current_participants', 0) // SEULEMENT les groupes vides
+        .lt('created_at', fortyEightHoursAgo);
 
       if (cleanupWaitingError) {
         console.error('❌ Erreur nettoyage groupes en attente:', cleanupWaitingError);
       } else {
-        console.log('✅ Groupes en attente anciens supprimés');
+        console.log('✅ Groupes en attente vides et très anciens supprimés');
       }
 
-      // 3. Supprimer les groupes confirmés sans bar (situation impossible)
+      // 3. Supprimer les groupes confirmés sans bar (situation impossible mais nettoyage de sécurité)
       const { error: cleanupConfirmedError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'confirmed')
-        .is('bar_name', null);
+        .is('bar_name', null)
+        .lt('created_at', twentyFourHoursAgo); // Seulement si anciens
 
       if (cleanupConfirmedError) {
         console.error('❌ Erreur nettoyage groupes confirmés sans bar:', cleanupConfirmedError);
       } else {
-        console.log('✅ Groupes confirmés sans bar supprimés');
+        console.log('✅ Groupes confirmés sans bar anciens supprimés');
       }
 
-      // 4. Supprimer les groupes terminés (meeting_time + 3h)
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      // 4. Supprimer les groupes terminés (meeting_time + 6h au lieu de 3h)
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupCompletedError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'confirmed')
         .not('meeting_time', 'is', null)
-        .lt('meeting_time', threeHoursAgo);
+        .lt('meeting_time', sixHoursAgo);
 
       if (cleanupCompletedError) {
         console.error('❌ Erreur nettoyage groupes terminés:', cleanupCompletedError);
@@ -96,29 +98,17 @@ export class UnifiedGroupService {
         console.log('✅ Groupes terminés supprimés');
       }
 
-      // 5. Appeler la fonction de nettoyage de la base de données
-      const { error: rpcError } = await supabase.rpc('dissolve_old_groups');
-      
-      if (rpcError) {
-        ErrorHandler.logError('FORCE_CLEANUP_RPC', rpcError);
-      } else {
-        console.log('✅ Nettoyage RPC effectué');
-      }
-
-      console.log('✅ NETTOYAGE ULTRA AGRESSIF terminé avec succès');
+      console.log('✅ NETTOYAGE CONSERVATEUR terminé avec succès');
     } catch (error) {
       ErrorHandler.logError('FORCE_CLEANUP_OLD_GROUPS', error);
-      console.error('❌ Erreur dans le nettoyage ultra agressif:', error);
+      console.error('❌ Erreur dans le nettoyage conservateur:', error);
     }
   }
 
-  // AMÉLIORATION: Recherche de participations avec validation stricte
+  // CORRIGÉ: Recherche de participations SANS nettoyage automatique
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
-      // D'abord nettoyer
-      await this.forceCleanupOldGroups();
-      
-      console.log('📋 Recherche STRICTE des participations actives pour:', userId);
+      console.log('📋 Recherche des participations actives pour:', userId);
       
       const { data, error } = await supabase
         .from('group_participants')
@@ -149,7 +139,7 @@ export class UnifiedGroupService {
         .eq('user_id', userId)
         .eq('status', 'confirmed')
         .in('groups.status', ['waiting', 'confirmed'])
-        .gt('last_seen', new Date(Date.now() - 60 * 60 * 1000).toISOString()); // Actif dans la dernière heure
+        .gt('last_seen', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Actif dans les dernières 24h
 
       if (error) {
         ErrorHandler.logError('FETCH_USER_PARTICIPATIONS', error);
@@ -158,17 +148,17 @@ export class UnifiedGroupService {
         return [];
       }
 
-      // Validation supplémentaire côté client
+      // Validation supplémentaire côté client MOINS STRICTE
       const validParticipations = (data || []).filter(participation => {
         const group = participation.groups;
         if (!group) return false;
         
-        // Vérifier que le groupe n'est pas trop ancien
+        // Vérifier que le groupe n'est pas TRÈS ancien (7 jours au lieu de 24h)
         const groupAge = Date.now() - new Date(group.created_at).getTime();
-        const maxAge = 24 * 60 * 60 * 1000; // 24 heures max
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 jours max
         
         if (groupAge > maxAge) {
-          console.log('🗑️ Groupe trop ancien filtré:', group.id);
+          console.log('🗑️ Groupe très ancien filtré:', group.id);
           return false;
         }
         
@@ -334,8 +324,8 @@ export class UnifiedGroupService {
       // Données du groupe conformes aux nouvelles contraintes
       const groupData = {
         status: 'waiting' as const,
-        max_participants: 5, // Contrainte: <= 5
-        current_participants: 0, // Contrainte: = 0 pour création
+        max_participants: 5,
+        current_participants: 0,
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
         location_name: userLocation.locationName,
@@ -350,7 +340,6 @@ export class UnifiedGroupService {
 
       if (createError) {
         console.error('❌ Erreur création groupe:', createError);
-        // Gestion spécifique des erreurs de validation
         if (createError.message.includes('check_max_participants')) {
           toast({
             title: 'Erreur de validation',
@@ -384,7 +373,6 @@ export class UnifiedGroupService {
         // Nettoyer le groupe créé en cas d'erreur
         await supabase.from('groups').delete().eq('id', newGroup.id);
         
-        // Gestion spécifique des erreurs de validation
         if (joinError.message.includes('User is already in an active group')) {
           toast({
             title: 'Participation non autorisée',
@@ -475,7 +463,6 @@ export class UnifiedGroupService {
 
       if (joinError) {
         console.error('❌ Erreur adhésion:', joinError);
-        // Gestion spécifique des erreurs de validation du trigger
         if (joinError.message.includes('User is already in an active group')) {
           toast({
             title: 'Participation limitée',
@@ -497,7 +484,7 @@ export class UnifiedGroupService {
 
       console.log('✅ Adhésion réussie avec validation sécurisée');
       
-      // 🔥 VÉRIFICATION POST-AJOUT POUR ATTRIBUTION AUTOMATIQUE
+      // Vérification post-ajout pour attribution automatique
       setTimeout(async () => {
         console.log('🔍 Vérification attribution automatique après ajout...');
         const { data: updatedGroup } = await supabase
@@ -511,7 +498,7 @@ export class UnifiedGroupService {
           console.log('🤖 Déclenchement attribution automatique après ajout participant...');
           await AutomaticBarAssignmentService.assignBarToGroup(groupId);
         }
-      }, 2000); // Délai pour permettre la propagation complète
+      }, 2000);
       
       return true;
     } catch (error) {

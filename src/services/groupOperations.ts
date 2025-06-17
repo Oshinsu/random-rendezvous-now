@@ -7,17 +7,20 @@ import { GroupService } from './groupService';
 import { toast } from '@/hooks/use-toast';
 
 export class GroupOperationsService {
+  // CORRIGÉ: Nettoyage périodique plus conservateur
   static async forceCleanupOldGroups(): Promise<void> {
     try {
-      const cutoffTime = new Date();
-      cutoffTime.setHours(cutoffTime.getHours() - 6);
+      console.log('🧹 [CLEANUP PÉRIODIQUE] Nettoyage conservateur...');
 
-      console.log('🧹 [CLEANUP] Suppression des groupes inactifs depuis:', cutoffTime.toISOString());
+      // 1. Supprimer les participants inactifs depuis 24 heures (au lieu de 6 heures)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      console.log('🗑️ Suppression des participants inactifs depuis 24h...');
 
       const { data: oldParticipants, error: selectError } = await supabase
         .from('group_participants')
         .select('group_id, last_seen')
-        .lt('last_seen', cutoffTime.toISOString());
+        .lt('last_seen', twentyFourHoursAgo);
 
       if (selectError) {
         console.error('❌ Erreur lors de la sélection des participants inactifs:', selectError);
@@ -32,7 +35,7 @@ export class GroupOperationsService {
             .from('group_participants')
             .delete()
             .eq('group_id', groupId)
-            .lt('last_seen', cutoffTime.toISOString());
+            .lt('last_seen', twentyFourHoursAgo);
 
           const currentCount = await GroupService.getCurrentParticipantCount(groupId);
           
@@ -48,9 +51,19 @@ export class GroupOperationsService {
         }
       }
 
-      console.log('✅ [CLEANUP] Nettoyage terminé');
+      // 2. Supprimer les groupes en attente vides très anciens (48 heures)
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      
+      await supabase
+        .from('groups')
+        .delete()
+        .eq('status', 'waiting')
+        .eq('current_participants', 0)
+        .lt('created_at', fortyEightHoursAgo);
+
+      console.log('✅ [CLEANUP PÉRIODIQUE] Nettoyage conservateur terminé');
     } catch (error) {
-      console.error('❌ Erreur lors du nettoyage forcé:', error);
+      console.error('❌ Erreur lors du nettoyage périodique:', error);
     }
   }
 
@@ -87,16 +100,17 @@ export class GroupOperationsService {
     setLoading(true);
     
     try {
-      console.log('🧹 [JOIN] Nettoyage forcé des groupes anciens avant recherche...');
-      await GroupOperationsService.forceCleanupOldGroups();
+      // PAS de nettoyage automatique ici - seulement quand nécessaire
+      console.log('📋 [JOIN] Vérification simple des participations existantes...');
 
-      // Vérifier les participations existantes APRÈS le nettoyage
+      // Vérification légère des participations existantes
       const { data: existingParticipation, error: checkError } = await supabase
         .from('group_participants')
         .select('group_id, groups!inner(status)')
         .eq('user_id', user.id)
         .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed']);
+        .in('groups.status', ['waiting', 'confirmed'])
+        .gt('last_seen', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (checkError) {
         console.error('❌ Erreur de vérification:', checkError);
@@ -104,7 +118,7 @@ export class GroupOperationsService {
       }
 
       if (existingParticipation && existingParticipation.length > 0) {
-        console.log('⚠️ Utilisateur encore dans un groupe actif après nettoyage');
+        console.log('⚠️ Utilisateur déjà dans un groupe actif');
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif !', 
@@ -113,9 +127,9 @@ export class GroupOperationsService {
         return false;
       }
 
-      console.log('✅ [JOIN] Utilisateur libre après nettoyage, recherche d\'un groupe...');
+      console.log('✅ [JOIN] Utilisateur libre, recherche d\'un groupe...');
 
-      console.log('🌍 Recherche exclusive dans un rayon de 10km...');
+      console.log('🌍 Recherche dans un rayon de 10km...');
       const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
 
       if (!targetGroup) {
@@ -226,7 +240,7 @@ export class GroupOperationsService {
 
     setLoading(true);
     try {
-      console.log('🚪 [LAST_SEEN] Quitter le groupe:', groupId, 'utilisateur:', user.id);
+      console.log('🚪 [LEAVE] Quitter le groupe:', groupId, 'utilisateur:', user.id);
 
       console.log('🧹 Nettoyage immédiat de l\'état local');
       clearUserGroupsState();
@@ -243,13 +257,13 @@ export class GroupOperationsService {
         throw deleteError;
       }
 
-      console.log('✅ [LAST_SEEN] Participation supprimée avec succès');
+      console.log('✅ [LEAVE] Participation supprimée avec succès');
 
       const realCount = await GroupService.getCurrentParticipantCount(groupId);
-      console.log('📊 [LAST_SEEN] Participants restants après départ:', realCount);
+      console.log('📊 [LEAVE] Participants restants après départ:', realCount);
 
       if (realCount === 0) {
-        console.log('🗑️ [LAST_SEEN] Suppression du groupe vide');
+        console.log('🗑️ [LEAVE] Suppression du groupe vide');
         await supabase
           .from('groups')
           .delete()
@@ -270,7 +284,7 @@ export class GroupOperationsService {
             bar_longitude: null,
             bar_place_id: null
           };
-          console.log('⏳ [LAST_SEEN] Remise en waiting et suppression du bar');
+          console.log('⏳ [LEAVE] Remise en waiting et suppression du bar');
         }
 
         await supabase
