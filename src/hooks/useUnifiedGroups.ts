@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
+import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
+import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { showUniqueToast } from '@/utils/toastUtils';
 import { toast } from '@/hooks/use-toast';
@@ -66,55 +68,29 @@ export const useUnifiedGroups = () => {
     return locationPromise.current;
   };
 
-  // CORRIGÉ: Seuils réalistes pour usage normal de l'app
+  // Unified group fetching using the same service as useSimpleGroupManagement
   const fetchUserGroups = async (): Promise<Group[]> => {
     if (!user) {
       return [];
     }
 
     try {
-      console.log('📋 Recherche des groupes utilisateur avec seuils RÉALISTES');
+      console.log('📋 [UNIFIED] Recherche des groupes utilisateur avec service unifié');
       
-      // 1. Recherche directe des participations actives avec seuil de 3 heures
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-      
-      const participations = await UnifiedGroupService.getUserParticipations(user.id);
-      
-      if (participations.length === 0) {
-        console.log('✅ Aucune participation active');
-        setGroupMembers([]);
-        return [];
-      }
+      // Use the same unified service
+      const participations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
+      const validGroups = UnifiedGroupRetrievalService.extractValidGroups(participations);
 
-      // 2. Filtrer les participations vraiment actives (moins de 3h d'inactivité)
-      const activeParticipations = participations.filter(participation => {
-        const lastSeenTime = new Date(participation.last_seen || participation.joined_at).getTime();
-        const now = Date.now();
-        const inactiveTime = now - lastSeenTime;
-        const maxInactiveTime = 3 * 60 * 60 * 1000; // 3 heures
-        
-        return inactiveTime < maxInactiveTime;
-      });
-
-      if (activeParticipations.length === 0) {
-        console.log('⚠️ Participations trouvées mais toutes inactives depuis +3h');
-        setGroupMembers([]);
-        return [];
-      }
-
-      // 3. Extraction des groupes valides
-      const validGroups: Group[] = activeParticipations.map(participation => participation.groups);
-
-      // 4. Si on a des groupes valides, récupérer les membres et mettre à jour l'activité
+      // Update user activity and get members
       if (validGroups.length > 0) {
-        const members = await UnifiedGroupService.getGroupMembers(validGroups[0].id);
+        await UnifiedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
+        const members = await UnifiedGroupRetrievalService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
-        
-        // Mise à jour de last_seen à chaque fetch (important pour rester "actif")
-        await UnifiedGroupService.updateUserActivity(validGroups[0].id, user.id);
+      } else {
+        setGroupMembers([]);
       }
 
-      console.log('✅ Groupes valides trouvés:', validGroups.length);
+      console.log('✅ [UNIFIED] Groupes valides trouvés:', validGroups.length);
       return validGroups;
     } catch (error) {
       ErrorHandler.logError('FETCH_USER_GROUPS', error);
@@ -129,16 +105,16 @@ export const useUnifiedGroups = () => {
     isLoading: groupsLoading,
     refetch: refetchGroups 
   } = useQuery({
-    queryKey: ['userGroups', user?.id],
+    queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 60000, // Réduit à 1 minute (au lieu de 30s) pour être moins agressif
-    staleTime: 30000, // 30 secondes
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 
-  // CORRIGÉ: Fonction de création de groupe SANS nettoyage agressif
+  // Fonction de création de groupe
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
       toast({ 
@@ -166,7 +142,7 @@ export const useUnifiedGroups = () => {
     setLoading(true);
     
     try {
-      console.log('🎯 DÉBUT - Recherche/Création de groupe avec seuils RÉALISTES');
+      console.log('🎯 DÉBUT - Recherche/Création de groupe avec seuils UNIFIÉS');
       
       // 1. Géolocalisation fraîche
       console.log('📍 Géolocalisation...');
@@ -180,29 +156,18 @@ export const useUnifiedGroups = () => {
         return false;
       }
 
-      // 2. Vérification RÉALISTE des participations existantes (3h au lieu de 5min)
-      console.log('🔍 Vérification des participations avec seuil 3h...');
-      const participations = await UnifiedGroupService.getUserParticipations(user.id);
+      // 2. Vérification UNIFIÉE des participations existantes
+      console.log('🔍 Vérification des participations avec service unifié...');
+      const participations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
       
       if (participations.length > 0) {
-        // Vérifier si la participation est vraiment active (moins de 3h)
-        const latestParticipation = participations[0];
-        const lastSeenTime = new Date(latestParticipation.last_seen || latestParticipation.joined_at).getTime();
-        const now = Date.now();
-        const inactiveTime = now - lastSeenTime;
-        const maxInactiveTime = 3 * 60 * 60 * 1000; // 3 heures
-        
-        if (inactiveTime < maxInactiveTime) {
-          console.log('⚠️ Participation récente détectée (moins de 3h)');
-          toast({ 
-            title: 'Déjà dans un groupe', 
-            description: 'Vous êtes déjà dans un groupe actif.', 
-            variant: 'destructive' 
-          });
-          return false;
-        } else {
-          console.log('✅ Participation ancienne détectée (plus de 3h), création autorisée');
-        }
+        console.log('⚠️ Participation active détectée');
+        toast({ 
+          title: 'Déjà dans un groupe', 
+          description: 'Vous êtes déjà dans un groupe actif.', 
+          variant: 'destructive' 
+        });
+        return false;
       }
 
       // 3. Recherche de groupe compatible
@@ -215,7 +180,7 @@ export const useUnifiedGroups = () => {
         const newGroup = await UnifiedGroupService.createGroup(location, user.id);
         
         if (newGroup) {
-          queryClient.invalidateQueries({ queryKey: ['userGroups'] });
+          queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
           toast({ 
@@ -231,7 +196,7 @@ export const useUnifiedGroups = () => {
         const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
         
         if (success) {
-          queryClient.invalidateQueries({ queryKey: ['userGroups'] });
+          queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
           toast({ 
@@ -251,7 +216,7 @@ export const useUnifiedGroups = () => {
     }
   };
 
-  // CORRIGÉ: Fonction de sortie avec nettoyage LOCAL seulement
+  // Fonction de sortie avec nettoyage LOCAL seulement
   const leaveGroup = async (groupId: string): Promise<void> => {
     if (!user || loading) {
       return;
@@ -259,18 +224,18 @@ export const useUnifiedGroups = () => {
 
     setLoading(true);
     try {
-      console.log('🚪 Sortie de groupe...');
+      console.log('🚪 [UNIFIED] Sortie de groupe...');
       
       // 1. Nettoyage immédiat de l'état local
       setGroupMembers([]);
-      queryClient.setQueryData(['userGroups', user.id], []);
+      queryClient.setQueryData(['unifiedUserGroups', user.id], []);
 
       // 2. Sortie du groupe
       const success = await UnifiedGroupService.leaveGroup(groupId, user.id);
       
       if (success) {
         // 3. Invalidation contrôlée du cache
-        queryClient.invalidateQueries({ queryKey: ['userGroups'] });
+        queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
         
         toast({ 
           title: '✅ Groupe quitté', 

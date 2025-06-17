@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorHandler } from '@/utils/errorHandling';
+import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
 export class PeriodicCleanupService {
   // Service de nettoyage périodique RÉALISTE pour usage normal
@@ -8,13 +9,13 @@ export class PeriodicCleanupService {
     try {
       console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique RÉALISTE...');
       
-      // 1. Supprimer les participants inactifs depuis 6 HEURES (plus réaliste)
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      // 1. Supprimer les participants inactifs depuis le seuil défini (6 heures)
+      const cleanupThreshold = new Date(Date.now() - GROUP_CONSTANTS.PERIODIC_CLEANUP_THRESHOLD).toISOString();
       
       const { error: cleanupParticipantsError } = await supabase
         .from('group_participants')
         .delete()
-        .lt('last_seen', sixHoursAgo);
+        .lt('last_seen', cleanupThreshold);
 
       if (cleanupParticipantsError) {
         ErrorHandler.logError('PERIODIC_CLEANUP_PARTICIPANTS', cleanupParticipantsError);
@@ -97,7 +98,7 @@ export class PeriodicCleanupService {
       }
 
       // 4. Supprimer les groupes terminés (6 heures après meeting_time)
-      const sixHoursAfterMeetingAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const sixHoursAfterMeetingAgo = new Date(Date.now() - GROUP_CONSTANTS.PERIODIC_CLEANUP_THRESHOLD).toISOString();
       
       const { error: cleanupCompletedError } = await supabase
         .from('groups')
