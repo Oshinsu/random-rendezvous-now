@@ -66,16 +66,18 @@ export const useUnifiedGroups = () => {
     return locationPromise.current;
   };
 
-  // CORRIGÉ: Pas de nettoyage automatique + invalidation cache contrôlée
+  // CORRIGÉ: Seuils réalistes pour usage normal de l'app
   const fetchUserGroups = async (): Promise<Group[]> => {
     if (!user) {
       return [];
     }
 
     try {
-      console.log('📋 Recherche des groupes utilisateur SANS nettoyage automatique');
+      console.log('📋 Recherche des groupes utilisateur avec seuils RÉALISTES');
       
-      // 1. Recherche directe des participations actives
+      // 1. Recherche directe des participations actives avec seuil de 3 heures
+      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      
       const participations = await UnifiedGroupService.getUserParticipations(user.id);
       
       if (participations.length === 0) {
@@ -84,15 +86,31 @@ export const useUnifiedGroups = () => {
         return [];
       }
 
-      // 2. Extraction des groupes valides
-      const validGroups: Group[] = participations.map(participation => participation.groups);
+      // 2. Filtrer les participations vraiment actives (moins de 3h d'inactivité)
+      const activeParticipations = participations.filter(participation => {
+        const lastSeenTime = new Date(participation.last_seen || participation.joined_at).getTime();
+        const now = Date.now();
+        const inactiveTime = now - lastSeenTime;
+        const maxInactiveTime = 3 * 60 * 60 * 1000; // 3 heures
+        
+        return inactiveTime < maxInactiveTime;
+      });
 
-      // 3. Si on a des groupes valides, récupérer les membres et mettre à jour l'activité
+      if (activeParticipations.length === 0) {
+        console.log('⚠️ Participations trouvées mais toutes inactives depuis +3h');
+        setGroupMembers([]);
+        return [];
+      }
+
+      // 3. Extraction des groupes valides
+      const validGroups: Group[] = activeParticipations.map(participation => participation.groups);
+
+      // 4. Si on a des groupes valides, récupérer les membres et mettre à jour l'activité
       if (validGroups.length > 0) {
         const members = await UnifiedGroupService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
         
-        // AMÉLIORATION: Mise à jour automatique de last_seen à chaque fetch
+        // Mise à jour de last_seen à chaque fetch (important pour rester "actif")
         await UnifiedGroupService.updateUserActivity(validGroups[0].id, user.id);
       }
 
@@ -114,8 +132,8 @@ export const useUnifiedGroups = () => {
     queryKey: ['userGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 30000, // Augmenté à 30s pour réduire la charge
-    staleTime: 15000, // Augmenté à 15s
+    refetchInterval: 60000, // Réduit à 1 minute (au lieu de 30s) pour être moins agressif
+    staleTime: 30000, // 30 secondes
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
@@ -148,7 +166,7 @@ export const useUnifiedGroups = () => {
     setLoading(true);
     
     try {
-      console.log('🎯 DÉBUT - Recherche/Création de groupe SANS nettoyage agressif');
+      console.log('🎯 DÉBUT - Recherche/Création de groupe avec seuils RÉALISTES');
       
       // 1. Géolocalisation fraîche
       console.log('📍 Géolocalisation...');
@@ -162,18 +180,29 @@ export const useUnifiedGroups = () => {
         return false;
       }
 
-      // 2. Vérification légère des participations existantes
-      console.log('🔍 Vérification légère des participations...');
+      // 2. Vérification RÉALISTE des participations existantes (3h au lieu de 5min)
+      console.log('🔍 Vérification des participations avec seuil 3h...');
       const participations = await UnifiedGroupService.getUserParticipations(user.id);
       
       if (participations.length > 0) {
-        console.log('⚠️ Participation existante détectée');
-        toast({ 
-          title: 'Déjà dans un groupe', 
-          description: 'Vous êtes déjà dans un groupe actif.', 
-          variant: 'destructive' 
-        });
-        return false;
+        // Vérifier si la participation est vraiment active (moins de 3h)
+        const latestParticipation = participations[0];
+        const lastSeenTime = new Date(latestParticipation.last_seen || latestParticipation.joined_at).getTime();
+        const now = Date.now();
+        const inactiveTime = now - lastSeenTime;
+        const maxInactiveTime = 3 * 60 * 60 * 1000; // 3 heures
+        
+        if (inactiveTime < maxInactiveTime) {
+          console.log('⚠️ Participation récente détectée (moins de 3h)');
+          toast({ 
+            title: 'Déjà dans un groupe', 
+            description: 'Vous êtes déjà dans un groupe actif.', 
+            variant: 'destructive' 
+          });
+          return false;
+        } else {
+          console.log('✅ Participation ancienne détectée (plus de 3h), création autorisée');
+        }
       }
 
       // 3. Recherche de groupe compatible
@@ -191,7 +220,7 @@ export const useUnifiedGroups = () => {
           
           toast({ 
             title: '🎉 Nouveau groupe créé', 
-            description: `Groupe créé à ${location.locationName}.`, 
+            description: `Groupe créé à ${location.locationName}. Vous pouvez maintenant fermer l'app !`, 
           });
           return true;
         }
@@ -207,7 +236,7 @@ export const useUnifiedGroups = () => {
           
           toast({ 
             title: '✅ Groupe rejoint', 
-            description: `Vous avez rejoint un groupe à ${location.locationName}.`, 
+            description: `Vous avez rejoint un groupe à ${location.locationName}. Vous pouvez fermer l'app !`, 
           });
         }
         return success;
@@ -230,7 +259,7 @@ export const useUnifiedGroups = () => {
 
     setLoading(true);
     try {
-      console.log('🚪 Sortie de groupe avec nettoyage LOCAL...');
+      console.log('🚪 Sortie de groupe...');
       
       // 1. Nettoyage immédiat de l'état local
       setGroupMembers([]);

@@ -15,7 +15,7 @@ export const useSimpleGroupManagement = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
-  // Récupération des groupes avec nettoyage automatique
+  // Récupération des groupes avec nettoyage RÉALISTE
   const { 
     data: userGroups = [], 
     isLoading: groupsLoading,
@@ -25,21 +25,21 @@ export const useSimpleGroupManagement = () => {
     queryFn: async (): Promise<Group[]> => {
       if (!user) return [];
       
-      console.log('🔍 Récupération STRICTE des groupes utilisateur pour:', user.id);
+      console.log('🔍 Récupération RÉALISTE des groupes utilisateur pour:', user.id);
       
       try {
-        // Nettoyage automatique d'abord
-        console.log('🧹 Nettoyage des participants inactifs (>5min)');
+        // Nettoyage automatique avec seuil de 3 heures (au lieu de 5 minutes)
+        console.log('🧹 Nettoyage des participants inactifs (>3h)');
         
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
         
-        // Supprimer les participants inactifs
+        // Supprimer les participants inactifs depuis 3 heures
         await supabase
           .from('group_participants')
           .delete()
-          .lt('last_seen', fiveMinutesAgo);
+          .lt('last_seen', threeHoursAgo);
 
-        // Récupérer les participations ACTIVES uniquement
+        // Récupérer les participations ACTIVES uniquement (moins de 3h d'inactivité)
         const { data: participations, error: participationsError } = await supabase
           .from('group_participants')
           .select(`
@@ -49,7 +49,7 @@ export const useSimpleGroupManagement = () => {
           .eq('user_id', user.id)
           .eq('status', 'confirmed')
           .in('groups.status', ['waiting', 'confirmed'])
-          .gte('last_seen', fiveMinutesAgo); // Seulement les participants récents
+          .gte('last_seen', threeHoursAgo); // Seulement les participants actifs (moins de 3h)
 
         if (participationsError) {
           console.error('❌ Erreur récupération participations:', participationsError);
@@ -73,7 +73,7 @@ export const useSimpleGroupManagement = () => {
             .select('id')
             .eq('group_id', group.id)
             .eq('status', 'confirmed')
-            .gte('last_seen', fiveMinutesAgo);
+            .gte('last_seen', threeHoursAgo);
 
           const realCount = activeParticipants?.length || 0;
           
@@ -103,7 +103,7 @@ export const useSimpleGroupManagement = () => {
             .select('*')
             .eq('group_id', firstGroup.id)
             .eq('status', 'confirmed')
-            .gte('last_seen', fiveMinutesAgo)
+            .gte('last_seen', threeHoursAgo)
             .order('joined_at', { ascending: true });
 
           if (membersData) {
@@ -129,8 +129,8 @@ export const useSimpleGroupManagement = () => {
       }
     },
     enabled: !!user,
-    refetchInterval: 10000, // Refresh toutes les 10 secondes
-    staleTime: 5000,
+    refetchInterval: 60000, // Refresh toutes les 60 secondes (au lieu de 10)
+    staleTime: 30000,
   });
 
   // Récupération de la géolocalisation

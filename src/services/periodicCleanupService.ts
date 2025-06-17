@@ -3,23 +3,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { ErrorHandler } from '@/utils/errorHandling';
 
 export class PeriodicCleanupService {
-  // Service de nettoyage périodique CONSERVATEUR
-  static async runPeriodicCleanup(): Promise<void> {
+  // Service de nettoyage périodique RÉALISTE pour usage normal
+  static async runPeriodicCleanup(): Promise<void> => {
     try {
-      console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique conservateur...');
+      console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique RÉALISTE...');
       
-      // 1. Supprimer les participants inactifs depuis 24 heures
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // 1. Supprimer les participants inactifs depuis 6 HEURES (plus réaliste)
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupParticipantsError } = await supabase
         .from('group_participants')
         .delete()
-        .lt('last_seen', twentyFourHoursAgo);
+        .lt('last_seen', sixHoursAgo);
 
       if (cleanupParticipantsError) {
         ErrorHandler.logError('PERIODIC_CLEANUP_PARTICIPANTS', cleanupParticipantsError);
       } else {
-        console.log('✅ [PERIODIC] Participants inactifs (24h+) supprimés');
+        console.log('✅ [PERIODIC] Participants inactifs (6h+) supprimés');
       }
 
       // 2. Corriger les compteurs après suppression des participants
@@ -80,31 +80,31 @@ export class PeriodicCleanupService {
         }
       }
 
-      // 3. Supprimer les groupes en attente très anciens ET vides (48 heures)
-      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      // 3. Supprimer les groupes en attente vides ET très anciens (12 heures au lieu de 48h)
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupWaitingError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'waiting')
         .eq('current_participants', 0)
-        .lt('created_at', fortyEightHoursAgo);
+        .lt('created_at', twelveHoursAgo);
 
       if (cleanupWaitingError) {
         ErrorHandler.logError('PERIODIC_CLEANUP_WAITING', cleanupWaitingError);
       } else {
-        console.log('✅ [PERIODIC] Groupes en attente vides et très anciens (48h+) supprimés');
+        console.log('✅ [PERIODIC] Groupes en attente vides et anciens (12h+) supprimés');
       }
 
       // 4. Supprimer les groupes terminés (6 heures après meeting_time)
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const sixHoursAfterMeetingAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupCompletedError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'confirmed')
         .not('meeting_time', 'is', null)
-        .lt('meeting_time', sixHoursAgo);
+        .lt('meeting_time', sixHoursAfterMeetingAgo);
 
       if (cleanupCompletedError) {
         ErrorHandler.logError('PERIODIC_CLEANUP_COMPLETED', cleanupCompletedError);
@@ -121,24 +121,24 @@ export class PeriodicCleanupService {
         console.log('✅ [PERIODIC] Fonction de nettoyage DB appelée');
       }
 
-      console.log('✅ [PERIODIC] Nettoyage périodique conservateur terminé avec succès');
+      console.log('✅ [PERIODIC] Nettoyage périodique RÉALISTE terminé avec succès');
     } catch (error) {
       ErrorHandler.logError('PERIODIC_CLEANUP_SERVICE', error);
       console.error('❌ [PERIODIC] Erreur dans le nettoyage périodique:', error);
     }
   }
 
-  // Méthode pour démarrer le nettoyage périodique automatique
+  // Méthode pour démarrer le nettoyage périodique automatique (toutes les 2 heures)
   static startPeriodicCleanup(): void {
-    console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique automatique (toutes les 30 minutes)');
+    console.log('🕐 [PERIODIC] Démarrage du nettoyage périodique automatique (toutes les 2 heures)');
     
     // Nettoyage immédiat
     this.runPeriodicCleanup();
     
-    // Puis nettoyage toutes les 30 minutes
+    // Puis nettoyage toutes les 2 heures (plus réaliste)
     setInterval(() => {
       this.runPeriodicCleanup();
-    }, 30 * 60 * 1000); // 30 minutes
+    }, 2 * 60 * 60 * 1000); // 2 heures
   }
 
   // Méthode pour forcer un nettoyage manuel
