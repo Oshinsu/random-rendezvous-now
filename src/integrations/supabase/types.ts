@@ -276,6 +276,25 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      create_group_with_participant: {
+        Args: {
+          p_latitude: number
+          p_longitude: number
+          p_location_name: string
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          status: string
+          max_participants: number
+          current_participants: number
+          latitude: number
+          longitude: number
+          location_name: string
+          search_radius: number
+          created_at: string
+        }[]
+      }
       dissolve_old_groups: {
         Args: Record<PropertyKey, never>
         Returns: undefined

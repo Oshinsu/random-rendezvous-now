@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
@@ -34,39 +33,39 @@ export class UnifiedGroupService {
     }
   }
 
-  // CORRIGÉ: Nettoyage AVEC DÉLAI MINIMUM de sécurité (5 minutes)
+  // CORRIGÉ: Nettoyage SÉCURISÉ avec délais augmentés
   static async forceCleanupOldGroups(): Promise<void> {
     try {
-      console.log('🧹 NETTOYAGE SÉCURISÉ avec délai minimum...');
+      console.log('🧹 NETTOYAGE SÉCURISÉ avec délais augmentés...');
       
-      // 1. Supprimer SEULEMENT les participants vraiment inactifs (6 heures)
-      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      // 1. Supprimer SEULEMENT les participants vraiment inactifs (12 heures au lieu de 6)
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
       
       const { error: cleanupParticipantsError } = await supabase
         .from('group_participants')
         .delete()
-        .lt('last_seen', sixHoursAgo);
+        .lt('last_seen', twelveHoursAgo);
 
       if (cleanupParticipantsError) {
         console.error('❌ Erreur nettoyage participants:', cleanupParticipantsError);
       } else {
-        console.log('✅ Participants inactifs depuis 6h supprimés');
+        console.log('✅ Participants inactifs depuis 12h supprimés');
       }
 
-      // 2. Supprimer SEULEMENT les groupes en attente AVEC DÉLAI MINIMUM (5 minutes + vides)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      // 2. Supprimer SEULEMENT les groupes en attente AVEC DÉLAI AUGMENTÉ (10 minutes + vides)
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       
       const { error: cleanupWaitingError } = await supabase
         .from('groups')
         .delete()
         .eq('status', 'waiting')
         .eq('current_participants', 0) // SEULEMENT les groupes vides
-        .lt('created_at', fiveMinutesAgo); // Délai minimum de 5 minutes
+        .lt('created_at', tenMinutesAgo); // Délai augmenté à 10 minutes
 
       if (cleanupWaitingError) {
         console.error('❌ Erreur nettoyage groupes en attente:', cleanupWaitingError);
       } else {
-        console.log('✅ Groupes en attente vides et anciens (5min+) supprimés');
+        console.log('✅ Groupes en attente vides et anciens (10min+) supprimés');
       }
 
       // 3. Supprimer les groupes confirmés sans bar (situation impossible mais nettoyage de sécurité)
@@ -101,7 +100,7 @@ export class UnifiedGroupService {
         console.log('✅ Groupes terminés supprimés');
       }
 
-      console.log('✅ NETTOYAGE SÉCURISÉ terminé avec délai minimum');
+      console.log('✅ NETTOYAGE SÉCURISÉ terminé avec délais augmentés');
     } catch (error) {
       ErrorHandler.logError('FORCE_CLEANUP_OLD_GROUPS', error);
       console.error('❌ Erreur dans le nettoyage sécurisé:', error);
@@ -309,10 +308,10 @@ export class UnifiedGroupService {
     }
   }
 
-  // CORRIGÉ: Création de groupe avec méthode alternative sans RPC problématique
+  // CORRIGÉ: Création de groupe avec FONCTION ATOMIQUE
   static async createGroup(userLocation: LocationData, userId: string): Promise<Group | null> {
     try {
-      console.log('🔐 Création d\'un nouveau groupe avec transaction manuelle sécurisée');
+      console.log('🔐 Création ATOMIQUE d\'un nouveau groupe avec fonction PostgreSQL sécurisée');
       
       // Vérifier d'abord si l'utilisateur peut créer un groupe (sécurité)
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -325,60 +324,58 @@ export class UnifiedGroupService {
         return null;
       }
 
-      // TRANSACTION MANUELLE: Créer le groupe d'abord
-      const { data: newGroupData, error: groupCreationError } = await supabase
-        .from('groups')
-        .insert({
-          status: 'waiting',
-          max_participants: 5,
-          current_participants: 1, // Déjà 1 participant (celui qui crée)
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName,
-          search_radius: 10000
-        })
-        .select()
-        .single();
+      // TRANSACTION ATOMIQUE: Utiliser la fonction PostgreSQL sécurisée
+      const { data: result, error: transactionError } = await supabase.rpc('create_group_with_participant', {
+        p_latitude: userLocation.latitude,
+        p_longitude: userLocation.longitude,
+        p_location_name: userLocation.locationName,
+        p_user_id: userId
+      });
 
-      if (groupCreationError || !newGroupData) {
-        console.error('❌ Erreur création groupe:', groupCreationError);
-        const appError = ErrorHandler.handleSupabaseError(groupCreationError);
-        ErrorHandler.showErrorToast(appError);
+      if (transactionError) {
+        console.error('❌ Erreur transaction atomique:', transactionError);
+        
+        // Gestion spécifique des erreurs
+        if (transactionError.message.includes('User is already in an active group')) {
+          toast({
+            title: 'Participation limitée',
+            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.',
+            variant: 'destructive'
+          });
+        } else if (transactionError.message.includes('Invalid coordinates')) {
+          toast({
+            title: 'Coordonnées invalides',
+            description: 'Les coordonnées de géolocalisation sont invalides.',
+            variant: 'destructive'
+          });
+        } else {
+          const appError = ErrorHandler.handleSupabaseError(transactionError);
+          ErrorHandler.showErrorToast(appError);
+        }
         return null;
       }
 
-      // Ensuite, ajouter immédiatement le participant créateur
-      const { error: participantError } = await supabase
-        .from('group_participants')
-        .insert({
-          group_id: newGroupData.id,
-          user_id: userId,
-          status: 'confirmed',
-          last_seen: new Date().toISOString(),
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName
+      if (!result || result.length === 0) {
+        console.error('❌ Aucun résultat de la transaction atomique');
+        toast({
+          title: 'Erreur de création',
+          description: 'Impossible de créer le groupe pour le moment.',
+          variant: 'destructive'
         });
-
-      if (participantError) {
-        console.error('❌ Erreur ajout participant:', participantError);
-        // Nettoyer le groupe créé en cas d'échec
-        await supabase.from('groups').delete().eq('id', newGroupData.id);
-        const appError = ErrorHandler.handleSupabaseError(participantError);
-        ErrorHandler.showErrorToast(appError);
         return null;
       }
 
-      console.log('✅ Groupe créé avec transaction manuelle sécurisée:', newGroupData.id);
+      const newGroup = result[0];
+      console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
       
       const typedGroup: Group = {
-        ...newGroupData,
-        status: newGroupData.status as Group['status']
+        ...newGroup,
+        status: newGroup.status as Group['status']
       };
       
       return typedGroup;
     } catch (error) {
-      ErrorHandler.logError('CREATE_GROUP_MANUAL', error);
+      ErrorHandler.logError('CREATE_GROUP_ATOMIC', error);
       const appError = ErrorHandler.handleGenericError(error as Error);
       ErrorHandler.showErrorToast(appError);
       return null;

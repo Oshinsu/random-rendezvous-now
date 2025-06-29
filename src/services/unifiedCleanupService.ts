@@ -5,28 +5,28 @@ import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
 export class UnifiedCleanupService {
   /**
-   * SERVICE DE NETTOYAGE UNIFIÉ SÉCURISÉ - Point d'entrée unique pour toutes les opérations de nettoyage
+   * SERVICE DE NETTOYAGE UNIFIÉ SÉCURISÉ - Point d'entrée unique avec délais augmentés
    */
   static async runUnifiedCleanup(): Promise<void> {
     try {
-      console.log('🧹 [UNIFIED CLEANUP] Démarrage du nettoyage unifié SÉCURISÉ...');
+      console.log('🧹 [UNIFIED CLEANUP] Démarrage du nettoyage unifié SÉCURISÉ avec délais augmentés...');
       
-      // 1. Nettoyage des participants inactifs (6 heures au lieu de plus court)
+      // 1. Nettoyage des participants inactifs (12 heures au lieu de 6)
       await this.cleanupInactiveParticipants();
       
       // 2. Correction des compteurs de tous les groupes
       await this.correctGroupCounters();
       
-      // 3. Nettoyage des groupes en attente anciens AVEC DÉLAI MINIMUM (5 minutes)
+      // 3. Nettoyage des groupes en attente anciens AVEC DÉLAI AUGMENTÉ (10 minutes)
       await this.cleanupOldWaitingGroups();
       
       // 4. Nettoyage des groupes terminés (3 heures après meeting)
       await this.cleanupCompletedGroups();
       
-      // 5. Appel de la fonction DB pour nettoyage complet
+      // 5. Appel de la fonction DB pour nettoyage complet sécurisé
       await this.callDatabaseCleanup();
       
-      console.log('✅ [UNIFIED CLEANUP] Nettoyage unifié SÉCURISÉ terminé avec succès');
+      console.log('✅ [UNIFIED CLEANUP] Nettoyage unifié SÉCURISÉ terminé avec délais augmentés');
     } catch (error) {
       ErrorHandler.logError('UNIFIED_CLEANUP_SERVICE', error);
       console.error('❌ [UNIFIED CLEANUP] Erreur dans le nettoyage unifié:', error);
@@ -34,13 +34,13 @@ export class UnifiedCleanupService {
   }
 
   /**
-   * Nettoyage des participants inactifs avec seuil PLUS CONSERVATEUR (6 heures)
+   * Nettoyage des participants inactifs avec seuil PLUS CONSERVATEUR (12 heures)
    */
   private static async cleanupInactiveParticipants(): Promise<void> {
     try {
-      // CHANGÉ: 6 heures au lieu de plus court pour éviter les suppressions prématurées
-      const threshold = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(); // 6 heures
-      console.log('🗑️ [UNIFIED CLEANUP] Suppression participants inactifs depuis 6h...');
+      // CHANGÉ: 12 heures au lieu de 6 pour éviter les suppressions prématurées
+      const threshold = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(); // 12 heures
+      console.log('🗑️ [UNIFIED CLEANUP] Suppression participants inactifs depuis 12h...');
       
       const { error } = await supabase
         .from('group_participants')
@@ -50,7 +50,7 @@ export class UnifiedCleanupService {
       if (error) {
         ErrorHandler.logError('CLEANUP_INACTIVE_PARTICIPANTS', error);
       } else {
-        console.log('✅ [UNIFIED CLEANUP] Participants inactifs (6h+) supprimés');
+        console.log('✅ [UNIFIED CLEANUP] Participants inactifs (12h+) supprimés');
       }
     } catch (error) {
       ErrorHandler.logError('CLEANUP_INACTIVE_PARTICIPANTS', error);
@@ -92,7 +92,7 @@ export class UnifiedCleanupService {
             current_participants: realCount
           };
 
-          // Si le groupe devient vide, le marquer pour suppression SEULEMENT après délai minimum
+          // Si le groupe devient vide, le marquer pour suppression SEULEMENT après délai minimum AUGMENTÉ
           if (realCount === 0) {
             // Vérifier l'âge du groupe avant suppression
             const { data: groupInfo } = await supabase
@@ -103,7 +103,7 @@ export class UnifiedCleanupService {
               
             if (groupInfo) {
               const groupAge = Date.now() - new Date(groupInfo.created_at).getTime();
-              const minAge = 5 * 60 * 1000; // 5 minutes minimum
+              const minAge = 10 * 60 * 1000; // 10 minutes minimum (augmenté)
               
               if (groupAge > minAge) {
                 await supabase
@@ -147,13 +147,13 @@ export class UnifiedCleanupService {
   }
 
   /**
-   * Nettoyage des groupes en attente anciens AVEC DÉLAI MINIMUM DE SÉCURITÉ
+   * Nettoyage des groupes en attente anciens AVEC DÉLAI AUGMENTÉ DE SÉCURITÉ
    */
   private static async cleanupOldWaitingGroups(): Promise<void> {
     try {
-      // CHANGÉ: Délai minimum de 5 minutes au lieu de plus court pour protéger la création
-      const threshold = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 minutes minimum
-      console.log('🗑️ [UNIFIED CLEANUP] Suppression groupes en attente anciens (5min+ ET vides)...');
+      // CHANGÉ: Délai minimum de 10 minutes au lieu de 5 pour protéger la création
+      const threshold = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 minutes minimum
+      console.log('🗑️ [UNIFIED CLEANUP] Suppression groupes en attente anciens (10min+ ET vides)...');
       
       const { error } = await supabase
         .from('groups')
@@ -165,7 +165,7 @@ export class UnifiedCleanupService {
       if (error) {
         ErrorHandler.logError('CLEANUP_OLD_WAITING_GROUPS', error);
       } else {
-        console.log('✅ [UNIFIED CLEANUP] Groupes en attente anciens (5min+) supprimés');
+        console.log('✅ [UNIFIED CLEANUP] Groupes en attente anciens (10min+) supprimés');
       }
     } catch (error) {
       ErrorHandler.logError('CLEANUP_OLD_WAITING_GROUPS', error);
@@ -198,18 +198,18 @@ export class UnifiedCleanupService {
   }
 
   /**
-   * Appel de la fonction de nettoyage de la base de données
+   * Appel de la fonction de nettoyage sécurisée de la base de données
    */
   private static async callDatabaseCleanup(): Promise<void> {
     try {
-      console.log('🔧 [UNIFIED CLEANUP] Appel fonction DB dissolve_old_groups...');
+      console.log('🔧 [UNIFIED CLEANUP] Appel fonction DB dissolve_old_groups sécurisée...');
       
       const { error } = await supabase.rpc('dissolve_old_groups');
       
       if (error) {
         ErrorHandler.logError('DATABASE_CLEANUP_RPC', error);
       } else {
-        console.log('✅ [UNIFIED CLEANUP] Fonction DB appelée avec succès');
+        console.log('✅ [UNIFIED CLEANUP] Fonction DB sécurisée appelée avec succès');
       }
     } catch (error) {
       ErrorHandler.logError('DATABASE_CLEANUP_RPC', error);
@@ -220,22 +220,22 @@ export class UnifiedCleanupService {
    * Nettoyage manuel forcé (pour les cas d'urgence)
    */
   static async forceEmergencyCleanup(): Promise<void> {
-    console.log('🚨 [UNIFIED CLEANUP] Nettoyage d\'urgence forcé...');
+    console.log('🚨 [UNIFIED CLEANUP] Nettoyage d\'urgence forcé avec délais augmentés...');
     await this.runUnifiedCleanup();
   }
 
   /**
-   * Démarrage du nettoyage périodique automatique MOINS FRÉQUENT (toutes les 2 heures)
+   * Démarrage du nettoyage périodique automatique MOINS FRÉQUENT (toutes les 3 heures)
    */
   static startPeriodicCleanup(): void {
-    console.log('⏰ [UNIFIED CLEANUP] Démarrage nettoyage périodique SÉCURISÉ (toutes les 2 heures)');
+    console.log('⏰ [UNIFIED CLEANUP] Démarrage nettoyage périodique SÉCURISÉ (toutes les 3 heures)');
     
-    // Nettoyage immédiat
+    // Nettoyage immédiat avec délais augmentés
     this.runUnifiedCleanup();
     
-    // Puis nettoyage toutes les 2 heures (moins agressif)
+    // Puis nettoyage toutes les 3 heures (encore moins agressif)
     setInterval(() => {
       this.runUnifiedCleanup();
-    }, 2 * 60 * 60 * 1000); // 2 heures
+    }, 3 * 60 * 60 * 1000); // 3 heures
   }
 }
