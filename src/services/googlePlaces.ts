@@ -15,11 +15,11 @@ interface PlaceResult {
 
 export class GooglePlacesService {
   /**
-   * MÉTHODE CORRIGÉE avec gestion d'erreur robuste et validation stricte
+   * Recherche SIMPLIFIÉE de bars - uniquement type=bar
    */
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 5000): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche avec validation stricte:', { latitude, longitude, radius });
+      console.log('🔍 [GooglePlacesService] Recherche SIMPLIFIÉE (type=bar uniquement):', { latitude, longitude, radius });
       
       // Validation stricte des coordonnées
       if (!this.validateCoordinatesStrict(latitude, longitude)) {
@@ -27,7 +27,7 @@ export class GooglePlacesService {
         return null;
       }
 
-      // Appel avec timeout et retry
+      // Appel simplifié à l'Edge Function
       let response: Response;
       let retryCount = 0;
       const maxRetries = 2;
@@ -87,7 +87,7 @@ export class GooglePlacesService {
         return null;
       }
 
-      console.log('🍺 [GooglePlacesService] Bar sélectionné avec validation:', {
+      console.log('🍺 [GooglePlacesService] Bar sélectionné (recherche simplifiée):', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,

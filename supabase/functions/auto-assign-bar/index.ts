@@ -149,7 +149,7 @@ serve(async (req) => {
       )
     }
 
-    // Recherche de bar avec gestion d'erreur et timeout
+    // Recherche de bar SIMPLIFIÉE avec Google Places
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
       console.error('❌ [AUTO-ASSIGN-BAR] Clé API Google Places manquante')
@@ -163,50 +163,13 @@ serve(async (req) => {
       )
     }
 
-    // Recherche avec timeout et retry
+    // RECHERCHE SIMPLIFIÉE: uniquement type=bar
     const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${searchLatitude},${searchLongitude}&radius=8000&type=bar&key=${apiKey}`;
     
-    let response: Response;
-    let retryCount = 0;
-    const maxRetries = 2;
-    
-    while (retryCount <= maxRetries) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-        
-        response = await fetch(searchUrl, {
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          break;
-        } else {
-          throw new Error(`HTTP ${response.status}`);
-        }
-      } catch (error) {
-        retryCount++;
-        console.warn(`⚠️ [AUTO-ASSIGN-BAR] Tentative ${retryCount}/${maxRetries + 1} échouée:`, error);
-        
-        if (retryCount > maxRetries) {
-          const errorResponse: StandardResponse = {
-            success: false,
-            error: 'Échec de la recherche de bars après plusieurs tentatives'
-          };
-          return new Response(
-            JSON.stringify(errorResponse),
-            { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-        
-        // Attendre avant retry (backoff exponentiel)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-      }
-    }
+    console.log('🌐 [AUTO-ASSIGN-BAR] Recherche Google Places (type=bar uniquement)');
 
-    const data: GooglePlacesResponse = await response!.json();
+    const response = await fetch(searchUrl);
+    const data: GooglePlacesResponse = await response.json();
 
     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
       console.log('⚠️ [AUTO-ASSIGN-BAR] Aucun bar trouvé');
@@ -220,37 +183,14 @@ serve(async (req) => {
       )
     }
 
-    // Filtrage strict des résultats
-    const filteredResults = data.results.filter(place => {
-      const types = place.types || [];
-      const name = place.name.toLowerCase();
-      
-      const excludedTypes = ['lodging', 'hotel', 'motel', 'resort', 'hostel', 'guest_house'];
-      const excludedWords = ['hotel', 'hôtel', 'motel', 'resort', 'auberge', 'lodge', 'inn'];
-      
-      const hasExcludedType = excludedTypes.some(type => types.includes(type));
-      const hasExcludedWord = excludedWords.some(word => name.includes(word));
-      
-      return !hasExcludedType && !hasExcludedWord;
-    });
-
-    if (filteredResults.length === 0) {
-      const errorResponse: StandardResponse = {
-        success: false,
-        error: 'Aucun bar approprié trouvé après filtrage'
-      };
-      return new Response(
-        JSON.stringify(errorResponse),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Sélection du meilleur bar
-    const selectedBar = filteredResults
+    // Sélection simple du meilleur bar
+    const sortedBars = data.results
       .filter(bar => bar.rating && bar.rating >= 3.0)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))[0] || filteredResults[0];
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-    // Réponse standardisée avec toutes les informations requises
+    const selectedBar = sortedBars[0] || data.results[0];
+
+    // Réponse standardisée
     const result: StandardResponse = {
       success: true,
       bar: {
@@ -262,7 +202,7 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Bar sélectionné:', result.bar?.name);
+    console.log('✅ [AUTO-ASSIGN-BAR] Bar sélectionné (recherche simplifiée):', result.bar?.name);
 
     return new Response(
       JSON.stringify(result),

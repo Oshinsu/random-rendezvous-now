@@ -46,8 +46,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 Recherche de bars près de:', { latitude, longitude, radius });
-    console.log('📍 Position reçue - Lat:', latitude, 'Lng:', longitude);
+    console.log('🔍 Recherche simplifiée de bars près de:', { latitude, longitude, radius });
     
     // Utiliser la clé API depuis les secrets Supabase
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
@@ -62,80 +61,21 @@ serve(async (req) => {
       )
     }
 
-    // CORRECTION: Recherche spécifique aux bars avec mots-clés multiples
-    const searchQueries = [
-      // Recherche principale avec type bar
-      `location=${latitude},${longitude}&radius=${radius}&type=bar&key=${apiKey}`,
-      // Recherche avec mots-clés spécifiques
-      `location=${latitude},${longitude}&radius=${radius}&keyword=bar pub taverne&type=establishment&key=${apiKey}`,
-      // Recherche avec place type night_club pour diversifier
-      `location=${latitude},${longitude}&radius=${radius}&type=night_club&key=${apiKey}`
-    ];
+    // RECHERCHE SIMPLIFIÉE: uniquement type=bar
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=bar&key=${apiKey}`;
+    
+    console.log('🌐 Recherche Google Places (type=bar uniquement):', searchUrl.replace(apiKey, 'API_KEY_HIDDEN'));
 
-    let allBars: PlaceResult[] = [];
+    const response = await fetch(searchUrl);
+    const data: GooglePlacesResponse = await response.json();
 
-    // Effectuer plusieurs recherches pour maximiser les résultats de bars
-    for (let i = 0; i < searchQueries.length; i++) {
-      try {
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${searchQueries[i]}`;
-        console.log(`🌐 Recherche ${i + 1}/3:`, url.replace(apiKey, 'API_KEY_HIDDEN'));
+    console.log('📊 Réponse Google Places:', { 
+      status: data.status, 
+      resultCount: data.results?.length 
+    });
 
-        const response = await fetch(url);
-        const data: GooglePlacesResponse = await response.json();
-
-        console.log(`📊 Réponse recherche ${i + 1}:`, { status: data.status, resultCount: data.results?.length });
-
-        if (data.status === 'OK' && data.results && data.results.length > 0) {
-          // Filtrer strictement pour exclure les hôtels
-          const filteredResults = data.results.filter(place => {
-            const types = place.types || [];
-            const name = place.name.toLowerCase();
-            
-            // Exclure explicitement les hôtels, lodging, et autres hébergements
-            const excludedTypes = ['lodging', 'hotel', 'motel', 'resort', 'hostel', 'guest_house'];
-            const hasExcludedType = excludedTypes.some(excludedType => 
-              types.includes(excludedType)
-            );
-            
-            // Exclure les noms contenant des mots d'hôtellerie
-            const excludedWords = ['hotel', 'hôtel', 'motel', 'resort', 'auberge', 'lodge', 'inn'];
-            const hasExcludedWord = excludedWords.some(word => 
-              name.includes(word)
-            );
-            
-            // Privilégier les types liés aux bars
-            const barTypes = ['bar', 'pub', 'tavern', 'brewery', 'wine_bar', 'cocktail_lounge', 'night_club'];
-            const hasBarType = barTypes.some(barType => 
-              types.includes(barType) || name.includes(barType)
-            );
-            
-            const isValid = !hasExcludedType && !hasExcludedWord;
-            
-            if (!isValid) {
-              console.log(`❌ Exclu: ${place.name} (types: ${types.join(', ')}, motifs: ${hasExcludedType ? 'type exclu' : 'mot exclu'})`);
-            } else {
-              console.log(`✅ Accepté: ${place.name} (types: ${types.join(', ')}, hasBarType: ${hasBarType})`);
-            }
-            
-            return isValid;
-          });
-          
-          allBars = [...allBars, ...filteredResults];
-        }
-      } catch (error) {
-        console.error(`❌ Erreur recherche ${i + 1}:`, error);
-      }
-    }
-
-    // Supprimer les doublons basés sur place_id
-    const uniqueBars = allBars.filter((bar, index, self) => 
-      index === self.findIndex(b => b.place_id === bar.place_id)
-    );
-
-    console.log(`📊 Total des bars trouvés après filtrage: ${uniqueBars.length}`);
-
-    if (uniqueBars.length === 0) {
-      console.error('❌ Aucun bar trouvé après filtrage strict');
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      console.log('❌ Aucun bar trouvé par Google Places');
       return new Response(
         JSON.stringify({ 
           error: 'Aucun bar trouvé dans cette zone',
@@ -143,9 +83,7 @@ serve(async (req) => {
             latitude,
             longitude,
             radius,
-            totalSearches: searchQueries.length,
-            rawResults: allBars.length,
-            filteredResults: uniqueBars.length
+            apiStatus: data.status
           }
         }),
         { 
@@ -155,14 +93,14 @@ serve(async (req) => {
       )
     }
 
-    // Trier par note et sélectionner le meilleur
-    const sortedBars = uniqueBars
+    // Sélection simple : prendre le mieux noté ou le premier
+    const sortedBars = data.results
       .filter(bar => bar.rating && bar.rating >= 3.0)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-    const selectedBar = sortedBars[0] || uniqueBars[0];
+    const selectedBar = sortedBars[0] || data.results[0];
     
-    // Améliorer la gestion de l'adresse
+    // Gestion de l'adresse
     const barAddress = selectedBar.formatted_address || selectedBar.vicinity || `Coordonnées: ${selectedBar.geometry.location.lat.toFixed(4)}, ${selectedBar.geometry.location.lng.toFixed(4)}`;
     
     const result = {
@@ -175,7 +113,7 @@ serve(async (req) => {
       types: selectedBar.types || []
     };
     
-    console.log('🍺 Bar final sélectionné:', {
+    console.log('🍺 Bar sélectionné (recherche simplifiée):', {
       name: result.name,
       address: result.formatted_address,
       rating: result.rating,
