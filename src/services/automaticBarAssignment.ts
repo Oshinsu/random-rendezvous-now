@@ -2,16 +2,34 @@
 import { supabase } from '@/integrations/supabase/client';
 import { GooglePlacesService } from './googlePlaces';
 
+// Interface standardisée pour les réponses
+interface BarAssignmentResponse {
+  success: boolean;
+  bar?: {
+    place_id: string;
+    name: string;
+    formatted_address: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      };
+    };
+    rating?: number;
+  };
+  error?: string;
+}
+
 export class AutomaticBarAssignmentService {
   /**
-   * SYSTÈME D'ATTRIBUTION AUTOMATIQUE UNIFIÉ
-   * Attribue automatiquement un bar à un groupe de 5 participants confirmés
+   * SYSTÈME D'ATTRIBUTION AUTOMATIQUE UNIFIÉ ET CORRIGÉ
+   * Attribution avec gestion d'erreur robuste et validation stricte
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [BAR ASSIGNMENT] Démarrage attribution automatique pour groupe:', groupId);
+      console.log('🤖 [BAR ASSIGNMENT] Démarrage attribution UNIFIÉE pour groupe:', groupId);
 
-      // 1. Récupérer et valider les informations du groupe
+      // 1. Vérification d'éligibilité STRICTE avec verrouillage
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('id, latitude, longitude, current_participants, status, bar_name, bar_place_id')
@@ -47,26 +65,47 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 3. Utiliser les coordonnées du groupe avec fallback sur Paris
+      // 3. Coordonnées avec validation stricte et fallback sécurisé
       const searchLatitude = group.latitude || 48.8566;
       const searchLongitude = group.longitude || 2.3522;
 
-      console.log('🔍 [BAR ASSIGNMENT] Recherche bar avec coordonnées:', { 
+      // Validation des coordonnées
+      if (!this.validateCoordinates(searchLatitude, searchLongitude)) {
+        console.error('❌ [BAR ASSIGNMENT] Coordonnées invalides:', { 
+          lat: searchLatitude, 
+          lng: searchLongitude 
+        });
+        return false;
+      }
+
+      console.log('🔍 [BAR ASSIGNMENT] Recherche avec coordonnées validées:', { 
         lat: searchLatitude, 
         lng: searchLongitude 
       });
 
-      // 4. Rechercher un bar via le service Google Places
-      const selectedBar = await GooglePlacesService.findNearbyBars(
-        searchLatitude,
-        searchLongitude,
-        8000 // Rayon de 8km
-      );
+      // 4. Appel de l'Edge Function avec gestion d'erreur robuste
+      const { data: barResponse, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
+        body: {
+          group_id: groupId,
+          latitude: searchLatitude,
+          longitude: searchLongitude
+        }
+      });
 
-      if (!selectedBar || !selectedBar.name) {
-        console.log('⚠️ [BAR ASSIGNMENT] Aucun bar trouvé pour attribution automatique');
-        
-        // Envoyer un message d'échec
+      if (barError) {
+        console.error('❌ [BAR ASSIGNMENT] Erreur Edge Function:', barError);
+        await this.sendSystemMessage(
+          groupId,
+          '⚠️ Erreur lors de la recherche automatique. Veuillez choisir manuellement.'
+        );
+        return false;
+      }
+
+      // 5. Traitement de la réponse standardisée
+      const response = barResponse as BarAssignmentResponse;
+      
+      if (!response?.success || !response?.bar) {
+        console.log('⚠️ [BAR ASSIGNMENT] Aucun bar trouvé:', response?.error);
         await this.sendSystemMessage(
           groupId,
           '⚠️ Aucun bar disponible trouvé automatiquement. Vous pouvez choisir un lieu manuellement.'
@@ -74,53 +113,71 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 5. Définir l'heure de rendez-vous (1 heure à partir de maintenant)
+      // 6. Mise à jour atomique du groupe avec conditions strictes
       const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
-
-      // 6. Mettre à jour le groupe avec les informations du bar - TRANSACTION ATOMIQUE
-      const updateData = {
-        bar_name: selectedBar.name,
-        bar_address: selectedBar.formatted_address,
-        meeting_time: meetingTime.toISOString(),
-        bar_latitude: selectedBar.geometry.location.lat,
-        bar_longitude: selectedBar.geometry.location.lng,
-        bar_place_id: selectedBar.place_id
-      };
 
       const { error: updateError } = await supabase
         .from('groups')
-        .update(updateData)
+        .update({
+          bar_name: response.bar.name,
+          bar_address: response.bar.formatted_address,
+          meeting_time: meetingTime.toISOString(),
+          bar_latitude: response.bar.geometry.location.lat,
+          bar_longitude: response.bar.geometry.location.lng,
+          bar_place_id: response.bar.place_id
+        })
         .eq('id', groupId)
-        .eq('status', 'confirmed') // Condition de sécurité
-        .is('bar_name', null); // S'assurer qu'aucun bar n'est déjà assigné
+        .eq('status', 'confirmed')
+        .eq('current_participants', 5)
+        .is('bar_name', null);
 
       if (updateError) {
-        console.error('❌ [BAR ASSIGNMENT] Erreur mise à jour groupe:', updateError);
+        console.error('❌ [BAR ASSIGNMENT] Erreur mise à jour atomique:', updateError);
+        await this.sendSystemMessage(
+          groupId,
+          '⚠️ Erreur lors de l\'attribution. Veuillez réessayer.'
+        );
         return false;
       }
 
-      // 7. Envoyer le message de confirmation
+      // 7. Message de confirmation avec formatage uniforme
       await this.sendSystemMessage(
         groupId,
-        `🍺 Votre groupe est complet ! Rendez-vous au ${selectedBar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+        `🍺 Votre groupe est complet ! Rendez-vous au ${response.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
       );
 
-      console.log('✅ [BAR ASSIGNMENT] Attribution automatique réussie:', {
+      console.log('✅ [BAR ASSIGNMENT] Attribution réussie:', {
         group: groupId,
-        bar: selectedBar.name,
-        address: selectedBar.formatted_address,
+        bar: response.bar.name,
+        address: response.bar.formatted_address,
         meetingTime: meetingTime.toLocaleString('fr-FR')
       });
 
       return true;
     } catch (error) {
-      console.error('❌ [BAR ASSIGNMENT] Erreur attribution automatique:', error);
+      console.error('❌ [BAR ASSIGNMENT] Erreur globale:', error);
+      await this.sendSystemMessage(
+        groupId,
+        '⚠️ Erreur technique lors de l\'attribution automatique.'
+      );
       return false;
     }
   }
 
   /**
-   * Envoie un message système au groupe
+   * Validation stricte des coordonnées
+   */
+  private static validateCoordinates(lat: number, lng: number): boolean {
+    if (typeof lat !== 'number' || typeof lng !== 'number') return false;
+    if (isNaN(lat) || isNaN(lng)) return false;
+    if (!isFinite(lat) || !isFinite(lng)) return false;
+    if (lat < -90 || lat > 90) return false;
+    if (lng < -180 || lng > 180) return false;
+    return true;
+  }
+
+  /**
+   * Envoi de message système avec gestion d'erreur
    */
   private static async sendSystemMessage(groupId: string, message: string): Promise<void> {
     try {
@@ -138,7 +195,7 @@ export class AutomaticBarAssignmentService {
   }
 
   /**
-   * Nettoie les messages de déclenchement d'attribution automatique
+   * Nettoyage des messages de déclenchement (utilisé par les hooks)
    */
   static async cleanupTriggerMessages(groupId: string): Promise<void> {
     try {
@@ -149,7 +206,7 @@ export class AutomaticBarAssignmentService {
         .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
         .eq('is_system', true);
     } catch (error) {
-      console.error('❌ [BAR ASSIGNMENT] Erreur nettoyage messages déclenchement:', error);
+      console.error('❌ [BAR ASSIGNMENT] Erreur nettoyage messages:', error);
     }
   }
 }
