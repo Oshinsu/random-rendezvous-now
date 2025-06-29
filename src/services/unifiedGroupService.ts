@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
@@ -308,10 +309,10 @@ export class UnifiedGroupService {
     }
   }
 
-  // CORRIGÉ: Création de groupe avec TRANSACTION ATOMIQUE
+  // CORRIGÉ: Création de groupe avec méthode alternative sans RPC problématique
   static async createGroup(userLocation: LocationData, userId: string): Promise<Group | null> {
     try {
-      console.log('🔐 Création ATOMIQUE d\'un nouveau groupe avec transaction sécurisée');
+      console.log('🔐 Création d\'un nouveau groupe avec transaction manuelle sécurisée');
       
       // Vérifier d'abord si l'utilisateur peut créer un groupe (sécurité)
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -324,42 +325,60 @@ export class UnifiedGroupService {
         return null;
       }
 
-      // TRANSACTION ATOMIQUE: Créer le groupe ET ajouter le participant dans une seule transaction
-      const { data: result, error: transactionError } = await supabase.rpc('create_group_with_participant', {
-        p_latitude: userLocation.latitude,
-        p_longitude: userLocation.longitude,
-        p_location_name: userLocation.locationName,
-        p_user_id: userId
-      });
+      // TRANSACTION MANUELLE: Créer le groupe d'abord
+      const { data: newGroupData, error: groupCreationError } = await supabase
+        .from('groups')
+        .insert({
+          status: 'waiting',
+          max_participants: 5,
+          current_participants: 1, // Déjà 1 participant (celui qui crée)
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName,
+          search_radius: 10000
+        })
+        .select()
+        .single();
 
-      if (transactionError) {
-        console.error('❌ Erreur transaction atomique:', transactionError);
-        const appError = ErrorHandler.handleSupabaseError(transactionError);
+      if (groupCreationError || !newGroupData) {
+        console.error('❌ Erreur création groupe:', groupCreationError);
+        const appError = ErrorHandler.handleSupabaseError(groupCreationError);
         ErrorHandler.showErrorToast(appError);
         return null;
       }
 
-      if (!result || result.length === 0) {
-        console.error('❌ Aucun résultat de la transaction atomique');
-        toast({
-          title: 'Erreur de création',
-          description: 'Impossible de créer le groupe pour le moment.',
-          variant: 'destructive'
+      // Ensuite, ajouter immédiatement le participant créateur
+      const { error: participantError } = await supabase
+        .from('group_participants')
+        .insert({
+          group_id: newGroupData.id,
+          user_id: userId,
+          status: 'confirmed',
+          last_seen: new Date().toISOString(),
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName
         });
+
+      if (participantError) {
+        console.error('❌ Erreur ajout participant:', participantError);
+        // Nettoyer le groupe créé en cas d'échec
+        await supabase.from('groups').delete().eq('id', newGroupData.id);
+        const appError = ErrorHandler.handleSupabaseError(participantError);
+        ErrorHandler.showErrorToast(appError);
         return null;
       }
 
-      const newGroup = result[0];
-      console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
+      console.log('✅ Groupe créé avec transaction manuelle sécurisée:', newGroupData.id);
       
       const typedGroup: Group = {
-        ...newGroup,
-        status: newGroup.status as Group['status']
+        ...newGroupData,
+        status: newGroupData.status as Group['status']
       };
       
       return typedGroup;
     } catch (error) {
-      ErrorHandler.logError('CREATE_GROUP_ATOMIC', error);
+      ErrorHandler.logError('CREATE_GROUP_MANUAL', error);
       const appError = ErrorHandler.handleGenericError(error as Error);
       ErrorHandler.showErrorToast(appError);
       return null;
