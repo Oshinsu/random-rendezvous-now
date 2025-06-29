@@ -27,51 +27,84 @@ interface GooglePlacesResponse {
   status: string;
 }
 
-// Types d'établissements à EXCLURE (pas des bars authentiques)
+// ENHANCED: Types d'établissements à EXCLURE (pas des bars authentiques)
 const EXCLUDED_TYPES = [
   'lodging', 'hotel', 'resort', 'guest_house', 'hostel',
   'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
-  'night_club', 'casino', 'store', 'shopping_mall', 'gas_station'
+  'night_club', 'casino', 
+  'store', 'shopping_mall', 'convenience_store', 'supermarket', 'department_store',
+  'gas_station', 'car_dealer', 'car_rental', 'car_repair',
+  'pharmacy', 'hospital', 'dentist', 'doctor',
+  'bank', 'atm', 'finance',
+  'gym', 'spa', 'beauty_salon', 'hair_care',
+  'school', 'university', 'library'
 ];
 
-// Mots-clés suspects dans les noms (vape shops, etc.)
+// ENHANCED: Mots-clés suspects dans les noms
 const SUSPICIOUS_KEYWORDS = [
-  'vape', 'vapor', 'smoke', 'tobacco', 'cigarette', 'hotel', 'restaurant', 'resto'
+  'vape', 'vapor', 'smoke', 'smoking', 'tobacco', 'cigarette', 'cigar',
+  'hotel', 'restaurant', 'resto', 'café', 'coffee',
+  'shop', 'store', 'market', 'pharmacy', 'hospital',
+  'gas', 'station', 'fuel', 'petrol'
 ];
 
-// Fonction pour vérifier si un établissement est un bar authentique
+// Fonction STRICTE pour vérifier si un établissement est un bar authentique
 function isAuthenticBar(place: PlaceResult): boolean {
   if (!place.types || place.types.length === 0) {
     console.log(`⚠️ [FILTER] ${place.name}: Aucun type défini`);
     return false;
   }
 
-  // Vérifier s'il contient 'bar' dans ses types
+  // ÉTAPE 1: DOIT avoir 'bar' dans ses types
   const hasBarType = place.types.includes('bar');
-  
-  // Vérifier s'il contient des types exclus
+  if (!hasBarType) {
+    console.log(`❌ [FILTER] ${place.name}: N'a pas le type 'bar'`);
+    return false;
+  }
+
+  // ÉTAPE 2: NE DOIT PAS avoir de types exclus
   const hasExcludedType = place.types.some(type => EXCLUDED_TYPES.includes(type));
-  
-  // Vérifier les mots-clés suspects dans le nom
+  if (hasExcludedType) {
+    const excludedFound = place.types.filter(type => EXCLUDED_TYPES.includes(type));
+    console.log(`❌ [FILTER] ${place.name}: Contient des types exclus: ${excludedFound.join(', ')}`);
+    return false;
+  }
+
+  // ÉTAPE 3: NE DOIT PAS avoir de mots-clés suspects dans le nom
   const hasSuspiciousName = SUSPICIOUS_KEYWORDS.some(keyword => 
     place.name.toLowerCase().includes(keyword.toLowerCase())
   );
+  if (hasSuspiciousName) {
+    const suspiciousFound = SUSPICIOUS_KEYWORDS.filter(keyword => 
+      place.name.toLowerCase().includes(keyword.toLowerCase())
+    );
+    console.log(`❌ [FILTER] ${place.name}: Nom suspect (${suspiciousFound.join(', ')})`);
+    return false;
+  }
   
-  console.log(`🔍 [FILTER] ${place.name}: types=${place.types.join(', ')}, hasBar=${hasBarType}, hasExcluded=${hasExcludedType}, suspicious=${hasSuspiciousName}`);
-  
-  // Doit avoir 'bar' ET ne pas avoir de types exclus ET ne pas avoir de nom suspect
-  return hasBarType && !hasExcludedType && !hasSuspiciousName;
+  console.log(`✅ [FILTER] ${place.name}: Bar authentique validé (types: ${place.types.join(', ')})`);
+  return true;
 }
 
-// Fonction de sélection aléatoire
+// Fonction de sélection ALÉATOIRE améliorée
 function selectRandomBar(bars: PlaceResult[]): PlaceResult {
+  if (bars.length === 0) {
+    throw new Error('Aucun bar disponible pour la sélection');
+  }
+
   // Filtrer les bars avec une note décente (≥ 3.0) si disponible
   const decentBars = bars.filter(bar => !bar.rating || bar.rating >= 3.0);
   const barsToChooseFrom = decentBars.length > 0 ? decentBars : bars;
   
+  console.log(`🎲 [SELECTION] Sélection parmi ${barsToChooseFrom.length} bars (${decentBars.length} avec bonne note)`);
+  
   // Sélection aléatoire
   const randomIndex = Math.floor(Math.random() * barsToChooseFrom.length);
-  return barsToChooseFrom[randomIndex];
+  const selectedBar = barsToChooseFrom[randomIndex];
+  
+  console.log(`🎯 [SELECTION] Bar sélectionné: ${selectedBar.name} (index ${randomIndex}/${barsToChooseFrom.length - 1})`);
+  
+  return selectedBar;
 }
 
 serve(async (req) => {
@@ -108,10 +141,10 @@ serve(async (req) => {
       )
     }
 
-    // Recherche Google Places avec type=bar
+    // Recherche Google Places avec type=bar UNIQUEMENT
     const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=bar&key=${apiKey}`;
     
-    console.log('🌐 Recherche Google Places (type=bar):', searchUrl.replace(apiKey, 'API_KEY_HIDDEN'));
+    console.log('🌐 Recherche Google Places (type=bar UNIQUEMENT)');
 
     const response = await fetch(searchUrl);
     const data: GooglePlacesResponse = await response.json();
@@ -140,14 +173,16 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE STRICT : ne garder que les bars authentiques
-    console.log('🔍 [FILTRAGE] Application du filtre strict pour bars authentiques...');
+    // FILTRAGE STRICT RENFORCÉ : ne garder que les bars 100% authentiques
+    console.log('🔍 [FILTRAGE] Application du filtre STRICT RENFORCÉ pour bars authentiques...');
+    console.log(`📋 [FILTRAGE] ${EXCLUDED_TYPES.length} types exclus, ${SUSPICIOUS_KEYWORDS.length} mots-clés suspects`);
+    
     const authenticBars = data.results.filter(isAuthenticBar);
     
-    console.log(`📋 [FILTRAGE] Résultats après filtrage: ${authenticBars.length}/${data.results.length} bars authentiques`);
+    console.log(`📋 [FILTRAGE] Résultats après filtrage strict: ${authenticBars.length}/${data.results.length} bars authentiques`);
 
     if (authenticBars.length === 0) {
-      console.log('❌ Aucun bar authentique trouvé après filtrage');
+      console.log('❌ Aucun bar authentique trouvé après filtrage strict');
       return new Response(
         JSON.stringify({ 
           error: 'Aucun bar authentique trouvé dans cette zone',
@@ -155,7 +190,16 @@ serve(async (req) => {
             totalFound: data.results.length,
             authenticBarsFound: authenticBars.length,
             excludedTypes: EXCLUDED_TYPES,
-            suspiciousKeywords: SUSPICIOUS_KEYWORDS
+            suspiciousKeywords: SUSPICIOUS_KEYWORDS,
+            rejectedBars: data.results.map(bar => ({
+              name: bar.name,
+              types: bar.types,
+              hasBar: bar.types?.includes('bar'),
+              hasExcluded: bar.types?.some(type => EXCLUDED_TYPES.includes(type)),
+              hasSuspicious: SUSPICIOUS_KEYWORDS.some(keyword => 
+                bar.name.toLowerCase().includes(keyword.toLowerCase())
+              )
+            }))
           }
         }),
         { 
