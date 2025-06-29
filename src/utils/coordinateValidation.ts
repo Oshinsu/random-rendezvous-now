@@ -52,29 +52,27 @@ export class CoordinateValidator {
       };
     }
 
-    // Precision validation (prevent excessive precision attacks)
+    // Precision sanitization (automatically round to 6 decimal places instead of rejecting)
     const maxPrecision = 6; // ~11cm accuracy
-    const latPrecision = this.getDecimalPlaces(lat);
-    const lngPrecision = this.getDecimalPlaces(lng);
+    const sanitizedLat = parseFloat(lat.toFixed(maxPrecision));
+    const sanitizedLng = parseFloat(lng.toFixed(maxPrecision));
 
-    if (latPrecision > maxPrecision || lngPrecision > maxPrecision) {
-      return {
-        isValid: false,
-        error: `Coordinate precision cannot exceed ${maxPrecision} decimal places`
-      };
-    }
+    console.log('🔧 [COORDINATE VALIDATION] Coordinates validated and sanitized:', {
+      original: { lat, lng },
+      sanitized: { lat: sanitizedLat, lng: sanitizedLng }
+    });
 
-    // Return sanitized coordinates
+    // Return sanitized coordinates (always valid now)
     return {
       isValid: true,
       sanitized: {
-        latitude: parseFloat(lat.toFixed(6)),
-        longitude: parseFloat(lng.toFixed(6))
+        latitude: sanitizedLat,
+        longitude: sanitizedLng
       }
     };
   }
 
-  // Helper method to count decimal places
+  // Helper method to count decimal places (kept for potential future use)
   private static getDecimalPlaces(num: number): number {
     const str = num.toString();
     const decimalIndex = str.indexOf('.');
