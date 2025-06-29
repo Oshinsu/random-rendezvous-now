@@ -11,16 +11,15 @@ interface PlaceResult {
   };
   rating?: number;
   price_level?: number;
-  business_status?: string;
 }
 
 export class GooglePlacesService {
   /**
-   * Recherche SIMPLIFIÉE avec Google Places API v1 - bars ouverts uniquement
+   * Recherche SIMPLIFIÉE de bars - uniquement type=bar
    */
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 5000): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche avec Google Places API v1 (bars ouverts uniquement):', { latitude, longitude, radius });
+      console.log('🔍 [GooglePlacesService] Recherche SIMPLIFIÉE (type=bar uniquement):', { latitude, longitude, radius });
       
       // Validation stricte des coordonnées
       if (!this.validateCoordinatesStrict(latitude, longitude)) {
@@ -28,7 +27,7 @@ export class GooglePlacesService {
         return null;
       }
 
-      // Appel à l'Edge Function mise à jour
+      // Appel simplifié à l'Edge Function
       let response: Response;
       let retryCount = 0;
       const maxRetries = 2;
@@ -36,7 +35,7 @@ export class GooglePlacesService {
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
           
           response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/find-nearby-bars', {
             method: 'POST',
@@ -88,11 +87,10 @@ export class GooglePlacesService {
         return null;
       }
 
-      console.log('🍺 [GooglePlacesService] Bar sélectionné (Google Places API v1):', {
+      console.log('🍺 [GooglePlacesService] Bar sélectionné (recherche simplifiée):', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,
-        business_status: selectedBar.business_status,
         location: selectedBar.geometry?.location
       });
 
