@@ -47,6 +47,32 @@ interface GooglePlacesResponse {
   status: string;
 }
 
+// Types d'établissements à EXCLURE (pas des bars authentiques)
+const EXCLUDED_TYPES = [
+  'lodging', 'hotel', 'resort', 'guest_house', 'hostel',
+  'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
+  'night_club', 'casino'
+];
+
+// Fonction pour vérifier si un établissement est un bar authentique
+function isAuthenticBar(place: PlaceResult): boolean {
+  if (!place.types || place.types.length === 0) {
+    console.log(`⚠️ [FILTER] ${place.name}: Aucun type défini`);
+    return false;
+  }
+
+  // Vérifier s'il contient 'bar' dans ses types
+  const hasBarType = place.types.includes('bar');
+  
+  // Vérifier s'il contient des types exclus
+  const hasExcludedType = place.types.some(type => EXCLUDED_TYPES.includes(type));
+  
+  console.log(`🔍 [FILTER] ${place.name}: types=${place.types.join(', ')}, hasBar=${hasBarType}, hasExcluded=${hasExcludedType}`);
+  
+  // Doit avoir 'bar' ET ne pas avoir de types exclus
+  return hasBarType && !hasExcludedType;
+}
+
 // Validation stricte des coordonnées
 function validateCoordinatesStrict(lat: number, lng: number): boolean {
   if (typeof lat !== 'number' || typeof lng !== 'number') return false;
@@ -149,7 +175,7 @@ serve(async (req) => {
       )
     }
 
-    // Recherche de bar SIMPLIFIÉE avec Google Places
+    // Recherche de bars authentiques avec Google Places
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
       console.error('❌ [AUTO-ASSIGN-BAR] Clé API Google Places manquante')
@@ -163,19 +189,19 @@ serve(async (req) => {
       )
     }
 
-    // RECHERCHE SIMPLIFIÉE: uniquement type=bar
+    // Recherche Google Places avec type=bar
     const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${searchLatitude},${searchLongitude}&radius=8000&type=bar&key=${apiKey}`;
     
-    console.log('🌐 [AUTO-ASSIGN-BAR] Recherche Google Places (type=bar uniquement)');
+    console.log('🌐 [AUTO-ASSIGN-BAR] Recherche Google Places (type=bar)');
 
     const response = await fetch(searchUrl);
     const data: GooglePlacesResponse = await response.json();
 
     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.log('⚠️ [AUTO-ASSIGN-BAR] Aucun bar trouvé');
+      console.log('❌ [AUTO-ASSIGN-BAR] Aucun établissement trouvé');
       const errorResponse: StandardResponse = {
         success: false,
-        error: 'Aucun bar trouvé dans cette zone'
+        error: 'Aucun établissement trouvé dans cette zone'
       };
       return new Response(
         JSON.stringify(errorResponse),
@@ -183,12 +209,35 @@ serve(async (req) => {
       )
     }
 
-    // Sélection simple du meilleur bar
-    const sortedBars = data.results
+    // FILTRAGE STRICT : ne garder que les bars authentiques
+    console.log('🔍 [AUTO-ASSIGN-BAR] Application du filtre strict pour bars authentiques...');
+    const authenticBars = data.results.filter(isAuthenticBar);
+    
+    console.log(`📋 [AUTO-ASSIGN-BAR] Résultats après filtrage: ${authenticBars.length}/${data.results.length} bars authentiques`);
+
+    if (authenticBars.length === 0) {
+      console.log('❌ [AUTO-ASSIGN-BAR] Aucun bar authentique trouvé après filtrage');
+      const errorResponse: StandardResponse = {
+        success: false,
+        error: 'Aucun bar authentique trouvé dans cette zone',
+        debug: {
+          totalFound: data.results.length,
+          authenticBarsFound: authenticBars.length,
+          excludedTypes: EXCLUDED_TYPES
+        }
+      };
+      return new Response(
+        JSON.stringify(errorResponse),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Sélection du meilleur bar authentique
+    const sortedBars = authenticBars
       .filter(bar => bar.rating && bar.rating >= 3.0)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-    const selectedBar = sortedBars[0] || data.results[0];
+    const selectedBar = sortedBars[0] || authenticBars[0];
 
     // Réponse standardisée
     const result: StandardResponse = {
@@ -202,7 +251,7 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Bar sélectionné (recherche simplifiée):', result.bar?.name);
+    console.log('✅ [AUTO-ASSIGN-BAR] Bar authentique sélectionné:', result.bar?.name);
 
     return new Response(
       JSON.stringify(result),
