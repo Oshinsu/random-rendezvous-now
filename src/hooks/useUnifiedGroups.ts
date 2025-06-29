@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +11,8 @@ import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { showUniqueToast } from '@/utils/toastUtils';
+import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
+import { CoordinateValidator } from '@/utils/coordinateValidation';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
@@ -32,6 +35,14 @@ export const useUnifiedGroups = () => {
     
     if (!forceRefresh && userLocation && (now - lastLocationTime.current) < locationCacheTime) {
       console.log('📍 Utilisation de la position en cache:', userLocation.locationName);
+      
+      // Validate cached coordinates
+      const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
+      if (!validation.isValid) {
+        console.warn('🚨 Cached coordinates are invalid, forcing refresh');
+        return await getUserLocation(true);
+      }
+      
       return userLocation;
     }
 
@@ -122,8 +133,8 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Maintenant 45 secondes
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Maintenant 30 secondes
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
@@ -133,7 +144,7 @@ export const useUnifiedGroups = () => {
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
     enabled: !!activeGroupId,
-    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Maintenant 30 secondes avec constantes unifiées
+    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
   });
 
   console.log('💓 [UNIFIED HOOK] Heartbeat status:', { 
@@ -143,7 +154,7 @@ export const useUnifiedGroups = () => {
     heartbeatInterval: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
   });
 
-  // Fonction de création de groupe
+  // Fonction de création de groupe avec rate limiting
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
       toast({ 
@@ -155,6 +166,19 @@ export const useUnifiedGroups = () => {
     }
 
     if (loading) {
+      return false;
+    }
+
+    // Apply rate limiting
+    if (RateLimiter.isRateLimited(`group_creation_${user.id}`, RATE_LIMITS.GROUP_CREATION)) {
+      const status = RateLimiter.getStatus(`group_creation_${user.id}`);
+      const remainingMinutes = Math.ceil(status.remainingTime / 60000);
+      
+      toast({ 
+        title: 'Trop de tentatives', 
+        description: `Veuillez attendre ${remainingMinutes} minute(s) avant de créer un nouveau groupe.`, 
+        variant: 'destructive' 
+      });
       return false;
     }
 
@@ -249,6 +273,16 @@ export const useUnifiedGroups = () => {
   // Fonction de sortie avec nettoyage LOCAL seulement
   const leaveGroup = async (groupId: string): Promise<void> => {
     if (!user || loading) {
+      return;
+    }
+
+    // Apply rate limiting
+    if (RateLimiter.isRateLimited(`group_leave_${user.id}`, RATE_LIMITS.GROUP_JOIN)) {
+      toast({ 
+        title: 'Trop de tentatives', 
+        description: 'Veuillez attendre avant de quitter/rejoindre un groupe.', 
+        variant: 'destructive' 
+      });
       return;
     }
 

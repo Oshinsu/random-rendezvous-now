@@ -1,4 +1,6 @@
 
+import { CoordinateValidator } from './coordinateValidation';
+
 // Utilitaires de validation côté client pour compléter la sécurité serveur
 
 export class SecurityValidation {
@@ -31,18 +33,25 @@ export class SecurityValidation {
     return { isValid: true };
   }
 
-  // Validation des coordonnées géographiques côté client
+  // Validation des coordonnées géographiques côté client (utilise le nouveau validateur)
   static validateCoordinates(latitude: number, longitude: number): boolean {
-    return (
-      typeof latitude === 'number' &&
-      typeof longitude === 'number' &&
-      latitude >= -90 &&
-      latitude <= 90 &&
-      longitude >= -180 &&
-      longitude <= 180 &&
-      !isNaN(latitude) &&
-      !isNaN(longitude)
-    );
+    const result = CoordinateValidator.validateCoordinates(latitude, longitude);
+    return result.isValid;
+  }
+
+  // Validation sécurisée des coordonnées avec détails
+  static validateCoordinatesSecure(latitude: any, longitude: any): { isValid: boolean; error?: string; sanitized?: { latitude: number; longitude: number } } {
+    const result = CoordinateValidator.validateCoordinates(latitude, longitude);
+    
+    if (!result.isValid) {
+      console.warn('🚨 Coordinate validation failed:', result.error);
+    }
+    
+    return {
+      isValid: result.isValid,
+      error: result.error,
+      sanitized: result.sanitized
+    };
   }
 
   // Validation des données de groupe côté client
@@ -58,8 +67,9 @@ export class SecurityValidation {
     }
 
     if (groupData.latitude !== undefined && groupData.longitude !== undefined) {
-      if (!this.validateCoordinates(groupData.latitude, groupData.longitude)) {
-        errors.push('Les coordonnées géographiques sont invalides.');
+      const coordValidation = this.validateCoordinatesSecure(groupData.latitude, groupData.longitude);
+      if (!coordValidation.isValid) {
+        errors.push(`Coordonnées invalides: ${coordValidation.error}`);
       }
     }
 

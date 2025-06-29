@@ -1,4 +1,7 @@
 
+import { CoordinateValidator } from '@/utils/coordinateValidation';
+import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
+
 export interface LocationData {
   latitude: number;
   longitude: number;
@@ -7,6 +10,11 @@ export interface LocationData {
 
 export class GeolocationService {
   static async getCurrentLocation(): Promise<LocationData> {
+    // Apply rate limiting
+    if (RateLimiter.isRateLimited('geolocation', RATE_LIMITS.GEOLOCATION)) {
+      throw new Error('Trop de demandes de géolocalisation. Veuillez attendre avant de réessayer.');
+    }
+
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('La géolocalisation n\'est pas supportée par ce navigateur'));
@@ -17,16 +25,30 @@ export class GeolocationService {
         async (position) => {
           const { latitude, longitude } = position.coords;
           
+          // Validate and sanitize coordinates
+          const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
+          if (!validation.isValid) {
+            console.error('🚨 Invalid coordinates from geolocation API:', validation.error);
+            reject(new Error('Coordonnées de géolocalisation invalides'));
+            return;
+          }
+
+          const sanitizedCoords = validation.sanitized!;
+          
           try {
             // Géocodage inversé pour obtenir le nom de la localisation
-            const locationName = await this.reverseGeocode(latitude, longitude);
-            resolve({ latitude, longitude, locationName });
+            const locationName = await this.reverseGeocode(sanitizedCoords.latitude, sanitizedCoords.longitude);
+            resolve({ 
+              latitude: sanitizedCoords.latitude, 
+              longitude: sanitizedCoords.longitude, 
+              locationName 
+            });
           } catch (error) {
             // Si le géocodage échoue, on utilise quand même les coordonnées
             resolve({ 
-              latitude, 
-              longitude, 
-              locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
+              latitude: sanitizedCoords.latitude, 
+              longitude: sanitizedCoords.longitude, 
+              locationName: `${sanitizedCoords.latitude.toFixed(4)}, ${sanitizedCoords.longitude.toFixed(4)}` 
             });
           }
         },
@@ -55,10 +77,18 @@ export class GeolocationService {
   }
 
   static async reverseGeocode(lat: number, lng: number): Promise<string> {
+    // Validate coordinates before making API call
+    const validation = CoordinateValidator.validateCoordinates(lat, lng);
+    if (!validation.isValid) {
+      throw new Error(`Invalid coordinates for geocoding: ${validation.error}`);
+    }
+
+    const sanitizedCoords = validation.sanitized!;
+    
     try {
       // Utilise l'API de géocodage inversé de Nominatim (OpenStreetMap)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${sanitizedCoords.latitude}&lon=${sanitizedCoords.longitude}&zoom=14&addressdetails=1`,
         {
           headers: {
             'User-Agent': 'Random-App/1.0'
@@ -90,13 +120,24 @@ export class GeolocationService {
     lat2: number,
     lon2: number
   ): number {
+    // Validate all coordinates
+    const validation1 = CoordinateValidator.validateCoordinates(lat1, lon1);
+    const validation2 = CoordinateValidator.validateCoordinates(lat2, lon2);
+    
+    if (!validation1.isValid || !validation2.isValid) {
+      throw new Error('Invalid coordinates for distance calculation');
+    }
+
+    const coords1 = validation1.sanitized!;
+    const coords2 = validation2.sanitized!;
+
     const R = 6371000; // Rayon de la Terre en mètres
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLon = this.toRadians(lon2 - lon1);
+    const dLat = this.toRadians(coords2.latitude - coords1.latitude);
+    const dLon = this.toRadians(coords2.longitude - coords1.longitude);
     
     const a = 
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.cos(this.toRadians(coords1.latitude)) * Math.cos(this.toRadians(coords2.latitude)) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
