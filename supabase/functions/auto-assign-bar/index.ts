@@ -51,7 +51,12 @@ interface GooglePlacesResponse {
 const EXCLUDED_TYPES = [
   'lodging', 'hotel', 'resort', 'guest_house', 'hostel',
   'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
-  'night_club', 'casino'
+  'night_club', 'casino', 'store', 'shopping_mall', 'gas_station'
+];
+
+// Mots-clés suspects dans les noms (vape shops, etc.)
+const SUSPICIOUS_KEYWORDS = [
+  'vape', 'vapor', 'smoke', 'tobacco', 'cigarette', 'hotel', 'restaurant', 'resto'
 ];
 
 // Fonction pour vérifier si un établissement est un bar authentique
@@ -67,10 +72,26 @@ function isAuthenticBar(place: PlaceResult): boolean {
   // Vérifier s'il contient des types exclus
   const hasExcludedType = place.types.some(type => EXCLUDED_TYPES.includes(type));
   
-  console.log(`🔍 [FILTER] ${place.name}: types=${place.types.join(', ')}, hasBar=${hasBarType}, hasExcluded=${hasExcludedType}`);
+  // Vérifier les mots-clés suspects dans le nom
+  const hasSuspiciousName = SUSPICIOUS_KEYWORDS.some(keyword => 
+    place.name.toLowerCase().includes(keyword.toLowerCase())
+  );
   
-  // Doit avoir 'bar' ET ne pas avoir de types exclus
-  return hasBarType && !hasExcludedType;
+  console.log(`🔍 [FILTER] ${place.name}: types=${place.types.join(', ')}, hasBar=${hasBarType}, hasExcluded=${hasExcludedType}, suspicious=${hasSuspiciousName}`);
+  
+  // Doit avoir 'bar' ET ne pas avoir de types exclus ET ne pas avoir de nom suspect
+  return hasBarType && !hasExcludedType && !hasSuspiciousName;
+}
+
+// Fonction de sélection aléatoire
+function selectRandomBar(bars: PlaceResult[]): PlaceResult {
+  // Filtrer les bars avec une note décente (≥ 3.0) si disponible
+  const decentBars = bars.filter(bar => !bar.rating || bar.rating >= 3.0);
+  const barsToChooseFrom = decentBars.length > 0 ? decentBars : bars;
+  
+  // Sélection aléatoire
+  const randomIndex = Math.floor(Math.random() * barsToChooseFrom.length);
+  return barsToChooseFrom[randomIndex];
 }
 
 // Validation stricte des coordonnées
@@ -223,7 +244,8 @@ serve(async (req) => {
         debug: {
           totalFound: data.results.length,
           authenticBarsFound: authenticBars.length,
-          excludedTypes: EXCLUDED_TYPES
+          excludedTypes: EXCLUDED_TYPES,
+          suspiciousKeywords: SUSPICIOUS_KEYWORDS
         }
       };
       return new Response(
@@ -232,12 +254,8 @@ serve(async (req) => {
       )
     }
 
-    // Sélection du meilleur bar authentique
-    const sortedBars = authenticBars
-      .filter(bar => bar.rating && bar.rating >= 3.0)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-    const selectedBar = sortedBars[0] || authenticBars[0];
+    // Sélection ALÉATOIRE du meilleur bar authentique
+    const selectedBar = selectRandomBar(authenticBars);
 
     // Réponse standardisée
     const result: StandardResponse = {
@@ -251,7 +269,10 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Bar authentique sélectionné:', result.bar?.name);
+    console.log('✅ [AUTO-ASSIGN-BAR] Bar authentique sélectionné ALÉATOIREMENT:', {
+      name: result.bar?.name,
+      totalOptions: authenticBars.length
+    });
 
     return new Response(
       JSON.stringify(result),
