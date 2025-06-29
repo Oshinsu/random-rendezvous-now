@@ -1,15 +1,18 @@
 
--- Corriger complètement la fonction de nettoyage pour résoudre le problème des groupes persistants
+-- Corriger complètement la fonction de nettoyage avec DÉLAI MINIMUM de sécurité
 CREATE OR REPLACE FUNCTION dissolve_old_groups()
 RETURNS void AS $$
 BEGIN
-  -- 1. Supprimer les participants inactifs depuis 48 heures (seuil périodique)
+  -- 1. Supprimer les participants inactifs depuis 6 heures (seuil plus conservateur)
   DELETE FROM public.group_participants 
-  WHERE last_seen < NOW() - INTERVAL '48 hours';
+  WHERE last_seen < NOW() - INTERVAL '6 hours';
   
   -- 2. Identifier et supprimer les groupes en attente qui sont maintenant vides
+  -- MAIS SEULEMENT après un délai minimum de 5 minutes
   DELETE FROM public.groups 
   WHERE status = 'waiting'
+  AND current_participants = 0
+  AND created_at < NOW() - INTERVAL '5 minutes' -- DÉLAI MINIMUM DE SÉCURITÉ
   AND id NOT IN (
     SELECT DISTINCT group_id 
     FROM public.group_participants 
@@ -38,17 +41,20 @@ BEGIN
   WHERE status = 'confirmed'
   AND current_participants < 5;
   
-  -- 5. Supprimer les groupes en attente très anciens (48h+) même s'ils ont des participants inactifs
+  -- 5. Supprimer les groupes en attente très anciens (1 heure au lieu de plus court)
+  -- SEULEMENT s'ils sont vides ET anciens
   DELETE FROM public.group_participants 
   WHERE group_id IN (
     SELECT id FROM public.groups 
     WHERE status = 'waiting'
-    AND created_at < NOW() - INTERVAL '48 hours'
+    AND current_participants = 0
+    AND created_at < NOW() - INTERVAL '1 hour'
   );
   
   DELETE FROM public.groups 
   WHERE status = 'waiting'
-  AND created_at < NOW() - INTERVAL '48 hours';
+  AND current_participants = 0
+  AND created_at < NOW() - INTERVAL '1 hour';
   
   -- 6. Supprimer les messages des groupes qui n'existent plus
   DELETE FROM public.group_messages 
@@ -77,6 +83,6 @@ BEGIN
     AND meeting_time < NOW() - INTERVAL '3 hours';
   
   -- Log pour debug
-  RAISE NOTICE 'Nettoyage complet effectué à % - Groupes persistants résolus', NOW();
+  RAISE NOTICE 'Nettoyage sécurisé effectué à % - Délai minimum respecté', NOW();
 END;
 $$ LANGUAGE plpgsql;
