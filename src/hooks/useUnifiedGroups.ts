@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -188,8 +187,8 @@ export const useUnifiedGroups = () => {
 
       // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
       console.log('🔍 Vérification des participations avec nouveau système...');
-      const allParticipations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
-      const activeParticipations = UnifiedGroupRetrievalService.filterActiveParticipations(allParticipations);
+      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
+      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
       
       if (activeParticipations.length > 0) {
         console.log('⚠️ Participation active détectée avec nouveau système');
