@@ -1,19 +1,27 @@
 
-// Centralized group management constants
+// Constantes centralisées et CORRIGÉES pour la gestion des groupes
 export const GROUP_CONSTANTS = {
-  // Inactivity thresholds (in milliseconds) - MUCH MORE LENIENT
-  PARTICIPANT_INACTIVE_THRESHOLD: 24 * 60 * 60 * 1000, // 24 hours - for client-side filtering only
-  PERIODIC_CLEANUP_THRESHOLD: 48 * 60 * 60 * 1000, // 48 hours - for actual cleanup
-  CONNECTION_THRESHOLD: 60 * 60 * 1000, // 1 hour - for "connected" status display
+  // Seuils d'inactivité HARMONISÉS (en millisecondes)
+  PARTICIPANT_INACTIVE_THRESHOLD: 3 * 60 * 60 * 1000, // 3 heures - filtrage côté client uniquement
+  PERIODIC_CLEANUP_THRESHOLD: 48 * 60 * 60 * 1000, // 48 heures - nettoyage réel DB
+  CONNECTION_THRESHOLD: 60 * 60 * 1000, // 1 heure - statut "connecté"
   
-  // Activity heartbeat settings - MORE FREQUENT
-  HEARTBEAT_INTERVAL: 20 * 1000, // 20 seconds - how often to update last_seen
+  // Battement de cœur d'activité OPTIMISÉ
+  HEARTBEAT_INTERVAL: 30 * 1000, // 30 secondes - fréquence de mise à jour last_seen
   
-  // Group settings
+  // Paramètres de groupe
   MAX_PARTICIPANTS: 5,
-  SEARCH_RADIUS: 10000, // 10km in meters
+  SEARCH_RADIUS: 10000, // 10km en mètres
   
-  // Refresh intervals - MORE FREQUENT
-  GROUP_REFETCH_INTERVAL: 30000, // 30 seconds
-  GROUP_STALE_TIME: 15000, // 15 seconds
+  // Intervalles de rafraîchissement OPTIMISÉS
+  GROUP_REFETCH_INTERVAL: 45000, // 45 secondes
+  GROUP_STALE_TIME: 30000, // 30 secondes
+  
+  // Nouveaux seuils de nettoyage UNIFIÉS
+  CLEANUP_THRESHOLDS: {
+    INACTIVE_PARTICIPANTS: 6 * 60 * 60 * 1000, // 6 heures
+    OLD_WAITING_GROUPS: 12 * 60 * 60 * 1000, // 12 heures
+    COMPLETED_GROUPS: 6 * 60 * 60 * 1000, // 6 heures après meeting_time
+    VERY_OLD_GROUPS: 48 * 60 * 60 * 1000, // 48 heures (dernière chance)
+  }
 };

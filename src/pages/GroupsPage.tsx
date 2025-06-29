@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
+import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
@@ -15,19 +16,26 @@ import LoadingState from '@/components/groups/LoadingState';
 const GroupsPage = () => {
   const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useUnifiedGroups();
 
-  // IMMEDIATE recovery trigger when accessing GroupsPage
+  // Déclenchement du système unifié au montage
   useEffect(() => {
-    console.log('🔄 [GROUPS PAGE] Déclenchement récupération immédiate');
-    // Force an immediate refetch to trigger auto-recovery
+    console.log('🔄 [GROUPS PAGE UNIFIÉ] Déclenchement récupération avec système unifié');
+    
+    // Déclenchement du nettoyage unifié si nécessaire
+    if (userGroups.length === 0) {
+      console.log('🧹 [GROUPS PAGE UNIFIÉ] Pas de groupes trouvés - nettoyage préventif');
+      UnifiedCleanupService.forceEmergencyCleanup();
+    }
+    
+    // Force un refetch immédiat pour la récupération
     refetchGroups();
-  }, []); // Only on mount
+  }, []);
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
   );
 
   const handleRefresh = () => {
-    console.log('🔄 Refresh manuel des groupes (page Groups)');
+    console.log('🔄 Refresh manuel avec système unifié (page Groups)');
     refetchGroups();
   };
 

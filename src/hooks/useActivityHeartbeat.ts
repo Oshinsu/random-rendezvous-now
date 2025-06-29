@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
+import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
 import { useAuth } from '@/contexts/AuthContext';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
@@ -13,22 +13,22 @@ interface ActivityHeartbeatOptions {
 export const useActivityHeartbeat = ({ 
   groupId, 
   enabled, 
-  intervalMs = GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Now 20 seconds by default
+  intervalMs = GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Maintenant 30 secondes avec constantes unifiées
 }: ActivityHeartbeatOptions) => {
   const { user } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(true);
 
-  // Track page visibility with enhanced logging
+  // Suivi de la visibilité de la page avec logging amélioré
   useEffect(() => {
     const handleVisibilityChange = () => {
       isActiveRef.current = !document.hidden;
-      console.log('👁️ [HEARTBEAT] Visibilité page:', isActiveRef.current ? 'visible' : 'cachée');
+      console.log('👁️ [HEARTBEAT UNIFIÉ] Visibilité page:', isActiveRef.current ? 'visible' : 'cachée');
       
-      // Immediate update when page becomes visible
+      // Mise à jour immédiate quand la page devient visible
       if (isActiveRef.current && groupId && user) {
-        console.log('👁️ [HEARTBEAT] Page visible - mise à jour immédiate');
-        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        console.log('👁️ [HEARTBEAT UNIFIÉ] Page visible - mise à jour immédiate');
+        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
       }
     };
 
@@ -36,10 +36,10 @@ export const useActivityHeartbeat = ({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [groupId, user]);
 
-  // Enhanced activity heartbeat
+  // Battement de cœur d'activité UNIFIÉ et OPTIMISÉ
   useEffect(() => {
     if (!enabled || !groupId || !user) {
-      console.log('💓 [HEARTBEAT] Désactivé:', { enabled, groupId: !!groupId, user: !!user });
+      console.log('💓 [HEARTBEAT UNIFIÉ] Désactivé:', { enabled, groupId: !!groupId, user: !!user });
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -47,24 +47,24 @@ export const useActivityHeartbeat = ({
       return;
     }
 
-    console.log('💓 [HEARTBEAT] Activation RENFORCÉE pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
+    console.log('💓 [HEARTBEAT UNIFIÉ] Activation pour groupe:', groupId, 'intervalle unifié:', intervalMs + 'ms');
 
-    // Immediate initial update
-    UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
+    // Mise à jour initiale immédiate
+    EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
 
-    // Set up more frequent interval
+    // Configuration de l'intervalle unifié
     intervalRef.current = setInterval(() => {
       if (isActiveRef.current) {
-        console.log('💓 [HEARTBEAT] Pulse RENFORCÉ - mise à jour activité');
-        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        console.log('💓 [HEARTBEAT UNIFIÉ] Pulse - mise à jour activité');
+        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
       } else {
-        console.log('💓 [HEARTBEAT] Pulse ignoré - page non visible');
+        console.log('💓 [HEARTBEAT UNIFIÉ] Pulse ignoré - page non visible');
       }
     }, intervalMs);
 
     return () => {
       if (intervalRef.current) {
-        console.log('💓 [HEARTBEAT] Nettoyage');
+        console.log('💓 [HEARTBEAT UNIFIÉ] Nettoyage');
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
@@ -75,7 +75,7 @@ export const useActivityHeartbeat = ({
     isActive: isActiveRef.current,
     updateActivity: () => {
       if (groupId && user) {
-        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
       }
     }
   };

@@ -1,10 +1,12 @@
+
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
-import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
+import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
+import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
@@ -24,7 +26,7 @@ export const useUnifiedGroups = () => {
   const locationPromise = useRef<Promise<LocationData> | null>(null);
   const lastLocationTime = useRef<number>(0);
 
-  // Cache de localisation avec expiration de 10 minutes
+  // Cache de localisation avec expiration UNIFIÉE
   const getUserLocation = async (forceRefresh = false): Promise<LocationData | null> => {
     const now = Date.now();
     const locationCacheTime = 10 * 60 * 1000; // 10 minutes
@@ -39,7 +41,7 @@ export const useUnifiedGroups = () => {
     }
 
     isGettingLocation.current = true;
-    console.log('📍 Demande de géolocalisation FRAÎCHE');
+    console.log('📍 Demande de géolocalisation avec paramètres unifiés');
 
     locationPromise.current = GeolocationService.getCurrentLocation()
       .then((location) => {
@@ -68,45 +70,45 @@ export const useUnifiedGroups = () => {
     return locationPromise.current;
   };
 
-  // ENHANCED unified group fetching with auto-recovery
+  // Récupération UNIFIÉE des groupes avec système amélioré
   const fetchUserGroups = async (): Promise<Group[]> => {
     if (!user) {
       return [];
     }
 
     try {
-      console.log('📋 [UNIFIED] Recherche des groupes avec système RENFORCÉ');
+      console.log('📋 [UNIFIED HOOK] Recherche des groupes avec système UNIFIÉ et AMÉLIORÉ');
       
-      // 1. Retrieve ALL participations with minimal filtering
-      const allParticipations = await UnifiedGroupRetrievalService.getUserParticipations(user.id);
-      console.log('📋 [UNIFIED] Participations récupérées (total):', allParticipations.length);
+      // 1. Récupération avec service amélioré
+      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
+      console.log('📋 [UNIFIED HOOK] Participations récupérées (total):', allParticipations.length);
       
-      // 2. AUTO-RECOVERY: Update last_seen for all participations
+      // 2. Auto-récupération améliorée
       if (allParticipations.length > 0) {
-        console.log('🔄 [UNIFIED] Déclenchement auto-récupération');
-        await UnifiedGroupRetrievalService.recoverUserActivity(user.id, allParticipations);
+        console.log('🔄 [UNIFIED HOOK] Déclenchement auto-récupération améliorée');
+        await EnhancedGroupRetrievalService.recoverUserActivity(user.id, allParticipations);
       }
       
-      // 3. Apply VERY lenient client-side filtering (24h instead of 3h)
-      const activeParticipations = UnifiedGroupRetrievalService.filterActiveParticipations(allParticipations);
-      console.log('📋 [UNIFIED] Participations actives après filtrage LENIENT:', activeParticipations.length);
+      // 3. Filtrage unifié côté client
+      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
+      console.log('📋 [UNIFIED HOOK] Participations actives après filtrage unifié:', activeParticipations.length);
       
-      // 4. Extract valid groups
-      const validGroups = UnifiedGroupRetrievalService.extractValidGroups(activeParticipations);
+      // 4. Extraction des groupes valides
+      const validGroups = EnhancedGroupRetrievalService.extractValidGroups(activeParticipations);
 
-      // 5. Update user activity and get members for first group
+      // 5. Mise à jour des membres avec service amélioré
       if (validGroups.length > 0) {
-        await UnifiedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
-        const members = await UnifiedGroupRetrievalService.getGroupMembers(validGroups[0].id);
+        await EnhancedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
+        const members = await EnhancedGroupRetrievalService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
       } else {
         setGroupMembers([]);
       }
 
-      console.log('✅ [UNIFIED] Groupes valides avec système RENFORCÉ:', validGroups.length);
+      console.log('✅ [UNIFIED HOOK] Groupes valides avec système UNIFIÉ:', validGroups.length);
       return validGroups;
     } catch (error) {
-      ErrorHandler.logError('FETCH_USER_GROUPS', error);
+      ErrorHandler.logError('UNIFIED_FETCH_USER_GROUPS', error);
       const appError = ErrorHandler.handleGenericError(error as Error);
       ErrorHandler.showErrorToast(appError);
       return [];
@@ -121,21 +123,21 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Now 30 seconds
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Now 15 seconds
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Maintenant 45 secondes
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Maintenant 30 secondes
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 
-  // ENHANCED activity heartbeat - activate when user has an active group
+  // Battement de cœur d'activité UNIFIÉ
   const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
     enabled: !!activeGroupId,
-    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Now 20 seconds
+    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Maintenant 30 secondes avec constantes unifiées
   });
 
-  console.log('💓 [UNIFIED] Heartbeat RENFORCÉ status:', { 
+  console.log('💓 [UNIFIED HOOK] Heartbeat status:', { 
     activeGroupId, 
     isHeartbeatActive, 
     hasGroups: userGroups.length > 0,
