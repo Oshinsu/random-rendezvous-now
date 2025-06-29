@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { GooglePlacesService } from './googlePlaces';
 
 // Interface standardisée pour les réponses
 interface BarAssignmentResponse {

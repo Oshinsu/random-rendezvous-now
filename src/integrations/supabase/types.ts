@@ -311,6 +311,10 @@ export type Database = {
         Args: { lat: number; lng: number }
         Returns: boolean
       }
+      validate_coordinates_strict: {
+        Args: { lat: number; lng: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
