@@ -21,31 +21,25 @@ interface BarAssignmentResponse {
 
 export class AutomaticBarAssignmentService {
   /**
-   * SYSTÈME D'ATTRIBUTION AUTOMATIQUE UNIFIÉ ET CORRIGÉ
-   * Attribution avec gestion d'erreur robuste et validation stricte
+   * Attribution automatique de bar avec gestion d'erreur robuste
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [BAR ASSIGNMENT] Démarrage attribution UNIFIÉE pour groupe:', groupId);
+      console.log('🤖 [BAR ASSIGNMENT] Démarrage attribution pour groupe:', groupId);
 
-      // 1. Vérification d'éligibilité STRICTE avec verrouillage
+      // 1. Vérification d'éligibilité avec les nouvelles politiques RLS
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('id, latitude, longitude, current_participants, status, bar_name, bar_place_id')
         .eq('id', groupId)
         .single();
 
-      if (groupError) {
+      if (groupError || !group) {
         console.error('❌ [BAR ASSIGNMENT] Erreur récupération groupe:', groupError);
         return false;
       }
 
-      if (!group) {
-        console.error('❌ [BAR ASSIGNMENT] Groupe introuvable:', groupId);
-        return false;
-      }
-
-      // 2. Vérifications d'éligibilité STRICTES
+      // 2. Vérifications d'éligibilité
       const isEligible = (
         group.current_participants === 5 &&
         group.status === 'confirmed' &&
@@ -58,31 +52,22 @@ export class AutomaticBarAssignmentService {
           id: groupId,
           participants: group.current_participants,
           status: group.status,
-          hasBar: !!group.bar_name,
-          hasPlaceId: !!group.bar_place_id
+          hasBar: !!group.bar_name
         });
         return false;
       }
 
-      // 3. Coordonnées avec validation stricte et fallback sécurisé
+      // 3. Validation des coordonnées avec fallback
       const searchLatitude = group.latitude || 48.8566;
       const searchLongitude = group.longitude || 2.3522;
 
-      // Validation des coordonnées
       if (!this.validateCoordinates(searchLatitude, searchLongitude)) {
-        console.error('❌ [BAR ASSIGNMENT] Coordonnées invalides:', { 
-          lat: searchLatitude, 
-          lng: searchLongitude 
-        });
+        console.error('❌ [BAR ASSIGNMENT] Coordonnées invalides');
+        await this.sendSystemMessage(groupId, '⚠️ Position invalide pour la recherche automatique.');
         return false;
       }
 
-      console.log('🔍 [BAR ASSIGNMENT] Recherche avec coordonnées validées:', { 
-        lat: searchLatitude, 
-        lng: searchLongitude 
-      });
-
-      // 4. Appel de l'Edge Function avec gestion d'erreur robuste
+      // 4. Appel de l'Edge Function
       const { data: barResponse, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
         body: {
           group_id: groupId,
@@ -93,26 +78,18 @@ export class AutomaticBarAssignmentService {
 
       if (barError) {
         console.error('❌ [BAR ASSIGNMENT] Erreur Edge Function:', barError);
-        await this.sendSystemMessage(
-          groupId,
-          '⚠️ Erreur lors de la recherche automatique. Veuillez choisir manuellement.'
-        );
+        await this.sendSystemMessage(groupId, '⚠️ Erreur lors de la recherche automatique.');
         return false;
       }
 
-      // 5. Traitement de la réponse standardisée
       const response = barResponse as BarAssignmentResponse;
       
       if (!response?.success || !response?.bar) {
-        console.log('⚠️ [BAR ASSIGNMENT] Aucun bar trouvé:', response?.error);
-        await this.sendSystemMessage(
-          groupId,
-          '⚠️ Aucun bar disponible trouvé automatiquement. Vous pouvez choisir un lieu manuellement.'
-        );
+        await this.sendSystemMessage(groupId, '⚠️ Aucun bar disponible trouvé automatiquement.');
         return false;
       }
 
-      // 6. Mise à jour atomique du groupe avec conditions strictes
+      // 5. Mise à jour atomique du groupe
       const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
 
       const { error: updateError } = await supabase
@@ -131,34 +108,23 @@ export class AutomaticBarAssignmentService {
         .is('bar_name', null);
 
       if (updateError) {
-        console.error('❌ [BAR ASSIGNMENT] Erreur mise à jour atomique:', updateError);
-        await this.sendSystemMessage(
-          groupId,
-          '⚠️ Erreur lors de l\'attribution. Veuillez réessayer.'
-        );
+        console.error('❌ [BAR ASSIGNMENT] Erreur mise à jour:', updateError);
+        await this.sendSystemMessage(groupId, '⚠️ Erreur lors de l\'attribution.');
         return false;
       }
 
-      // 7. Message de confirmation avec formatage uniforme
+      // 6. Message de confirmation
       await this.sendSystemMessage(
         groupId,
         `🍺 Votre groupe est complet ! Rendez-vous au ${response.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
       );
 
-      console.log('✅ [BAR ASSIGNMENT] Attribution réussie:', {
-        group: groupId,
-        bar: response.bar.name,
-        address: response.bar.formatted_address,
-        meetingTime: meetingTime.toLocaleString('fr-FR')
-      });
-
+      console.log('✅ [BAR ASSIGNMENT] Attribution réussie:', response.bar.name);
       return true;
+
     } catch (error) {
       console.error('❌ [BAR ASSIGNMENT] Erreur globale:', error);
-      await this.sendSystemMessage(
-        groupId,
-        '⚠️ Erreur technique lors de l\'attribution automatique.'
-      );
+      await this.sendSystemMessage(groupId, '⚠️ Erreur technique lors de l\'attribution automatique.');
       return false;
     }
   }
@@ -176,7 +142,7 @@ export class AutomaticBarAssignmentService {
   }
 
   /**
-   * Envoi de message système avec gestion d'erreur
+   * Envoi de message système optimisé pour les nouvelles politiques RLS
    */
   private static async sendSystemMessage(groupId: string, message: string): Promise<void> {
     try {
@@ -194,7 +160,7 @@ export class AutomaticBarAssignmentService {
   }
 
   /**
-   * Nettoyage des messages de déclenchement (utilisé par les hooks)
+   * Nettoyage des messages de déclenchement
    */
   static async cleanupTriggerMessages(groupId: string): Promise<void> {
     try {
