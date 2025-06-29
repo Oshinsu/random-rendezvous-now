@@ -16,39 +16,66 @@ serve(async (req) => {
   try {
     const { table, record, old_record } = await req.json()
     
-    console.log('🔄 Trigger webhook reçu:', { table, record: record ? { id: record.id, message: record.message } : null });
+    console.log('🔄 [TRIGGER] Webhook reçu:', { 
+      table, 
+      recordId: record?.id, 
+      message: record?.message?.substring(0, 50) 
+    });
 
-    // Gérer les messages système pour l'attribution automatique de bar
-    if (table === 'group_messages' && record?.is_system && record?.message === 'AUTO_BAR_ASSIGNMENT_TRIGGER') {
+    // Gérer les messages de déclenchement d'attribution automatique
+    if (table === 'group_messages' && 
+        record?.is_system && 
+        record?.message === 'AUTO_BAR_ASSIGNMENT_TRIGGER') {
+      
       const groupId = record.group_id;
-      console.log('🤖 Déclenchement automatique d\'attribution de bar pour le groupe:', groupId);
+      console.log('🤖 [TRIGGER] Déclenchement attribution automatique pour groupe:', groupId);
 
       try {
-        // Récupérer les informations du groupe
+        // 1. Vérifier immédiatement l'éligibilité du groupe
         const { data: group, error: groupError } = await supabase
           .from('groups')
-          .select('latitude, longitude, current_participants, status, bar_name')
+          .select('id, latitude, longitude, current_participants, status, bar_name, bar_place_id')
           .eq('id', groupId)
           .single();
 
         if (groupError) {
-          console.error('❌ Erreur récupération groupe:', groupError);
+          console.error('❌ [TRIGGER] Erreur récupération groupe:', groupError);
           return new Response('OK', { status: 200 })
         }
 
-        // Vérifier que le groupe est éligible
-        if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-          console.log('ℹ️ Groupe non éligible pour attribution automatique:', {
+        if (!group) {
+          console.error('❌ [TRIGGER] Groupe introuvable:', groupId);
+          return new Response('OK', { status: 200 })
+        }
+
+        // 2. Vérifications d'éligibilité
+        const isEligible = (
+          group.current_participants === 5 &&
+          group.status === 'confirmed' &&
+          !group.bar_name &&
+          !group.bar_place_id
+        );
+
+        if (!isEligible) {
+          console.log('ℹ️ [TRIGGER] Groupe non éligible:', {
             participants: group.current_participants,
             status: group.status,
-            hasBar: !!group.bar_name
+            hasBar: !!group.bar_name,
+            hasPlaceId: !!group.bar_place_id
           });
+          
+          // Nettoyer le message de déclenchement
+          await supabase
+            .from('group_messages')
+            .delete()
+            .eq('id', record.id);
+            
           return new Response('OK', { status: 200 })
         }
 
-        console.log('🎯 Appel de l\'Edge Function auto-assign-bar...');
+        console.log('🎯 [TRIGGER] Appel Edge Function auto-assign-bar...');
 
-        // Appeler l'Edge Function auto-assign-bar
+        // 3. Appeler l'Edge Function auto-assign-bar
         const { data: barData, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
           body: {
             group_id: groupId,
@@ -58,56 +85,68 @@ serve(async (req) => {
         });
 
         if (barError) {
-          console.error('❌ Erreur appel auto-assign-bar:', barError);
+          console.error('❌ [TRIGGER] Erreur appel auto-assign-bar:', barError);
           return new Response('OK', { status: 200 })
         }
 
-        if (barData && barData.name) {
-          console.log('✅ Réponse de auto-assign-bar:', barData.name);
+        if (barData && barData.success && barData.bar) {
+          console.log('✅ [TRIGGER] Bar assigné:', barData.bar.name);
           
-          // Mettre à jour le groupe avec les informations du bar
+          // 4. Mettre à jour le groupe avec les informations du bar
+          const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
+          
           const { error: updateError } = await supabase
             .from('groups')
             .update({
-              bar_name: barData.name,
-              bar_address: barData.formatted_address,
-              meeting_time: barData.meeting_time,
-              bar_latitude: barData.geometry.location.lat,
-              bar_longitude: barData.geometry.location.lng,
-              bar_place_id: barData.place_id
+              bar_name: barData.bar.name,
+              bar_address: barData.bar.formatted_address,
+              meeting_time: meetingTime.toISOString(),
+              bar_latitude: barData.bar.geometry.location.lat,
+              bar_longitude: barData.bar.geometry.location.lng,
+              bar_place_id: barData.bar.place_id
             })
-            .eq('id', groupId);
+            .eq('id', groupId)
+            .eq('status', 'confirmed')
+            .is('bar_name', null);
 
           if (updateError) {
-            console.error('❌ Erreur mise à jour groupe:', updateError);
-            return new Response('OK', { status: 200 })
+            console.error('❌ [TRIGGER] Erreur mise à jour groupe:', updateError);
+          } else {
+            console.log('✅ [TRIGGER] Groupe mis à jour avec succès');
+            
+            // 5. Envoyer message de confirmation
+            await supabase
+              .from('group_messages')
+              .insert({
+                group_id: groupId,
+                user_id: '00000000-0000-0000-0000-000000000000',
+                message: `🍺 Votre groupe est complet ! Rendez-vous au ${barData.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+                is_system: true
+              });
           }
-
-          console.log('✅ Groupe mis à jour avec les informations du bar');
+        } else {
+          console.log('⚠️ [TRIGGER] Aucun bar trouvé par auto-assign-bar');
           
-          // Supprimer le message de déclenchement
-          await supabase
-            .from('group_messages')
-            .delete()
-            .eq('group_id', groupId)
-            .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER');
-
-          // Envoyer un message système informatif
+          // Envoyer message d'échec
           await supabase
             .from('group_messages')
             .insert({
               group_id: groupId,
               user_id: '00000000-0000-0000-0000-000000000000',
-              message: `🍺 Votre groupe est complet ! Rendez-vous au ${barData.name} à ${new Date(barData.meeting_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+              message: '⚠️ Aucun bar disponible trouvé automatiquement. Vous pouvez choisir un lieu manuellement.',
               is_system: true
             });
-
-          console.log('✅ Attribution automatique terminée avec succès');
-        } else {
-          console.log('⚠️ Aucune donnée de bar reçue de auto-assign-bar');
         }
+
+        // 6. Nettoyer le message de déclenchement
+        await supabase
+          .from('group_messages')
+          .delete()
+          .eq('id', record.id);
+
+        console.log('✅ [TRIGGER] Attribution automatique terminée');
       } catch (error) {
-        console.error('❌ Erreur attribution automatique:', error);
+        console.error('❌ [TRIGGER] Erreur attribution automatique:', error);
       }
 
       return new Response('OK', { status: 200 })
@@ -115,7 +154,7 @@ serve(async (req) => {
 
     return new Response('OK', { status: 200 })
   } catch (error) {
-    console.error('❌ Erreur trigger:', error);
+    console.error('❌ [TRIGGER] Erreur globale:', error);
     return new Response('Error', { status: 500 })
   }
 })
