@@ -299,7 +299,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_group_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
       is_group_member: {
+        Args: { group_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_user_in_group: {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
