@@ -6,88 +6,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface PlaceResult {
-  place_id: string;
+interface NewPlaceResult {
+  id: string;
   name: string;
-  formatted_address?: string;
-  vicinity?: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
+  formattedAddress?: string;
+  location: {
+    latitude: number;
+    longitude: number;
   };
   rating?: number;
-  price_level?: number;
+  priceLevel?: string;
+  primaryType?: string;
   types?: string[];
+  businessStatus?: string;
+  currentOpeningHours?: {
+    openNow?: boolean;
+  };
 }
 
-interface GooglePlacesResponse {
-  results: PlaceResult[];
-  status: string;
+interface NewGooglePlacesResponse {
+  places: NewPlaceResult[];
 }
 
-// ENHANCED: Types d'établissements à EXCLURE (pas des bars authentiques)
-const EXCLUDED_TYPES = [
-  'lodging', 'hotel', 'resort', 'guest_house', 'hostel',
-  'restaurant', 'food', 'meal_takeaway', 'meal_delivery',
-  'night_club', 'casino', 
-  'store', 'shopping_mall', 'convenience_store', 'supermarket', 'department_store',
-  'gas_station', 'car_dealer', 'car_rental', 'car_repair',
-  'pharmacy', 'hospital', 'dentist', 'doctor',
-  'bank', 'atm', 'finance',
-  'gym', 'spa', 'beauty_salon', 'hair_care',
-  'school', 'university', 'library'
-];
-
-// ENHANCED: Mots-clés suspects dans les noms
-const SUSPICIOUS_KEYWORDS = [
-  'vape', 'vapor', 'smoke', 'smoking', 'tobacco', 'cigarette', 'cigar',
-  'hotel', 'restaurant', 'resto', 'café', 'coffee',
-  'shop', 'store', 'market', 'pharmacy', 'hospital',
-  'gas', 'station', 'fuel', 'petrol'
-];
-
-// Fonction STRICTE pour vérifier si un établissement est un bar authentique
-function isAuthenticBar(place: PlaceResult): boolean {
-  if (!place.types || place.types.length === 0) {
-    console.log(`⚠️ [FILTER] ${place.name}: Aucun type défini`);
-    return false;
-  }
-
-  // ÉTAPE 1: DOIT avoir 'bar' dans ses types
-  const hasBarType = place.types.includes('bar');
-  if (!hasBarType) {
-    console.log(`❌ [FILTER] ${place.name}: N'a pas le type 'bar'`);
-    return false;
-  }
-
-  // ÉTAPE 2: NE DOIT PAS avoir de types exclus
-  const hasExcludedType = place.types.some(type => EXCLUDED_TYPES.includes(type));
-  if (hasExcludedType) {
-    const excludedFound = place.types.filter(type => EXCLUDED_TYPES.includes(type));
-    console.log(`❌ [FILTER] ${place.name}: Contient des types exclus: ${excludedFound.join(', ')}`);
-    return false;
-  }
-
-  // ÉTAPE 3: NE DOIT PAS avoir de mots-clés suspects dans le nom
-  const hasSuspiciousName = SUSPICIOUS_KEYWORDS.some(keyword => 
-    place.name.toLowerCase().includes(keyword.toLowerCase())
-  );
-  if (hasSuspiciousName) {
-    const suspiciousFound = SUSPICIOUS_KEYWORDS.filter(keyword => 
-      place.name.toLowerCase().includes(keyword.toLowerCase())
-    );
-    console.log(`❌ [FILTER] ${place.name}: Nom suspect (${suspiciousFound.join(', ')})`);
+// Fonction de filtrage SIMPLIFIÉE pour New API - plus strict avec business status
+function isAuthenticOpenBar(place: NewPlaceResult): boolean {
+  console.log(`🔍 [NEW API FILTER] Vérification: ${place.name}`);
+  
+  // ÉTAPE 1: Vérifier business status - DOIT être opérationnel
+  if (place.businessStatus && place.businessStatus !== 'OPERATIONAL') {
+    console.log(`❌ [NEW API FILTER] ${place.name}: Business status non opérationnel (${place.businessStatus})`);
     return false;
   }
   
-  console.log(`✅ [FILTER] ${place.name}: Bar authentique validé (types: ${place.types.join(', ')})`);
+  // ÉTAPE 2: Vérifier si ouvert maintenant si l'info est disponible
+  if (place.currentOpeningHours && place.currentOpeningHours.openNow === false) {
+    console.log(`❌ [NEW API FILTER] ${place.name}: Fermé actuellement`);
+    return false;
+  }
+  
+  // ÉTAPE 3: Vérifier le type primaire (devrait être 'bar' avec new API)
+  if (place.primaryType && place.primaryType !== 'bar') {
+    console.log(`❌ [NEW API FILTER] ${place.name}: Type primaire non-bar (${place.primaryType})`);
+    return false;
+  }
+  
+  // ÉTAPE 4: Filtrage par nom suspect (réduit car New API est plus précis)
+  const suspiciousKeywords = ['event', 'société', 'company', 'traiteur', 'catering'];
+  const hasSuspiciousName = suspiciousKeywords.some(keyword => 
+    place.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  if (hasSuspiciousName) {
+    const suspiciousFound = suspiciousKeywords.filter(keyword => 
+      place.name.toLowerCase().includes(keyword.toLowerCase())
+    );
+    console.log(`❌ [NEW API FILTER] ${place.name}: Nom suspect pour événementiel (${suspiciousFound.join(', ')})`);
+    return false;
+  }
+  
+  console.log(`✅ [NEW API FILTER] ${place.name}: Bar authentique et ouvert validé`);
+  console.log(`   - Business Status: ${place.businessStatus || 'N/A'}`);
+  console.log(`   - Primary Type: ${place.primaryType || 'N/A'}`);
+  console.log(`   - Open Now: ${place.currentOpeningHours?.openNow ?? 'N/A'}`);
+  
   return true;
 }
 
-// Fonction de sélection ALÉATOIRE améliorée
-function selectRandomBar(bars: PlaceResult[]): PlaceResult {
+// Fonction de sélection ALÉATOIRE améliorée pour New API
+function selectRandomBarNewAPI(bars: NewPlaceResult[]): NewPlaceResult {
   if (bars.length === 0) {
     throw new Error('Aucun bar disponible pour la sélection');
   }
@@ -96,13 +81,13 @@ function selectRandomBar(bars: PlaceResult[]): PlaceResult {
   const decentBars = bars.filter(bar => !bar.rating || bar.rating >= 3.0);
   const barsToChooseFrom = decentBars.length > 0 ? decentBars : bars;
   
-  console.log(`🎲 [SELECTION] Sélection parmi ${barsToChooseFrom.length} bars (${decentBars.length} avec bonne note)`);
+  console.log(`🎲 [NEW API SELECTION] Sélection parmi ${barsToChooseFrom.length} bars (${decentBars.length} avec bonne note)`);
   
   // Sélection aléatoire
   const randomIndex = Math.floor(Math.random() * barsToChooseFrom.length);
   const selectedBar = barsToChooseFrom[randomIndex];
   
-  console.log(`🎯 [SELECTION] Bar sélectionné: ${selectedBar.name} (index ${randomIndex}/${barsToChooseFrom.length - 1})`);
+  console.log(`🎯 [NEW API SELECTION] Bar sélectionné: ${selectedBar.name} (index ${randomIndex}/${barsToChooseFrom.length - 1})`);
   
   return selectedBar;
 }
@@ -141,21 +126,46 @@ serve(async (req) => {
       )
     }
 
-    // Recherche Google Places avec type=bar UNIQUEMENT
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=bar&key=${apiKey}`;
+// Recherche Google Places API (New) v1 avec filtrage strict
+    const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     
-    console.log('🌐 Recherche Google Places (type=bar UNIQUEMENT)');
+    console.log('🌐 Recherche Google Places API (New) v1 avec filtrage strict pour bars authentiques');
 
-    const response = await fetch(searchUrl);
-    const data: GooglePlacesResponse = await response.json();
+    const requestBody = {
+      includedPrimaryTypes: ["bar"],
+      locationRestriction: {
+        circle: {
+          center: {
+            latitude: latitude,
+            longitude: longitude
+          },
+          radius: radius
+        }
+      },
+      rankPreference: "DISTANCE",
+      maxResultCount: 20,
+      languageCode: "fr"
+    };
 
-    console.log('📊 Réponse Google Places:', { 
-      status: data.status, 
-      resultCount: data.results?.length 
+    const response = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.name,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours'
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      console.log('❌ Aucun établissement trouvé par Google Places');
+    const data = await response.json();
+
+    console.log('📊 Réponse Google Places API (New):', { 
+      placeCount: data.places?.length,
+      hasPlaces: !!data.places
+    });
+
+    if (!data.places || data.places.length === 0) {
+      console.log('❌ Aucun établissement trouvé par Google Places API (New)');
       return new Response(
         JSON.stringify({ 
           error: 'Aucun établissement trouvé dans cette zone',
@@ -163,7 +173,7 @@ serve(async (req) => {
             latitude,
             longitude,
             radius,
-            apiStatus: data.status
+            newApiUsed: true
           }
         }),
         { 
@@ -173,30 +183,28 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE STRICT RENFORCÉ : ne garder que les bars 100% authentiques
-    console.log('🔍 [FILTRAGE] Application du filtre STRICT RENFORCÉ pour bars authentiques...');
-    console.log(`📋 [FILTRAGE] ${EXCLUDED_TYPES.length} types exclus, ${SUSPICIOUS_KEYWORDS.length} mots-clés suspects`);
+    // FILTRAGE SIMPLIFIÉ avec New API : plus strict sur business status et ouverture
+    console.log('🔍 [NEW API FILTRAGE] Application du filtrage optimisé pour New API...');
     
-    const authenticBars = data.results.filter(isAuthenticBar);
+    const authenticOpenBars = data.places.filter(isAuthenticOpenBar);
     
-    console.log(`📋 [FILTRAGE] Résultats après filtrage strict: ${authenticBars.length}/${data.results.length} bars authentiques`);
+    console.log(`📋 [NEW API FILTRAGE] Résultats après filtrage: ${authenticOpenBars.length}/${data.places.length} bars authentiques ouverts`);
 
-    if (authenticBars.length === 0) {
-      console.log('❌ Aucun bar authentique trouvé après filtrage strict');
+    if (authenticOpenBars.length === 0) {
+      console.log('❌ Aucun bar authentique ouvert trouvé après filtrage New API');
       return new Response(
         JSON.stringify({ 
-          error: 'Aucun bar authentique trouvé dans cette zone',
+          error: 'Aucun bar authentique ouvert trouvé dans cette zone',
           debug: {
-            totalFound: data.results.length,
-            authenticBarsFound: authenticBars.length,
-            excludedTypes: EXCLUDED_TYPES,
-            suspiciousKeywords: SUSPICIOUS_KEYWORDS,
-            rejectedBars: data.results.map(bar => ({
+            totalFound: data.places.length,
+            authenticBarsFound: authenticOpenBars.length,
+            newApiUsed: true,
+            rejectedBars: data.places.map(bar => ({
               name: bar.name,
-              types: bar.types,
-              hasBar: bar.types?.includes('bar'),
-              hasExcluded: bar.types?.some(type => EXCLUDED_TYPES.includes(type)),
-              hasSuspicious: SUSPICIOUS_KEYWORDS.some(keyword => 
+              primaryType: bar.primaryType,
+              businessStatus: bar.businessStatus,
+              openNow: bar.currentOpeningHours?.openNow,
+              suspiciousName: ['event', 'société', 'company', 'traiteur', 'catering'].some(keyword => 
                 bar.name.toLowerCase().includes(keyword.toLowerCase())
               )
             }))
@@ -209,29 +217,38 @@ serve(async (req) => {
       )
     }
 
-    // Sélection ALÉATOIRE du bar authentique
-    const selectedBar = selectRandomBar(authenticBars);
+    // Sélection ALÉATOIRE du bar authentique ouvert
+    const selectedBar = selectRandomBarNewAPI(authenticOpenBars);
     
-    // Gestion de l'adresse
-    const barAddress = selectedBar.formatted_address || selectedBar.vicinity || `Coordonnées: ${selectedBar.geometry.location.lat.toFixed(4)}, ${selectedBar.geometry.location.lng.toFixed(4)}`;
+    // Gestion de l'adresse pour New API
+    const barAddress = selectedBar.formattedAddress || `Coordonnées: ${selectedBar.location.latitude.toFixed(4)}, ${selectedBar.location.longitude.toFixed(4)}`;
     
     const result = {
-      place_id: selectedBar.place_id,
+      place_id: selectedBar.id,
       name: selectedBar.name,
       formatted_address: barAddress,
-      geometry: selectedBar.geometry,
+      geometry: {
+        location: {
+          lat: selectedBar.location.latitude,
+          lng: selectedBar.location.longitude
+        }
+      },
       rating: selectedBar.rating,
-      price_level: selectedBar.price_level,
-      types: selectedBar.types || []
+      price_level: selectedBar.priceLevel,
+      types: selectedBar.types || [],
+      businessStatus: selectedBar.businessStatus,
+      openNow: selectedBar.currentOpeningHours?.openNow
     };
     
-    console.log('🍺 Bar authentique sélectionné ALÉATOIREMENT:', {
+    console.log('🍺 Bar authentique sélectionné avec New API:', {
       name: result.name,
       address: result.formatted_address,
       rating: result.rating,
-      types: result.types,
+      businessStatus: result.businessStatus,
+      openNow: result.openNow,
+      primaryType: selectedBar.primaryType,
       location: result.geometry.location,
-      totalOptions: authenticBars.length
+      totalOptions: authenticOpenBars.length
     });
 
     return new Response(
