@@ -48,55 +48,14 @@ interface NewGooglePlacesResponse {
   places: NewPlaceResult[];
 }
 
-// Fonction de filtrage SIMPLIFIÉE pour Martinique - plus permissive  
-function isAuthenticOpenBar(place: NewPlaceResult): boolean {
-  console.log(`🔍 [AUTO-ASSIGN MARTINIQUE FILTER] Vérification: ${place.name}`);
-  
-  // ÉTAPE 1: Business status - exclure FERMÉ DÉFINITIVEMENT uniquement
-  if (place.businessStatus && place.businessStatus === 'CLOSED_PERMANENTLY') {
-    console.log(`❌ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Fermé définitivement`);
-    return false;
-  }
-  
-  // ÉTAPE 2: Filtrage minimal par nom suspect (sociétés non-bars)
-  const suspiciousKeywords = ['société', 'company', 'ltd', 'sarl', 'event', 'traiteur', 'catering'];
-  const hasSuspiciousName = suspiciousKeywords.some(keyword => 
-    place.name.toLowerCase().includes(keyword.toLowerCase())
-  );
-  if (hasSuspiciousName) {
-    const suspiciousFound = suspiciousKeywords.filter(keyword => 
-      place.name.toLowerCase().includes(keyword.toLowerCase())
-    );
-    console.log(`❌ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Nom suspect (${suspiciousFound.join(', ')})`);
-    return false;
-  }
-  
-  console.log(`✅ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Établissement validé`);
-  console.log(`   - Business Status: ${place.businessStatus || 'N/A'}`);
-  console.log(`   - Primary Type: ${place.primaryType || 'N/A'}`);
-  console.log(`   - Open Now: ${place.currentOpeningHours?.openNow ?? 'N/A'}`);
-  console.log(`   - Types: ${place.types?.join(', ') || 'N/A'}`);
-  
-  return true;
-}
-
-// Fonction de sélection ALÉATOIRE améliorée pour New API
-function selectRandomBarNewAPI(bars: NewPlaceResult[]): NewPlaceResult {
+// Sélection SIMPLE du premier bar - pas de filtrage complexe
+function selectFirstBar(bars: NewPlaceResult[]): NewPlaceResult {
   if (bars.length === 0) {
     throw new Error('Aucun bar disponible pour la sélection');
   }
 
-  // Filtrer les bars avec une note décente (≥ 3.0) si disponible
-  const decentBars = bars.filter(bar => !bar.rating || bar.rating >= 3.0);
-  const barsToChooseFrom = decentBars.length > 0 ? decentBars : bars;
-  
-  console.log(`🎲 [AUTO-ASSIGN NEW API SELECTION] Sélection parmi ${barsToChooseFrom.length} bars (${decentBars.length} avec bonne note)`);
-  
-  // Sélection aléatoire
-  const randomIndex = Math.floor(Math.random() * barsToChooseFrom.length);
-  const selectedBar = barsToChooseFrom[randomIndex];
-  
-  console.log(`🎯 [AUTO-ASSIGN NEW API SELECTION] Bar sélectionné: ${selectedBar.name} (index ${randomIndex}/${barsToChooseFrom.length - 1})`);
+  const selectedBar = bars[0];
+  console.log(`🎯 [AUTO-ASSIGN SIMPLE SELECTION] Premier bar sélectionné: ${selectedBar.name}`);
   
   return selectedBar;
 }
@@ -262,41 +221,12 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE SIMPLIFIÉ pour Martinique - plus permissif
-    console.log('🔍 [AUTO-ASSIGN-BAR] Application du filtrage simplifié pour Martinique...');
-    
-    const authenticOpenBars = data.places.filter(isAuthenticOpenBar);
-    
-    console.log(`📋 [AUTO-ASSIGN-BAR] Résultats après filtrage: ${authenticOpenBars.length}/${data.places.length} établissements validés`);
+    // PAS DE FILTRAGE - on accepte tous les bars trouvés par l'API Google
+    console.log('✅ [AUTO-ASSIGN SIMPLE APPROACH] Pas de filtrage - on accepte tous les bars de type "bar"');
+    console.log(`📋 [AUTO-ASSIGN SIMPLE APPROACH] ${data.places.length} bars trouvés par Google Places API`);
 
-    if (authenticOpenBars.length === 0) {
-      console.log('❌ [AUTO-ASSIGN-BAR] Aucun établissement validé trouvé après filtrage simplifié');
-      const errorResponse: StandardResponse = {
-        success: false,
-        error: 'Aucun établissement trouvé dans cette zone après filtrage',
-        debug: {
-          totalFound: data.places.length,
-          validEstablishmentsFound: authenticOpenBars.length,
-          newApiUsed: true,
-          rejectedBars: data.places.map(bar => ({
-            name: bar.name,
-            primaryType: bar.primaryType,
-            businessStatus: bar.businessStatus,
-            openNow: bar.currentOpeningHours?.openNow,
-            suspiciousName: ['société', 'company', 'ltd', 'sarl', 'event', 'traiteur', 'catering'].some(keyword => 
-              bar.name.toLowerCase().includes(keyword.toLowerCase())
-            )
-          }))
-        }
-      };
-      return new Response(
-        JSON.stringify(errorResponse),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Sélection ALÉATOIRE du meilleur établissement validé
-    const selectedBar = selectRandomBarNewAPI(authenticOpenBars);
+    // Sélection du PREMIER bar trouvé
+    const selectedBar = selectFirstBar(data.places);
 
     // Validation et correction du mapping des données
     const barName = selectedBar.name || `Bar ${selectedBar.id.slice(-8)}`;
@@ -345,13 +275,13 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Établissement sélectionné avec filtrage simplifié:', {
+    console.log('✅ [AUTO-ASSIGN-BAR] Établissement sélectionné avec approche simplifiée:', {
       name: result.bar?.name,
       businessStatus: selectedBar.businessStatus,
       primaryType: selectedBar.primaryType,
       openNow: selectedBar.currentOpeningHours?.openNow,
       types: selectedBar.types?.join(', ') || 'N/A',
-      totalOptions: authenticOpenBars.length
+      totalOptions: data.places.length
     });
 
     return new Response(
