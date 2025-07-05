@@ -28,8 +28,8 @@ interface NewGooglePlacesResponse {
   places: NewPlaceResult[];
 }
 
-// Fonction de filtrage ASSOUPLIE pour trouver des bars uniquement
-function isAuthenticBar(place: NewPlaceResult): boolean {
+// Fonction de filtrage pour trouver des bars OUVERTS uniquement
+function isOpenBar(place: NewPlaceResult): boolean {
   console.log(`🔍 [BAR FILTER] Vérification: ${place.name}`);
   
   // ÉTAPE 1: Vérifier le type primaire - DOIT être 'bar'
@@ -38,14 +38,17 @@ function isAuthenticBar(place: NewPlaceResult): boolean {
     return false;
   }
   
-  // ÉTAPE 2: Business status - accepter OPERATIONAL ou undefined (plus permissif)
+  // ÉTAPE 2: Business status - exclure FERMÉ DÉFINITIVEMENT
   if (place.businessStatus && place.businessStatus === 'CLOSED_PERMANENTLY') {
     console.log(`❌ [BAR FILTER] ${place.name}: Fermé définitivement`);
     return false;
   }
   
-  // ÉTAPE 3: Ignorer l'état d'ouverture - on peut chercher des bars même fermés
-  // (Les gens veulent voir les bars disponibles pour planifier)
+  // ÉTAPE 3: État d'ouverture - accepter OUVERT ou INCONNU mais pas FERMÉ
+  if (place.currentOpeningHours && place.currentOpeningHours.openNow === false) {
+    console.log(`❌ [BAR FILTER] ${place.name}: Fermé actuellement`);
+    return false;
+  }
   
   // ÉTAPE 4: Filtrage minimal par nom suspect
   const suspiciousKeywords = ['société', 'company'];
@@ -57,9 +60,10 @@ function isAuthenticBar(place: NewPlaceResult): boolean {
     return false;
   }
   
-  console.log(`✅ [BAR FILTER] ${place.name}: Bar validé`);
+  console.log(`✅ [BAR FILTER] ${place.name}: Bar ouvert validé`);
   console.log(`   - Business Status: ${place.businessStatus || 'N/A'}`);
   console.log(`   - Primary Type: ${place.primaryType || 'N/A'}`);
+  console.log(`   - Open Now: ${place.currentOpeningHours?.openNow ?? 'Inconnu'}`);
   
   return true;
 }
@@ -176,26 +180,27 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE ASSOUPLI : recherche de bars uniquement
-    console.log('🔍 [BAR FILTRAGE] Application du filtrage assoupli pour bars uniquement...');
+    // FILTRAGE pour bars OUVERTS uniquement dans un rayon de 10km
+    console.log('🔍 [BAR FILTRAGE] Application du filtrage pour bars ouverts uniquement...');
     
-    const authenticBars = data.places.filter(isAuthenticBar);
+    const openBars = data.places.filter(isOpenBar);
     
-    console.log(`📋 [BAR FILTRAGE] Résultats après filtrage: ${authenticBars.length}/${data.places.length} bars authentiques`);
+    console.log(`📋 [BAR FILTRAGE] Résultats après filtrage: ${openBars.length}/${data.places.length} bars ouverts`);
 
-    if (authenticBars.length === 0) {
-      console.log('❌ Aucun bar authentique trouvé après filtrage');
+    if (openBars.length === 0) {
+      console.log('❌ Aucun bar ouvert trouvé après filtrage');
       return new Response(
         JSON.stringify({ 
-          error: 'Aucun bar trouvé dans cette zone de 10km',
+          error: 'Aucun bar ouvert trouvé dans cette zone de 10km',
           debug: {
             totalFound: data.places.length,
-            authenticBarsFound: authenticBars.length,
+            openBarsFound: openBars.length,
             newApiUsed: true,
             rejectedBars: data.places.map(bar => ({
               name: bar.name,
               primaryType: bar.primaryType,
               businessStatus: bar.businessStatus,
+              openNow: bar.currentOpeningHours?.openNow,
               suspiciousName: ['société', 'company'].some(keyword => 
                 bar.name.toLowerCase().includes(keyword.toLowerCase())
               )
@@ -209,8 +214,8 @@ serve(async (req) => {
       )
     }
 
-    // Sélection ALÉATOIRE du bar authentique
-    const selectedBar = selectRandomBarNewAPI(authenticBars);
+    // Sélection ALÉATOIRE du bar ouvert
+    const selectedBar = selectRandomBarNewAPI(openBars);
     
     // Gestion de l'adresse pour New API
     const barAddress = selectedBar.formattedAddress || `Coordonnées: ${selectedBar.location.latitude.toFixed(4)}, ${selectedBar.location.longitude.toFixed(4)}`;
@@ -256,7 +261,7 @@ serve(async (req) => {
       openNow: result.openNow,
       primaryType: selectedBar.primaryType,
       location: result.geometry.location,
-      totalOptions: authenticBars.length
+      totalOptions: openBars.length
     });
 
     return new Response(
