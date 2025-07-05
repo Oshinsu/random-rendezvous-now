@@ -89,6 +89,20 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
+      // Validation stricte des données reçues
+      if (!response.bar.name || response.bar.name.startsWith('places/') || response.bar.name.startsWith('ChIJ')) {
+        console.error('❌ [AUTO BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', response.bar.name);
+        console.error('   - Données complètes:', JSON.stringify(response.bar, null, 2));
+        await this.sendSystemMessage(groupId, '⚠️ Données de bar invalides reçues - nouvelle tentative requise.');
+        return false;
+      }
+
+      console.log('✅ [AUTO BAR ASSIGNMENT VALIDATION] Bar validé:', {
+        name: response.bar.name,
+        place_id: response.bar.place_id,
+        address: response.bar.formatted_address
+      });
+
       // 5. Mise à jour atomique du groupe
       const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
 

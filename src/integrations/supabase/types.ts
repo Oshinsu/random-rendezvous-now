@@ -315,6 +315,10 @@ export type Database = {
         Args: { input_message: string }
         Returns: string
       }
+      validate_bar_name: {
+        Args: { input_name: string }
+        Returns: boolean
+      }
       validate_coordinates: {
         Args: { lat: number; lng: number }
         Returns: boolean

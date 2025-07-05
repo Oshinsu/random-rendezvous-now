@@ -68,6 +68,19 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         throw new Error('Aucun bar trouvé dans la zone');
       }
 
+      // Validation stricte des données reçues
+      if (selectedBar.name.startsWith('places/') || selectedBar.name.startsWith('ChIJ')) {
+        console.error('❌ [BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', selectedBar.name);
+        console.error('   - Données complètes:', JSON.stringify(selectedBar, null, 2));
+        throw new Error('Données de bar invalides - nom corrrompu');
+      }
+
+      console.log('✅ [BAR ASSIGNMENT VALIDATION] Bar validé:', {
+        name: selectedBar.name,
+        place_id: selectedBar.place_id,
+        address: selectedBar.formatted_address
+      });
+
       // Définir l'heure de rendez-vous (1h à partir de maintenant)
       const meetingTime = new Date(Date.now() + 1 * 60 * 60 * 1000);
 

@@ -81,9 +81,21 @@ export class GooglePlacesService {
 
       const selectedBar = await response!.json();
       
-      // Validation de la réponse
+      // Validation de la réponse avec logs détaillés
+      console.log('📋 [GooglePlacesService] Données brutes reçues:', JSON.stringify(selectedBar, null, 2));
+      
       if (!selectedBar || !selectedBar.name) {
         console.error('❌ [GooglePlacesService] Réponse invalide:', selectedBar);
+        return null;
+      }
+
+      // Validation stricte du nom de bar
+      if (selectedBar.name.startsWith('places/') || selectedBar.name.startsWith('ChIJ')) {
+        console.error('❌ [GooglePlacesService] Nom de bar invalide détecté:', {
+          name: selectedBar.name,
+          place_id: selectedBar.place_id,
+          rawData: selectedBar
+        });
         return null;
       }
 
