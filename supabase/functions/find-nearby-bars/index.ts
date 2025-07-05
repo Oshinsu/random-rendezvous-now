@@ -28,42 +28,31 @@ interface NewGooglePlacesResponse {
   places: NewPlaceResult[];
 }
 
-// Fonction de filtrage pour trouver des bars OUVERTS uniquement
+// Fonction de filtrage SIMPLIFIÉE pour Martinique - plus permissive
 function isOpenBar(place: NewPlaceResult): boolean {
-  console.log(`🔍 [BAR FILTER] Vérification: ${place.name}`);
+  console.log(`🔍 [BAR FILTER MARTINIQUE] Vérification: ${place.name}`);
   
-  // ÉTAPE 1: Vérifier le type primaire - DOIT être 'bar'
-  if (place.primaryType && place.primaryType !== 'bar') {
-    console.log(`❌ [BAR FILTER] ${place.name}: Type primaire non-bar (${place.primaryType})`);
-    return false;
-  }
-  
-  // ÉTAPE 2: Business status - exclure FERMÉ DÉFINITIVEMENT
+  // ÉTAPE 1: Business status - exclure FERMÉ DÉFINITIVEMENT uniquement
   if (place.businessStatus && place.businessStatus === 'CLOSED_PERMANENTLY') {
-    console.log(`❌ [BAR FILTER] ${place.name}: Fermé définitivement`);
+    console.log(`❌ [BAR FILTER MARTINIQUE] ${place.name}: Fermé définitivement`);
     return false;
   }
   
-  // ÉTAPE 3: État d'ouverture - accepter OUVERT ou INCONNU mais pas FERMÉ
-  if (place.currentOpeningHours && place.currentOpeningHours.openNow === false) {
-    console.log(`❌ [BAR FILTER] ${place.name}: Fermé actuellement`);
-    return false;
-  }
-  
-  // ÉTAPE 4: Filtrage minimal par nom suspect
-  const suspiciousKeywords = ['société', 'company'];
+  // ÉTAPE 2: Filtrage minimal par nom suspect (sociétés non-bars)
+  const suspiciousKeywords = ['société', 'company', 'ltd', 'sarl'];
   const hasSuspiciousName = suspiciousKeywords.some(keyword => 
     place.name.toLowerCase().includes(keyword.toLowerCase())
   );
   if (hasSuspiciousName) {
-    console.log(`❌ [BAR FILTER] ${place.name}: Nom suspect (${suspiciousKeywords.filter(k => place.name.toLowerCase().includes(k.toLowerCase())).join(', ')})`);
+    console.log(`❌ [BAR FILTER MARTINIQUE] ${place.name}: Nom suspect (${suspiciousKeywords.filter(k => place.name.toLowerCase().includes(k.toLowerCase())).join(', ')})`);
     return false;
   }
   
-  console.log(`✅ [BAR FILTER] ${place.name}: Bar ouvert validé`);
+  console.log(`✅ [BAR FILTER MARTINIQUE] ${place.name}: Établissement validé`);
   console.log(`   - Business Status: ${place.businessStatus || 'N/A'}`);
   console.log(`   - Primary Type: ${place.primaryType || 'N/A'}`);
   console.log(`   - Open Now: ${place.currentOpeningHours?.openNow ?? 'Inconnu'}`);
+  console.log(`   - Types: ${place.types?.join(', ') || 'N/A'}`);
   
   return true;
 }
@@ -180,28 +169,28 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE pour bars OUVERTS uniquement dans un rayon de 10km
-    console.log('🔍 [BAR FILTRAGE] Application du filtrage pour bars ouverts uniquement...');
+    // FILTRAGE SIMPLIFIÉ pour Martinique - plus permissif
+    console.log('🔍 [BAR FILTRAGE] Application du filtrage simplifié pour Martinique...');
     
     const openBars = data.places.filter(isOpenBar);
     
-    console.log(`📋 [BAR FILTRAGE] Résultats après filtrage: ${openBars.length}/${data.places.length} bars ouverts`);
+    console.log(`📋 [BAR FILTRAGE] Résultats après filtrage: ${openBars.length}/${data.places.length} établissements validés`);
 
     if (openBars.length === 0) {
-      console.log('❌ Aucun bar ouvert trouvé après filtrage');
+      console.log('❌ Aucun établissement validé trouvé après filtrage');
       return new Response(
         JSON.stringify({ 
-          error: 'Aucun bar ouvert trouvé dans cette zone de 10km',
+          error: 'Aucun établissement trouvé dans cette zone après filtrage',
           debug: {
             totalFound: data.places.length,
-            openBarsFound: openBars.length,
+            validEstablishmentsFound: openBars.length,
             newApiUsed: true,
             rejectedBars: data.places.map(bar => ({
               name: bar.name,
               primaryType: bar.primaryType,
               businessStatus: bar.businessStatus,
               openNow: bar.currentOpeningHours?.openNow,
-              suspiciousName: ['société', 'company'].some(keyword => 
+              suspiciousName: ['société', 'company', 'ltd', 'sarl'].some(keyword => 
                 bar.name.toLowerCase().includes(keyword.toLowerCase())
               )
             }))
@@ -253,13 +242,14 @@ serve(async (req) => {
       openNow: selectedBar.currentOpeningHours?.openNow
     };
     
-    console.log('🍺 Bar authentique sélectionné avec New API:', {
+    console.log('🍺 Établissement sélectionné avec filtrage simplifié pour Martinique:', {
       name: result.name,
       address: result.formatted_address,
       rating: result.rating,
       businessStatus: result.businessStatus,
       openNow: result.openNow,
       primaryType: selectedBar.primaryType,
+      types: selectedBar.types?.join(', ') || 'N/A',
       location: result.geometry.location,
       totalOptions: openBars.length
     });

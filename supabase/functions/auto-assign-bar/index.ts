@@ -48,30 +48,18 @@ interface NewGooglePlacesResponse {
   places: NewPlaceResult[];
 }
 
-// Fonction de filtrage SIMPLIFIÉE pour New API - plus strict avec business status
+// Fonction de filtrage SIMPLIFIÉE pour Martinique - plus permissive  
 function isAuthenticOpenBar(place: NewPlaceResult): boolean {
-  console.log(`🔍 [AUTO-ASSIGN NEW API FILTER] Vérification: ${place.name}`);
+  console.log(`🔍 [AUTO-ASSIGN MARTINIQUE FILTER] Vérification: ${place.name}`);
   
-  // ÉTAPE 1: Vérifier business status - DOIT être opérationnel
-  if (place.businessStatus && place.businessStatus !== 'OPERATIONAL') {
-    console.log(`❌ [AUTO-ASSIGN NEW API FILTER] ${place.name}: Business status non opérationnel (${place.businessStatus})`);
+  // ÉTAPE 1: Business status - exclure FERMÉ DÉFINITIVEMENT uniquement
+  if (place.businessStatus && place.businessStatus === 'CLOSED_PERMANENTLY') {
+    console.log(`❌ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Fermé définitivement`);
     return false;
   }
   
-  // ÉTAPE 2: Vérifier si ouvert maintenant si l'info est disponible
-  if (place.currentOpeningHours && place.currentOpeningHours.openNow === false) {
-    console.log(`❌ [AUTO-ASSIGN NEW API FILTER] ${place.name}: Fermé actuellement`);
-    return false;
-  }
-  
-  // ÉTAPE 3: Vérifier le type primaire (devrait être 'bar' avec new API)
-  if (place.primaryType && place.primaryType !== 'bar') {
-    console.log(`❌ [AUTO-ASSIGN NEW API FILTER] ${place.name}: Type primaire non-bar (${place.primaryType})`);
-    return false;
-  }
-  
-  // ÉTAPE 4: Filtrage par nom suspect (réduit car New API est plus précis)
-  const suspiciousKeywords = ['event', 'société', 'company', 'traiteur', 'catering'];
+  // ÉTAPE 2: Filtrage minimal par nom suspect (sociétés non-bars)
+  const suspiciousKeywords = ['société', 'company', 'ltd', 'sarl', 'event', 'traiteur', 'catering'];
   const hasSuspiciousName = suspiciousKeywords.some(keyword => 
     place.name.toLowerCase().includes(keyword.toLowerCase())
   );
@@ -79,14 +67,15 @@ function isAuthenticOpenBar(place: NewPlaceResult): boolean {
     const suspiciousFound = suspiciousKeywords.filter(keyword => 
       place.name.toLowerCase().includes(keyword.toLowerCase())
     );
-    console.log(`❌ [AUTO-ASSIGN NEW API FILTER] ${place.name}: Nom suspect pour événementiel (${suspiciousFound.join(', ')})`);
+    console.log(`❌ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Nom suspect (${suspiciousFound.join(', ')})`);
     return false;
   }
   
-  console.log(`✅ [AUTO-ASSIGN NEW API FILTER] ${place.name}: Bar authentique et ouvert validé`);
+  console.log(`✅ [AUTO-ASSIGN MARTINIQUE FILTER] ${place.name}: Établissement validé`);
   console.log(`   - Business Status: ${place.businessStatus || 'N/A'}`);
   console.log(`   - Primary Type: ${place.primaryType || 'N/A'}`);
   console.log(`   - Open Now: ${place.currentOpeningHours?.openNow ?? 'N/A'}`);
+  console.log(`   - Types: ${place.types?.join(', ') || 'N/A'}`);
   
   return true;
 }
@@ -273,28 +262,28 @@ serve(async (req) => {
       )
     }
 
-    // FILTRAGE SIMPLIFIÉ avec New API : plus strict sur business status et ouverture
-    console.log('🔍 [AUTO-ASSIGN-BAR] Application du filtrage optimisé pour New API...');
+    // FILTRAGE SIMPLIFIÉ pour Martinique - plus permissif
+    console.log('🔍 [AUTO-ASSIGN-BAR] Application du filtrage simplifié pour Martinique...');
     
     const authenticOpenBars = data.places.filter(isAuthenticOpenBar);
     
-    console.log(`📋 [AUTO-ASSIGN-BAR] Résultats après filtrage: ${authenticOpenBars.length}/${data.places.length} bars authentiques ouverts`);
+    console.log(`📋 [AUTO-ASSIGN-BAR] Résultats après filtrage: ${authenticOpenBars.length}/${data.places.length} établissements validés`);
 
     if (authenticOpenBars.length === 0) {
-      console.log('❌ [AUTO-ASSIGN-BAR] Aucun bar authentique ouvert trouvé après filtrage New API');
+      console.log('❌ [AUTO-ASSIGN-BAR] Aucun établissement validé trouvé après filtrage simplifié');
       const errorResponse: StandardResponse = {
         success: false,
-        error: 'Aucun bar authentique ouvert trouvé dans cette zone',
+        error: 'Aucun établissement trouvé dans cette zone après filtrage',
         debug: {
           totalFound: data.places.length,
-          authenticBarsFound: authenticOpenBars.length,
+          validEstablishmentsFound: authenticOpenBars.length,
           newApiUsed: true,
           rejectedBars: data.places.map(bar => ({
             name: bar.name,
             primaryType: bar.primaryType,
             businessStatus: bar.businessStatus,
             openNow: bar.currentOpeningHours?.openNow,
-            suspiciousName: ['event', 'société', 'company', 'traiteur', 'catering'].some(keyword => 
+            suspiciousName: ['société', 'company', 'ltd', 'sarl', 'event', 'traiteur', 'catering'].some(keyword => 
               bar.name.toLowerCase().includes(keyword.toLowerCase())
             )
           }))
@@ -306,7 +295,7 @@ serve(async (req) => {
       )
     }
 
-    // Sélection ALÉATOIRE du meilleur bar authentique ouvert
+    // Sélection ALÉATOIRE du meilleur établissement validé
     const selectedBar = selectRandomBarNewAPI(authenticOpenBars);
 
     // Validation et correction du mapping des données
@@ -356,11 +345,12 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Bar authentique sélectionné avec New API:', {
+    console.log('✅ [AUTO-ASSIGN-BAR] Établissement sélectionné avec filtrage simplifié:', {
       name: result.bar?.name,
       businessStatus: selectedBar.businessStatus,
       primaryType: selectedBar.primaryType,
       openNow: selectedBar.currentOpeningHours?.openNow,
+      types: selectedBar.types?.join(', ') || 'N/A',
       totalOptions: authenticOpenBars.length
     });
 
