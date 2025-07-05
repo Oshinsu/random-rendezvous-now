@@ -223,9 +223,25 @@ serve(async (req) => {
     // Gestion de l'adresse pour New API
     const barAddress = selectedBar.formattedAddress || `Coordonnées: ${selectedBar.location.latitude.toFixed(4)}, ${selectedBar.location.longitude.toFixed(4)}`;
     
+    // Validation et correction du mapping des données
+    const barName = selectedBar.name || `Bar ${selectedBar.id.slice(-8)}`;
+    const placeId = selectedBar.id;
+    
+    // Validation stricte des données essentielles
+    if (!placeId || placeId.length < 10) {
+      console.error('❌ [DATA VALIDATION] Place ID invalide:', placeId);
+      throw new Error('Place ID invalide reçu de l\'API');
+    }
+    
+    if (!barName || barName.startsWith('places/')) {
+      console.error('❌ [DATA VALIDATION] Nom de bar invalide:', barName);
+      console.error('   - Raw selectedBar:', JSON.stringify(selectedBar, null, 2));
+      throw new Error('Nom de bar invalide - possiblement un Place ID');
+    }
+
     const result = {
-      place_id: selectedBar.id,
-      name: selectedBar.name,
+      place_id: placeId,
+      name: barName,
       formatted_address: barAddress,
       geometry: {
         location: {

@@ -309,12 +309,42 @@ serve(async (req) => {
     // Sélection ALÉATOIRE du meilleur bar authentique ouvert
     const selectedBar = selectRandomBarNewAPI(authenticOpenBars);
 
+    // Validation et correction du mapping des données
+    const barName = selectedBar.name || `Bar ${selectedBar.id.slice(-8)}`;
+    const placeId = selectedBar.id;
+    
+    // Validation stricte des données essentielles
+    if (!placeId || placeId.length < 10) {
+      console.error('❌ [AUTO-ASSIGN DATA VALIDATION] Place ID invalide:', placeId);
+      const errorResponse: StandardResponse = {
+        success: false,
+        error: 'Place ID invalide reçu de l\'API'
+      };
+      return new Response(
+        JSON.stringify(errorResponse),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    if (!barName || barName.startsWith('places/')) {
+      console.error('❌ [AUTO-ASSIGN DATA VALIDATION] Nom de bar invalide:', barName);
+      console.error('   - Raw selectedBar:', JSON.stringify(selectedBar, null, 2));
+      const errorResponse: StandardResponse = {
+        success: false,
+        error: 'Nom de bar invalide - possiblement un Place ID'
+      };
+      return new Response(
+        JSON.stringify(errorResponse),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Réponse standardisée pour New API
     const result: StandardResponse = {
       success: true,
       bar: {
-        place_id: selectedBar.id,
-        name: selectedBar.name,
+        place_id: placeId,
+        name: barName,
         formatted_address: selectedBar.formattedAddress || `Coordonnées: ${selectedBar.location.latitude.toFixed(4)}, ${selectedBar.location.longitude.toFixed(4)}`,
         geometry: {
           location: {
