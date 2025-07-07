@@ -80,19 +80,19 @@ serve(async (req) => {
     console.log('🌐 Recherche Google Places API (New) v1 avec filtrage strict pour bars authentiques');
 
     const requestBody = {
-      includedPrimaryTypes: ["bar"],
+      includedTypes: ["bar", "pub", "wine_bar", "night_club"],
       locationRestriction: {
         circle: {
           center: {
             latitude: latitude,
             longitude: longitude
           },
-          radius: radius
+          radius: Math.max(radius, 10000) // Minimum 10km radius
         }
       },
       rankPreference: "DISTANCE",
       maxResultCount: 20,
-      languageCode: "fr"
+      languageCode: "fr-FR"
     };
 
     const response = await fetch(searchUrl, {
@@ -100,7 +100,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.name,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours'
+        'X-Goog-FieldMask': 'places.id,places.name,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours,places.photos'
       },
       body: JSON.stringify(requestBody)
     });

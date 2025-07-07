@@ -17,7 +17,7 @@ export class GooglePlacesService {
   /**
    * Recherche SIMPLIFIÉE de bars - uniquement type=bar
    */
-  static async findNearbyBars(latitude: number, longitude: number, radius: number = 5000): Promise<PlaceResult | null> {
+  static async findNearbyBars(latitude: number, longitude: number, radius: number = 10000): Promise<PlaceResult | null> {
     try {
       console.log('🔍 [GooglePlacesService] Recherche SIMPLIFIÉE (type=bar uniquement):', { latitude, longitude, radius });
       
