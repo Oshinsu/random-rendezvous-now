@@ -29,6 +29,10 @@ interface StandardResponse {
 interface NewPlaceResult {
   id: string;
   name: string;
+  displayName?: {
+    text: string;
+    languageCode?: string;
+  };
   formattedAddress?: string;
   location: {
     latitude: number;
@@ -46,6 +50,38 @@ interface NewPlaceResult {
 
 interface NewGooglePlacesResponse {
   places: NewPlaceResult[];
+}
+
+// Extraction ROBUSTE du nom du bar avec système de fallback
+function extractBarName(place: NewPlaceResult): string {
+  console.log('🔍 [NAME EXTRACTION] Données complètes du bar:', JSON.stringify(place, null, 2));
+
+  // Priorité 1: displayName.text (le plus fiable)
+  if (place.displayName?.text && !place.displayName.text.startsWith('places/') && !place.displayName.text.startsWith('ChIJ')) {
+    console.log('✅ [NAME EXTRACTION] Utilisation displayName.text:', place.displayName.text);
+    return place.displayName.text;
+  }
+
+  // Priorité 2: name (si ce n'est pas un Place ID)
+  if (place.name && !place.name.startsWith('places/') && !place.name.startsWith('ChIJ')) {
+    console.log('✅ [NAME EXTRACTION] Utilisation name:', place.name);
+    return place.name;
+  }
+
+  // Priorité 3: Fallback sur adresse formatée
+  if (place.formattedAddress) {
+    const addressParts = place.formattedAddress.split(',');
+    const possibleName = addressParts[0].trim();
+    if (possibleName && possibleName.length > 2) {
+      console.log('⚠️ [NAME EXTRACTION] Utilisation adresse comme nom:', possibleName);
+      return possibleName;
+    }
+  }
+
+  // Priorité 4: Nom générique basé sur l'ID
+  const fallbackName = `Bar ${place.id.slice(-8)}`;
+  console.log('⚠️ [NAME EXTRACTION] Utilisation nom générique:', fallbackName);
+  return fallbackName;
 }
 
 // Sélection SIMPLE du premier bar - pas de filtrage complexe
@@ -176,13 +212,13 @@ serve(async (req) => {
       )
     }
 
-    // Recherche Google Places API (New) v1 avec filtrage strict
+    // Recherche Google Places API (New) v1 avec enrichissement des données
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     
-    console.log('🌐 [AUTO-ASSIGN-BAR] Recherche Google Places API (New) v1 avec filtrage strict pour bars authentiques');
+    console.log('🌐 [AUTO-ASSIGN-BAR] Recherche Google Places API (New) v1 avec enrichissement des données');
 
     const requestBody = {
-      includedTypes: ["bar", "pub", "wine_bar", "night_club"],
+      includedTypes: ["bar"],
       locationRestriction: {
         circle: {
           center: {
@@ -202,7 +238,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.name,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours,places.photos'
+        'X-Goog-FieldMask': 'places.id,places.name,places.displayName,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours'
       },
       body: JSON.stringify(requestBody)
     });
@@ -210,10 +246,10 @@ serve(async (req) => {
     const data: NewGooglePlacesResponse = await response.json();
 
     if (!data.places || data.places.length === 0) {
-      console.log('❌ [AUTO-ASSIGN-BAR] Aucun établissement trouvé par Google Places API (New)');
+      console.log('❌ [AUTO-ASSIGN-BAR] Aucun bar trouvé par Google Places API (New)');
       const errorResponse: StandardResponse = {
         success: false,
-        error: 'Aucun établissement trouvé dans cette zone'
+        error: 'Aucun bar trouvé dans cette zone'
       };
       return new Response(
         JSON.stringify(errorResponse),
@@ -221,15 +257,14 @@ serve(async (req) => {
       )
     }
 
-    // PAS DE FILTRAGE - on accepte tous les bars trouvés par l'API Google
-    console.log('✅ [AUTO-ASSIGN SIMPLE APPROACH] Pas de filtrage - on accepte tous les bars de type "bar"');
-    console.log(`📋 [AUTO-ASSIGN SIMPLE APPROACH] ${data.places.length} bars trouvés par Google Places API`);
+    console.log('✅ [AUTO-ASSIGN-BAR] Bars trouvés - recherche exclusivement sur type "bar"');
+    console.log(`📋 [AUTO-ASSIGN-BAR] ${data.places.length} bars trouvés par Google Places API`);
 
     // Sélection du PREMIER bar trouvé
     const selectedBar = selectFirstBar(data.places);
 
-    // Validation et correction du mapping des données
-    const barName = selectedBar.name || `Bar ${selectedBar.id.slice(-8)}`;
+    // Extraction robuste du nom avec système de fallback
+    const barName = extractBarName(selectedBar);
     const placeId = selectedBar.id;
     
     // Validation stricte des données essentielles
@@ -245,12 +280,13 @@ serve(async (req) => {
       )
     }
     
-    if (!barName || barName.startsWith('places/')) {
-      console.error('❌ [AUTO-ASSIGN DATA VALIDATION] Nom de bar invalide:', barName);
+    // Validation finale du nom extrait
+    if (!barName || barName.startsWith('places/') || barName.startsWith('ChIJ')) {
+      console.error('❌ [AUTO-ASSIGN DATA VALIDATION] Nom de bar invalide après extraction:', barName);
       console.error('   - Raw selectedBar:', JSON.stringify(selectedBar, null, 2));
       const errorResponse: StandardResponse = {
         success: false,
-        error: 'Nom de bar invalide - possiblement un Place ID'
+        error: 'Impossible d\'extraire un nom de bar valide'
       };
       return new Response(
         JSON.stringify(errorResponse),
@@ -258,7 +294,7 @@ serve(async (req) => {
       )
     }
 
-    // Réponse standardisée pour New API
+    // Réponse standardisée avec nom robuste
     const result: StandardResponse = {
       success: true,
       bar: {
@@ -275,8 +311,10 @@ serve(async (req) => {
       }
     };
 
-    console.log('✅ [AUTO-ASSIGN-BAR] Établissement sélectionné avec approche simplifiée:', {
-      name: result.bar?.name,
+    console.log('✅ [AUTO-ASSIGN-BAR] Bar sélectionné avec extraction robuste du nom:', {
+      extractedName: result.bar?.name,
+      displayName: selectedBar.displayName?.text,
+      originalName: selectedBar.name,
       businessStatus: selectedBar.businessStatus,
       primaryType: selectedBar.primaryType,
       openNow: selectedBar.currentOpeningHours?.openNow,
