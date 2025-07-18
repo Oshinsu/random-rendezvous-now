@@ -84,14 +84,25 @@ function extractBarName(place: NewPlaceResult): string {
   return fallbackName;
 }
 
-// Sélection SIMPLE du premier bar - pas de filtrage complexe
-function selectFirstBar(bars: NewPlaceResult[]): NewPlaceResult {
+// Filtrage strict des vrais bars uniquement
+function selectFirstTrueBar(bars: NewPlaceResult[]): NewPlaceResult {
   if (bars.length === 0) {
     throw new Error('Aucun bar disponible pour la sélection');
   }
 
-  const selectedBar = bars[0];
-  console.log(`🎯 [AUTO-ASSIGN SIMPLE SELECTION] Premier bar sélectionné: ${selectedBar.name}`);
+  // Filtrer uniquement les bars avec primaryType = "bar"
+  const trueBars = bars.filter(bar => {
+    const isPrimaryBar = bar.primaryType === 'bar';
+    console.log(`🔍 [BAR FILTERING] ${bar.displayName?.text || bar.name}: primaryType=${bar.primaryType}, isValidBar=${isPrimaryBar}`);
+    return isPrimaryBar;
+  });
+
+  if (trueBars.length === 0) {
+    throw new Error('Aucun vrai bar trouvé (primaryType !== "bar")');
+  }
+
+  const selectedBar = trueBars[0];
+  console.log(`🎯 [STRICT BAR SELECTION] Premier vrai bar sélectionné: ${selectedBar.displayName?.text || selectedBar.name} (primaryType: ${selectedBar.primaryType})`);
   
   return selectedBar;
 }
@@ -260,8 +271,8 @@ serve(async (req) => {
     console.log('✅ [AUTO-ASSIGN-BAR] Bars trouvés - recherche exclusivement sur type "bar"');
     console.log(`📋 [AUTO-ASSIGN-BAR] ${data.places.length} bars trouvés par Google Places API`);
 
-    // Sélection du PREMIER bar trouvé
-    const selectedBar = selectFirstBar(data.places);
+    // Sélection du PREMIER vrai bar (primaryType = "bar")
+    const selectedBar = selectFirstTrueBar(data.places);
 
     // Extraction robuste du nom avec système de fallback
     const barName = extractBarName(selectedBar);
