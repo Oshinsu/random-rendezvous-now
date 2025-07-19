@@ -8,7 +8,6 @@ const corsHeaders = {
 
 interface NewPlaceResult {
   id: string;
-  name: string;
   displayName?: {
     text: string;
     languageCode?: string;
@@ -28,39 +27,47 @@ interface NewPlaceResult {
   };
 }
 
-interface NewGooglePlacesResponse {
-  places: NewPlaceResult[];
-}
-
 interface BarValidationResult {
   isValid: boolean;
   score: number;
   reasons: string[];
   warnings: string[];
+  confidence: 'high' | 'medium' | 'low';
 }
 
-// Enhanced bar validation with multiple criteria
-class EnhancedBarValidator {
-  // Blacklist of non-bar keywords in various languages
-  private static readonly NON_BAR_KEYWORDS = [
+/**
+ * Service de validation stricte des bars (version Edge Function)
+ */
+class StrictBarValidator {
+  // Mots-clés interdits (services non-bar)
+  private static readonly FORBIDDEN_KEYWORDS = [
     'service', 'services', 'bureau', 'office', 'entreprise', 'company', 'société',
     'magasin', 'boutique', 'shop', 'store', 'pharmacie', 'pharmacy', 'clinique',
-    'clinic', 'hôtel', 'hotel', 'restaurant', 'école', 'school', 'université',
-    'banque', 'bank', 'assurance', 'insurance', 'immobilier', 'real estate',
-    'garage', 'station', 'supermarché', 'supermarket', 'centre commercial',
-    'shopping center', 'église', 'church', 'temple', 'mosquée', 'mosque',
-    'medical', 'dental', 'hospital', 'market', 'mall', 'center', 'centre'
+    'clinic', 'médical', 'medical', 'hôtel', 'hotel', 'restaurant', 'école', 
+    'school', 'université', 'university', 'banque', 'bank', 'assurance', 
+    'insurance', 'immobilier', 'real estate', 'garage', 'station', 'supermarché', 
+    'supermarket', 'centre commercial', 'shopping center', 'église', 'church',
+    'dental', 'hospital', 'market', 'mall', 'center', 'centre', 'temple',
+    'mosque', 'automotive', 'repair', 'finance', 'legal', 'lawyer'
   ];
 
-  // Required bar-related keywords
-  private static readonly BAR_KEYWORDS = [
-    'bar', 'pub', 'tavern', 'bistro', 'brasserie', 'lounge', 'cocktail',
-    'wine bar', 'beer', 'drinks', 'alcohol', 'spirits', 'brewery'
+  // Mots-clés obligatoires pour les bars
+  private static readonly REQUIRED_BAR_KEYWORDS = [
+    'bar', 'pub', 'tavern', 'taverne', 'bistro', 'brasserie', 'lounge', 
+    'cocktail', 'wine bar', 'beer', 'bière', 'drinks', 'boissons', 
+    'alcohol', 'alcool', 'spirits', 'brewery'
   ];
 
-  // Valid bar types from Google Places
-  private static readonly VALID_BAR_TYPES = [
-    'bar', 'night_club', 'liquor_store', 'establishment', 'food', 'point_of_interest'
+  // Types Google Places valides pour les bars
+  private static readonly VALID_PRIMARY_TYPES = [
+    'bar', 'night_club', 'liquor_store'
+  ];
+
+  // Types Google Places interdits
+  private static readonly FORBIDDEN_TYPES = [
+    'store', 'shopping_mall', 'doctor', 'hospital', 'school', 'church',
+    'pharmacy', 'gas_station', 'car_repair', 'bank', 'insurance_agency',
+    'real_estate_agency', 'lawyer', 'dentist', 'veterinary_care'
   ];
 
   static validateBarCandidate(place: NewPlaceResult): BarValidationResult {
@@ -68,94 +75,114 @@ class EnhancedBarValidator {
       isValid: false,
       score: 0,
       reasons: [],
-      warnings: []
+      warnings: [],
+      confidence: 'low'
     };
 
-    console.log('🔍 [ENHANCED VALIDATION] Validating bar candidate:', {
-      name: place.name,
-      displayName: place.displayName?.text,
+    const displayName = place.displayName?.text || `Place_${place.id.slice(-8)}`;
+    
+    console.log('🔍 [EDGE STRICT VALIDATION] Validation stricte du candidat:', {
+      name: displayName,
       primaryType: place.primaryType,
       types: place.types,
-      business_status: place.businessStatus
+      businessStatus: place.businessStatus
     });
 
-    // 1. Primary type validation (highest priority)
-    if (place.primaryType === 'bar') {
-      result.score += 50;
-      result.reasons.push('Primary type is bar');
+    // 1. Validation du type principal (critère le plus important)
+    if (place.primaryType && this.VALID_PRIMARY_TYPES.includes(place.primaryType)) {
+      result.score += 60;
+      result.reasons.push(`Type principal valide: ${place.primaryType}`);
     } else {
-      result.warnings.push(`Primary type is ${place.primaryType}, not bar`);
+      result.score -= 40;
+      result.warnings.push(`Type principal invalide: ${place.primaryType || 'inconnu'}`);
     }
 
-    // 2. Name validation - check for non-bar keywords
-    const displayName = place.displayName?.text || place.name || '';
+    // 2. Validation stricte du nom (mots-clés interdits)
     const nameLower = displayName.toLowerCase();
-    
-    const hasNonBarKeywords = this.NON_BAR_KEYWORDS.some(keyword => 
+    const hasForbiddenKeywords = this.FORBIDDEN_KEYWORDS.some(keyword => 
       nameLower.includes(keyword.toLowerCase())
     );
 
-    if (hasNonBarKeywords) {
-      result.score -= 30;
-      result.reasons.push('Name contains non-bar keywords');
-      result.warnings.push('Potentially not a bar based on name');
+    if (hasForbiddenKeywords) {
+      result.score -= 50;
+      result.reasons.push('Nom contient des mots-clés de service non-bar');
+      result.warnings.push('REJETÉ: Probablement un service, pas un bar');
+      console.log('❌ [EDGE STRICT VALIDATION] REJET IMMÉDIAT - Service détecté:', {
+        name: displayName,
+        forbiddenKeywords: this.FORBIDDEN_KEYWORDS.filter(k => nameLower.includes(k.toLowerCase()))
+      });
+      return { ...result, isValid: false, confidence: 'high' };
     }
 
-    // 3. Check for bar-related keywords in name
-    const hasBarKeywords = this.BAR_KEYWORDS.some(keyword => 
+    // 3. Validation des mots-clés de bar requis
+    const hasBarKeywords = this.REQUIRED_BAR_KEYWORDS.some(keyword => 
       nameLower.includes(keyword.toLowerCase())
     );
 
     if (hasBarKeywords) {
-      result.score += 20;
-      result.reasons.push('Name contains bar-related keywords');
+      result.score += 30;
+      result.reasons.push('Nom contient des mots-clés de bar');
+    } else {
+      result.score -= 20;
+      result.warnings.push('Nom ne contient pas de mots-clés de bar évidents');
     }
 
-    // 4. Types validation
+    // 4. Validation des types secondaires
     if (place.types && place.types.length > 0) {
-      const validTypes = place.types.filter(type => 
-        this.VALID_BAR_TYPES.includes(type)
-      );
-      
-      if (validTypes.length > 0) {
-        result.score += 15;
-        result.reasons.push(`Has valid bar types: ${validTypes.join(', ')}`);
-      }
-
-      // Check for problematic types
-      const problematicTypes = ['store', 'doctor', 'hospital', 'school', 'church'];
-      const hasProblematicTypes = place.types.some(type => 
-        problematicTypes.includes(type)
+      const hasForbiddenTypes = place.types.some(type => 
+        this.FORBIDDEN_TYPES.includes(type)
       );
 
-      if (hasProblematicTypes) {
-        result.score -= 25;
-        result.reasons.push('Has non-bar types');
+      if (hasForbiddenTypes) {
+        result.score -= 60;
+        result.reasons.push('Contient des types interdits');
+        result.warnings.push('REJETÉ: Types non-compatibles avec un bar');
+        console.log('❌ [EDGE STRICT VALIDATION] REJET IMMÉDIAT - Types interdits:', {
+          name: displayName,
+          forbiddenTypes: place.types.filter(t => this.FORBIDDEN_TYPES.includes(t))
+        });
+        return { ...result, isValid: false, confidence: 'high' };
       }
     }
 
-    // 5. Business status validation
+    // 5. Validation du statut d'entreprise
     if (place.businessStatus === 'OPERATIONAL') {
-      result.score += 10;
-      result.reasons.push('Business is operational');
+      result.score += 15;
+      result.reasons.push('Entreprise opérationnelle');
     } else if (place.businessStatus === 'CLOSED_PERMANENTLY') {
-      result.score -= 50;
-      result.reasons.push('Business is permanently closed');
+      result.score -= 100;
+      result.reasons.push('Entreprise fermée définitivement');
+      console.log('❌ [EDGE STRICT VALIDATION] REJET IMMÉDIAT - Fermé définitivement:', displayName);
+      return { ...result, isValid: false, confidence: 'high' };
     }
 
-    // 6. Rating validation (optional bonus)
-    if (place.rating && place.rating >= 3.5) {
+    // 6. Validation de la note (bonus)
+    if (place.rating && place.rating >= 4.0) {
+      result.score += 10;
+      result.reasons.push('Excellente note');
+    } else if (place.rating && place.rating >= 3.5) {
       result.score += 5;
-      result.reasons.push('Good rating');
+      result.reasons.push('Bonne note');
     }
 
-    // 7. Final validation
-    result.isValid = result.score >= 40; // Minimum score threshold
+    // 7. Validation finale avec seuil strict
+    const MIN_SCORE_THRESHOLD = 70;
+    result.isValid = result.score >= MIN_SCORE_THRESHOLD;
 
-    console.log('📊 [ENHANCED VALIDATION] Validation result:', {
+    // Détermination du niveau de confiance
+    if (result.score >= 90) {
+      result.confidence = 'high';
+    } else if (result.score >= 70) {
+      result.confidence = 'medium';
+    } else {
+      result.confidence = 'low';
+    }
+
+    console.log('📊 [EDGE STRICT VALIDATION] Résultat validation stricte:', {
       name: displayName,
       score: result.score,
       isValid: result.isValid,
+      confidence: result.confidence,
       reasons: result.reasons,
       warnings: result.warnings
     });
@@ -164,81 +191,87 @@ class EnhancedBarValidator {
   }
 }
 
-// Extraction ROBUSTE du nom du bar avec système de fallback amélioré
-function extractBarName(place: NewPlaceResult): string {
-  console.log('🔍 [ENHANCED NAME EXTRACTION] Données complètes du bar:', JSON.stringify(place, null, 2));
+// Extraction robuste du nom avec système de fallback
+function extractBarNameRobust(place: NewPlaceResult): string {
+  console.log('🏷️ [EDGE NAME EXTRACTION] Extraction nom robuste:', {
+    id: place.id,
+    displayName: place.displayName?.text,
+    formattedAddress: place.formattedAddress
+  });
 
   // Priorité 1: displayName.text (le plus fiable)
   if (place.displayName?.text && 
       !place.displayName.text.startsWith('places/') && 
       !place.displayName.text.startsWith('ChIJ') &&
       place.displayName.text.length > 2) {
-    console.log('✅ [ENHANCED NAME EXTRACTION] Utilisation displayName.text:', place.displayName.text);
+    console.log('✅ [EDGE NAME EXTRACTION] Utilisation displayName.text:', place.displayName.text);
     return place.displayName.text;
   }
 
-  // Priorité 2: name (si ce n'est pas un Place ID)
-  if (place.name && 
-      !place.name.startsWith('places/') && 
-      !place.name.startsWith('ChIJ') &&
-      place.name.length > 2) {
-    console.log('✅ [ENHANCED NAME EXTRACTION] Utilisation name:', place.name);
-    return place.name;
-  }
-
-  // Priorité 3: Fallback sur adresse formatée
+  // Priorité 2: Fallback sur adresse formatée
   if (place.formattedAddress) {
     const addressParts = place.formattedAddress.split(',');
     const possibleName = addressParts[0].trim();
     if (possibleName && 
         possibleName.length > 2 && 
-        !possibleName.match(/^\d+/)) { // Not starting with numbers
-      console.log('⚠️ [ENHANCED NAME EXTRACTION] Utilisation adresse comme nom:', possibleName);
+        !possibleName.match(/^\d+/)) {
+      console.log('⚠️ [EDGE NAME EXTRACTION] Utilisation adresse:', possibleName);
       return possibleName;
     }
   }
 
-  // Priorité 4: Nom générique basé sur l'ID
+  // Priorité 3: Nom générique basé sur l'ID
   const fallbackName = `Bar ${place.id.slice(-8)}`;
-  console.log('⚠️ [ENHANCED NAME EXTRACTION] Utilisation nom générique:', fallbackName);
+  console.log('⚠️ [EDGE NAME EXTRACTION] Nom générique:', fallbackName);
   return fallbackName;
 }
 
-// Sélection AMÉLIORÉE avec validation multi-critères
-function selectBestValidatedBar(bars: NewPlaceResult[]): NewPlaceResult {
+// Sélection STRICTE avec validation multi-critères
+function selectBestValidatedBar(bars: NewPlaceResult[]): NewPlaceResult | null {
   if (bars.length === 0) {
-    throw new Error('Aucun bar disponible pour la sélection');
+    console.log('❌ [EDGE SELECTION] Aucun bar disponible');
+    return null;
   }
 
-  console.log('🔄 [ENHANCED FILTERING] Processing', bars.length, 'candidates');
+  console.log('🔄 [EDGE SELECTION] Filtrage strict de', bars.length, 'candidats');
 
   // Valider et noter tous les bars
   const validatedBars = bars
     .map(place => ({
       place,
-      validation: EnhancedBarValidator.validateBarCandidate(place)
+      validation: StrictBarValidator.validateBarCandidate(place)
     }))
-    .filter(item => item.validation.isValid)
-    .sort((a, b) => b.validation.score - a.validation.score); // Sort by score descending
+    .filter(item => item.validation.isValid && item.validation.confidence !== 'low')
+    .sort((a, b) => {
+      // Trier par confiance puis par score
+      if (a.validation.confidence !== b.validation.confidence) {
+        const confidenceOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+        return confidenceOrder[b.validation.confidence] - confidenceOrder[a.validation.confidence];
+      }
+      return b.validation.score - a.validation.score;
+    });
 
-  console.log('✅ [ENHANCED FILTERING] Filtered to', validatedBars.length, 'valid bars');
+  console.log('✅ [EDGE SELECTION] Filtrage terminé:', {
+    input: bars.length,
+    validBars: validatedBars.length,
+    rejectionRate: ((bars.length - validatedBars.length) / bars.length * 100).toFixed(1) + '%'
+  });
 
   if (validatedBars.length === 0) {
-    // Fallback: if no bars pass validation, use the first one with a warning
-    console.warn('⚠️ [ENHANCED SELECTION] No bars passed validation, using first available with warning');
-    return bars[0];
+    console.log('❌ [EDGE SELECTION] Aucun bar n\'a passé la validation stricte');
+    return null;
   }
 
-  const selectedBar = validatedBars[0].place;
-  console.log(`🎯 [ENHANCED SELECTION] Best validated bar selected:`, {
-    name: selectedBar.displayName?.text || selectedBar.name,
-    score: validatedBars[0].validation.score,
-    primaryType: selectedBar.primaryType,
-    rating: selectedBar.rating,
-    businessStatus: selectedBar.businessStatus
+  const selectedBar = validatedBars[0];
+  console.log('🎯 [EDGE SELECTION] Bar sélectionné avec validation stricte:', {
+    name: selectedBar.place.displayName?.text,
+    score: selectedBar.validation.score,
+    confidence: selectedBar.validation.confidence,
+    primaryType: selectedBar.place.primaryType,
+    businessStatus: selectedBar.place.businessStatus
   });
-  
-  return selectedBar;
+
+  return selectedBar.place;
 }
 
 serve(async (req) => {
@@ -248,7 +281,7 @@ serve(async (req) => {
   }
 
   try {
-    const { latitude, longitude, radius = 5000 } = await req.json()
+    const { latitude, longitude, radius = 15000, enhanced = false } = await req.json()
 
     if (!latitude || !longitude) {
       return new Response(
@@ -260,12 +293,17 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 [ENHANCED BAR SEARCH] Recherche améliorée de bars près de:', { latitude, longitude, radius });
+    console.log('🚀 [EDGE ENHANCED BAR SEARCH] Recherche avec validation stricte:', { 
+      latitude, 
+      longitude, 
+      radius,
+      enhanced
+    });
     
     // Utiliser la clé API depuis les secrets Supabase
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
-      console.error('❌ [ENHANCED BAR SEARCH] Clé API Google Places manquante')
+      console.error('❌ [EDGE ENHANCED BAR SEARCH] Clé API Google Places manquante')
       return new Response(
         JSON.stringify({ error: 'Configuration API manquante' }),
         { 
@@ -275,10 +313,10 @@ serve(async (req) => {
       )
     }
 
-    // Recherche Google Places API (New) v1 avec enrichissement des données
+    // Recherche Google Places API (New) v1 avec rayon optimal pour Martinique
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     
-    console.log('🌐 [ENHANCED BAR SEARCH] Recherche Google Places API (New) v1 avec validation améliorée');
+    console.log('🌐 [EDGE ENHANCED BAR SEARCH] Appel Google Places API v1 avec validation stricte');
 
     const requestBody = {
       includedTypes: ["bar"],
@@ -288,11 +326,11 @@ serve(async (req) => {
             latitude: latitude,
             longitude: longitude
           },
-          radius: Math.max(radius, 15000) // Increased minimum radius for better results
+          radius: Math.max(radius, 15000) // Rayon minimum pour Martinique
         }
       },
       rankPreference: "DISTANCE",
-      maxResultCount: 20,
+      maxResultCount: 20, // Plus de candidats pour meilleure sélection
       languageCode: "fr-FR"
     };
 
@@ -301,29 +339,25 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.name,places.displayName,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours'
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.priceLevel,places.primaryType,places.types,places.businessStatus,places.currentOpeningHours'
       },
       body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
 
-    console.log('📊 [ENHANCED BAR SEARCH] Réponse Google Places API (New):', { 
+    console.log('📊 [EDGE ENHANCED BAR SEARCH] Réponse Google Places API:', { 
       placeCount: data.places?.length,
       hasPlaces: !!data.places
     });
 
     if (!data.places || data.places.length === 0) {
-      console.log('❌ [ENHANCED BAR SEARCH] Aucun bar trouvé par Google Places API (New)');
+      console.log('❌ [EDGE ENHANCED BAR SEARCH] Aucun bar trouvé par Google Places API');
       return new Response(
         JSON.stringify({ 
-          error: 'Aucun bar trouvé dans cette zone',
-          debug: {
-            latitude,
-            longitude,
-            radius,
-            enhancedSearchUsed: true
-          }
+          error: 'Aucun bar trouvé dans cette zone avec les critères de validation stricte',
+          searchLocation: { latitude, longitude, radius },
+          enhanced: true
         }),
         { 
           status: 404, 
@@ -332,26 +366,39 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ [ENHANCED BAR SEARCH] Recherche avec validation multi-critères');
-    console.log(`📋 [ENHANCED BAR SEARCH] ${data.places.length} bars trouvés par Google Places API`);
-
-    // Sélection du MEILLEUR bar validé avec critères multiples
+    // Sélection STRICTE du meilleur bar validé
     const selectedBar = selectBestValidatedBar(data.places);
     
-    // Extraction robuste du nom avec système de fallback amélioré
-    const barName = extractBarName(selectedBar);
+    if (!selectedBar) {
+      console.log('❌ [EDGE ENHANCED BAR SEARCH] Aucun bar n\'a passé la validation stricte');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Aucun bar authentique trouvé selon les critères de validation stricte',
+          searchLocation: { latitude, longitude, radius },
+          totalCandidates: data.places.length,
+          validCandidates: 0,
+          enhanced: true
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Extraction robuste du nom avec système de fallback
+    const barName = extractBarNameRobust(selectedBar);
     const placeId = selectedBar.id;
     
     // Validation stricte des données essentielles
     if (!placeId || placeId.length < 10) {
-      console.error('❌ [ENHANCED DATA VALIDATION] Place ID invalide:', placeId);
+      console.error('❌ [EDGE ENHANCED DATA VALIDATION] Place ID invalide:', placeId);
       throw new Error('Place ID invalide reçu de l\'API');
     }
     
     // Validation finale du nom extrait
     if (!barName || barName.startsWith('places/') || barName.startsWith('ChIJ')) {
-      console.error('❌ [ENHANCED DATA VALIDATION] Nom de bar invalide après extraction:', barName);
-      console.error('   - Raw selectedBar:', JSON.stringify(selectedBar, null, 2));
+      console.error('❌ [EDGE ENHANCED DATA VALIDATION] Nom invalide après extraction:', barName);
       throw new Error('Impossible d\'extraire un nom de bar valide');
     }
 
@@ -368,24 +415,27 @@ serve(async (req) => {
       rating: selectedBar.rating,
       price_level: selectedBar.priceLevel,
       types: selectedBar.types || [],
-      businessStatus: selectedBar.businessStatus,
+      business_status: selectedBar.businessStatus,
+      primaryType: selectedBar.primaryType,
       openNow: selectedBar.currentOpeningHours?.openNow,
-      primaryType: selectedBar.primaryType
+      enhanced: true,
+      validation: {
+        totalCandidates: data.places.length,
+        strictValidation: true,
+        confidence: 'high'
+      }
     };
     
-    console.log('🍺 [ENHANCED BAR SEARCH] Bar sélectionné avec validation améliorée:', {
+    console.log('🍺 [EDGE ENHANCED BAR SEARCH] Bar sélectionné avec validation stricte réussie:', {
       extractedName: result.name,
       displayName: selectedBar.displayName?.text,
-      originalName: selectedBar.name,
       address: result.formatted_address,
+      primaryType: result.primaryType,
+      businessStatus: result.business_status,
       rating: result.rating,
-      businessStatus: result.businessStatus,
-      openNow: result.openNow,
-      primaryType: selectedBar.primaryType,
-      types: selectedBar.types?.join(', ') || 'N/A',
       location: result.geometry.location,
       totalCandidates: data.places.length,
-      enhancedValidation: true
+      enhanced: true
     });
 
     return new Response(
@@ -396,11 +446,11 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ [ENHANCED BAR SEARCH] Erreur dans find-nearby-bars:', error);
+    console.error('❌ [EDGE ENHANCED BAR SEARCH] Erreur critique:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Erreur serveur lors de la recherche améliorée de bars',
-        enhancedSearchUsed: true
+        error: 'Erreur serveur lors de la recherche avec validation stricte',
+        enhanced: true
       }),
       { 
         status: 500, 
