@@ -5,7 +5,7 @@
  */
 
 import { StrictBarValidationService, ValidatedPlace } from './barValidation';
-import { MartiniqueGeolocationService, MartiniqueLocation } from './martinqueGeolocation';
+import { GeolocationService, LocationData } from './geolocation';
 
 export interface EnhancedSearchResult {
   bar: ValidatedPlace | null;
@@ -13,7 +13,7 @@ export interface EnhancedSearchResult {
     totalCandidates: number;
     validCandidates: number;
     rejectedCandidates: number;
-    searchLocation: MartiniqueLocation;
+    searchLocation: LocationData;
     searchRadius: number;
     confidence: 'high' | 'medium' | 'low';
   };
@@ -33,12 +33,14 @@ export class EnhancedGooglePlacesService {
   ): Promise<EnhancedSearchResult> {
     console.log('🚀 [ENHANCED GOOGLE PLACES] Début recherche améliorée avec validation stricte');
 
-    // 1. Validation et correction de la géolocalisation
-    const searchLocation = MartiniqueGeolocationService.validateAndCorrectUserLocation(
-      userLatitude, userLongitude, userLocationName
-    );
+    // 1. Validation et utilisation de la géolocalisation
+    const searchLocation: LocationData = {
+      latitude: userLatitude || 48.8566,  // Default to Paris if no location
+      longitude: userLongitude || 2.3522,
+      locationName: userLocationName || 'Position actuelle'
+    };
 
-    const searchRadius = MartiniqueGeolocationService.getOptimalSearchRadius(searchLocation.confidence);
+    const searchRadius = 10000; // 10km par défaut
 
     console.log('📍 [ENHANCED GOOGLE PLACES] Position de recherche validée:', {
       location: searchLocation,
