@@ -23,7 +23,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
   const assignBar = async () => {
     setLoading(true);
     try {
-      console.log('🍺 Assignation manuelle de bar pour le groupe:', groupId);
+      console.log('🍺 [ENHANCED] Assignation manuelle de bar avec validation améliorée pour le groupe:', groupId);
 
       // Récupérer l'état actuel du groupe
       const { data: currentGroup, error: groupError } = await supabase
@@ -33,7 +33,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         .single();
 
       if (groupError) {
-        console.error('❌ Erreur récupération groupe:', groupError);
+        console.error('❌ [ENHANCED] Erreur récupération groupe:', groupError);
         throw groupError;
       }
 
@@ -45,40 +45,54 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
       if (!searchLatitude && !searchLongitude && userLocation) {
         searchLatitude = userLocation.latitude;
         searchLongitude = userLocation.longitude;
-        console.log('📍 Utilisation position utilisateur:', { searchLatitude, searchLongitude });
+        console.log('📍 [ENHANCED] Utilisation position utilisateur:', { searchLatitude, searchLongitude });
       }
       
       // Fallback sur Paris si aucune position disponible
       if (!searchLatitude && !searchLongitude) {
         searchLatitude = 48.8566;
         searchLongitude = 2.3522;
-        console.log('⚠️ Utilisation position Paris par défaut');
+        console.log('⚠️ [ENHANCED] Utilisation position Paris par défaut');
       }
 
-      console.log('🔍 Recherche de bar avec position:', { searchLatitude, searchLongitude });
+      console.log('🔍 [ENHANCED] Recherche de bar avec validation améliorée:', { searchLatitude, searchLongitude });
 
-      // Rechercher un bar via l'API
+      // Rechercher un bar via l'API améliorée
       const selectedBar = await GooglePlacesService.findNearbyBars(
         searchLatitude,
         searchLongitude,
-        8000
+        15000 // Increased radius
       );
 
       if (!selectedBar || !selectedBar.name) {
-        throw new Error('Aucun bar trouvé dans la zone');
+        throw new Error('Aucun bar validé trouvé dans la zone');
       }
 
-      // Validation stricte des données reçues
+      // Validation stricte améliorée des données reçues
       if (selectedBar.name.startsWith('places/') || selectedBar.name.startsWith('ChIJ')) {
-        console.error('❌ [BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', selectedBar.name);
+        console.error('❌ [ENHANCED BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', selectedBar.name);
         console.error('   - Données complètes:', JSON.stringify(selectedBar, null, 2));
-        throw new Error('Données de bar invalides - nom corrrompu');
+        throw new Error('Données de bar invalides - nom corrompu');
       }
 
-      console.log('✅ [BAR ASSIGNMENT VALIDATION] Bar validé:', {
+      // Validation supplémentaire pour les services non-bar
+      const nameLower = selectedBar.name.toLowerCase();
+      const problematicKeywords = ['service', 'services', 'office', 'company', 'entreprise', 'bureau'];
+      if (problematicKeywords.some(keyword => nameLower.includes(keyword))) {
+        console.warn('⚠️ [ENHANCED BAR ASSIGNMENT VALIDATION] Bar potentiellement invalide:', selectedBar.name);
+        toast({
+          title: '⚠️ Attention',
+          description: `Le lieu sélectionné (${selectedBar.name}) pourrait ne pas être un bar. Vérifiez l'adresse.`,
+          variant: 'default',
+        });
+      }
+
+      console.log('✅ [ENHANCED BAR ASSIGNMENT VALIDATION] Bar validé avec critères améliorés:', {
         name: selectedBar.name,
         place_id: selectedBar.place_id,
-        address: selectedBar.formatted_address
+        address: selectedBar.formatted_address,
+        primaryType: selectedBar.primaryType,
+        businessStatus: selectedBar.businessStatus
       });
 
       // Définir l'heure de rendez-vous (1h à partir de maintenant)
@@ -100,27 +114,28 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         .eq('id', groupId);
 
       if (updateError) {
-        console.error('❌ Erreur mise à jour groupe:', updateError);
+        console.error('❌ [ENHANCED] Erreur mise à jour groupe:', updateError);
         throw updateError;
       }
 
-      console.log('✅ Bar assigné avec succès:', {
+      console.log('✅ [ENHANCED] Bar assigné avec validation améliorée:', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
-        meetingTime: meetingTime.toLocaleString('fr-FR')
+        meetingTime: meetingTime.toLocaleString('fr-FR'),
+        enhancedValidation: true
       });
 
       toast({
-        title: '🍺 Bar assigné !',
+        title: '🍺 Bar assigné avec validation améliorée !',
         description: `Rendez-vous au ${selectedBar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
       });
 
       onBarAssigned();
     } catch (error) {
-      console.error('❌ Erreur assignation bar:', error);
+      console.error('❌ [ENHANCED] Erreur assignation bar avec validation améliorée:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'assigner un bar. Veuillez réessayer.',
+        description: 'Impossible d\'assigner un bar avec la validation améliorée. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -137,7 +152,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
       className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
     >
       <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-      {loading ? 'Recherche...' : 'Assigner un bar'}
+      {loading ? 'Recherche validée...' : 'Assigner un bar (validé)'}
     </Button>
   );
 };

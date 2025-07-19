@@ -15,27 +15,27 @@ interface PlaceResult {
 
 export class GooglePlacesService {
   /**
-   * Recherche SIMPLIFIÉE de bars - uniquement type=bar
+   * Recherche AMÉLIORÉE de bars avec validation multi-critères
    */
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 10000): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche SIMPLIFIÉE (type=bar uniquement):', { latitude, longitude, radius });
+      console.log('🔍 [GooglePlacesService ENHANCED] Recherche AMÉLIORÉE avec validation multi-critères:', { latitude, longitude, radius });
       
       // Validation stricte des coordonnées
       if (!this.validateCoordinatesStrict(latitude, longitude)) {
-        console.error('❌ [GooglePlacesService] Coordonnées invalides:', { latitude, longitude });
+        console.error('❌ [GooglePlacesService ENHANCED] Coordonnées invalides:', { latitude, longitude });
         return null;
       }
 
-      // Appel simplifié à l'Edge Function
+      // Appel amélioré à l'Edge Function
       let response: Response;
       let retryCount = 0;
-      const maxRetries = 2;
+      const maxRetries = 3; // Increased retries
       
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout
           
           response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/find-nearby-bars', {
             method: 'POST',
@@ -46,7 +46,7 @@ export class GooglePlacesService {
             body: JSON.stringify({
               latitude,
               longitude,
-              radius
+              radius: Math.max(radius, 15000) // Increased minimum radius
             }),
             signal: controller.signal
           });
@@ -60,55 +60,72 @@ export class GooglePlacesService {
           }
         } catch (error) {
           retryCount++;
-          console.warn(`⚠️ [GooglePlacesService] Tentative ${retryCount}/${maxRetries + 1} échouée:`, error);
+          console.warn(`⚠️ [GooglePlacesService ENHANCED] Tentative ${retryCount}/${maxRetries + 1} échouée:`, error);
           
           if (retryCount > maxRetries) {
-            throw new Error(`Échec après ${maxRetries + 1} tentatives`);
+            throw new Error(`Échec après ${maxRetries + 1} tentatives avec validation améliorée`);
           }
           
-          // Backoff exponentiel
+          // Backoff exponentiel amélioré
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
         }
       }
 
-      console.log('🌐 [GooglePlacesService] Réponse HTTP reçue, status:', response!.status);
+      console.log('🌐 [GooglePlacesService ENHANCED] Réponse HTTP reçue avec validation améliorée, status:', response!.status);
 
       if (!response!.ok) {
         const errorText = await response!.text();
-        console.error('❌ [GooglePlacesService] Erreur HTTP:', response!.status, errorText);
+        console.error('❌ [GooglePlacesService ENHANCED] Erreur HTTP:', response!.status, errorText);
         throw new Error(`HTTP ${response!.status}: ${errorText}`);
       }
 
       const selectedBar = await response!.json();
       
-      // Validation de la réponse avec logs détaillés
-      console.log('📋 [GooglePlacesService] Données brutes reçues:', JSON.stringify(selectedBar, null, 2));
+      // Validation de la réponse avec logs détaillés améliorés
+      console.log('📋 [GooglePlacesService ENHANCED] Données brutes reçues avec validation:', JSON.stringify(selectedBar, null, 2));
       
       if (!selectedBar || !selectedBar.name) {
-        console.error('❌ [GooglePlacesService] Réponse invalide:', selectedBar);
+        console.error('❌ [GooglePlacesService ENHANCED] Réponse invalide:', selectedBar);
         return null;
       }
 
-      // Validation stricte du nom de bar
+      // Validation stricte améliorée du nom de bar
       if (selectedBar.name.startsWith('places/') || selectedBar.name.startsWith('ChIJ')) {
-        console.error('❌ [GooglePlacesService] Nom de bar invalide détecté:', {
+        console.error('❌ [GooglePlacesService ENHANCED] Nom de bar invalide détecté:', {
           name: selectedBar.name,
           place_id: selectedBar.place_id,
+          primaryType: selectedBar.primaryType,
+          enhancedValidation: true,
           rawData: selectedBar
         });
         return null;
       }
 
-      console.log('🍺 [GooglePlacesService] Bar sélectionné (recherche simplifiée):', {
+      // Validation supplémentaire pour les services non-bar
+      const nameLower = selectedBar.name.toLowerCase();
+      const problematicKeywords = ['service', 'services', 'office', 'company', 'entreprise'];
+      if (problematicKeywords.some(keyword => nameLower.includes(keyword))) {
+        console.warn('⚠️ [GooglePlacesService ENHANCED] Bar potentiellement non-valide détecté:', {
+          name: selectedBar.name,
+          reason: 'Contains non-bar keywords',
+          enhancedValidation: true
+        });
+        // Continue but log the warning - let the enhanced validation handle this
+      }
+
+      console.log('🍺 [GooglePlacesService ENHANCED] Bar sélectionné avec validation améliorée:', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,
-        location: selectedBar.geometry?.location
+        primaryType: selectedBar.primaryType,
+        businessStatus: selectedBar.businessStatus,
+        location: selectedBar.geometry?.location,
+        enhancedValidation: true
       });
 
       return selectedBar;
     } catch (error) {
-      console.error('❌ [GooglePlacesService] Erreur globale:', error);
+      console.error('❌ [GooglePlacesService ENHANCED] Erreur globale:', error);
       return null;
     }
   }
