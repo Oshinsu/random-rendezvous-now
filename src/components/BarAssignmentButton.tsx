@@ -91,8 +91,8 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         name: selectedBar.name,
         place_id: selectedBar.place_id,
         address: selectedBar.formatted_address,
-        primaryType: selectedBar.primaryType,
-        businessStatus: selectedBar.businessStatus
+        primaryType: selectedBar.primaryType || 'N/A',
+        businessStatus: selectedBar.businessStatus || 'N/A'
       });
 
       // Définir l'heure de rendez-vous (1h à partir de maintenant)

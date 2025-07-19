@@ -11,6 +11,8 @@ interface PlaceResult {
   };
   rating?: number;
   price_level?: number;
+  primaryType?: string;
+  businessStatus?: string;
 }
 
 export class GooglePlacesService {
