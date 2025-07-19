@@ -24,10 +24,11 @@ export default {
 		},
 		extend: {
       fontFamily: {
-        sans: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Clash Display', 'system-ui', 'sans-serif'],
-        heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'system-ui', 'serif'],
+        heading: ['Poppins', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
+        playfair: ['Playfair Display', 'serif'],
       },
 			colors: {
 				border: 'hsl(var(--border))',
@@ -138,6 +139,10 @@ export default {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
         },
+        parallax: {
+          '0%': { transform: 'translateY(0px)' },
+          '100%': { transform: 'translateY(-50px)' },
+        },
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -146,6 +151,7 @@ export default {
         'slide-up': 'slideUp 0.8s ease-out forwards',
         'glow': 'glow 2s ease-in-out infinite',
         'float': 'float 3s ease-in-out infinite',
+        'parallax': 'parallax 10s ease-in-out infinite',
 			},
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
@@ -153,6 +159,7 @@ export default {
         'strong': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 20px 50px -10px rgba(0, 0, 0, 0.08)',
         'glow': '0 0 30px rgba(241, 194, 50, 0.3)',
         'glow-strong': '0 0 50px rgba(241, 194, 50, 0.5)',
+        'intense': '0 20px 80px -20px rgba(0, 0, 0, 0.25)',
       }
 		}
 	},

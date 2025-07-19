@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     question: "Pourquoi je ne vois pas le bar avant de confirmer ?",
-    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection croissante de bars partenaires.",
+    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection croissante de bars partenaires dans ta ville.",
   },
   {
     question: "Et si le groupe ne me plaît pas ?",
@@ -26,31 +26,49 @@ const faqs = [
   {
     question: "C'est sécurisé ?",
     answer: "Totalement. Lieux publics uniquement, et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit = notre obsession."
+  },
+  {
+    question: "Random est disponible dans ma ville ?",
+    answer: "Random est actuellement actif dans plusieurs grandes villes françaises et continue son déploiement. Consulte la section 'Villes disponibles' pour voir si Random est déjà arrivé près de chez toi !"
   }
 ];
 
 const FaqSection = () => {
   return (
-    <section className="py-16 md:py-20 bg-secondary">
+    <section className="py-20 md:py-24 bg-gradient-to-br from-neutral-50 to-amber-50/30">
       <div className="container mx-auto px-6">
-        <h2 className="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
-          Questions <span className="text-primary">Brûlantes</span> ?
-        </h2>
-        <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          On répond cash, sans détour. Comme on aime chez Random.
-        </p>
-        <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
-          {faqs.map((faq, index) => (
-            <AccordionItem value={`item-${index}`} key={index} className="border-b-muted/50 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
-              <AccordionTrigger className="text-left text-base hover:no-underline py-4 font-semibold hover:text-primary transition-colors duration-300">
-                {faq.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4 pt-2 text-sm leading-relaxed">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-playfair font-bold mb-6">
+            Questions <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Brûlantes</span> ?
+          </h2>
+          <p className="text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+            On répond cash, sans détour. Comme on aime chez Random.
+          </p>
+        </div>
+        
+        <div className="max-w-4xl mx-auto">
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, index) => (
+              <AccordionItem value={`item-${index}`} key={index} className="border-b border-amber-200/30 animate-fade-in bg-white/50 backdrop-blur-sm rounded-2xl mb-4 px-6 hover:bg-white/80 transition-all duration-300" style={{animationDelay: `${index * 100}ms`}}>
+                <AccordionTrigger className="text-left text-lg hover:no-underline py-6 font-bold hover:text-amber-700 transition-colors duration-300">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-neutral-600 pb-6 pt-2 leading-relaxed text-base">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+
+        <div className="text-center mt-12 p-8 bg-gradient-to-r from-amber-50/50 to-orange-50/50 rounded-3xl border border-amber-200/30">
+          <p className="text-lg text-neutral-700 font-medium mb-2">
+            Une autre question ?
+          </p>
+          <p className="text-neutral-500">
+            Notre équipe est là pour t'accompagner dans ton aventure Random !
+          </p>
+        </div>
       </div>
     </section>
   );
