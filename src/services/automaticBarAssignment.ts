@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class AutomaticBarAssignmentService {
   /**
-   * Attribution automatique de bar - VERSION ULTRA SIMPLIFIÉE
+   * Attribution automatique de bar - VERSION AVEC TRIGGER RESTAURÉ
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [AUTO-ASSIGN] Attribution pour groupe:', groupId);
+      console.log('🤖 [AUTO-ASSIGN] Attribution avec trigger pour groupe:', groupId);
 
       // Vérifier le groupe
       const { data: group, error: groupError } = await supabase
@@ -27,52 +27,34 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // Coordonnées
-      const searchLatitude = group.latitude || 48.8566;
-      const searchLongitude = group.longitude || 2.3522;
-
-      // Appel Edge Function unique
-      const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
-        body: { 
+      // Déclencher le trigger en insérant le message système
+      console.log('🔥 Déclenchement du trigger group-participant-trigger');
+      
+      const { error: triggerError } = await supabase
+        .from('group_messages')
+        .insert({
           group_id: groupId,
-          latitude: searchLatitude, 
-          longitude: searchLongitude 
+          user_id: '00000000-0000-0000-0000-000000000000',
+          message: 'AUTO_BAR_ASSIGNMENT_TRIGGER',
+          is_system: true
+        });
+
+      if (triggerError) {
+        console.error('❌ Erreur déclenchement trigger:', triggerError);
+        return false;
+      }
+
+      // Attendre un peu puis déclencher le traitement
+      setTimeout(async () => {
+        try {
+          console.log('⚡ Appel du trigger group-participant-trigger');
+          await supabase.functions.invoke('group-participant-trigger');
+        } catch (error) {
+          console.error('❌ Erreur appel trigger:', error);
         }
-      });
+      }, 2000);
 
-      if (barError || !barResponse?.success || !barResponse?.bar?.name) {
-        console.error('❌ Aucun bar trouvé');
-        await this.sendSystemMessage(groupId, '⚠️ Aucun bar trouvé automatiquement.');
-        return false;
-      }
-
-      // Mise à jour du groupe
-      const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
-
-      const { error: updateError } = await supabase
-        .from('groups')
-        .update({
-          bar_name: barResponse.bar.name,
-          bar_address: barResponse.bar.formatted_address,
-          meeting_time: meetingTime.toISOString(),
-          bar_latitude: barResponse.bar.geometry.location.lat,
-          bar_longitude: barResponse.bar.geometry.location.lng,
-          bar_place_id: barResponse.bar.place_id
-        })
-        .eq('id', groupId);
-
-      if (updateError) {
-        console.error('❌ Erreur mise à jour:', updateError);
-        return false;
-      }
-
-      // Message de confirmation
-      await this.sendSystemMessage(
-        groupId, 
-        `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-      );
-
-      console.log('✅ Bar assigné:', barResponse.bar.name);
+      console.log('✅ Trigger déclenché avec succès');
       return true;
 
     } catch (error) {
