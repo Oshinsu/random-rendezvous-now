@@ -3,13 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class AutomaticBarAssignmentService {
   /**
-   * Attribution automatique de bar - VERSION SIMPLIFIÉE
+   * Attribution automatique de bar - VERSION ULTRA SIMPLIFIÉE
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [SIMPLE BAR ASSIGNMENT] Attribution pour groupe:', groupId);
+      console.log('🤖 [AUTO-ASSIGN] Attribution pour groupe:', groupId);
 
-      // 1. Vérifier le groupe
+      // Vérifier le groupe
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('id, latitude, longitude, current_participants, status, bar_name')
@@ -21,17 +21,17 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 2. Vérifier l'éligibilité (5 participants, confirmé, pas de bar)
+      // Vérifier l'éligibilité
       if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
         console.log('ℹ️ Groupe non éligible');
         return false;
       }
 
-      // 3. Coordonnées (fallback Paris si nécessaire)
+      // Coordonnées
       const searchLatitude = group.latitude || 48.8566;
       const searchLongitude = group.longitude || 2.3522;
 
-      // 4. Appel Edge Function simple
+      // Appel Edge Function unique
       const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
         body: { 
           group_id: groupId,
@@ -46,7 +46,7 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 5. Mise à jour du groupe
+      // Mise à jour du groupe
       const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
 
       const { error: updateError } = await supabase
@@ -66,7 +66,7 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 6. Message de confirmation
+      // Message de confirmation
       await this.sendSystemMessage(
         groupId, 
         `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
@@ -82,9 +82,6 @@ export class AutomaticBarAssignmentService {
     }
   }
 
-  /**
-   * Envoi de message système
-   */
   private static async sendSystemMessage(groupId: string, message: string): Promise<void> {
     try {
       await supabase
@@ -97,22 +94,6 @@ export class AutomaticBarAssignmentService {
         });
     } catch (error) {
       console.error('❌ Erreur envoi message système:', error);
-    }
-  }
-
-  /**
-   * Nettoyage des messages de déclenchement
-   */
-  static async cleanupTriggerMessages(groupId: string): Promise<void> {
-    try {
-      await supabase
-        .from('group_messages')
-        .delete()
-        .eq('group_id', groupId)
-        .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
-        .eq('is_system', true);
-    } catch (error) {
-      console.error('❌ Erreur nettoyage messages:', error);
     }
   }
 }
