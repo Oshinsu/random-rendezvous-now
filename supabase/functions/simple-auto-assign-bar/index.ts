@@ -7,8 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage STRICTE pour les bars/pubs/brasseries UNIQUEMENT
-const isRealBarOrPub = (place: any): boolean => {
+// Fonction de filtrage HARMONISÉE avec priorités clairement définies
+const isRealBarOrPub = (place: any): { isValid: boolean; priority: number; reason: string } => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
   const types = place.types || [];
@@ -22,38 +22,38 @@ const isRealBarOrPub = (place: any): boolean => {
     rating: rating
   });
 
-  // NOUVELLE RÈGLE : Seuil de note abaissé à 3.0 (au lieu de 4.0)
+  // Seuil de note abaissé à 3.0 (au lieu de 4.0)
   if (rating > 0 && rating < 3.0) {
     console.log('❌ Lieu rejeté - note trop faible:', rating);
-    return false;
+    return { isValid: false, priority: 0, reason: `Note trop faible: ${rating}` };
   }
 
-  // 1. PRIORITÉ ABSOLUE : Vrais bars et pubs
+  // PRIORITÉ 1 : Vrais bars et pubs (score 100)
   const isBarOrPub = types.includes('bar') || types.includes('pub') || 
                      primaryType === 'bar' || primaryType === 'pub';
   
-  // 2. BRASSERIES acceptées explicitement
+  if (isBarOrPub) {
+    console.log('✅ PRIORITÉ 1 - Vrai bar/pub détecté');
+    return { isValid: true, priority: 100, reason: 'Bar/pub authentique' };
+  }
+
+  // PRIORITÉ 2 : Brasseries (score 80)
   const isBrasserie = name.includes('brasserie') || types.includes('brewery') || 
                       name.includes('brewery');
   
-  // 3. Bars dans des restaurants acceptés SI pas trop de types restaurant
+  if (isBrasserie) {
+    console.log('✅ PRIORITÉ 2 - Brasserie acceptée');
+    return { isValid: true, priority: 80, reason: 'Brasserie' };
+  }
+
+  // PRIORITÉ 3 : Restaurant-bars avec critères stricts (score 60)
   const hasBarType = types.includes('bar');
   const restaurantTypes = types.filter(type => ['restaurant', 'meal_takeaway', 'food'].includes(type));
   const isRestaurantBar = hasBarType && restaurantTypes.length <= 2;
 
-  if (isBarOrPub) {
-    console.log('✅ PRIORITÉ 1 - Vrai bar/pub détecté');
-    return true;
-  }
-  
-  if (isBrasserie) {
-    console.log('✅ PRIORITÉ 2 - Brasserie acceptée');
-    return true;
-  }
-  
   if (isRestaurantBar) {
-    console.log('✅ PRIORITÉ 3 - Restaurant-bar accepté (types restaurants limités)');
-    return true;
+    console.log('✅ PRIORITÉ 3 - Restaurant-bar accepté');
+    return { isValid: true, priority: 60, reason: 'Restaurant avec bar' };
   }
 
   // Types explicitement INTERDITS
@@ -69,7 +69,7 @@ const isRealBarOrPub = (place: any): boolean => {
   
   if (hasBannedType) {
     console.log('❌ Lieu rejeté - type interdit détecté');
-    return false;
+    return { isValid: false, priority: 0, reason: 'Type interdit' };
   }
 
   // Mots-clés strictement INTERDITS
@@ -85,11 +85,11 @@ const isRealBarOrPub = (place: any): boolean => {
 
   if (hasBannedKeyword) {
     console.log('❌ Lieu rejeté - mot-clé interdit trouvé');
-    return false;
+    return { isValid: false, priority: 0, reason: 'Mot-clé interdit' };
   }
 
-  console.log('❌ Lieu rejeté - ne correspond à aucun critère de bar/pub/brasserie');
-  return false;
+  console.log('❌ Lieu rejeté - ne correspond à aucun critère accepté');
+  return { isValid: false, priority: 0, reason: 'Aucun critère accepté' };
 };
 
 serve(async (req) => {
@@ -111,7 +111,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN AVANCÉ] Attribution pour:', group_id);
+    console.log('🤖 [AUTO-ASSIGN HARMONISÉ] Attribution pour:', group_id);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
@@ -138,7 +138,7 @@ serve(async (req) => {
     const searchLatitude = latitude || 48.8566;
     const searchLongitude = longitude || 2.3522;
 
-    // Recherche avancée de bars
+    // API Google Places
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
       return new Response(
@@ -147,15 +147,15 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 Recherche avancée avec rayon 10km pour:', { searchLatitude, searchLongitude });
+    console.log('🔍 Recherche HARMONISÉE avec rayon 10km pour:', { searchLatitude, searchLongitude });
 
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub", "brewery"], // SUPPRIMÉ "night_club", AJOUTÉ "brewery"
+      includedTypes: ["bar", "pub", "brewery"], // SANS night_club, AVEC brewery
       locationRestriction: {
         circle: {
           center: { latitude: searchLatitude, longitude: searchLongitude },
-          radius: 10000 // 10km radius
+          radius: 10000
         }
       },
       maxResultCount: 20,
@@ -175,63 +175,82 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!data.places || data.places.length === 0) {
+      console.log('❌ ÉCHEC TOTAL - Aucun lieu trouvé par l\'API');
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar trouvé' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Aucun établissement trouvé dans cette zone' 
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     console.log('📊 Lieux trouvés initialement:', data.places.length);
 
-    // Filter only OPEN bars/pubs
+    // Filtrer les lieux ouverts
     const openBars = data.places.filter(place => {
       const currentHours = place.currentOpeningHours;
       if (currentHours && currentHours.openNow !== undefined) {
         return currentHours.openNow === true;
       }
-      return true; // If no current hours info, allow it
+      return true; // Si pas d'info, on assume ouvert
     });
 
     console.log('🕐 Lieux ouverts:', openBars.length);
 
-    // Filtrage STRICT pour les bars/pubs/brasseries UNIQUEMENT
-    const realBars = openBars.filter(isRealBarOrPub);
+    // Analyse avec priorités
+    const analyzedBars = openBars.map(place => {
+      const analysis = isRealBarOrPub(place);
+      return {
+        place,
+        ...analysis
+      };
+    }).filter(item => item.isValid);
 
-    console.log('🍺 Vrais bars après filtrage STRICT:', realBars.length);
+    console.log('🍺 Bars valides après analyse complète:', analyzedBars.length);
+    
+    // Log des priorités
+    analyzedBars.forEach(bar => {
+      console.log(`📋 ${bar.place.displayName?.text} - Priorité: ${bar.priority} (${bar.reason})`);
+    });
 
-    // AUCUN FALLBACK ! Si pas de bars trouvés = ERREUR
-    if (realBars.length === 0) {
-      console.log('❌ ÉCHEC - Aucun bar/pub/brasserie trouvé dans la zone');
+    // Si aucun bar valide trouvé = ERREUR (pas de fallback)
+    if (analyzedBars.length === 0) {
+      console.log('❌ ÉCHEC FINAL - Aucun bar/pub/brasserie valide trouvé');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Aucun bar, pub ou brasserie trouvé dans cette zone. Essayez de changer de localisation.' 
+          error: 'Aucun bar, pub ou brasserie valide trouvé dans cette zone' 
         }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Sélection aléatoire parmi les VRAIS bars uniquement
-    const randomBar = realBars[Math.floor(Math.random() * realBars.length)];
+    // Trier par priorité décroissante puis sélection aléatoire dans la meilleure catégorie
+    analyzedBars.sort((a, b) => b.priority - a.priority);
+    const bestPriority = analyzedBars[0].priority;
+    const bestBars = analyzedBars.filter(bar => bar.priority === bestPriority);
+    
+    const selectedBar = bestBars[Math.floor(Math.random() * bestBars.length)];
     
     const result = {
       success: true,
       bar: {
-        place_id: randomBar.id,
-        name: randomBar.displayName?.text || `Bar ${randomBar.id.slice(-8)}`,
-        formatted_address: randomBar.formattedAddress || 'Adresse non disponible',
+        place_id: selectedBar.place.id,
+        name: selectedBar.place.displayName?.text || `Bar ${selectedBar.place.id.slice(-8)}`,
+        formatted_address: selectedBar.place.formattedAddress || 'Adresse non disponible',
         geometry: {
           location: {
-            lat: randomBar.location.latitude,
-            lng: randomBar.location.longitude
+            lat: selectedBar.place.location.latitude,
+            lng: selectedBar.place.location.longitude
           }
         },
-        rating: randomBar.rating || null
+        rating: selectedBar.place.rating || null
       }
     };
 
-    console.log('🎲 Bar sélectionné:', result.bar.name, '- Note:', result.bar.rating);
-    console.log('📊 RÉSULTATS FINAUX - Total trouvés:', data.places.length, 'Ouverts:', openBars.length, 'BARS VALIDES:', realBars.length);
+    console.log('🏆 Bar sélectionné:', result.bar.name, '- Priorité:', bestPriority, '- Note:', result.bar.rating);
+    console.log('📊 STATS FINALES - Total:', data.places.length, 'Ouverts:', openBars.length, 'Valides:', analyzedBars.length, 'Priorité max:', bestPriority);
 
     return new Response(
       JSON.stringify(result),
@@ -239,9 +258,9 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Erreur:', error);
+    console.error('❌ Erreur globale:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur' }),
+      JSON.stringify({ success: false, error: 'Erreur serveur lors de l\'attribution' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
