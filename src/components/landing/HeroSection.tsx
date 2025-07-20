@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Zap, Heart, Users } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -17,70 +17,42 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative py-20 md:py-32 bg-gradient-to-br from-white via-amber-50/50 to-orange-100/30 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-r from-amber-400/5 to-orange-500/5 animate-pulse"></div>
-      <div className="absolute top-0 left-1/4 w-72 h-72 bg-gradient-to-br from-amber-300/20 to-orange-400/20 rounded-full blur-3xl animate-float"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-orange-300/15 to-amber-400/15 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
-      
-      <div className="container mx-auto px-6 text-center relative z-10">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair font-bold mb-8 tracking-tight leading-tight">
-            Random: <span className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 bg-clip-text text-transparent">Fini</span> les Soirées Plates
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-neutral-600 mb-6 leading-relaxed font-light">
-            L'app qui révolutionne tes sorties. Un clic, 4 inconnus, 1 bar surprise.
+    <section className="py-16 md:py-24 bg-background text-foreground animate-fade-in">
+      <div className="container mx-auto px-6 text-center">
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-extrabold mb-6 tracking-tight">
+          Random: <span className="text-primary">Bye Bye</span> les Soirées Plates
+        </h1>
+        <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+          Marre des swipes sans fin et des plans foireux ? Random te connecte à 4 inconnus dans un bar surprise. 
+          <span className="font-semibold text-foreground"> 1 clic, 1 aventure, 100% gratuit.</span>
+        </p>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
+          <Button 
+            onClick={handleMainAction}
+            size="lg" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-4 text-base w-full sm:w-auto transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
+          >
+            <Zap className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+            {user ? 'Chercher un groupe' : 'Tenter l\'Aventure'}
+          </Button>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <p className="text-sm text-muted-foreground mb-4">
+            {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez déjà +500 aventuriers parisiens'}
           </p>
-          
-          <p className="text-lg md:text-xl text-neutral-500 mb-12 max-w-3xl mx-auto font-medium">
-            <span className="font-semibold text-amber-700">100% gratuit</span> · 
-            <span className="font-semibold text-orange-700"> Totalement spontané</span> · 
-            <span className="font-semibold text-amber-800"> Vraies rencontres</span>
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-12">
-            <Button 
-              onClick={handleMainAction}
-              size="lg" 
-              className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:via-orange-600 hover:to-amber-700 text-white font-bold px-12 py-6 text-xl w-full sm:w-auto transform hover:scale-110 transition-all duration-500 shadow-intense hover:shadow-glow-strong group rounded-2xl"
-            >
-              <Zap className="mr-3 h-6 w-6 group-hover:animate-bounce" />
-              {user ? 'Chercher un groupe' : 'Tenter l\'Aventure'}
-            </Button>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center p-6 bg-white/60 backdrop-blur-sm rounded-3xl border border-amber-200/50 hover:bg-white/80 transition-all duration-300 group">
-              <div className="flex justify-center mb-4">
-                <Users className="h-8 w-8 text-amber-600 group-hover:animate-pulse" />
-              </div>
-              <p className="text-3xl font-bold text-amber-700 mb-2">500+</p>
-              <p className="text-sm text-neutral-600 font-medium">Aventuriers actifs</p>
-            </div>
-            
-            <div className="text-center p-6 bg-white/60 backdrop-blur-sm rounded-3xl border border-orange-200/50 hover:bg-white/80 transition-all duration-300 group">
-              <div className="flex justify-center mb-4">
-                <Heart className="h-8 w-8 text-orange-600 group-hover:animate-pulse" />
-              </div>
-              <p className="text-3xl font-bold text-orange-700 mb-2">95%</p>
-              <p className="text-sm text-neutral-600 font-medium">Satisfaction garantie</p>
-            </div>
-            
-            <div className="text-center p-6 bg-white/60 backdrop-blur-sm rounded-3xl border border-amber-200/50 hover:bg-white/80 transition-all duration-300 group">
-              <div className="flex justify-center mb-4">
-                <Zap className="h-8 w-8 text-amber-600 group-hover:animate-pulse" />
-              </div>
-              <p className="text-3xl font-bold text-amber-700 mb-2">2h</p>
-              <p className="text-sm text-neutral-600 font-medium">Temps d'attente moyen</p>
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <p className="text-sm text-neutral-500 mb-4 font-medium">
-              {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez l\'aventure dès maintenant'}
-            </p>
+          <div className="flex justify-center items-center gap-6 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              Groupes actifs
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+              Bars partenaires
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              Paris uniquement
+            </span>
           </div>
         </div>
       </div>

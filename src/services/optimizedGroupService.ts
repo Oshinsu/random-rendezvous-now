@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
@@ -231,7 +230,7 @@ export class OptimizedGroupService {
 
   // Optimized group members with connection status
   static async getGroupMembers(groupId: string): Promise<GroupMember[]> {
-    const metrics = this.startMetrics('GET_GROUP_MEMBERS');
+    const endMetrics = this.startMetrics('GET_GROUP_MEMBERS');
     
     try {
       const { data: participants, error } = await supabase
@@ -242,7 +241,7 @@ export class OptimizedGroupService {
         .order('joined_at', { ascending: true });
 
       if (error) {
-        metrics.end(false);
+        endMetrics(false);
         throw error;
       }
 
@@ -262,10 +261,10 @@ export class OptimizedGroupService {
         };
       });
 
-      metrics.end(true);
+      endMetrics(true);
       return members;
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('GET_GROUP_MEMBERS', error);
       return [];
     }
@@ -273,7 +272,7 @@ export class OptimizedGroupService {
 
   // Optimized group creation with atomic transaction
   static async createGroup(location: LocationData, userId: string): Promise<Group | null> {
-    const metrics = this.startMetrics('CREATE_GROUP');
+    const endMetrics = this.startMetrics('CREATE_GROUP');
     
     try {
       // Rate limiting check
@@ -286,7 +285,7 @@ export class OptimizedGroupService {
           description: `Veuillez attendre ${remainingMinutes} minute(s).`,
           variant: 'destructive'
         });
-        metrics.end(false);
+        endMetrics(false);
         return null;
       }
 
@@ -299,7 +298,7 @@ export class OptimizedGroupService {
       });
 
       if (error) {
-        metrics.end(false);
+        endMetrics(false);
         console.error('❌ Atomic group creation failed:', error);
         
         if (error.message.includes('User is already in an active group')) {
@@ -316,7 +315,7 @@ export class OptimizedGroupService {
       }
 
       if (!result || result.length === 0) {
-        metrics.end(false);
+        endMetrics(false);
         return null;
       }
 
@@ -325,10 +324,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      metrics.end(true);
+      endMetrics(true);
       return newGroup;
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('CREATE_GROUP_ATOMIC', error);
       return null;
     }
@@ -336,7 +335,7 @@ export class OptimizedGroupService {
 
   // Optimized group joining with validation
   static async joinGroup(groupId: string, userId: string, location: LocationData): Promise<boolean> {
-    const metrics = this.startMetrics('JOIN_GROUP');
+    const endMetrics = this.startMetrics('JOIN_GROUP');
     
     try {
       // Rate limiting check
@@ -346,7 +345,7 @@ export class OptimizedGroupService {
           description: 'Veuillez attendre avant de rejoindre un groupe.',
           variant: 'destructive'
         });
-        metrics.end(false);
+        endMetrics(false);
         return false;
       }
 
@@ -360,7 +359,7 @@ export class OptimizedGroupService {
         .single();
 
       if (groupError || !group) {
-        metrics.end(false);
+        endMetrics(false);
         toast({
           title: 'Groupe indisponible',
           description: 'Ce groupe n\'est plus disponible.',
@@ -383,7 +382,7 @@ export class OptimizedGroupService {
         });
 
       if (joinError) {
-        metrics.end(false);
+        endMetrics(false);
         const appError = ErrorHandler.handleSupabaseError(joinError);
         ErrorHandler.showErrorToast(appError);
         return false;
@@ -392,10 +391,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      metrics.end(true);
+      endMetrics(true);
       return true;
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('JOIN_GROUP', error);
       return false;
     }
@@ -403,7 +402,7 @@ export class OptimizedGroupService {
 
   // Optimized group leaving
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
-    const metrics = this.startMetrics('LEAVE_GROUP');
+    const endMetrics = this.startMetrics('LEAVE_GROUP');
     
     try {
       const { error } = await supabase
@@ -413,7 +412,7 @@ export class OptimizedGroupService {
         .eq('user_id', userId);
 
       if (error) {
-        metrics.end(false);
+        endMetrics(false);
         ErrorHandler.logError('LEAVE_GROUP', error);
         return false;
       }
@@ -421,10 +420,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      metrics.end(true);
+      endMetrics(true);
       return true;
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('LEAVE_GROUP', error);
       return false;
     }
@@ -432,7 +431,7 @@ export class OptimizedGroupService {
 
   // Update user activity with optimized query
   static async updateUserActivity(groupId: string, userId: string): Promise<void> {
-    const metrics = this.startMetrics('UPDATE_ACTIVITY');
+    const endMetrics = this.startMetrics('UPDATE_ACTIVITY');
     
     try {
       const { error } = await supabase
@@ -443,19 +442,19 @@ export class OptimizedGroupService {
 
       if (error) {
         ErrorHandler.logError('UPDATE_LAST_SEEN', error);
-        metrics.end(false);
+        endMetrics(false);
       } else {
-        metrics.end(true);
+        endMetrics(true);
       }
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('UPDATE_USER_ACTIVITY', error);
     }
   }
 
   // Smart cleanup with safety measures
   static async performSmartCleanup(): Promise<void> {
-    const metrics = this.startMetrics('SMART_CLEANUP');
+    const endMetrics = this.startMetrics('SMART_CLEANUP');
     
     try {
       console.log('🧹 Starting smart cleanup with safety measures');
@@ -465,17 +464,17 @@ export class OptimizedGroupService {
       
       if (error) {
         console.error('❌ Smart cleanup error:', error);
-        metrics.end(false);
+        endMetrics(false);
       } else {
         console.log('✅ Smart cleanup completed');
         
         // Clear all caches after cleanup
         this.groupCache.clear();
         
-        metrics.end(true);
+        endMetrics(true);
       }
     } catch (error) {
-      metrics.end(false);
+      endMetrics(false);
       ErrorHandler.logError('SMART_CLEANUP', error);
     }
   }
