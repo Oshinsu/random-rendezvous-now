@@ -29,7 +29,11 @@ const isRealBarOrPub = (place: any): boolean => {
     'église', 'temple', 'mosquée', 'synagogue', 'cathédrale',
     'pharmacie', 'station service', 'essence', 'total', 'shell',
     'supermarché', 'carrefour', 'leclerc', 'champion', 'géant',
-    'magasin', 'boutique', 'centre commercial', 'mall'
+    'magasin', 'boutique', 'centre commercial', 'mall',
+    // NOUVEAUX: Mots-clés fast-food
+    'mcdonalds', 'mcdonald', 'burger king', 'kfc', 'subway', 'dominos',
+    'pizza hut', 'quick', 'fast food', 'fastfood', 'snack', 'élizé',
+    'élize', 'elize', 'chicken', 'fried chicken', 'tacos'
   ];
 
   const hasCriticalNegative = criticalNegativeKeywords.some(keyword => 
@@ -37,11 +41,24 @@ const isRealBarOrPub = (place: any): boolean => {
   );
 
   if (hasCriticalNegative) {
-    console.log('❌ [FILTRAGE] Lieu REJETÉ - mot-clé critique trouvé');
+    console.log('❌ [FILTRAGE] Lieu REJETÉ - mot-clé critique trouvé:', name);
     return false;
   }
 
-  // ÉTAPE 2: Vérification des mots-clés POSITIFS prioritaires
+  // ÉTAPE 2: Types négatifs fast-food - exclusion immédiate
+  const fastFoodTypes = [
+    'fast_food_restaurant', 'meal_takeaway', 'hamburger_restaurant'
+  ];
+
+  const hasFastFoodType = types.some((type: string) => fastFoodTypes.includes(type)) || 
+                         fastFoodTypes.includes(primaryType);
+
+  if (hasFastFoodType) {
+    console.log('❌ [FILTRAGE] Lieu REJETÉ - type fast-food détecté:', primaryType, types);
+    return false;
+  }
+
+  // ÉTAPE 3: Vérification des mots-clés POSITIFS prioritaires
   const highPriorityKeywords = ['bar', 'pub', 'brasserie', 'taverne', 'lounge'];
   const hasHighPriorityKeyword = highPriorityKeywords.some(keyword => name.includes(keyword));
 
@@ -50,15 +67,15 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 3: Types Google Places - vérification flexible
+  // ÉTAPE 4: Types Google Places - vérification STRICTE (sans establishment)
   const acceptableTypes = [
-    'bar', 'pub', 'establishment', 'night_club', 'liquor_store'
+    'bar', 'pub', 'night_club', 'liquor_store'
   ];
 
   const hasAcceptableType = types.some((type: string) => acceptableTypes.includes(type)) || 
                            acceptableTypes.includes(primaryType);
 
-  // ÉTAPE 4: Gestion spéciale des bar-restaurants
+  // ÉTAPE 5: Gestion spéciale des bar-restaurants UNIQUEMENT
   const isBarRestaurant = (types.includes('bar') && types.includes('restaurant')) ||
                          (primaryType === 'bar' && types.includes('restaurant')) ||
                          (primaryType === 'restaurant' && types.includes('bar'));
@@ -68,13 +85,13 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 5: Exclusion des restaurants purs (sans composante bar)
+  // ÉTAPE 6: Exclusion des restaurants purs (sans composante bar)
   if (primaryType === 'restaurant' && !types.includes('bar')) {
     console.log('❌ [FILTRAGE] Restaurant pur - REJETÉ');
     return false;
   }
 
-  // ÉTAPE 6: Décision finale basée sur les types
+  // ÉTAPE 7: Décision finale basée sur les types STRICTS
   if (hasAcceptableType) {
     console.log('✅ [FILTRAGE] Lieu ACCEPTÉ - type acceptable trouvé');
     return true;
