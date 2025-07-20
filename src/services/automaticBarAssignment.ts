@@ -15,17 +15,19 @@ interface BarAssignmentResponse {
       };
     };
     rating?: number;
+    confidence_score?: number;
+    fallback_used?: string;
   };
   error?: string;
 }
 
 export class AutomaticBarAssignmentService {
   /**
-   * Attribution automatique de bar avec gestion d'erreur robuste
+   * Attribution automatique de bar avec gestion d'erreur robuste et scoring avancé
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [BAR ASSIGNMENT] Démarrage attribution pour groupe:', groupId);
+      console.log('🤖 [ENHANCED BAR ASSIGNMENT] Démarrage attribution pour groupe:', groupId);
 
       // 1. Vérification d'éligibilité avec les nouvelles politiques RLS
       const { data: group, error: groupError } = await supabase
@@ -35,7 +37,7 @@ export class AutomaticBarAssignmentService {
         .single();
 
       if (groupError || !group) {
-        console.error('❌ [BAR ASSIGNMENT] Erreur récupération groupe:', groupError);
+        console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur récupération groupe:', groupError);
         return false;
       }
 
@@ -48,7 +50,7 @@ export class AutomaticBarAssignmentService {
       );
 
       if (!isEligible) {
-        console.log('ℹ️ [BAR ASSIGNMENT] Groupe non éligible:', {
+        console.log('ℹ️ [ENHANCED BAR ASSIGNMENT] Groupe non éligible:', {
           id: groupId,
           participants: group.current_participants,
           status: group.status,
@@ -62,12 +64,12 @@ export class AutomaticBarAssignmentService {
       const searchLongitude = group.longitude || 2.3522;
 
       if (!this.validateCoordinates(searchLatitude, searchLongitude)) {
-        console.error('❌ [BAR ASSIGNMENT] Coordonnées invalides');
+        console.error('❌ [ENHANCED BAR ASSIGNMENT] Coordonnées invalides');
         await this.sendSystemMessage(groupId, '⚠️ Position invalide pour la recherche automatique.');
         return false;
       }
 
-      // 4. Appel de l'Edge Function
+      // 4. Appel de l'Edge Function avec enhanced logic
       const { data: barResponse, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
         body: {
           group_id: groupId,
@@ -77,7 +79,7 @@ export class AutomaticBarAssignmentService {
       });
 
       if (barError) {
-        console.error('❌ [BAR ASSIGNMENT] Erreur Edge Function:', barError);
+        console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur Edge Function:', barError);
         await this.sendSystemMessage(groupId, '⚠️ Erreur lors de la recherche automatique.');
         return false;
       }
@@ -89,18 +91,20 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // Validation stricte des données reçues
+      // Validation stricte des données reçues avec enhanced checks
       if (!response.bar.name || response.bar.name.startsWith('places/') || response.bar.name.startsWith('ChIJ')) {
-        console.error('❌ [AUTO BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', response.bar.name);
+        console.error('❌ [ENHANCED BAR ASSIGNMENT VALIDATION] Nom invalide détecté:', response.bar.name);
         console.error('   - Données complètes:', JSON.stringify(response.bar, null, 2));
         await this.sendSystemMessage(groupId, '⚠️ Données de bar invalides reçues - nouvelle tentative requise.');
         return false;
       }
 
-      console.log('✅ [AUTO BAR ASSIGNMENT VALIDATION] Bar validé:', {
+      console.log('✅ [ENHANCED BAR ASSIGNMENT VALIDATION] Bar validé:', {
         name: response.bar.name,
         place_id: response.bar.place_id,
-        address: response.bar.formatted_address
+        address: response.bar.formatted_address,
+        confidence: response.bar.confidence_score,
+        fallback: response.bar.fallback_used
       });
 
       // 5. Mise à jour atomique du groupe
@@ -122,22 +126,34 @@ export class AutomaticBarAssignmentService {
         .is('bar_name', null);
 
       if (updateError) {
-        console.error('❌ [BAR ASSIGNMENT] Erreur mise à jour:', updateError);
+        console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur mise à jour:', updateError);
         await this.sendSystemMessage(groupId, '⚠️ Erreur lors de l\'attribution.');
         return false;
       }
 
-      // 6. Message de confirmation
-      await this.sendSystemMessage(
-        groupId,
-        `🍺 Votre groupe est complet ! Rendez-vous au ${response.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-      );
+      // 6. Message de confirmation avec informations sur la qualité
+      let confirmationMessage = `🍺 Votre groupe est complet ! Rendez-vous au ${response.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+      
+      // Add confidence and fallback info if available
+      if (response.bar.confidence_score && response.bar.confidence_score < 70) {
+        confirmationMessage += '\n💡 Vérifiez les informations du bar avant de vous déplacer.';
+      }
+      
+      if (response.bar.fallback_used) {
+        confirmationMessage += `\n⚠️ ${response.bar.fallback_used}`;
+      }
 
-      console.log('✅ [BAR ASSIGNMENT] Attribution réussie:', response.bar.name);
+      await this.sendSystemMessage(groupId, confirmationMessage);
+
+      console.log('✅ [ENHANCED BAR ASSIGNMENT] Attribution réussie:', {
+        name: response.bar.name,
+        confidence: response.bar.confidence_score,
+        fallback: response.bar.fallback_used
+      });
       return true;
 
     } catch (error) {
-      console.error('❌ [BAR ASSIGNMENT] Erreur globale:', error);
+      console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur globale:', error);
       await this.sendSystemMessage(groupId, '⚠️ Erreur technique lors de l\'attribution automatique.');
       return false;
     }
@@ -169,7 +185,7 @@ export class AutomaticBarAssignmentService {
           is_system: true
         });
     } catch (error) {
-      console.error('❌ [BAR ASSIGNMENT] Erreur envoi message système:', error);
+      console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur envoi message système:', error);
     }
   }
 
@@ -185,7 +201,7 @@ export class AutomaticBarAssignmentService {
         .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
         .eq('is_system', true);
     } catch (error) {
-      console.error('❌ [BAR ASSIGNMENT] Erreur nettoyage messages:', error);
+      console.error('❌ [ENHANCED BAR ASSIGNMENT] Erreur nettoyage messages:', error);
     }
   }
 }

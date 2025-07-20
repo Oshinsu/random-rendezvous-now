@@ -11,15 +11,20 @@ interface PlaceResult {
   };
   rating?: number;
   price_level?: number;
+  confidence_score?: number;
+  fallback_used?: string;
+  businessStatus?: string;
+  openNow?: boolean;
+  userRatingCount?: number;
 }
 
 export class GooglePlacesService {
   /**
-   * Recherche SIMPLIFIÉE de bars - uniquement type=bar
+   * Recherche ENHANCED de bars avec scoring de confiance et fallbacks
    */
   static async findNearbyBars(latitude: number, longitude: number, radius: number = 10000): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche SIMPLIFIÉE (type=bar uniquement):', { latitude, longitude, radius });
+      console.log('🔍 [GooglePlacesService] Recherche ENHANCED avec scoring avancé:', { latitude, longitude, radius });
       
       // Validation stricte des coordonnées
       if (!this.validateCoordinatesStrict(latitude, longitude)) {
@@ -27,7 +32,7 @@ export class GooglePlacesService {
         return null;
       }
 
-      // Appel simplifié à l'Edge Function
+      // Appel à l'Enhanced Edge Function
       let response: Response;
       let retryCount = 0;
       const maxRetries = 2;
@@ -35,7 +40,7 @@ export class GooglePlacesService {
       while (retryCount <= maxRetries) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout for enhanced processing
           
           response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/find-nearby-bars', {
             method: 'POST',
@@ -71,7 +76,7 @@ export class GooglePlacesService {
         }
       }
 
-      console.log('🌐 [GooglePlacesService] Réponse HTTP reçue, status:', response!.status);
+      console.log('🌐 [GooglePlacesService] Réponse ENHANCED HTTP reçue, status:', response!.status);
 
       if (!response!.ok) {
         const errorText = await response!.text();
@@ -82,7 +87,7 @@ export class GooglePlacesService {
       const selectedBar = await response!.json();
       
       // Validation de la réponse avec logs détaillés
-      console.log('📋 [GooglePlacesService] Données brutes reçues:', JSON.stringify(selectedBar, null, 2));
+      console.log('📋 [GooglePlacesService] Données ENHANCED reçues:', JSON.stringify(selectedBar, null, 2));
       
       if (!selectedBar || !selectedBar.name) {
         console.error('❌ [GooglePlacesService] Réponse invalide:', selectedBar);
@@ -99,16 +104,20 @@ export class GooglePlacesService {
         return null;
       }
 
-      console.log('🍺 [GooglePlacesService] Bar sélectionné (recherche simplifiée):', {
+      console.log('🍺 [GooglePlacesService] Bar sélectionné ENHANCED:', {
         name: selectedBar.name,
         address: selectedBar.formatted_address,
         rating: selectedBar.rating,
+        confidence: selectedBar.confidence_score,
+        fallback: selectedBar.fallback_used,
+        businessStatus: selectedBar.businessStatus,
+        openNow: selectedBar.openNow,
         location: selectedBar.geometry?.location
       });
 
       return selectedBar;
     } catch (error) {
-      console.error('❌ [GooglePlacesService] Erreur globale:', error);
+      console.error('❌ [GooglePlacesService] Erreur globale ENHANCED:', error);
       return null;
     }
   }
