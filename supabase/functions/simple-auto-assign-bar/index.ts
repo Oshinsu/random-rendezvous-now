@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage pour identifier les vrais bars/pubs avec support des brasseries
+// Fonction de filtrage STRICTE pour les bars/pubs/brasseries UNIQUEMENT
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
@@ -22,71 +22,74 @@ const isRealBarOrPub = (place: any): boolean => {
     rating: rating
   });
 
-  // Filtrer les bars avec une note inférieure à 4
-  if (rating > 0 && rating < 4.0) {
+  // NOUVELLE RÈGLE : Seuil de note abaissé à 3.0 (au lieu de 4.0)
+  if (rating > 0 && rating < 3.0) {
     console.log('❌ Lieu rejeté - note trop faible:', rating);
     return false;
   }
 
-  // Mots-clés négatifs SANS "brasserie" - maintenant accepté
-  const negativeKeywords = [
-    'restaurant', 'café', 'pizzeria', 'bistrot', 'grill',
-    'steakhouse', 'burger', 'sandwich', 'tacos', 'sushi', 'kebab',
-    'crêperie', 'glacier', 'pâtisserie', 'boulangerie', 'fast food',
-    'mcdo', 'kfc', 'subway', 'quick', 'domino', 'pizza hut',
-    'hôtel', 'hotel', 'resort', 'auberge', 'gîte', 'camping',
-    'supermarché', 'épicerie', 'magasin', 'boutique', 'pharmacie',
-    'station service', 'essence', 'garage', 'centre commercial',
-    'école', 'université', 'hôpital', 'clinique', 'mairie',
-    'église', 'temple', 'mosquée', 'synagogue'
+  // 1. PRIORITÉ ABSOLUE : Vrais bars et pubs
+  const isBarOrPub = types.includes('bar') || types.includes('pub') || 
+                     primaryType === 'bar' || primaryType === 'pub';
+  
+  // 2. BRASSERIES acceptées explicitement
+  const isBrasserie = name.includes('brasserie') || types.includes('brewery') || 
+                      name.includes('brewery');
+  
+  // 3. Bars dans des restaurants acceptés SI pas trop de types restaurant
+  const hasBarType = types.includes('bar');
+  const restaurantTypes = types.filter(type => ['restaurant', 'meal_takeaway', 'food'].includes(type));
+  const isRestaurantBar = hasBarType && restaurantTypes.length <= 2;
+
+  if (isBarOrPub) {
+    console.log('✅ PRIORITÉ 1 - Vrai bar/pub détecté');
+    return true;
+  }
+  
+  if (isBrasserie) {
+    console.log('✅ PRIORITÉ 2 - Brasserie acceptée');
+    return true;
+  }
+  
+  if (isRestaurantBar) {
+    console.log('✅ PRIORITÉ 3 - Restaurant-bar accepté (types restaurants limités)');
+    return true;
+  }
+
+  // Types explicitement INTERDITS
+  const bannedTypes = [
+    'cafe', 'bakery', 'grocery_or_supermarket', 'convenience_store',
+    'gas_station', 'lodging', 'hospital', 'pharmacy', 'school',
+    'university', 'church', 'mosque', 'synagogue', 'temple',
+    'hotel'
   ];
 
-  // Vérifier les mots-clés négatifs dans le nom et l'adresse
-  const hasNegativeKeyword = negativeKeywords.some(keyword => 
+  const hasBannedType = bannedTypes.some(type => types.includes(type)) || 
+                        bannedTypes.includes(primaryType);
+  
+  if (hasBannedType) {
+    console.log('❌ Lieu rejeté - type interdit détecté');
+    return false;
+  }
+
+  // Mots-clés strictement INTERDITS
+  const bannedKeywords = [
+    'mcdo', 'kfc', 'subway', 'quick', 'domino', 'pizza hut',
+    'hôtel', 'hotel', 'resort', 'camping', 'supermarché', 'épicerie',
+    'magasin', 'pharmacie', 'école', 'hôpital', 'église', 'temple'
+  ];
+
+  const hasBannedKeyword = bannedKeywords.some(keyword => 
     name.includes(keyword) || address.includes(keyword)
   );
 
-  if (hasNegativeKeyword) {
-    console.log('❌ Lieu rejeté - mot-clé négatif trouvé');
+  if (hasBannedKeyword) {
+    console.log('❌ Lieu rejeté - mot-clé interdit trouvé');
     return false;
   }
 
-  // Types Google Places à éviter
-  const negativeTypes = [
-    'restaurant', 'meal_takeaway', 'meal_delivery', 'food',
-    'cafe', 'bakery', 'grocery_or_supermarket', 'convenience_store',
-    'gas_station', 'lodging', 'hospital', 'pharmacy', 'school',
-    'university', 'church', 'mosque', 'synagogue', 'temple'
-  ];
-
-  // Vérifier si le type principal est négatif
-  if (negativeTypes.includes(primaryType)) {
-    console.log('❌ Lieu rejeté - type principal négatif:', primaryType);
-    return false;
-  }
-
-  // Vérifier si trop de types négatifs sont présents
-  const negativeTypesFound = types.filter((type: string) => negativeTypes.includes(type));
-  if (negativeTypesFound.length > 1) {
-    console.log('❌ Lieu rejeté - trop de types négatifs:', negativeTypesFound);
-    return false;
-  }
-
-  // Types positifs pour les bars/pubs + brasseries
-  const positiveTypes = ['bar', 'pub', 'liquor_store', 'night_club', 'establishment'];
-  const hasPositiveType = types.some((type: string) => positiveTypes.includes(type)) || 
-                         positiveTypes.includes(primaryType);
-
-  // Accepter explicitement les brasseries
-  const isBrasserie = name.includes('brasserie') || types.includes('brewery');
-  
-  if (!hasPositiveType && !isBrasserie) {
-    console.log('⚠️ Lieu accepté par défaut - aucun type positif mais pas de négatif majeur');
-  } else {
-    console.log('✅ Lieu accepté - type positif trouvé ou brasserie');
-  }
-
-  return true;
+  console.log('❌ Lieu rejeté - ne correspond à aucun critère de bar/pub/brasserie');
+  return false;
 };
 
 serve(async (req) => {
@@ -148,7 +151,7 @@ serve(async (req) => {
 
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub", "night_club"],
+      includedTypes: ["bar", "pub", "brewery"], // SUPPRIMÉ "night_club", AJOUTÉ "brewery"
       locationRestriction: {
         circle: {
           center: { latitude: searchLatitude, longitude: searchLongitude },
@@ -191,27 +194,25 @@ serve(async (req) => {
 
     console.log('🕐 Lieux ouverts:', openBars.length);
 
-    // Apply advanced filtering for real bars/pubs (includes rating filter)
+    // Filtrage STRICT pour les bars/pubs/brasseries UNIQUEMENT
     const realBars = openBars.filter(isRealBarOrPub);
 
-    console.log('🍺 Vrais bars après filtrage:', realBars.length);
+    console.log('🍺 Vrais bars après filtrage STRICT:', realBars.length);
 
-    // Fallback if no real bars found
-    let selectedBars = realBars;
+    // AUCUN FALLBACK ! Si pas de bars trouvés = ERREUR
     if (realBars.length === 0) {
-      console.log('⚠️ Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
-      selectedBars = openBars;
-    }
-
-    if (selectedBars.length === 0) {
+      console.log('❌ ÉCHEC - Aucun bar/pub/brasserie trouvé dans la zone');
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar ouvert trouvé' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Aucun bar, pub ou brasserie trouvé dans cette zone. Essayez de changer de localisation.' 
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Sélection aléatoire parmi les vrais bars
-    const randomBar = selectedBars[Math.floor(Math.random() * selectedBars.length)];
+    // Sélection aléatoire parmi les VRAIS bars uniquement
+    const randomBar = realBars[Math.floor(Math.random() * realBars.length)];
     
     const result = {
       success: true,
@@ -230,7 +231,7 @@ serve(async (req) => {
     };
 
     console.log('🎲 Bar sélectionné:', result.bar.name, '- Note:', result.bar.rating);
-    console.log('📊 Stats finales - Total:', data.places.length, 'Ouverts:', openBars.length, 'Vrais bars:', realBars.length);
+    console.log('📊 RÉSULTATS FINAUX - Total trouvés:', data.places.length, 'Ouverts:', openBars.length, 'BARS VALIDES:', realBars.length);
 
     return new Response(
       JSON.stringify(result),
