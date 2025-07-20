@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -7,22 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage pour identifier les vrais bars/pubs
+// Fonction de filtrage pour identifier les vrais bars/pubs avec support des brasseries
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
   const types = place.types || [];
   const primaryType = place.primaryType || '';
+  const rating = place.rating || 0;
 
   console.log('🔍 Analyse du lieu:', {
     name: place.displayName?.text,
     types: types,
-    primaryType: primaryType
+    primaryType: primaryType,
+    rating: rating
   });
 
-  // Mots-clés négatifs - si trouvés, ce n'est probablement pas un vrai bar
+  // Filtrer les bars avec une note inférieure à 4
+  if (rating > 0 && rating < 4.0) {
+    console.log('❌ Lieu rejeté - note trop faible:', rating);
+    return false;
+  }
+
+  // Mots-clés négatifs SANS "brasserie" - maintenant accepté
   const negativeKeywords = [
-    'restaurant', 'café', 'pizzeria', 'brasserie', 'bistrot', 'grill',
+    'restaurant', 'café', 'pizzeria', 'bistrot', 'grill',
     'steakhouse', 'burger', 'sandwich', 'tacos', 'sushi', 'kebab',
     'crêperie', 'glacier', 'pâtisserie', 'boulangerie', 'fast food',
     'mcdo', 'kfc', 'subway', 'quick', 'domino', 'pizza hut',
@@ -64,15 +71,18 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // Types positifs pour les bars/pubs
+  // Types positifs pour les bars/pubs + brasseries
   const positiveTypes = ['bar', 'pub', 'liquor_store', 'night_club', 'establishment'];
   const hasPositiveType = types.some((type: string) => positiveTypes.includes(type)) || 
                          positiveTypes.includes(primaryType);
 
-  if (!hasPositiveType) {
+  // Accepter explicitement les brasseries
+  const isBrasserie = name.includes('brasserie') || types.includes('brewery');
+  
+  if (!hasPositiveType && !isBrasserie) {
     console.log('⚠️ Lieu accepté par défaut - aucun type positif mais pas de négatif majeur');
   } else {
-    console.log('✅ Lieu accepté - type positif trouvé');
+    console.log('✅ Lieu accepté - type positif trouvé ou brasserie');
   }
 
   return true;
@@ -110,17 +120,17 @@ serve(async (req) => {
 
     console.log('🔍 Recherche avancée de bars près de:', { latitude, longitude });
 
-    // Search for bars/pubs with extended field mask for filtering
+    // Search for bars/pubs with extended radius (10km) and field mask for filtering
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub"],
+      includedTypes: ["bar", "pub", "night_club"],
       locationRestriction: {
         circle: {
           center: { latitude, longitude },
-          radius: 5000
+          radius: 10000 // 10km radius
         }
       },
-      maxResultCount: 20, // Get more to filter properly
+      maxResultCount: 20,
       languageCode: "fr-FR"
     };
 
@@ -129,7 +139,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.currentOpeningHours,places.regularOpeningHours,places.types,places.primaryType'
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.currentOpeningHours,places.regularOpeningHours,places.types,places.primaryType,places.rating'
       },
       body: JSON.stringify(requestBody)
     });
@@ -159,7 +169,7 @@ serve(async (req) => {
 
     console.log('🕐 Lieux ouverts:', openBars.length);
 
-    // Apply advanced filtering for real bars/pubs
+    // Apply advanced filtering for real bars/pubs (includes rating filter)
     const realBars = openBars.filter(isRealBarOrPub);
 
     console.log('🍺 Vrais bars après filtrage:', realBars.length);
@@ -193,10 +203,11 @@ serve(async (req) => {
           lat: randomBar.location.latitude,
           lng: randomBar.location.longitude
         }
-      }
+      },
+      rating: randomBar.rating || null
     };
 
-    console.log('🎲 Bar sélectionné aléatoirement:', result.name);
+    console.log('🎲 Bar sélectionné aléatoirement:', result.name, '- Note:', result.rating);
     console.log('📊 Stats finales - Total:', data.places.length, 'Ouverts:', openBars.length, 'Vrais bars:', realBars.length);
 
     return new Response(
@@ -215,4 +226,3 @@ serve(async (req) => {
     )
   }
 })
-
