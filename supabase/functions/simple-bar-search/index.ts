@@ -38,7 +38,7 @@ serve(async (req) => {
 
     console.log('🔍 Recherche simple de bars près de:', { latitude, longitude });
 
-    // Simple search for bars within 5km
+    // Search for bars/pubs with opening hours info
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
       includedTypes: ["bar", "pub"],
@@ -48,7 +48,7 @@ serve(async (req) => {
           radius: 5000
         }
       },
-      maxResultCount: 10,
+      maxResultCount: 20, // Get more to filter open ones
       languageCode: "fr-FR"
     };
 
@@ -57,7 +57,7 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location'
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.currentOpeningHours,places.regularOpeningHours'
       },
       body: JSON.stringify(requestBody)
     });
@@ -74,8 +74,29 @@ serve(async (req) => {
       )
     }
 
-    // Pick a random bar - true randomness!
-    const randomBar = data.places[Math.floor(Math.random() * data.places.length)];
+    // Filter only OPEN bars/pubs
+    const openBars = data.places.filter(place => {
+      // Check if place is currently open
+      const currentHours = place.currentOpeningHours;
+      if (currentHours && currentHours.openNow !== undefined) {
+        return currentHours.openNow === true;
+      }
+      // If no current hours info, allow it (better than no bars)
+      return true;
+    });
+
+    if (openBars.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Aucun bar ouvert trouvé' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Pick a random OPEN bar - true randomness!
+    const randomBar = openBars[Math.floor(Math.random() * openBars.length)];
     
     const result = {
       place_id: randomBar.id,
