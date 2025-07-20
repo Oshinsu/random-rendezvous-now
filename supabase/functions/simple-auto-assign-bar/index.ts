@@ -7,7 +7,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage AMÉLIORÉE identique à simple-bar-search
+// Fonction de priorisation des bars
+const getBarPriority = (place: any): number => {
+  const name = place.displayName?.text?.toLowerCase() || '';
+  const types = place.types || [];
+  const primaryType = place.primaryType || '';
+
+  // PRIORITÉ 1: Bars purs (score 3)
+  if (primaryType === 'bar' || primaryType === 'pub' || primaryType === 'night_club') {
+    return 3;
+  }
+
+  // PRIORITÉ 2: Bar-restaurants (score 2)
+  const isBarRestaurant = (types.includes('bar') && types.includes('restaurant')) ||
+                         (primaryType === 'bar' && types.includes('restaurant')) ||
+                         (primaryType === 'restaurant' && types.includes('bar'));
+  
+  if (isBarRestaurant) {
+    return 2;
+  }
+
+  // PRIORITÉ 3: Bars d'hôtels (score 1)
+  if (types.includes('bar') && (types.includes('hotel') || types.includes('lodging'))) {
+    return 1;
+  }
+
+  // Autres (score 0)
+  return 0;
+};
+
+// Fonction de filtrage ULTRA-STRICTE contre les fast-foods
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
@@ -21,22 +50,37 @@ const isRealBarOrPub = (place: any): boolean => {
     address: place.formattedAddress
   });
 
-  // ÉTAPE 1: Mots-clés TRÈS négatifs - exclusion immédiate
-  const criticalNegativeKeywords = [
-    'moto', 'motorcycle', 'harley', 'yamaha', 'honda', 'kawasaki', 'suzuki',
-    'concessionnaire', 'dealer', 'garage moto', 'bike shop',
-    'école', 'university', 'hôpital', 'clinique', 'mairie', 'préfecture',
-    'église', 'temple', 'mosquée', 'synagogue', 'cathédrale',
-    'pharmacie', 'station service', 'essence', 'total', 'shell',
-    'supermarché', 'carrefour', 'leclerc', 'champion', 'géant',
-    'magasin', 'boutique', 'centre commercial', 'mall',
-    // NOUVEAUX: Mots-clés fast-food
-    'mcdonalds', 'mcdonald', 'burger king', 'kfc', 'subway', 'dominos',
-    'pizza hut', 'quick', 'fast food', 'fastfood', 'snack', 'élizé',
-    'élize', 'elize', 'chicken', 'fried chicken', 'tacos'
+  // ÉTAPE 1: Exclusion STRICTE des fast-foods - types
+  const strictFastFoodTypes = [
+    'fast_food_restaurant', 'meal_takeaway', 'hamburger_restaurant',
+    'pizza_restaurant', 'sandwich_shop', 'american_restaurant'
   ];
 
-  const hasCriticalNegative = criticalNegativeKeywords.some(keyword => 
+  const hasFastFoodType = types.some((type: string) => strictFastFoodTypes.includes(type)) || 
+                         strictFastFoodTypes.includes(primaryType);
+
+  if (hasFastFoodType) {
+    console.log('❌ [FILTRAGE] Lieu REJETÉ - type fast-food détecté:', primaryType, types);
+    return false;
+  }
+
+  // ÉTAPE 2: Exclusion STRICTE des fast-foods - mots-clés
+  const strictNegativeKeywords = [
+    // Fast-foods internationaux
+    'mcdonalds', 'mcdonald', 'burger king', 'kfc', 'subway', 'dominos',
+    'pizza hut', 'quick', 'taco bell', 'wendy', 'five guys',
+    // Fast-foods locaux
+    'élizé', 'élize', 'elize', 'snack', 'fast food', 'fastfood',
+    // Types de nourriture fast-food
+    'chicken', 'fried chicken', 'tacos', 'burger', 'fries',
+    'pizza delivery', 'takeaway', 'drive',
+    // Autres exclusions
+    'moto', 'motorcycle', 'concessionnaire', 'garage',
+    'école', 'university', 'hôpital', 'pharmacie',
+    'supermarché', 'magasin', 'station service'
+  ];
+
+  const hasCriticalNegative = strictNegativeKeywords.some(keyword => 
     name.includes(keyword) || address.includes(keyword)
   );
 
@@ -45,37 +89,17 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // ÉTAPE 2: Types négatifs fast-food - exclusion immédiate
-  const fastFoodTypes = [
-    'fast_food_restaurant', 'meal_takeaway', 'hamburger_restaurant'
-  ];
+  // ÉTAPE 3: Vérification positive - bars purs
+  const pureBarTypes = ['bar', 'pub', 'night_club', 'liquor_store'];
+  const hasPureBarType = types.some((type: string) => pureBarTypes.includes(type)) || 
+                        pureBarTypes.includes(primaryType);
 
-  const hasFastFoodType = types.some((type: string) => fastFoodTypes.includes(type)) || 
-                         fastFoodTypes.includes(primaryType);
-
-  if (hasFastFoodType) {
-    console.log('❌ [FILTRAGE] Lieu REJETÉ - type fast-food détecté:', primaryType, types);
-    return false;
-  }
-
-  // ÉTAPE 3: Vérification des mots-clés POSITIFS prioritaires
-  const highPriorityKeywords = ['bar', 'pub', 'brasserie', 'taverne', 'lounge'];
-  const hasHighPriorityKeyword = highPriorityKeywords.some(keyword => name.includes(keyword));
-
-  if (hasHighPriorityKeyword) {
-    console.log('✅ [FILTRAGE] Lieu ACCEPTÉ - mot-clé prioritaire trouvé:', name);
+  if (hasPureBarType) {
+    console.log('✅ [FILTRAGE] Bar pur détecté - ACCEPTÉ:', name);
     return true;
   }
 
-  // ÉTAPE 4: Types Google Places - vérification STRICTE (sans establishment)
-  const acceptableTypes = [
-    'bar', 'pub', 'night_club', 'liquor_store'
-  ];
-
-  const hasAcceptableType = types.some((type: string) => acceptableTypes.includes(type)) || 
-                           acceptableTypes.includes(primaryType);
-
-  // ÉTAPE 5: Gestion spéciale des bar-restaurants UNIQUEMENT
+  // ÉTAPE 4: Vérification positive - bar-restaurants
   const isBarRestaurant = (types.includes('bar') && types.includes('restaurant')) ||
                          (primaryType === 'bar' && types.includes('restaurant')) ||
                          (primaryType === 'restaurant' && types.includes('bar'));
@@ -85,16 +109,18 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 6: Exclusion des restaurants purs (sans composante bar)
+  // ÉTAPE 5: Vérification positive - bars d'hôtels (en dernier recours)
+  const isHotelBar = types.includes('bar') && (types.includes('hotel') || types.includes('lodging'));
+  
+  if (isHotelBar) {
+    console.log('🏨 [FILTRAGE] Bar d\'hôtel détecté - ACCEPTÉ (priorité faible):', name);
+    return true;
+  }
+
+  // ÉTAPE 6: Exclusion des restaurants purs
   if (primaryType === 'restaurant' && !types.includes('bar')) {
     console.log('❌ [FILTRAGE] Restaurant pur - REJETÉ');
     return false;
-  }
-
-  // ÉTAPE 7: Décision finale basée sur les types STRICTS
-  if (hasAcceptableType) {
-    console.log('✅ [FILTRAGE] Lieu ACCEPTÉ - type acceptable trouvé');
-    return true;
   }
 
   console.log('❌ [FILTRAGE] Lieu REJETÉ - aucun critère accepté');
@@ -239,14 +265,29 @@ serve(async (req) => {
       )
     }
 
-    // Sélection aléatoire avec priorité aux bars avec mots-clés
-    const priorityBars = selectedBars.filter(bar => {
-      const name = bar.displayName?.text?.toLowerCase() || '';
-      return ['bar', 'pub', 'brasserie', 'taverne', 'lounge'].some(keyword => name.includes(keyword));
+    // NOUVELLE SÉLECTION AVEC SYSTÈME DE PRIORITÉ
+    const barsWithPriority = selectedBars.map(bar => ({
+      bar,
+      priority: getBarPriority(bar)
+    }));
+
+    console.log('🎯 [PRIORISATION] Analyse des priorités:');
+    barsWithPriority.forEach(({ bar, priority }, index) => {
+      const priorityLabel = priority === 3 ? 'BAR PUR' : 
+                           priority === 2 ? 'BAR-RESTAURANT' : 
+                           priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE';
+      console.log(`   ${index + 1}. ${bar.displayName?.text} - Priorité: ${priority} (${priorityLabel})`);
     });
 
-    const finalSelection = priorityBars.length > 0 ? priorityBars : selectedBars;
-    const randomBar = finalSelection[Math.floor(Math.random() * finalSelection.length)];
+    // Sélection par ordre de priorité décroissant
+    const maxPriority = Math.max(...barsWithPriority.map(b => b.priority));
+    const topPriorityBars = barsWithPriority.filter(b => b.priority === maxPriority);
+    
+    console.log(`🏆 [SÉLECTION] ${topPriorityBars.length} bar(s) avec priorité maximale (${maxPriority})`);
+    
+    // Sélection aléatoire parmi les bars de plus haute priorité
+    const randomSelection = topPriorityBars[Math.floor(Math.random() * topPriorityBars.length)];
+    const randomBar = randomSelection.bar;
     
     const result = {
       success: true,
@@ -267,15 +308,18 @@ serve(async (req) => {
       name: result.bar.name,
       types: randomBar.types,
       primaryType: randomBar.primaryType,
-      wasPriority: priorityBars.length > 0
+      priority: randomSelection.priority,
+      priorityLabel: randomSelection.priority === 3 ? 'BAR PUR' : 
+                    randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
+                    randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE'
     });
 
     console.log('📊 [STATISTIQUES] Résumé de la recherche:', {
       totalFound: data.places.length,
       openPlaces: openPlaces.length,
       realBars: realBars.length,
-      priorityBars: priorityBars.length,
-      finalSelection: finalSelection.length
+      maxPriority: maxPriority,
+      selectedPriority: randomSelection.priority
     });
 
     return new Response(
