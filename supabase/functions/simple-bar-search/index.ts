@@ -12,8 +12,8 @@ const getBarPriority = (place: any): number => {
   const types = place.types || [];
   const primaryType = place.primaryType || '';
 
-  // PRIORITÉ 1: Bars purs (score 3)
-  if (primaryType === 'bar' || primaryType === 'pub' || primaryType === 'night_club') {
+  // PRIORITÉ 1: Bars purs (score 3) - SANS NIGHTCLUBS
+  if (primaryType === 'bar' || primaryType === 'pub') {
     return 3;
   }
 
@@ -88,8 +88,8 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // ÉTAPE 3: Vérification positive - bars purs
-  const pureBarTypes = ['bar', 'pub', 'night_club', 'liquor_store'];
+  // ÉTAPE 3: Vérification positive - bars purs (SANS NIGHTCLUBS)
+  const pureBarTypes = ['bar', 'pub', 'liquor_store'];
   const hasPureBarType = types.some((type: string) => pureBarTypes.includes(type)) || 
                         pureBarTypes.includes(primaryType);
 
