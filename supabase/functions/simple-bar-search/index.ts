@@ -1,14 +1,13 @@
 
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage pour identifier les vrais bars/pubs (identique à simple-bar-search)
+// Fonction de filtrage pour identifier les vrais bars/pubs
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
@@ -84,64 +83,40 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
   try {
-    const { group_id, latitude, longitude } = await req.json()
+    const { latitude, longitude } = await req.json()
 
-    if (!group_id) {
+    if (!latitude || !longitude) {
       return new Response(
-        JSON.stringify({ success: false, error: 'group_id requis' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Coordonnées requises' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN AVANCÉ] Attribution pour:', group_id);
-
-    // Vérifier l'éligibilité du groupe
-    const { data: group, error: groupError } = await supabase
-      .from('groups')
-      .select('current_participants, status, bar_name')
-      .eq('id', group_id)
-      .single();
-
-    if (groupError || !group) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Groupe introuvable' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Groupe non éligible' }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Coordonnées avec fallback
-    const searchLatitude = latitude || 48.8566;
-    const searchLongitude = longitude || 2.3522;
-
-    // Recherche avancée de bars
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
+      console.error('❌ Clé API manquante')
       return new Response(
-        JSON.stringify({ success: false, error: 'Configuration manquante' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Configuration manquante' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
-    console.log('🔍 Recherche avancée de bars pour:', { searchLatitude, searchLongitude });
+    console.log('🔍 Recherche avancée de bars près de:', { latitude, longitude });
 
+    // Search for bars/pubs with extended field mask for filtering
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
       includedTypes: ["bar", "pub"],
       locationRestriction: {
         circle: {
-          center: { latitude: searchLatitude, longitude: searchLongitude },
+          center: { latitude, longitude },
           radius: 5000
         }
       },
@@ -163,8 +138,11 @@ serve(async (req) => {
 
     if (!data.places || data.places.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar trouvé' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Aucun bar trouvé' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
@@ -195,30 +173,30 @@ serve(async (req) => {
 
     if (selectedBars.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar ouvert trouvé' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Aucun bar ouvert trouvé' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
-    // Sélection aléatoire parmi les vrais bars
+    // Pick a random REAL bar - true randomness!
     const randomBar = selectedBars[Math.floor(Math.random() * selectedBars.length)];
     
     const result = {
-      success: true,
-      bar: {
-        place_id: randomBar.id,
-        name: randomBar.displayName?.text || `Bar ${randomBar.id.slice(-8)}`,
-        formatted_address: randomBar.formattedAddress || 'Adresse non disponible',
-        geometry: {
-          location: {
-            lat: randomBar.location.latitude,
-            lng: randomBar.location.longitude
-          }
+      place_id: randomBar.id,
+      name: randomBar.displayName?.text || `Bar ${randomBar.id.slice(-8)}`,
+      formatted_address: randomBar.formattedAddress || 'Adresse non disponible',
+      geometry: {
+        location: {
+          lat: randomBar.location.latitude,
+          lng: randomBar.location.longitude
         }
       }
     };
 
-    console.log('🎲 Bar sélectionné:', result.bar.name);
+    console.log('🎲 Bar sélectionné aléatoirement:', result.name);
     console.log('📊 Stats finales - Total:', data.places.length, 'Ouverts:', openBars.length, 'Vrais bars:', realBars.length);
 
     return new Response(
@@ -229,8 +207,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Erreur:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Erreur de recherche' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     )
   }
 })

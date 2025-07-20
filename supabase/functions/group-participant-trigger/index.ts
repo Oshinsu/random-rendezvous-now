@@ -2,149 +2,200 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
+
+// Fonction de mise à jour atomique avec verrouillage
+async function updateGroupWithBar(groupId: string, barData: any): Promise<boolean> {
+  try {
+    const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
+    
+    // Mise à jour atomique avec conditions strictes
+    const { error: updateError } = await supabase
+      .from('groups')
+      .update({
+        bar_name: barData.name,
+        bar_address: barData.formatted_address,
+        meeting_time: meetingTime.toISOString(),
+        bar_latitude: barData.geometry.location.lat,
+        bar_longitude: barData.geometry.location.lng,
+        bar_place_id: barData.place_id
+      })
+      .eq('id', groupId)
+      .eq('status', 'confirmed')
+      .eq('current_participants', 5)
+      .is('bar_name', null);
+
+    if (updateError) {
+      console.error('❌ [TRIGGER] Erreur mise à jour atomique:', updateError);
+      return false;
+    }
+
+    // Message de confirmation avec formatage uniforme
+    await supabase
+      .from('group_messages')
+      .insert({
+        group_id: groupId,
+        user_id: '00000000-0000-0000-0000-000000000000',
+        message: `🍺 Votre groupe est complet ! Rendez-vous au ${barData.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        is_system: true
+      });
+
+    return true;
+  } catch (error) {
+    console.error('❌ [TRIGGER] Erreur dans updateGroupWithBar:', error);
+    return false;
+  }
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
   try {
-    console.log('🔥 [GROUP-PARTICIPANT-TRIGGER] Déclenchement attribution automatique de bar')
+    const { table, record, old_record } = await req.json()
+    
+    console.log('🔄 [TRIGGER] Webhook reçu:', { 
+      table, 
+      recordId: record?.id, 
+      message: record?.message?.substring(0, 50) 
+    });
 
-    // Rechercher les messages de déclenchement non traités
-    const { data: triggerMessages, error: fetchError } = await supabase
-      .from('group_messages')
-      .select('group_id, created_at')
-      .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
-      .eq('is_system', true)
-      .order('created_at', { ascending: true })
-      .limit(10)
+    // Gérer uniquement les messages de déclenchement automatique
+    if (table === 'group_messages' && 
+        record?.is_system && 
+        record?.message === 'AUTO_BAR_ASSIGNMENT_TRIGGER') {
+      
+      const groupId = record.group_id;
+      console.log('🤖 [TRIGGER] Déclenchement attribution pour groupe:', groupId);
 
-    if (fetchError) {
-      console.error('❌ Erreur récupération messages trigger:', fetchError)
-      return new Response(
-        JSON.stringify({ success: false, error: 'Erreur récupération messages' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!triggerMessages || triggerMessages.length === 0) {
-      console.log('ℹ️ Aucun message de déclenchement en attente')
-      return new Response(
-        JSON.stringify({ success: true, processed: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log(`📋 Messages de déclenchement trouvés: ${triggerMessages.length}`)
-
-    let processedCount = 0
-    let successCount = 0
-
-    for (const trigger of triggerMessages) {
       try {
-        console.log(`🎯 Traitement groupe: ${trigger.group_id}`)
-
-        // Vérifier l'éligibilité du groupe
+        // Vérification immédiate de l'éligibilité avec verrouillage
         const { data: group, error: groupError } = await supabase
           .from('groups')
-          .select('id, current_participants, status, bar_name, latitude, longitude')
-          .eq('id', trigger.group_id)
-          .single()
+          .select('id, latitude, longitude, current_participants, status, bar_name, bar_place_id')
+          .eq('id', groupId)
+          .single();
 
         if (groupError || !group) {
-          console.log(`❌ Groupe ${trigger.group_id} introuvable`)
-          continue
+          console.error('❌ [TRIGGER] Groupe introuvable:', groupError);
+          await supabase.from('group_messages').delete().eq('id', record.id);
+          return new Response('OK', { status: 200 })
         }
 
-        // Vérifier si le groupe est éligible pour l'attribution
-        if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-          console.log(`ℹ️ Groupe ${trigger.group_id} non éligible:`, {
+        // Vérifications d'éligibilité STRICTES
+        const isEligible = (
+          group.current_participants === 5 &&
+          group.status === 'confirmed' &&
+          !group.bar_name &&
+          !group.bar_place_id
+        );
+
+        if (!isEligible) {
+          console.log('ℹ️ [TRIGGER] Groupe non éligible:', {
             participants: group.current_participants,
             status: group.status,
             hasBar: !!group.bar_name
-          })
+          });
           
-          // Supprimer le message de déclenchement obsolète
-          await supabase
-            .from('group_messages')
-            .delete()
-            .eq('group_id', trigger.group_id)
-            .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
-            .eq('is_system', true)
-          
-          processedCount++
-          continue
+          // Nettoyage immédiat du message de déclenchement
+          await supabase.from('group_messages').delete().eq('id', record.id);
+          return new Response('OK', { status: 200 })
         }
 
-        // Appeler l'attribution automatique via simple-auto-assign-bar
-        console.log(`🍺 Attribution automatique pour groupe: ${trigger.group_id}`)
-        
-        const { data: barResult, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
-          body: {
-            group_id: trigger.group_id,
-            latitude: group.latitude || 48.8566,
-            longitude: group.longitude || 2.3522
-          }
-        })
+        console.log('🎯 [TRIGGER] Appel Edge Function auto-assign-bar...');
 
-        if (barError || !barResult?.success) {
-          console.error(`❌ Erreur attribution bar pour ${trigger.group_id}:`, barError)
+        // Appel de l'Edge Function avec gestion d'erreur robuste
+        const { data: barResponse, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
+          body: {
+            group_id: groupId,
+            latitude: group.latitude,
+            longitude: group.longitude
+          }
+        });
+
+        if (barError) {
+          console.error('❌ [TRIGGER] Erreur appel auto-assign-bar:', barError);
           
-          // Envoyer message d'erreur au groupe
+          // Message d'échec avec nettoyage
           await supabase
             .from('group_messages')
             .insert({
-              group_id: trigger.group_id,
+              group_id: groupId,
               user_id: '00000000-0000-0000-0000-000000000000',
-              message: '⚠️ Erreur lors de l\'attribution automatique du bar. Veuillez réessayer manuellement.',
+              message: '⚠️ Erreur lors de la recherche automatique de bar. Réessayez manuellement.',
               is_system: true
-            })
-        } else {
-          console.log(`✅ Bar assigné avec succès pour groupe: ${trigger.group_id}`)
-          successCount++
+            });
+            
+          await supabase.from('group_messages').delete().eq('id', record.id);
+          return new Response('OK', { status: 200 })
         }
 
-        // Supprimer le message de déclenchement traité
-        await supabase
-          .from('group_messages')
-          .delete()
-          .eq('group_id', trigger.group_id)
-          .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
-          .eq('is_system', true)
+        // Traitement de la réponse standardisée
+        if (barResponse?.success && barResponse?.bar) {
+          console.log('✅ [TRIGGER] Bar reçu:', barResponse.bar.name);
+          
+          const success = await updateGroupWithBar(groupId, barResponse.bar);
+          
+          if (!success) {
+            // Fallback en cas d'échec de mise à jour
+            await supabase
+              .from('group_messages')
+              .insert({
+                group_id: groupId,
+                user_id: '00000000-0000-0000-0000-000000000000',
+                message: '⚠️ Erreur lors de l\'attribution du bar. Veuillez choisir manuellement.',
+                is_system: true
+              });
+          }
+        } else {
+          console.log('⚠️ [TRIGGER] Aucun bar trouvé par auto-assign-bar');
+          
+          // Message d'information pour recherche manuelle
+          await supabase
+            .from('group_messages')
+            .insert({
+              group_id: groupId,
+              user_id: '00000000-0000-0000-0000-000000000000',
+              message: '⚠️ Aucun bar disponible trouvé automatiquement. Vous pouvez choisir un lieu manuellement.',
+              is_system: true
+            });
+        }
 
-        processedCount++
-
+        // Nettoyage SYSTÉMATIQUE du message de déclenchement
+        await supabase.from('group_messages').delete().eq('id', record.id);
+        
+        console.log('✅ [TRIGGER] Attribution automatique terminée et nettoyée');
+        
       } catch (error) {
-        console.error(`❌ Erreur traitement groupe ${trigger.group_id}:`, error)
-        processedCount++
+        console.error('❌ [TRIGGER] Erreur dans le traitement:', error);
+        
+        // Nettoyage en cas d'erreur + message d'erreur
+        await Promise.all([
+          supabase.from('group_messages').delete().eq('id', record.id),
+          supabase
+            .from('group_messages')
+            .insert({
+              group_id: groupId,
+              user_id: '00000000-0000-0000-0000-000000000000',
+              message: '⚠️ Erreur technique lors de l\'attribution automatique. Réessayez.',
+              is_system: true
+            })
+        ]);
       }
+
+      return new Response('OK', { status: 200 })
     }
 
-    console.log(`✅ Traitement terminé: ${processedCount} traités, ${successCount} succès`)
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        processed: processedCount,
-        successful: successCount 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    // Autres types de webhooks
+    return new Response('OK', { status: 200 })
+    
   } catch (error) {
-    console.error('❌ Erreur globale:', error)
-    return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error('❌ [TRIGGER] Erreur globale:', error);
+    return new Response('Error', { status: 500 })
   }
 })
