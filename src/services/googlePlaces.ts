@@ -13,11 +13,11 @@ interface PlaceResult {
 
 export class GooglePlacesService {
   /**
-   * Recherche SIMPLE de bars - sélection aléatoire pure
+   * Recherche AMÉLIORÉE de bars - avec filtrage intelligent
    */
   static async findNearbyBars(latitude: number, longitude: number): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche simple de bars:', { latitude, longitude });
+      console.log('🔍 [GooglePlacesService] Recherche améliorée de bars:', { latitude, longitude });
       
       const response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/simple-bar-search', {
         method: 'POST',
@@ -29,22 +29,29 @@ export class GooglePlacesService {
       });
 
       if (!response.ok) {
-        console.error('❌ Erreur HTTP:', response.status);
+        console.error('❌ [GooglePlacesService] Erreur HTTP:', response.status);
+        const errorText = await response.text();
+        console.error('❌ [GooglePlacesService] Détails erreur:', errorText);
         return null;
       }
 
       const selectedBar = await response.json();
       
       if (!selectedBar || !selectedBar.name) {
-        console.error('❌ Aucun bar trouvé');
+        console.error('❌ [GooglePlacesService] Aucun bar trouvé dans la réponse');
         return null;
       }
 
-      console.log('🍺 Bar trouvé:', selectedBar.name);
+      console.log('🍺 [GooglePlacesService] Bar sélectionné:', {
+        name: selectedBar.name,
+        address: selectedBar.formatted_address,
+        coordinates: selectedBar.geometry?.location
+      });
+      
       return selectedBar;
       
     } catch (error) {
-      console.error('❌ Erreur de recherche:', error);
+      console.error('❌ [GooglePlacesService] Erreur de recherche:', error);
       return null;
     }
   }

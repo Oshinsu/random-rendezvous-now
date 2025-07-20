@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 export class AutomaticBarAssignmentService {
   /**
-   * Attribution automatique de bar - VERSION SIMPLIFIÉE
+   * Attribution automatique de bar - VERSION AMÉLIORÉE
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      console.log('🤖 [SIMPLE BAR ASSIGNMENT] Attribution pour groupe:', groupId);
+      console.log('🤖 [AUTOMATIC BAR ASSIGNMENT] Attribution améliorée pour groupe:', groupId);
 
       // 1. Vérifier le groupe
       const { data: group, error: groupError } = await supabase
@@ -17,21 +17,23 @@ export class AutomaticBarAssignmentService {
         .single();
 
       if (groupError || !group) {
-        console.error('❌ Groupe introuvable:', groupError);
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Groupe introuvable:', groupError);
         return false;
       }
 
       // 2. Vérifier l'éligibilité (5 participants, confirmé, pas de bar)
       if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-        console.log('ℹ️ Groupe non éligible');
+        console.log('ℹ️ [AUTOMATIC BAR ASSIGNMENT] Groupe non éligible pour attribution');
         return false;
       }
 
-      // 3. Coordonnées (fallback Paris si nécessaire)
-      const searchLatitude = group.latitude || 48.8566;
-      const searchLongitude = group.longitude || 2.3522;
+      // 3. Coordonnées avec fallback sur Fort-de-France
+      const searchLatitude = group.latitude || 14.633945;
+      const searchLongitude = group.longitude || -61.027498;
 
-      // 4. Appel Edge Function simple
+      console.log('📍 [AUTOMATIC BAR ASSIGNMENT] Recherche avec coordonnées:', { searchLatitude, searchLongitude });
+
+      // 4. Appel Edge Function améliorée
       const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
         body: { 
           group_id: groupId,
@@ -40,13 +42,19 @@ export class AutomaticBarAssignmentService {
         }
       });
 
-      if (barError || !barResponse?.success || !barResponse?.bar?.name) {
-        console.error('❌ Aucun bar trouvé');
-        await this.sendSystemMessage(groupId, '⚠️ Aucun bar trouvé automatiquement.');
+      if (barError) {
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur Edge Function:', barError);
+        await this.sendSystemMessage(groupId, '⚠️ Erreur lors de la recherche automatique de bar.');
         return false;
       }
 
-      // 5. Mise à jour du groupe
+      if (!barResponse?.success || !barResponse?.bar?.name) {
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Aucun bar trouvé dans la réponse');
+        await this.sendSystemMessage(groupId, '⚠️ Aucun bar trouvé automatiquement dans votre zone.');
+        return false;
+      }
+
+      // 5. Mise à jour du groupe avec le bar trouvé
       const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
 
       const { error: updateError } = await supabase
@@ -62,22 +70,28 @@ export class AutomaticBarAssignmentService {
         .eq('id', groupId);
 
       if (updateError) {
-        console.error('❌ Erreur mise à jour:', updateError);
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur mise à jour groupe:', updateError);
         return false;
       }
 
-      // 6. Message de confirmation
+      // 6. Message de confirmation avec détails
       await this.sendSystemMessage(
         groupId, 
-        `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+        `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} 🎉`
       );
 
-      console.log('✅ Bar assigné:', barResponse.bar.name);
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Attribution réussie:', {
+        groupId,
+        barName: barResponse.bar.name,
+        address: barResponse.bar.formatted_address,
+        meetingTime: meetingTime.toISOString()
+      });
+
       return true;
 
     } catch (error) {
-      console.error('❌ Erreur globale:', error);
-      await this.sendSystemMessage(groupId, '⚠️ Erreur lors de l\'attribution automatique.');
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur globale:', error);
+      await this.sendSystemMessage(groupId, '⚠️ Erreur technique lors de l\'attribution automatique.');
       return false;
     }
   }
@@ -95,8 +109,10 @@ export class AutomaticBarAssignmentService {
           message: message,
           is_system: true
         });
+      
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Message système envoyé:', message);
     } catch (error) {
-      console.error('❌ Erreur envoi message système:', error);
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur envoi message système:', error);
     }
   }
 
@@ -111,8 +127,10 @@ export class AutomaticBarAssignmentService {
         .eq('group_id', groupId)
         .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
         .eq('is_system', true);
+        
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Messages de déclenchement nettoyés');
     } catch (error) {
-      console.error('❌ Erreur nettoyage messages:', error);
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur nettoyage messages:', error);
     }
   }
 }

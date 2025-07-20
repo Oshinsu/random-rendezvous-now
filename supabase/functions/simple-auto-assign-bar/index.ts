@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
@@ -8,75 +7,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Fonction de filtrage pour identifier les vrais bars/pubs (identique à simple-bar-search)
+// Fonction de filtrage AMÉLIORÉE identique à simple-bar-search
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
   const types = place.types || [];
   const primaryType = place.primaryType || '';
 
-  console.log('🔍 Analyse du lieu:', {
+  console.log('🔍 [FILTRAGE AVANCÉ] Analyse du lieu:', {
     name: place.displayName?.text,
     types: types,
-    primaryType: primaryType
+    primaryType: primaryType,
+    address: place.formattedAddress
   });
 
-  // Mots-clés négatifs - si trouvés, ce n'est probablement pas un vrai bar
-  const negativeKeywords = [
-    'restaurant', 'café', 'pizzeria', 'brasserie', 'bistrot', 'grill',
-    'steakhouse', 'burger', 'sandwich', 'tacos', 'sushi', 'kebab',
-    'crêperie', 'glacier', 'pâtisserie', 'boulangerie', 'fast food',
-    'mcdo', 'kfc', 'subway', 'quick', 'domino', 'pizza hut',
-    'hôtel', 'hotel', 'resort', 'auberge', 'gîte', 'camping',
-    'supermarché', 'épicerie', 'magasin', 'boutique', 'pharmacie',
-    'station service', 'essence', 'garage', 'centre commercial',
-    'école', 'université', 'hôpital', 'clinique', 'mairie',
-    'église', 'temple', 'mosquée', 'synagogue'
+  // ÉTAPE 1: Mots-clés TRÈS négatifs - exclusion immédiate
+  const criticalNegativeKeywords = [
+    'moto', 'motorcycle', 'harley', 'yamaha', 'honda', 'kawasaki', 'suzuki',
+    'concessionnaire', 'dealer', 'garage moto', 'bike shop',
+    'école', 'university', 'hôpital', 'clinique', 'mairie', 'préfecture',
+    'église', 'temple', 'mosquée', 'synagogue', 'cathédrale',
+    'pharmacie', 'station service', 'essence', 'total', 'shell',
+    'supermarché', 'carrefour', 'leclerc', 'champion', 'géant',
+    'magasin', 'boutique', 'centre commercial', 'mall'
   ];
 
-  // Vérifier les mots-clés négatifs dans le nom et l'adresse
-  const hasNegativeKeyword = negativeKeywords.some(keyword => 
+  const hasCriticalNegative = criticalNegativeKeywords.some(keyword => 
     name.includes(keyword) || address.includes(keyword)
   );
 
-  if (hasNegativeKeyword) {
-    console.log('❌ Lieu rejeté - mot-clé négatif trouvé');
+  if (hasCriticalNegative) {
+    console.log('❌ [FILTRAGE] Lieu REJETÉ - mot-clé critique trouvé');
     return false;
   }
 
-  // Types Google Places à éviter
-  const negativeTypes = [
-    'restaurant', 'meal_takeaway', 'meal_delivery', 'food',
-    'cafe', 'bakery', 'grocery_or_supermarket', 'convenience_store',
-    'gas_station', 'lodging', 'hospital', 'pharmacy', 'school',
-    'university', 'church', 'mosque', 'synagogue', 'temple'
+  // ÉTAPE 2: Vérification des mots-clés POSITIFS prioritaires
+  const highPriorityKeywords = ['bar', 'pub', 'brasserie', 'taverne', 'lounge'];
+  const hasHighPriorityKeyword = highPriorityKeywords.some(keyword => name.includes(keyword));
+
+  if (hasHighPriorityKeyword) {
+    console.log('✅ [FILTRAGE] Lieu ACCEPTÉ - mot-clé prioritaire trouvé:', name);
+    return true;
+  }
+
+  // ÉTAPE 3: Types Google Places - vérification flexible
+  const acceptableTypes = [
+    'bar', 'pub', 'establishment', 'night_club', 'liquor_store'
   ];
 
-  // Vérifier si le type principal est négatif
-  if (negativeTypes.includes(primaryType)) {
-    console.log('❌ Lieu rejeté - type principal négatif:', primaryType);
+  const hasAcceptableType = types.some((type: string) => acceptableTypes.includes(type)) || 
+                           acceptableTypes.includes(primaryType);
+
+  // ÉTAPE 4: Gestion spéciale des bar-restaurants
+  const isBarRestaurant = (types.includes('bar') && types.includes('restaurant')) ||
+                         (primaryType === 'bar' && types.includes('restaurant')) ||
+                         (primaryType === 'restaurant' && types.includes('bar'));
+
+  if (isBarRestaurant) {
+    console.log('🍽️ [FILTRAGE] Bar-restaurant détecté - ACCEPTÉ:', name);
+    return true;
+  }
+
+  // ÉTAPE 5: Exclusion des restaurants purs (sans composante bar)
+  if (primaryType === 'restaurant' && !types.includes('bar')) {
+    console.log('❌ [FILTRAGE] Restaurant pur - REJETÉ');
     return false;
   }
 
-  // Vérifier si trop de types négatifs sont présents
-  const negativeTypesFound = types.filter((type: string) => negativeTypes.includes(type));
-  if (negativeTypesFound.length > 1) {
-    console.log('❌ Lieu rejeté - trop de types négatifs:', negativeTypesFound);
-    return false;
+  // ÉTAPE 6: Décision finale basée sur les types
+  if (hasAcceptableType) {
+    console.log('✅ [FILTRAGE] Lieu ACCEPTÉ - type acceptable trouvé');
+    return true;
   }
 
-  // Types positifs pour les bars/pubs
-  const positiveTypes = ['bar', 'pub', 'liquor_store', 'night_club', 'establishment'];
-  const hasPositiveType = types.some((type: string) => positiveTypes.includes(type)) || 
-                         positiveTypes.includes(primaryType);
-
-  if (!hasPositiveType) {
-    console.log('⚠️ Lieu accepté par défaut - aucun type positif mais pas de négatif majeur');
-  } else {
-    console.log('✅ Lieu accepté - type positif trouvé');
-  }
-
-  return true;
+  console.log('❌ [FILTRAGE] Lieu REJETÉ - aucun critère accepté');
+  return false;
 };
 
 serve(async (req) => {
@@ -98,7 +103,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN AVANCÉ] Attribution pour:', group_id);
+    console.log('🤖 [AUTO-ASSIGN AMÉLIORÉ] Attribution pour groupe:', group_id);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
@@ -121,9 +126,9 @@ serve(async (req) => {
       )
     }
 
-    // Coordonnées avec fallback
-    const searchLatitude = latitude || 48.8566;
-    const searchLongitude = longitude || 2.3522;
+    // Coordonnées avec fallback sur Fort-de-France
+    const searchLatitude = latitude || 14.633945;
+    const searchLongitude = longitude || -61.027498;
 
     // Recherche avancée de bars
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
@@ -134,20 +139,22 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 Recherche avancée de bars pour:', { searchLatitude, searchLongitude });
+    console.log('🔍 [RECHERCHE AMÉLIORÉE] Recherche de bars à Fort-de-France:', { searchLatitude, searchLongitude });
 
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub"],
+      includedTypes: ["bar", "pub", "restaurant", "night_club"],
       locationRestriction: {
         circle: {
           center: { latitude: searchLatitude, longitude: searchLongitude },
-          radius: 5000
+          radius: 8000 // Rayon élargi
         }
       },
-      maxResultCount: 20, // Get more to filter properly
+      maxResultCount: 20,
       languageCode: "fr-FR"
     };
+
+    console.log('📡 [API REQUEST] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(searchUrl, {
       method: 'POST',
@@ -159,49 +166,70 @@ serve(async (req) => {
       body: JSON.stringify(requestBody)
     });
 
+    if (!response.ok) {
+      console.error('❌ [API ERROR] Erreur HTTP:', response.status, await response.text());
+      return new Response(
+        JSON.stringify({ success: false, error: `Erreur API: ${response.status}` }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const data = await response.json();
+    console.log('📊 [API RESPONSE] Réponse complète:', JSON.stringify(data, null, 2));
 
     if (!data.places || data.places.length === 0) {
+      console.log('⚠️ [AUCUN RÉSULTAT] Google Places n\'a retourné aucun lieu');
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar trouvé' }),
+        JSON.stringify({ success: false, error: 'Aucun lieu trouvé par Google Places' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('📊 Lieux trouvés initialement:', data.places.length);
+    console.log('📋 [RÉSULTATS BRUTS] Lieux trouvés initialement:', data.places.length);
 
-    // Filter only OPEN bars/pubs
-    const openBars = data.places.filter(place => {
+    // Filtrage des lieux ouverts
+    const openPlaces = data.places.filter(place => {
       const currentHours = place.currentOpeningHours;
       if (currentHours && currentHours.openNow !== undefined) {
         return currentHours.openNow === true;
       }
-      return true; // If no current hours info, allow it
+      return true;
     });
 
-    console.log('🕐 Lieux ouverts:', openBars.length);
+    console.log('🕐 [FILTRAGE HORAIRES] Lieux potentiellement ouverts:', openPlaces.length);
 
-    // Apply advanced filtering for real bars/pubs
-    const realBars = openBars.filter(isRealBarOrPub);
+    // Application du filtrage avancé
+    const realBars = openPlaces.filter(isRealBarOrPub);
 
-    console.log('🍺 Vrais bars après filtrage:', realBars.length);
+    console.log('🍺 [FILTRAGE FINAL] Vrais bars après filtrage:', realBars.length);
 
-    // Fallback if no real bars found
+    // Log détaillé des bars sélectionnés
+    realBars.forEach((bar, index) => {
+      console.log(`🏆 [BAR ${index + 1}] ${bar.displayName?.text} - Types: [${bar.types?.join(', ')}] - Primary: ${bar.primaryType}`);
+    });
+
+    // Fallback si aucun bar trouvé
     let selectedBars = realBars;
     if (realBars.length === 0) {
-      console.log('⚠️ Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
-      selectedBars = openBars;
+      console.log('⚠️ [FALLBACK] Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
+      selectedBars = openPlaces;
     }
 
     if (selectedBars.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar ouvert trouvé' }),
+        JSON.stringify({ success: false, error: 'Aucun bar ouvert trouvé malgré le filtrage élargi' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Sélection aléatoire parmi les vrais bars
-    const randomBar = selectedBars[Math.floor(Math.random() * selectedBars.length)];
+    // Sélection aléatoire avec priorité aux bars avec mots-clés
+    const priorityBars = selectedBars.filter(bar => {
+      const name = bar.displayName?.text?.toLowerCase() || '';
+      return ['bar', 'pub', 'brasserie', 'taverne', 'lounge'].some(keyword => name.includes(keyword));
+    });
+
+    const finalSelection = priorityBars.length > 0 ? priorityBars : selectedBars;
+    const randomBar = finalSelection[Math.floor(Math.random() * finalSelection.length)];
     
     const result = {
       success: true,
@@ -218,8 +246,20 @@ serve(async (req) => {
       }
     };
 
-    console.log('🎲 Bar sélectionné:', result.bar.name);
-    console.log('📊 Stats finales - Total:', data.places.length, 'Ouverts:', openBars.length, 'Vrais bars:', realBars.length);
+    console.log('🎯 [SÉLECTION FINALE] Bar sélectionné:', {
+      name: result.bar.name,
+      types: randomBar.types,
+      primaryType: randomBar.primaryType,
+      wasPriority: priorityBars.length > 0
+    });
+
+    console.log('📊 [STATISTIQUES] Résumé de la recherche:', {
+      totalFound: data.places.length,
+      openPlaces: openPlaces.length,
+      realBars: realBars.length,
+      priorityBars: priorityBars.length,
+      finalSelection: finalSelection.length
+    });
 
     return new Response(
       JSON.stringify(result),
@@ -227,11 +267,10 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Erreur:', error);
+    console.error('❌ [ERREUR GLOBALE]', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur' }),
+      JSON.stringify({ success: false, error: 'Erreur serveur', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
-
