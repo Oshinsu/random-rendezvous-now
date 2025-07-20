@@ -241,7 +241,7 @@ export class OptimizedGroupService {
         .order('joined_at', { ascending: true });
 
       if (error) {
-        endMetrics(false);
+        endMetrics.end(false);
         throw error;
       }
 
@@ -261,10 +261,10 @@ export class OptimizedGroupService {
         };
       });
 
-      endMetrics(true);
+      endMetrics.end(true);
       return members;
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('GET_GROUP_MEMBERS', error);
       return [];
     }
@@ -285,7 +285,7 @@ export class OptimizedGroupService {
           description: `Veuillez attendre ${remainingMinutes} minute(s).`,
           variant: 'destructive'
         });
-        endMetrics(false);
+        endMetrics.end(false);
         return null;
       }
 
@@ -298,7 +298,7 @@ export class OptimizedGroupService {
       });
 
       if (error) {
-        endMetrics(false);
+        endMetrics.end(false);
         console.error('❌ Atomic group creation failed:', error);
         
         if (error.message.includes('User is already in an active group')) {
@@ -315,7 +315,7 @@ export class OptimizedGroupService {
       }
 
       if (!result || result.length === 0) {
-        endMetrics(false);
+        endMetrics.end(false);
         return null;
       }
 
@@ -324,10 +324,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      endMetrics(true);
+      endMetrics.end(true);
       return newGroup;
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('CREATE_GROUP_ATOMIC', error);
       return null;
     }
@@ -345,7 +345,7 @@ export class OptimizedGroupService {
           description: 'Veuillez attendre avant de rejoindre un groupe.',
           variant: 'destructive'
         });
-        endMetrics(false);
+        endMetrics.end(false);
         return false;
       }
 
@@ -359,7 +359,7 @@ export class OptimizedGroupService {
         .single();
 
       if (groupError || !group) {
-        endMetrics(false);
+        endMetrics.end(false);
         toast({
           title: 'Groupe indisponible',
           description: 'Ce groupe n\'est plus disponible.',
@@ -382,7 +382,7 @@ export class OptimizedGroupService {
         });
 
       if (joinError) {
-        endMetrics(false);
+        endMetrics.end(false);
         const appError = ErrorHandler.handleSupabaseError(joinError);
         ErrorHandler.showErrorToast(appError);
         return false;
@@ -391,10 +391,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      endMetrics(true);
+      endMetrics.end(true);
       return true;
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('JOIN_GROUP', error);
       return false;
     }
@@ -412,7 +412,7 @@ export class OptimizedGroupService {
         .eq('user_id', userId);
 
       if (error) {
-        endMetrics(false);
+        endMetrics.end(false);
         ErrorHandler.logError('LEAVE_GROUP', error);
         return false;
       }
@@ -420,10 +420,10 @@ export class OptimizedGroupService {
       // Clear cache for this user
       this.groupCache.delete(`groups_${userId}`);
       
-      endMetrics(true);
+      endMetrics.end(true);
       return true;
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('LEAVE_GROUP', error);
       return false;
     }
@@ -442,12 +442,12 @@ export class OptimizedGroupService {
 
       if (error) {
         ErrorHandler.logError('UPDATE_LAST_SEEN', error);
-        endMetrics(false);
+        endMetrics.end(false);
       } else {
-        endMetrics(true);
+        endMetrics.end(true);
       }
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('UPDATE_USER_ACTIVITY', error);
     }
   }
@@ -464,17 +464,17 @@ export class OptimizedGroupService {
       
       if (error) {
         console.error('❌ Smart cleanup error:', error);
-        endMetrics(false);
+        endMetrics.end(false);
       } else {
         console.log('✅ Smart cleanup completed');
         
         // Clear all caches after cleanup
         this.groupCache.clear();
         
-        endMetrics(true);
+        endMetrics.end(true);
       }
     } catch (error) {
-      endMetrics(false);
+      endMetrics.end(false);
       ErrorHandler.logError('SMART_CLEANUP', error);
     }
   }
