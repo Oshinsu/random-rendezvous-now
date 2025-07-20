@@ -1,5 +1,5 @@
 
--- Corriger l'attribution automatique de bar - Appel à la bonne Edge Function
+-- Corriger l'attribution automatique de bar - Appel à la fonction unifiée
 CREATE OR REPLACE FUNCTION public.handle_group_participant_changes()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -35,9 +35,9 @@ BEGIN
         SET status = 'confirmed'
         WHERE id = target_group_id;
         
-        -- Attribution automatique IMMÉDIATE du bar via la BONNE Edge Function
+        -- Attribution automatique IMMÉDIATE du bar via la fonction unifiée
         BEGIN
-            -- Appel à simple-auto-assign-bar (nom corrigé)
+            -- Appel à simple-auto-assign-bar (fonction unifiée)
             SELECT net.http_post(
                 url := 'https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/simple-auto-assign-bar',
                 headers := jsonb_build_object(
@@ -52,7 +52,7 @@ BEGIN
             );
             
             -- Log the result for debugging
-            RAISE NOTICE 'Bar assignment triggered for group % via simple-auto-assign-bar at %', target_group_id, now();
+            RAISE NOTICE 'Bar assignment triggered for group % via unified function at %', target_group_id, now();
             
         EXCEPTION WHEN OTHERS THEN
             -- En cas d'erreur, envoyer un message système de fallback

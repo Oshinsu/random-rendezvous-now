@@ -102,41 +102,50 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   try {
-    const { group_id, latitude, longitude } = await req.json()
+    const { group_id, latitude, longitude, manual_search } = await req.json()
 
-    if (!group_id) {
+    // Validation des coordonnées - OBLIGATOIRES
+    if (!latitude || !longitude) {
+      console.error('❌ Coordonnées manquantes:', { latitude, longitude });
       return new Response(
-        JSON.stringify({ success: false, error: 'group_id requis' }),
+        JSON.stringify({ success: false, error: 'Coordonnées requises' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN HARMONISÉ] Attribution pour:', group_id);
+    if (manual_search) {
+      console.log('🔍 [RECHERCHE MANUELLE] Coordonnées:', { latitude, longitude });
+    } else {
+      if (!group_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'group_id requis pour attribution automatique' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
 
-    // Vérifier l'éligibilité du groupe
-    const { data: group, error: groupError } = await supabase
-      .from('groups')
-      .select('current_participants, status, bar_name')
-      .eq('id', group_id)
-      .single()
+      console.log('🤖 [AUTO-ASSIGN] Attribution pour:', group_id);
 
-    if (groupError || !group) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Groupe introuvable' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      // Vérifier l'éligibilité du groupe
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .select('current_participants, status, bar_name')
+        .eq('id', group_id)
+        .single()
+
+      if (groupError || !group) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Groupe introuvable' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Groupe non éligible' }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
-
-    if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Groupe non éligible' }),
-        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Coordonnées avec fallback
-    const searchLatitude = latitude || 48.8566;
-    const searchLongitude = longitude || 2.3522;
 
     // API Google Places
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
@@ -147,14 +156,14 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 Recherche HARMONISÉE avec rayon 10km pour:', { searchLatitude, searchLongitude });
+    console.log('🔍 Recherche avec rayon 10km pour:', { latitude, longitude });
 
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub", "brewery"], // SANS night_club, AVEC brewery
+      includedTypes: ["bar", "pub", "brewery"],
       locationRestriction: {
         circle: {
-          center: { latitude: searchLatitude, longitude: searchLongitude },
+          center: { latitude, longitude },
           radius: 10000
         }
       },
@@ -193,7 +202,7 @@ serve(async (req) => {
       if (currentHours && currentHours.openNow !== undefined) {
         return currentHours.openNow === true;
       }
-      return true; // Si pas d'info, on assume ouvert
+      return true;
     });
 
     console.log('🕐 Lieux ouverts:', openBars.length);
@@ -208,14 +217,23 @@ serve(async (req) => {
     }).filter(item => item.isValid);
 
     console.log('🍺 Bars valides après analyse complète:', analyzedBars.length);
-    
-    // Log des priorités
-    analyzedBars.forEach(bar => {
-      console.log(`📋 ${bar.place.displayName?.text} - Priorité: ${bar.priority} (${bar.reason})`);
-    });
 
-    // Si aucun bar valide trouvé = ERREUR (pas de fallback)
-    if (analyzedBars.length === 0) {
+    // FALLBACK pour recherche manuelle SEULEMENT
+    let selectedBars = analyzedBars;
+    let fallbackUsed = false;
+    
+    if (analyzedBars.length === 0 && manual_search) {
+      console.log('⚠️ FALLBACK MANUEL - Utilisation de tous les lieux ouverts');
+      selectedBars = openBars.map(place => ({
+        place,
+        isValid: true,
+        priority: 10,
+        reason: 'Fallback manuel'
+      }));
+      fallbackUsed = true;
+    }
+
+    if (selectedBars.length === 0) {
       console.log('❌ ÉCHEC FINAL - Aucun bar/pub/brasserie valide trouvé');
       return new Response(
         JSON.stringify({ 
@@ -227,9 +245,9 @@ serve(async (req) => {
     }
 
     // Trier par priorité décroissante puis sélection aléatoire dans la meilleure catégorie
-    analyzedBars.sort((a, b) => b.priority - a.priority);
-    const bestPriority = analyzedBars[0].priority;
-    const bestBars = analyzedBars.filter(bar => bar.priority === bestPriority);
+    selectedBars.sort((a, b) => b.priority - a.priority);
+    const bestPriority = selectedBars[0].priority;
+    const bestBars = selectedBars.filter(bar => bar.priority === bestPriority);
     
     const selectedBar = bestBars[Math.floor(Math.random() * bestBars.length)];
     

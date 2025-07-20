@@ -13,19 +13,23 @@ interface PlaceResult {
 
 export class GooglePlacesService {
   /**
-   * Recherche SIMPLE de bars - sélection aléatoire pure
+   * Recherche de bars via l'edge function unifiée
    */
   static async findNearbyBars(latitude: number, longitude: number): Promise<PlaceResult | null> {
     try {
-      console.log('🔍 [GooglePlacesService] Recherche simple de bars:', { latitude, longitude });
+      console.log('🔍 [GooglePlacesService] Recherche de bars:', { latitude, longitude });
       
-      const response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/simple-bar-search', {
+      const response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/simple-auto-assign-bar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocmlldnZkbmFqdnlseXJvd3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4OTQ1MzUsImV4cCI6MjA2NTQ3MDUzNX0.RfwNUnsTFAzfRqxiqCOtunXBTMJj90MKWOm1iwzVBAs`
         },
-        body: JSON.stringify({ latitude, longitude })
+        body: JSON.stringify({ 
+          latitude, 
+          longitude,
+          manual_search: true 
+        })
       });
 
       if (!response.ok) {
@@ -33,15 +37,15 @@ export class GooglePlacesService {
         return null;
       }
 
-      const selectedBar = await response.json();
+      const result = await response.json();
       
-      if (!selectedBar || !selectedBar.name) {
+      if (!result.success || !result.bar) {
         console.error('❌ Aucun bar trouvé');
         return null;
       }
 
-      console.log('🍺 Bar trouvé:', selectedBar.name);
-      return selectedBar;
+      console.log('🍺 Bar trouvé:', result.bar.name);
+      return result.bar;
       
     } catch (error) {
       console.error('❌ Erreur de recherche:', error);
