@@ -20,11 +20,11 @@ const HeroSection = () => {
     <section className="py-16 md:py-24 bg-background text-foreground animate-fade-in">
       <div className="container mx-auto px-6 text-center">
         <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-extrabold mb-6 tracking-tight">
-          Random: <span className="text-primary">Bye Bye</span> les Soirées Plates
+          Random: <span className="text-primary">1 Clic = 1 Groupe = 1 Bar</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-          Marre des swipes sans fin et des plans foireux ? Random te connecte à 4 inconnus dans un bar surprise. 
-          <span className="font-semibold text-foreground"> 1 clic, 1 aventure, 100% gratuit.</span>
+          Dis <span className="font-semibold text-foreground">"oui"</span> à l'inattendu. 
+          <span className="font-semibold text-foreground"> C'est pas un date. C'est un dé.</span>
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
           <Button 
@@ -38,7 +38,7 @@ const HeroSection = () => {
         </div>
         <div className="max-w-2xl mx-auto">
           <p className="text-sm text-muted-foreground mb-4">
-            {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez déjà +500 aventuriers parisiens'}
+            {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez déjà +500 aventuriers'}
           </p>
           <div className="flex justify-center items-center gap-6 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -51,7 +51,7 @@ const HeroSection = () => {
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              Paris uniquement
+              Partout en France
             </span>
           </div>
         </div>

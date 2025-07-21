@@ -4,23 +4,23 @@ import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
 const steps = [
   {
     icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
-    title: "1. Un clic, c'est parti",
-    description: "Interface ultra-minimaliste. Un bouton, une action. Fini les profils à remplir pendant des heures.",
+    title: "1. Tu cliques",
+    description: "Un bouton, c'est tout. Pas de profil à remplir, pas de questions.",
   },
   {
     icon: <Users className="w-10 h-10 text-primary mb-4" />,
-    title: "2. Groupe mystère formé",
-    description: "4 inconnus, même envie d'aventure. Notre algo fait le reste. Prépare-toi à l'inattendu.",
+    title: "2. On forme ton groupe",
+    description: "4 personnes au hasard. Même envie d'aventure que toi.",
   },
   {
     icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
-    title: "3. Destination révélée",
-    description: "Le bar s'affiche une fois le groupe complet. Totalement gratuit pour découvrir l'expérience.",
+    title: "3. On révèle le bar",
+    description: "Le lieu s'affiche. Gratuit pour découvrir l'expérience.",
   },
   {
     icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
-    title: "4. L'aventure commence",
-    description: "Rendez-vous dans 2h. Zéro pression, 100% authenticité. Laisse la magie opérer.",
+    title: "4. Tu y vas",
+    description: "Rendez-vous dans 2h. La magie du hasard fait le reste.",
   },
 ];
 
@@ -32,7 +32,7 @@ const HowItWorksSection = () => {
           Comment <span className="text-primary">Ça Marche</span> ?
         </h2>
         <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          Random, c'est la simplicité radicale. Pas de blabla, direction l'action.
+          Simple comme bonjour. Pas de blabla.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (

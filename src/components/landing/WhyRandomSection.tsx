@@ -4,23 +4,23 @@ import { Sparkles, ShieldCheck, ThumbsUp, Zap } from "lucide-react";
 const benefits = [
   {
     icon: <Sparkles className="w-8 h-8 text-primary" />,
-    title: "100% Authentique",
-    description: "Fini les filtres et les profils bidons. Ici, on se montre tel qu'on est. L'authenticité, c'est notre kiff.",
+    title: "100% Vrai",
+    description: "Pas de filtres, pas de mensonges. Tu te montres comme tu es, les autres aussi.",
   },
   {
     icon: <Zap className="w-8 h-8 text-primary" />,
-    title: "L'Adrénaline de l'Inconnu",
-    description: "Redécouvre le frisson de la surprise. Chaque soirée Random est une page blanche à écrire ensemble.",
+    title: "La Magie du Hasard",
+    description: "Chaque soirée est une surprise. Tu ne sais jamais qui tu vas rencontrer.",
   },
   {
     icon: <ThumbsUp className="w-8 h-8 text-primary" />,
-    title: "Simple comme Bonjour",
-    description: "Une app, un bouton, une aventure. Moins de temps sur ton écran, plus de moments IRL qui comptent.",
+    title: "Super Simple",
+    description: "Un clic et c'est parti. Moins de temps sur ton téléphone, plus de vrais moments.",
   },
   {
     icon: <ShieldCheck className="w-8 h-8 text-primary" />,
-    title: "Gratuit & Fiable",
-    description: "Expérience 100% gratuite pour commencer. Bars partenaires sélectionnés. Ta sécurité, notre priorité absolue.",
+    title: "Gratuit & Sûr",
+    description: "Découvre l'expérience gratuitement. Bars sélectionnés, ta sécurité avant tout.",
   },
 ];
 
@@ -32,7 +32,7 @@ const WhyRandomSection = () => {
           Pourquoi <span className="text-primary">Random</span> Change Tout ?
         </h2>
         <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          Parce qu'on en a marre des soirées prévisibles et des connexions superficielles.
+          Parce qu'on en a marre des soirées ennuyeuses et des connexions bidons.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {benefits.map((benefit, index) => (
