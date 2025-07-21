@@ -152,9 +152,9 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // ÉTAPE 3: Exclusion des bars de ports
+  // ÉTAPE 3: Exclusion des bars de ports (SAUF marinas)
   const portKeywords = [
-    'port', 'marina', 'quai', 'môle', 'embarcadère', 'ferry',
+    'port', 'quai', 'môle', 'embarcadère', 'ferry',
     'terminal maritime', 'gare maritime', 'capitainerie',
     'yacht club', 'club nautique', 'port de plaisance'
   ];
@@ -163,9 +163,16 @@ const isRealBarOrPub = (place: any): boolean => {
     address.includes(keyword) || name.includes(keyword)
   );
 
-  if (hasPortLocation) {
-    console.log('❌ [FILTRAGE] Bar de port REJETÉ:', place.displayName?.text);
+  // Exception spéciale pour les marinas (lieux incroyables!)
+  const isMarina = address.includes('marina') || name.includes('marina');
+
+  if (hasPortLocation && !isMarina) {
+    console.log('❌ [FILTRAGE] Bar de port REJETÉ (sauf marina):', place.displayName?.text);
     return false;
+  }
+
+  if (isMarina) {
+    console.log('⛵ [FILTRAGE] Bar de marina ACCEPTÉ (lieu incroyable!):', place.displayName?.text);
   }
 
   // ÉTAPE 4: Exclusion des bar-tabacs et PMU
