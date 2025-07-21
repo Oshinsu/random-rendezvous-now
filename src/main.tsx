@@ -22,8 +22,6 @@ UnifiedCleanupService.startPeriodicCleanup();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PerformanceOptimizer>
-      <App />
-    </PerformanceOptimizer>
+    <App />
   </StrictMode>,
 );

@@ -46,9 +46,10 @@ export const usePerformanceMonitor = () => {
       const entries = list.getEntries();
       entries.forEach((entry) => {
         if (entry.entryType === 'navigation') {
+          const navEntry = entry as PerformanceNavigationTiming;
           track('navigation_timing', {
-            domContentLoaded: entry.domContentLoadedEventEnd - entry.domContentLoadedEventStart,
-            loadComplete: entry.loadEventEnd - entry.loadEventStart
+            domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
+            loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart
           });
         }
       });
