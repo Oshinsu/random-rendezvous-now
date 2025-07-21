@@ -35,6 +35,62 @@ const getBarPriority = (place: any): number => {
   return 0;
 };
 
+// Fonction de vérification du statut d'ouverture avec Places Details API
+const verifyBarBusinessStatus = async (placeId: string, apiKey: string): Promise<boolean> => {
+  try {
+    console.log(`🔍 [VERIFICATION STATUT] Vérification du statut pour place_id: ${placeId}`);
+    
+    const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    const response = await fetch(detailsUrl, {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'id,displayName,businessStatus,currentOpeningHours'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ [VERIFICATION STATUT] Erreur HTTP ${response.status} pour ${placeId}`);
+      return true; // En cas d'erreur, on assume que le bar est ouvert
+    }
+
+    const data = await response.json();
+    console.log(`📊 [VERIFICATION STATUT] Réponse API pour ${placeId}:`, {
+      displayName: data.displayName?.text,
+      businessStatus: data.businessStatus,
+      openNow: data.currentOpeningHours?.openNow
+    });
+
+    // Vérifier le business_status
+    if (data.businessStatus) {
+      const status = data.businessStatus;
+      if (status === 'CLOSED_TEMPORARILY' || status === 'CLOSED_PERMANENTLY') {
+        console.log(`❌ [VERIFICATION STATUT] Bar fermé - statut: ${status}`);
+        return false;
+      }
+      if (status === 'OPERATIONAL') {
+        console.log(`✅ [VERIFICATION STATUT] Bar opérationnel - statut: ${status}`);
+        return true;
+      }
+    }
+
+    // Vérifier les heures d'ouverture actuelles en tant que fallback
+    if (data.currentOpeningHours && data.currentOpeningHours.openNow !== undefined) {
+      const isOpen = data.currentOpeningHours.openNow;
+      console.log(`🕐 [VERIFICATION STATUT] Fallback heures d'ouverture: ${isOpen ? 'ouvert' : 'fermé'}`);
+      return isOpen;
+    }
+
+    // Par défaut, on assume que le bar est ouvert si aucune info spécifique
+    console.log(`📝 [VERIFICATION STATUT] Aucune info de statut, on assume ouvert`);
+    return true;
+
+  } catch (error) {
+    console.error(`❌ [VERIFICATION STATUT] Erreur lors de la vérification pour ${placeId}:`, error);
+    return true; // En cas d'erreur, on assume que le bar est ouvert
+  }
+};
+
 // Fonction de filtrage ULTRA-STRICTE contre les fast-foods
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
@@ -227,21 +283,41 @@ serve(async (req) => {
 
     console.log('🍺 [FILTRAGE FINAL] Vrais bars après filtrage:', realBars.length);
 
+    // NOUVELLE ÉTAPE: Vérification du statut d'activité avec Places Details API
+    console.log('🔍 [VERIFICATION STATUT] Début de la vérification du statut des bars...');
+    const verifiedBars = [];
+    
+    for (const bar of realBars) {
+      const isOperational = await verifyBarBusinessStatus(bar.id, apiKey);
+      if (isOperational) {
+        verifiedBars.push(bar);
+        console.log(`✅ [VERIFICATION STATUT] Bar validé: ${bar.displayName?.text}`);
+      } else {
+        console.log(`❌ [VERIFICATION STATUT] Bar rejeté (fermé): ${bar.displayName?.text}`);
+      }
+    }
+
+    console.log('🏢 [VERIFICATION STATUT] Bars opérationnels après vérification:', verifiedBars.length);
+
     // Log détaillé des bars sélectionnés
     realBars.forEach((bar, index) => {
       console.log(`🏆 [BAR ${index + 1}] ${bar.displayName?.text} - Types: [${bar.types?.join(', ')}] - Primary: ${bar.primaryType}`);
     });
 
-    // Fallback si aucun bar trouvé
-    let selectedBars = realBars;
-    if (realBars.length === 0) {
-      console.log('⚠️ [FALLBACK] Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
+    // Fallback si aucun bar vérifié trouvé
+    let selectedBars = verifiedBars;
+    if (verifiedBars.length === 0) {
+      console.log('⚠️ [FALLBACK NIVEAU 1] Aucun bar vérifié, utilisation des bars filtrés');
+      selectedBars = realBars;
+    }
+    if (selectedBars.length === 0) {
+      console.log('⚠️ [FALLBACK NIVEAU 2] Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
       selectedBars = openPlaces;
     }
 
     if (selectedBars.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Aucun bar ouvert trouvé malgré le filtrage élargi' }),
+        JSON.stringify({ error: 'Aucun bar opérationnel trouvé malgré le filtrage et la vérification' }),
         { 
           status: 404, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -299,6 +375,7 @@ serve(async (req) => {
       totalFound: data.places.length,
       openPlaces: openPlaces.length,
       realBars: realBars.length,
+      verifiedBars: verifiedBars.length,
       maxPriority: maxPriority,
       selectedPriority: randomSelection.priority
     });
