@@ -156,23 +156,23 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 [RECHERCHE AMÉLIORÉE] Recherche de bars à Fort-de-France:', { latitude, longitude });
+    console.log('🔍 [RECHERCHE STRICTE] Recherche UNIQUEMENT de bars et pubs:', { latitude, longitude });
 
-    // Recherche élargie avec types multiples
+    // Recherche STRICTE - SEULEMENT bars et pubs
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub", "restaurant", "night_club"],
+      includedTypes: ["bar", "pub"], // SEULEMENT bars et pubs !
       locationRestriction: {
         circle: {
           center: { latitude, longitude },
-          radius: 8000 // Rayon élargi pour Fort-de-France
+          radius: 8000
         }
       },
       maxResultCount: 20,
       languageCode: "fr-FR"
     };
 
-    console.log('📡 [API REQUEST] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
+    console.log('📡 [API REQUEST STRICTE] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(searchUrl, {
       method: 'POST',

@@ -146,7 +146,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN AMÉLIORÉ] Attribution pour groupe:', group_id);
+    console.log('🤖 [AUTO-ASSIGN STRICTE] Attribution pour groupe:', group_id);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
@@ -173,7 +173,7 @@ serve(async (req) => {
     const searchLatitude = latitude || 14.633945;
     const searchLongitude = longitude || -61.027498;
 
-    // Recherche avancée de bars
+    // Recherche STRICTE - SEULEMENT bars et pubs
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
       return new Response(
@@ -182,22 +182,22 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 [RECHERCHE AMÉLIORÉE] Recherche de bars à Fort-de-France:', { searchLatitude, searchLongitude });
+    console.log('🔍 [RECHERCHE STRICTE] Recherche UNIQUEMENT de bars et pubs:', { searchLatitude, searchLongitude });
 
     const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
     const requestBody = {
-      includedTypes: ["bar", "pub", "restaurant", "night_club"],
+      includedTypes: ["bar", "pub"], // SEULEMENT bars et pubs !
       locationRestriction: {
         circle: {
           center: { latitude: searchLatitude, longitude: searchLongitude },
-          radius: 8000 // Rayon élargi
+          radius: 8000
         }
       },
       maxResultCount: 20,
       languageCode: "fr-FR"
     };
 
-    console.log('📡 [API REQUEST] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
+    console.log('📡 [API REQUEST STRICTE] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(searchUrl, {
       method: 'POST',
