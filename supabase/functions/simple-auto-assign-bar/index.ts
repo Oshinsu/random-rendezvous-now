@@ -183,6 +183,42 @@ const isRealBarOrPub = (place: any): boolean => {
   return false;
 };
 
+// Fonction de recherche avec rayon variable
+const searchBarsWithRadius = async (latitude: number, longitude: number, radius: number, apiKey: string): Promise<any[]> => {
+  const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
+  const requestBody = {
+    includedTypes: ["bar", "pub"],
+    locationRestriction: {
+      circle: {
+        center: { latitude, longitude },
+        radius: radius
+      }
+    },
+    maxResultCount: 20,
+    languageCode: "fr-FR"
+  };
+
+  console.log(`📡 [RECHERCHE RAYON ${radius}m] Requête vers Google Places:`, JSON.stringify(requestBody, null, 2));
+
+  const response = await fetch(searchUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.currentOpeningHours,places.regularOpeningHours,places.types,places.primaryType'
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  if (!response.ok) {
+    console.error(`❌ [RECHERCHE RAYON ${radius}m] Erreur HTTP:`, response.status);
+    return [];
+  }
+
+  const data = await response.json();
+  return data.places || [];
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -202,7 +238,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN STRICTE] Attribution pour groupe:', group_id);
+    console.log('🤖 [AUTO-ASSIGN INTELLIGENTE] Attribution avec fallback multi-niveaux pour groupe:', group_id);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
@@ -229,7 +265,6 @@ serve(async (req) => {
     const searchLatitude = latitude || 14.633945;
     const searchLongitude = longitude || -61.027498;
 
-    // Recherche STRICTE - SEULEMENT bars et pubs
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
       return new Response(
@@ -238,110 +273,139 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 [RECHERCHE STRICTE] Recherche UNIQUEMENT de bars et pubs:', { searchLatitude, searchLongitude });
+    console.log('🔍 [RECHERCHE INTELLIGENTE] Début de la recherche avec fallback multi-niveaux:', { searchLatitude, searchLongitude });
 
-    const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
-    const requestBody = {
-      includedTypes: ["bar", "pub"], // SEULEMENT bars et pubs !
-      locationRestriction: {
-        circle: {
-          center: { latitude: searchLatitude, longitude: searchLongitude },
-          radius: 8000
-        }
-      },
-      maxResultCount: 20,
-      languageCode: "fr-FR"
-    };
+    // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT
+    let selectedBars = [];
+    let searchRadius = 8000; // Rayon initial
+    let fallbackLevel = 0;
 
-    console.log('📡 [API REQUEST STRICTE] Requête vers Google Places:', JSON.stringify(requestBody, null, 2));
-
-    const response = await fetch(searchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.currentOpeningHours,places.regularOpeningHours,places.types,places.primaryType'
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      console.error('❌ [API ERROR] Erreur HTTP:', response.status, await response.text());
-      return new Response(
-        JSON.stringify({ success: false, error: `Erreur API: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const data = await response.json();
-    console.log('📊 [API RESPONSE] Réponse complète:', JSON.stringify(data, null, 2));
-
-    if (!data.places || data.places.length === 0) {
-      console.log('⚠️ [AUCUN RÉSULTAT] Google Places n\'a retourné aucun lieu');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Aucun lieu trouvé par Google Places' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('📋 [RÉSULTATS BRUTS] Lieux trouvés initialement:', data.places.length);
-
-    // Filtrage des lieux ouverts
-    const openPlaces = data.places.filter(place => {
-      const currentHours = place.currentOpeningHours;
-      if (currentHours && currentHours.openNow !== undefined) {
-        return currentHours.openNow === true;
-      }
-      return true;
-    });
-
-    console.log('🕐 [FILTRAGE HORAIRES] Lieux potentiellement ouverts:', openPlaces.length);
-
-    // Application du filtrage avancé
-    const realBars = openPlaces.filter(isRealBarOrPub);
-
-    console.log('🍺 [FILTRAGE FINAL] Vrais bars après filtrage:', realBars.length);
-
-    // NOUVELLE ÉTAPE: Vérification du statut d'activité avec Places Details API
-    console.log('🔍 [VERIFICATION STATUT] Début de la vérification du statut des bars...');
-    const verifiedBars = [];
+    // NIVEAU 1: Recherche normale avec rayon initial
+    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 8km');
+    let allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
     
-    for (const bar of realBars) {
-      const isOperational = await verifyBarBusinessStatus(bar.id, apiKey);
-      if (isOperational) {
-        verifiedBars.push(bar);
-        console.log(`✅ [VERIFICATION STATUT] Bar validé: ${bar.displayName?.text}`);
+    if (allPlaces.length === 0) {
+      console.log('⚠️ [FALLBACK NIVEAU 1] Aucun lieu trouvé - passage au niveau 2');
+      fallbackLevel = 1;
+    } else {
+      console.log(`📋 [FALLBACK NIVEAU 1] ${allPlaces.length} lieux trouvés initialement`);
+
+      // Filtrage des lieux ouverts
+      const openPlaces = allPlaces.filter(place => {
+        const currentHours = place.currentOpeningHours;
+        if (currentHours && currentHours.openNow !== undefined) {
+          return currentHours.openNow === true;
+        }
+        return true; // Si pas d'info, on assume ouvert
+      });
+
+      console.log(`🕐 [FALLBACK NIVEAU 1] ${openPlaces.length} lieux potentiellement ouverts`);
+
+      // Application du filtrage strict
+      const realBars = openPlaces.filter(isRealBarOrPub);
+      console.log(`🍺 [FALLBACK NIVEAU 1] ${realBars.length} vrais bars après filtrage strict`);
+
+      if (realBars.length > 0) {
+        // Vérification du statut avec Places Details API
+        console.log('🔍 [FALLBACK NIVEAU 1] Vérification statut opérationnel...');
+        for (const bar of realBars) {
+          const isOperational = await verifyBarBusinessStatus(bar.id, apiKey);
+          if (isOperational) {
+            selectedBars.push(bar);
+            console.log(`✅ [FALLBACK NIVEAU 1] Bar validé: ${bar.displayName?.text}`);
+          } else {
+            console.log(`❌ [FALLBACK NIVEAU 1] Bar rejeté (fermé): ${bar.displayName?.text}`);
+          }
+        }
+
+        if (selectedBars.length > 0) {
+          console.log(`🏆 [FALLBACK NIVEAU 1] ${selectedBars.length} bars opérationnels trouvés`);
+        } else {
+          console.log('⚠️ [FALLBACK NIVEAU 1] Aucun bar opérationnel - passage au niveau 2');
+          fallbackLevel = 2;
+          selectedBars = realBars; // Utiliser les bars filtrés mais non vérifiés
+        }
       } else {
-        console.log(`❌ [VERIFICATION STATUT] Bar rejeté (fermé): ${bar.displayName?.text}`);
+        console.log('⚠️ [FALLBACK NIVEAU 1] Aucun vrai bar trouvé - passage au niveau 2');
+        fallbackLevel = 2;
       }
     }
 
-    console.log('🏢 [VERIFICATION STATUT] Bars opérationnels après vérification:', verifiedBars.length);
+    // NIVEAU 2: Expansion du rayon de recherche
+    if (fallbackLevel >= 1 && selectedBars.length === 0) {
+      console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 15km');
+      searchRadius = 15000;
+      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+      
+      if (allPlaces.length > 0) {
+        const openPlaces = allPlaces.filter(place => {
+          const currentHours = place.currentOpeningHours;
+          if (currentHours && currentHours.openNow !== undefined) {
+            return currentHours.openNow === true;
+          }
+          return true;
+        });
 
-    // Log détaillé des bars sélectionnés
-    realBars.forEach((bar, index) => {
-      console.log(`🏆 [BAR ${index + 1}] ${bar.displayName?.text} - Types: [${bar.types?.join(', ')}] - Primary: ${bar.primaryType}`);
-    });
+        const realBars = openPlaces.filter(isRealBarOrPub);
+        console.log(`🍺 [FALLBACK NIVEAU 2] ${realBars.length} vrais bars trouvés avec rayon étendu`);
 
-    // Fallback si aucun bar vérifié trouvé
-    let selectedBars = verifiedBars;
-    if (verifiedBars.length === 0) {
-      console.log('⚠️ [FALLBACK NIVEAU 1] Aucun bar vérifié, utilisation des bars filtrés');
-      selectedBars = realBars;
+        if (realBars.length > 0) {
+          selectedBars = realBars;
+          console.log(`✅ [FALLBACK NIVEAU 2] Utilisation des bars filtrés (non vérifiés)`);
+        } else {
+          console.log('⚠️ [FALLBACK NIVEAU 2] Aucun vrai bar trouvé - passage au niveau 3');
+          fallbackLevel = 3;
+        }
+      } else {
+        console.log('⚠️ [FALLBACK NIVEAU 2] Aucun lieu trouvé - passage au niveau 3');
+        fallbackLevel = 3;
+      }
     }
-    if (selectedBars.length === 0) {
-      console.log('⚠️ [FALLBACK NIVEAU 2] Aucun vrai bar trouvé, utilisation de tous les lieux ouverts');
-      selectedBars = openPlaces;
+
+    // NIVEAU 3: Rayon maximal
+    if (fallbackLevel >= 3 && selectedBars.length === 0) {
+      console.log('🎯 [FALLBACK NIVEAU 3] Expansion du rayon à 25km (dernier recours)');
+      searchRadius = 25000;
+      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+      
+      if (allPlaces.length > 0) {
+        const openPlaces = allPlaces.filter(place => {
+          const currentHours = place.currentOpeningHours;
+          if (currentHours && currentHours.openNow !== undefined) {
+            return currentHours.openNow === true;
+          }
+          return true;
+        });
+
+        const realBars = openPlaces.filter(isRealBarOrPub);
+        console.log(`🍺 [FALLBACK NIVEAU 3] ${realBars.length} vrais bars trouvés avec rayon maximal`);
+
+        if (realBars.length > 0) {
+          selectedBars = realBars;
+          console.log(`✅ [FALLBACK NIVEAU 3] Utilisation des bars filtrés (rayon maximal)`);
+        }
+      }
     }
 
+    // ÉCHEC FINAL: Aucun bar trouvé malgré tous les fallbacks
     if (selectedBars.length === 0) {
+      console.log('❌ [ÉCHEC TOTAL] Aucun bar trouvé malgré tous les niveaux de fallback');
       return new Response(
-        JSON.stringify({ success: false, error: 'Aucun bar opérationnel trouvé malgré le filtrage et la vérification' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          error: 'Aucun bar trouvé dans votre région',
+          details: `Recherche effectuée jusqu'à ${searchRadius/1000}km sans succès`,
+          fallbackLevel: fallbackLevel,
+          searchRadius: searchRadius
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
-    // NOUVELLE SÉLECTION AVEC SYSTÈME DE PRIORITÉ
+    // SÉLECTION FINALE AVEC SYSTÈME DE PRIORITÉ
     const barsWithPriority = selectedBars.map(bar => ({
       bar,
       priority: getBarPriority(bar)
@@ -387,16 +451,18 @@ serve(async (req) => {
       priority: randomSelection.priority,
       priorityLabel: randomSelection.priority === 3 ? 'BAR PUR' : 
                     randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
-                    randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE'
+                    randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE',
+      fallbackLevel: fallbackLevel,
+      searchRadius: searchRadius
     });
 
-    console.log('📊 [STATISTIQUES] Résumé de la recherche:', {
-      totalFound: data.places.length,
-      openPlaces: openPlaces.length,
-      realBars: realBars.length,
-      verifiedBars: verifiedBars.length,
+    console.log('📊 [STATISTIQUES FINALES] Résumé de la recherche intelligente:', {
+      totalFound: allPlaces.length,
+      finalSelection: selectedBars.length,
       maxPriority: maxPriority,
-      selectedPriority: randomSelection.priority
+      selectedPriority: randomSelection.priority,
+      fallbackLevel: fallbackLevel,
+      searchRadius: searchRadius
     });
 
     return new Response(
