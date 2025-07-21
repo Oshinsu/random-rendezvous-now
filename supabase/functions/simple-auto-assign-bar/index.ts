@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
@@ -92,14 +91,14 @@ const verifyBarBusinessStatus = async (placeId: string, apiKey: string): Promise
   }
 };
 
-// Fonction de filtrage ULTRA-STRICTE contre les fast-foods
+// Fonction AMÉLIORÉE de filtrage intelligent contre les lieux non désirés
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
   const address = place.formattedAddress?.toLowerCase() || '';
   const types = place.types || [];
   const primaryType = place.primaryType || '';
 
-  console.log('🔍 [FILTRAGE AVANCÉ] Analyse du lieu:', {
+  console.log('🔍 [FILTRAGE INTELLIGENT] Analyse du lieu:', {
     name: place.displayName?.text,
     types: types,
     primaryType: primaryType,
@@ -120,7 +119,77 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // ÉTAPE 2: Exclusion STRICTE des fast-foods - mots-clés
+  // ÉTAPE 2: Exclusion INTELLIGENTE des bars d'aéroports
+  const airportKeywords = [
+    // Mots-clés d'aéroport dans l'adresse
+    'aéroport', 'airport', 'aimé césaire', 'martinique aimé césaire',
+    'terminal', 'departure', 'arrival', 'gate', 'boarding',
+    // Codes aéroports
+    'fdf', 'orly', 'cdg', 'roissy',
+    // Zones aéroportuaires
+    'zone aéroportuaire', 'airside', 'duty free'
+  ];
+
+  // Mots-clés dans les noms d'établissements aéroportuaires
+  const airportEstablishmentKeywords = [
+    'air france', 'air caraïbes', 'corsair', 'american airlines',
+    'delta', 'lufthansa', 'klm', 'british airways'
+  ];
+
+  const hasAirportLocation = airportKeywords.some(keyword => 
+    address.includes(keyword)
+  );
+
+  const hasAirportEstablishment = airportEstablishmentKeywords.some(keyword =>
+    name.includes(keyword)
+  );
+
+  if (hasAirportLocation || hasAirportEstablishment) {
+    console.log('❌ [FILTRAGE] Bar d\'aéroport REJETÉ:', {
+      name: place.displayName?.text,
+      reason: hasAirportLocation ? 'adresse aéroportuaire' : 'nom compagnie aérienne',
+      address: address
+    });
+    return false;
+  }
+
+  // ÉTAPE 3: Exclusion des bars de ports
+  const portKeywords = [
+    'port', 'marina', 'quai', 'môle', 'embarcadère', 'ferry',
+    'terminal maritime', 'gare maritime', 'capitainerie',
+    'yacht club', 'club nautique', 'port de plaisance'
+  ];
+
+  const hasPortLocation = portKeywords.some(keyword => 
+    address.includes(keyword) || name.includes(keyword)
+  );
+
+  if (hasPortLocation) {
+    console.log('❌ [FILTRAGE] Bar de port REJETÉ:', place.displayName?.text);
+    return false;
+  }
+
+  // ÉTAPE 4: Exclusion des bar-tabacs et PMU
+  const tobaccoPmuKeywords = [
+    'tabac', 'bureau de tabac', 'bar tabac', 'bar-tabac',
+    'pmu', 'pari mutuel', 'paris sportifs', 'française des jeux',
+    'fdj', 'loto', 'tiercé', 'quinté', 'rapido'
+  ];
+
+  const isTobaccoPmu = tobaccoPmuKeywords.some(keyword => 
+    name.includes(keyword) || address.includes(keyword)
+  );
+
+  // Vérification par types Google
+  const tobaccoTypes = ['tobacco_shop', 'convenience_store'];
+  const hasTobaccoType = types.some((type: string) => tobaccoTypes.includes(type));
+
+  if (isTobaccoPmu || hasTobaccoType) {
+    console.log('❌ [FILTRAGE] Bar-tabac/PMU REJETÉ:', place.displayName?.text);
+    return false;
+  }
+
+  // ÉTAPE 5: Exclusion STRICTE des fast-foods - mots-clés
   const strictNegativeKeywords = [
     // Fast-foods internationaux
     'mcdonalds', 'mcdonald', 'burger king', 'kfc', 'subway', 'dominos',
@@ -145,7 +214,7 @@ const isRealBarOrPub = (place: any): boolean => {
     return false;
   }
 
-  // ÉTAPE 3: Vérification positive - bars purs (SANS NIGHTCLUBS)
+  // ÉTAPE 6: Vérification positive - bars purs (SANS NIGHTCLUBS)
   const pureBarTypes = ['bar', 'pub', 'liquor_store'];
   const hasPureBarType = types.some((type: string) => pureBarTypes.includes(type)) || 
                         pureBarTypes.includes(primaryType);
@@ -155,7 +224,7 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 4: Vérification positive - bar-restaurants
+  // ÉTAPE 7: Vérification positive - bar-restaurants
   const isBarRestaurant = (types.includes('bar') && types.includes('restaurant')) ||
                          (primaryType === 'bar' && types.includes('restaurant')) ||
                          (primaryType === 'restaurant' && types.includes('bar'));
@@ -165,7 +234,7 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 5: Vérification positive - bars d'hôtels (en dernier recours)
+  // ÉTAPE 8: Vérification positive - bars d'hôtels (en dernier recours)
   const isHotelBar = types.includes('bar') && (types.includes('hotel') || types.includes('lodging'));
   
   if (isHotelBar) {
@@ -173,7 +242,7 @@ const isRealBarOrPub = (place: any): boolean => {
     return true;
   }
 
-  // ÉTAPE 6: Exclusion des restaurants purs
+  // ÉTAPE 9: Exclusion des restaurants purs
   if (primaryType === 'restaurant' && !types.includes('bar')) {
     console.log('❌ [FILTRAGE] Restaurant pur - REJETÉ');
     return false;
@@ -238,7 +307,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN INTELLIGENTE] Attribution avec fallback multi-niveaux pour groupe:', group_id);
+    console.log('🤖 [AUTO-ASSIGN INTELLIGENTE AMÉLIORÉE] Attribution avec filtrage renforcé pour groupe:', group_id);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
@@ -273,7 +342,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🔍 [RECHERCHE INTELLIGENTE] Début de la recherche avec fallback multi-niveaux:', { searchLatitude, searchLongitude });
+    console.log('🔍 [RECHERCHE INTELLIGENTE AMÉLIORÉE] Début avec filtrage renforcé:', { searchLatitude, searchLongitude });
 
     // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT
     let selectedBars = [];
@@ -405,7 +474,7 @@ serve(async (req) => {
       )
     }
 
-    // SÉLECTION FINALE AVEC SYSTÈME DE PRIORITÉ
+    // SÉLECTION FINALE AVEC SYSTÈME DE PRIORITÉ ET RAPPORT FRANÇAIS
     const barsWithPriority = selectedBars.map(bar => ({
       bar,
       priority: getBarPriority(bar)
@@ -456,13 +525,20 @@ serve(async (req) => {
       searchRadius: searchRadius
     });
 
-    console.log('📊 [STATISTIQUES FINALES] Résumé de la recherche intelligente:', {
-      totalFound: allPlaces.length,
-      finalSelection: selectedBars.length,
-      maxPriority: maxPriority,
-      selectedPriority: randomSelection.priority,
-      fallbackLevel: fallbackLevel,
-      searchRadius: searchRadius
+    // RAPPORT FRANÇAIS DÉTAILLÉ
+    console.log('📊 [RAPPORT FILTRAGE FRANÇAIS] Attribution automatique avec filtrage intelligent:', {
+      'Lieux trouvés initialement': allPlaces.length,
+      'Lieux après filtrage qualité': selectedBars.length,
+      'Bars d\'aéroport exclus': '✅ Détection par adresse et nom',
+      'Bars de port exclus': '✅ Détection par mots-clés portuaires',
+      'Bar-tabacs exclus': '✅ Détection par types et mots-clés',
+      'PMU exclus': '✅ Détection par mots-clés paris',
+      'Fast-foods exclus': '✅ Détection stricte',
+      'Priorité maximale': maxPriority,
+      'Priorité sélectionnée': randomSelection.priority,
+      'Niveau de fallback': fallbackLevel,
+      'Rayon de recherche': `${searchRadius/1000}km`,
+      'Bar final': result.bar.name
     });
 
     return new Response(
