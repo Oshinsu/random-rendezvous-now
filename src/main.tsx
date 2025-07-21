@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
+import PerformanceOptimizer from './components/PerformanceOptimizer';
 import './index.css';
 import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
 
@@ -21,6 +22,8 @@ UnifiedCleanupService.startPeriodicCleanup();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <PerformanceOptimizer>
+      <App />
+    </PerformanceOptimizer>
   </StrictMode>,
 );

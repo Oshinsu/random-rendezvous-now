@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/AppLayout';
@@ -7,13 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Mail, Calendar, Settings, Star, Trophy } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
 import OutingsHistory from '@/components/OutingsHistory';
 import { useOutingsHistory } from '@/hooks/useOutingsHistory';
+import { useProfileUpdate } from '@/hooks/useProfileUpdate';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
   const { data: outings } = useOutingsHistory();
+  const { updateProfile, isUpdating } = useProfileUpdate();
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
@@ -24,12 +26,10 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
-    // TODO: Implement profile update logic with Supabase
-    toast({
-      title: 'Profil mis à jour',
-      description: 'Vos informations ont été sauvegardées avec succès.',
-    });
-    setIsEditing(false);
+    const success = await updateProfile(firstName, lastName);
+    if (success) {
+      setIsEditing(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -112,9 +112,10 @@ const ProfilePage = () => {
                     onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
                     variant="outline"
                     size="sm"
+                    disabled={isUpdating}
                     className="border-amber-300 text-amber-700 hover:bg-amber-50 py-1 px-3 min-h-0 h-8 text-xs"
                   >
-                    {isEditing ? 'Sauvegarder' : 'Modifier'}
+                    {isUpdating ? 'Sauvegarde...' : isEditing ? 'Sauvegarder' : 'Modifier'}
                   </Button>
                 </div>
               </CardHeader>
@@ -126,7 +127,7 @@ const ProfilePage = () => {
                       id="firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      disabled={!isEditing}
+                      disabled={!isEditing || isUpdating}
                       className="bg-white/50 text-sm"
                     />
                   </div>
@@ -136,7 +137,7 @@ const ProfilePage = () => {
                       id="lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      disabled={!isEditing}
+                      disabled={!isEditing || isUpdating}
                       className="bg-white/50 text-sm"
                     />
                   </div>
