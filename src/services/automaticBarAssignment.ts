@@ -33,7 +33,7 @@ export class AutomaticBarAssignmentService {
 
       console.log('📍 [AUTOMATIC BAR ASSIGNMENT] Recherche avec coordonnées:', { searchLatitude, searchLongitude });
 
-      // 4. Appel Edge Function améliorée
+      // 4. Appel Edge Function CORRIGÉE - simple-auto-assign-bar
       const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
         body: { 
           group_id: groupId,

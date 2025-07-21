@@ -107,10 +107,10 @@ serve(async (req) => {
           return new Response('OK', { status: 200 })
         }
 
-        console.log('🎯 [TRIGGER] Appel Edge Function auto-assign-bar...');
+        console.log('🎯 [TRIGGER] Appel Edge Function simple-auto-assign-bar...');
 
-        // Appel de l'Edge Function avec gestion d'erreur robuste
-        const { data: barResponse, error: barError } = await supabase.functions.invoke('auto-assign-bar', {
+        // Appel de l'Edge Function CORRIGÉE - simple-auto-assign-bar au lieu de auto-assign-bar
+        const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
           body: {
             group_id: groupId,
             latitude: group.latitude,
@@ -119,7 +119,7 @@ serve(async (req) => {
         });
 
         if (barError) {
-          console.error('❌ [TRIGGER] Erreur appel auto-assign-bar:', barError);
+          console.error('❌ [TRIGGER] Erreur appel simple-auto-assign-bar:', barError);
           
           // Message d'échec avec nettoyage
           await supabase
@@ -153,7 +153,7 @@ serve(async (req) => {
               });
           }
         } else {
-          console.log('⚠️ [TRIGGER] Aucun bar trouvé par auto-assign-bar');
+          console.log('⚠️ [TRIGGER] Aucun bar trouvé par simple-auto-assign-bar');
           
           // Message d'information pour recherche manuelle
           await supabase
