@@ -16,14 +16,15 @@ const AuthPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); // To toggle between Sign In and Sign Up
+  const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (isSignUp) {
+    if (activeTab === 'signup') {
       // Sign Up
+      console.log('🔐 Attempting signup for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -37,26 +38,33 @@ const AuthPage = () => {
       });
 
       if (error) {
+        console.error('❌ Signup error:', error);
         toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
-         toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
+        console.log('✅ Signup successful, email confirmation required');
+        toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       } else if (data.user) {
+        console.log('✅ Signup successful, user auto-confirmed');
         toast({ title: 'Inscription réussie!', description: 'Vous êtes maintenant connecté.' });
         navigate('/');
       } else {
-         toast({ title: 'Inscription initiée', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
+        console.log('✅ Signup initiated, email confirmation needed');
+        toast({ title: 'Inscription initiée', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       }
     } else {
       // Sign In
+      console.log('🔐 Attempting signin for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('❌ Signin error:', error);
         toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
       } else {
+        console.log('✅ Signin successful');
         toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
         navigate('/');
       }
@@ -66,10 +74,10 @@ const AuthPage = () => {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Tabs defaultValue="signin" className="w-[400px]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="signin" onClick={() => setIsSignUp(false)}>Se Connecter</TabsTrigger>
-          <TabsTrigger value="signup" onClick={() => setIsSignUp(true)}>S'inscrire</TabsTrigger>
+          <TabsTrigger value="signin">Se Connecter</TabsTrigger>
+          <TabsTrigger value="signup">S'inscrire</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
           <Card>
