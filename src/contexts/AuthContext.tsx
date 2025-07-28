@@ -3,8 +3,6 @@ import { createContext, useState, useEffect, useContext, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { useErrorTracking } from '@/hooks/useErrorTracking';
 
 interface AuthContextType {
   session: Session | null;
@@ -24,8 +22,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { track } = useAnalytics();
-  useErrorTracking();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -73,12 +69,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
       console.log('🚪 Signing out user...');
-      
-      // Track logout event before signing out
-      track('logout', {
-        user_id: user?.id,
-        session_duration: session ? Date.now() - new Date(session.expires_at || 0).getTime() : null
-      });
       
       const { error } = await supabase.auth.signOut();
       

@@ -16,6 +16,7 @@ import AuthPage from "./pages/AuthPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import PerformanceOptimizer from "./components/PerformanceOptimizer";
 import TrackingDebugPanel from "./components/TrackingDebugPanel";
+import AnalyticsProvider from "./components/AnalyticsProvider";
 
 const queryClient = new QueryClient();
 
@@ -60,14 +61,16 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <PerformanceOptimizer>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AppRoutes />
-            <TrackingDebugPanel />
-          </TooltipProvider>
-        </PerformanceOptimizer>
+        <AnalyticsProvider>
+          <PerformanceOptimizer>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AppRoutes />
+              <TrackingDebugPanel />
+            </TooltipProvider>
+          </PerformanceOptimizer>
+        </AnalyticsProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

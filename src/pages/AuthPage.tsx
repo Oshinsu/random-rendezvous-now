@@ -84,7 +84,8 @@ const AuthPage = () => {
         trackUserAction('signin_success');
         track('login', { 
           method: 'email',
-          email_domain: email.split('@')[1]
+          email_domain: email.split('@')[1],
+          timestamp: new Date().toISOString()
         });
         console.log('✅ Signin successful');
         toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
