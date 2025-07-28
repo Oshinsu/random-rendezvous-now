@@ -6,6 +6,13 @@ interface AnalyticsEvent {
   properties?: Record<string, any>;
 }
 
+// Déclaration globale pour GTM dataLayer
+declare global {
+  interface Window {
+    dataLayer: any[];
+  }
+}
+
 class SimpleAnalytics {
   private static instance: SimpleAnalytics;
   private events: AnalyticsEvent[] = [];
@@ -39,6 +46,9 @@ class SimpleAnalytics {
     // Log to console for development
     console.log('📊 Analytics Event:', analyticsEvent);
     
+    // Envoyer à Google Tag Manager
+    this.sendToGTM(event, analyticsEvent.properties);
+    
     // Store in localStorage for persistence
     try {
       const storedEvents = JSON.parse(localStorage.getItem('analytics_events') || '[]');
@@ -52,6 +62,32 @@ class SimpleAnalytics {
       localStorage.setItem('analytics_events', JSON.stringify(storedEvents));
     } catch (error) {
       console.warn('Failed to store analytics event:', error);
+    }
+  }
+
+  private sendToGTM(event: string, properties?: Record<string, any>) {
+    try {
+      // Initialiser dataLayer si nécessaire
+      if (typeof window !== 'undefined') {
+        window.dataLayer = window.dataLayer || [];
+        
+        // Préparer les données pour GTM
+        const gtmData = {
+          event: event,
+          user_id: this.userId,
+          timestamp: new Date().toISOString(),
+          page_url: window.location.href,
+          page_title: document.title,
+          ...properties
+        };
+
+        // Envoyer à GTM
+        window.dataLayer.push(gtmData);
+        
+        console.log('🏷️ GTM Event Sent:', gtmData);
+      }
+    } catch (error) {
+      console.warn('Failed to send event to GTM:', error);
     }
   }
 
