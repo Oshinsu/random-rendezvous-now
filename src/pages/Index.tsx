@@ -17,19 +17,13 @@ import { useEffect } from "react";
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
-  const { trackPageView, trackUserAction } = useAnalytics();
-
-  useEffect(() => {
-    trackPageView('landing_page');
-  }, [trackPageView]);
+  // Removed page tracking
 
   const handleSignOut = async () => {
-    trackUserAction('logout_clicked', { source: 'landing_page' });
     await signOut();
   };
 
   const handleGoToDashboard = () => {
-    trackUserAction('navigate_to_dashboard', { source: 'landing_page' });
     navigate('/dashboard');
   };
 

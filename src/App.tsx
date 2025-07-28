@@ -14,8 +14,6 @@ import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import PerformanceOptimizer from "./components/PerformanceOptimizer";
-import TrackingDebugPanel from "./components/TrackingDebugPanel";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 
 const queryClient = new QueryClient();
@@ -62,14 +60,13 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <AnalyticsProvider>
-          <PerformanceOptimizer>
-            <TooltipProvider>
+          <TooltipProvider>
+            <div className="min-h-screen bg-background font-sans antialiased">
               <Toaster />
               <Sonner />
               <AppRoutes />
-              <TrackingDebugPanel />
-            </TooltipProvider>
-          </PerformanceOptimizer>
+            </div>
+          </TooltipProvider>
         </AnalyticsProvider>
       </AuthProvider>
     </BrowserRouter>
