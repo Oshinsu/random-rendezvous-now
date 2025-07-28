@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
+import { EnhancedGroupService } from '@/services/enhancedGroupService';
 import { useAuth } from '@/contexts/AuthContext';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
@@ -23,12 +23,12 @@ export const useActivityHeartbeat = ({
   useEffect(() => {
     const handleVisibilityChange = () => {
       isActiveRef.current = !document.hidden;
-      console.log('👁️ [HEARTBEAT UNIFIÉ] Visibilité page:', isActiveRef.current ? 'visible' : 'cachée');
+      console.log('👁️ [HEARTBEAT ENHANCED] Visibilité page:', isActiveRef.current ? 'visible' : 'cachée');
       
       // Mise à jour immédiate quand la page devient visible
       if (isActiveRef.current && groupId && user) {
-        console.log('👁️ [HEARTBEAT UNIFIÉ] Page visible - mise à jour immédiate');
-        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        console.log('👁️ [HEARTBEAT ENHANCED] Page visible - mise à jour immédiate');
+        EnhancedGroupService.updateUserActivity(groupId, user.id);
       }
     };
 
@@ -39,7 +39,7 @@ export const useActivityHeartbeat = ({
   // Battement de cœur d'activité UNIFIÉ et OPTIMISÉ
   useEffect(() => {
     if (!enabled || !groupId || !user) {
-      console.log('💓 [HEARTBEAT UNIFIÉ] Désactivé:', { enabled, groupId: !!groupId, user: !!user });
+      console.log('💓 [HEARTBEAT ENHANCED] Désactivé:', { enabled, groupId: !!groupId, user: !!user });
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -47,24 +47,24 @@ export const useActivityHeartbeat = ({
       return;
     }
 
-    console.log('💓 [HEARTBEAT UNIFIÉ] Activation pour groupe:', groupId, 'intervalle unifié:', intervalMs + 'ms');
+    console.log('💓 [HEARTBEAT ENHANCED] Activation pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
 
     // Mise à jour initiale immédiate
-    EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
+    EnhancedGroupService.updateUserActivity(groupId, user.id);
 
-    // Configuration de l'intervalle unifié
+    // Configuration de l'intervalle
     intervalRef.current = setInterval(() => {
       if (isActiveRef.current) {
-        console.log('💓 [HEARTBEAT UNIFIÉ] Pulse - mise à jour activité');
-        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        console.log('💓 [HEARTBEAT ENHANCED] Pulse - mise à jour activité');
+        EnhancedGroupService.updateUserActivity(groupId, user.id);
       } else {
-        console.log('💓 [HEARTBEAT UNIFIÉ] Pulse ignoré - page non visible');
+        console.log('💓 [HEARTBEAT ENHANCED] Pulse ignoré - page non visible');
       }
     }, intervalMs);
 
     return () => {
       if (intervalRef.current) {
-        console.log('💓 [HEARTBEAT UNIFIÉ] Nettoyage');
+        console.log('💓 [HEARTBEAT ENHANCED] Nettoyage');
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
@@ -75,7 +75,7 @@ export const useActivityHeartbeat = ({
     isActive: isActiveRef.current,
     updateActivity: () => {
       if (groupId && user) {
-        EnhancedGroupRetrievalService.updateUserActivity(groupId, user.id);
+        EnhancedGroupService.updateUserActivity(groupId, user.id);
       }
     }
   };
