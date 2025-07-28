@@ -3,8 +3,16 @@ import React from 'react';
 import { MapPin, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BarInfoCardProps } from './types';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const BarInfoCard = ({ barName, barAddress, hasExactLocation, onOpenInGoogleMaps }: BarInfoCardProps) => {
+  const { trackBarVisit } = useAnalytics();
+
+  const handleOpenInGoogleMaps = () => {
+    trackBarVisit(barName);
+    onOpenInGoogleMaps();
+  };
+
   return (
     <div className={`bg-white rounded-xl p-6 shadow-sm border transition-all duration-300 ${hasExactLocation ? 'border-emerald-200' : 'border-amber-200'}`}>
       <div className="flex items-start gap-4">
@@ -22,7 +30,7 @@ const BarInfoCard = ({ barName, barAddress, hasExactLocation, onOpenInGoogleMaps
             <Badge 
               variant="secondary" 
               className={`transition-all duration-300 cursor-pointer hover:scale-105 ${hasExactLocation ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 hover:bg-amber-200'}`}
-              onClick={onOpenInGoogleMaps}
+              onClick={handleOpenInGoogleMaps}
             >
               <Navigation className="h-3 w-3 mr-1" />
               Voir l'itinéraire

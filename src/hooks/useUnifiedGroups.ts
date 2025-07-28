@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
@@ -18,6 +19,7 @@ import type { GroupMember } from '@/types/groups';
 
 export const useUnifiedGroups = () => {
   const { user } = useAuth();
+  const { trackGroupCreate, trackGroupJoin } = useAnalytics();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
@@ -233,6 +235,7 @@ export const useUnifiedGroups = () => {
         const newGroup = await UnifiedGroupService.createGroup(location, user.id);
         
         if (newGroup) {
+          trackGroupCreate(newGroup.id);
           queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
@@ -249,6 +252,7 @@ export const useUnifiedGroups = () => {
         const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
         
         if (success) {
+          trackGroupJoin(targetGroup.id);
           queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
