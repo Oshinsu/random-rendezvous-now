@@ -5,6 +5,7 @@ import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { GooglePlacesService } from '@/services/googlePlaces';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface BarAssignmentButtonProps {
   groupId: string;
@@ -18,6 +19,7 @@ interface BarAssignmentButtonProps {
 
 const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssignmentButtonProps) => {
   const [loading, setLoading] = useState(false);
+  const { track } = useAnalytics();
 
   const assignBar = async () => {
     setLoading(true);
@@ -79,6 +81,20 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
       }
 
       console.log('✅ Bar assigné:', selectedBar.name);
+
+      // Track bar visit assignment
+      track('bar_visit', {
+        group_id: groupId,
+        bar_name: selectedBar.name,
+        bar_address: selectedBar.formatted_address,
+        bar_place_id: selectedBar.place_id,
+        meeting_time: meetingTime.toISOString(),
+        location: userLocation ? {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          location_name: userLocation.locationName
+        } : null
+      });
 
       toast({
         title: '🍺 Bar assigné !',

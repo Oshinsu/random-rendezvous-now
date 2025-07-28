@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ const AuthPage = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
-  const { trackPageView, trackUserAction } = useAnalytics();
+  const { trackPageView, trackUserAction, track } = useAnalytics();
 
   useEffect(() => {
     trackPageView('auth_page');
@@ -55,6 +54,11 @@ const AuthPage = () => {
         toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       } else if (data.user) {
         trackUserAction('signup_success_auto_confirmed');
+        track('sign_up', { 
+          method: 'email',
+          user_id: data.user.id,
+          email_domain: email.split('@')[1]
+        });
         console.log('✅ Signup successful, user auto-confirmed');
         toast({ title: 'Inscription réussie!', description: 'Vous êtes maintenant connecté.' });
         navigate('/');
@@ -78,6 +82,10 @@ const AuthPage = () => {
         toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
       } else {
         trackUserAction('signin_success');
+        track('login', { 
+          method: 'email',
+          email_domain: email.split('@')[1]
+        });
         console.log('✅ Signin successful');
         toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
         navigate('/');

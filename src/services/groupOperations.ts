@@ -158,6 +158,18 @@ export class GroupOperationsService {
 
         console.log('✅ Nouveau groupe géolocalisé créé (rayon 10km):', newGroup.id);
         
+        // Track group creation
+        if (typeof window !== 'undefined' && window.dataLayer) {
+          window.dataLayer.push({
+            event: 'group_create',
+            group_id: newGroup.id,
+            location_name: userLocation.locationName,
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+            max_participants: 5
+          });
+        }
+        
         const participantData: any = {
           group_id: newGroup.id,
           user_id: user.id,
@@ -175,6 +187,16 @@ export class GroupOperationsService {
         if (joinError) {
           console.error('❌ Erreur d\'ajout au groupe:', joinError);
           throw joinError;
+        }
+
+        // Track group join for new group
+        if (typeof window !== 'undefined' && window.dataLayer) {
+          window.dataLayer.push({
+            event: 'group_join',
+            group_id: newGroup.id,
+            location_name: userLocation.locationName,
+            is_creator: true
+          });
         }
 
         toast({ 
@@ -204,6 +226,16 @@ export class GroupOperationsService {
         if (joinError) {
           console.error('❌ Erreur d\'ajout au groupe:', joinError);
           throw joinError;
+        }
+
+        // Track group join for existing group
+        if (typeof window !== 'undefined' && window.dataLayer) {
+          window.dataLayer.push({
+            event: 'group_join',
+            group_id: targetGroup.id,
+            location_name: userLocation.locationName,
+            is_creator: false
+          });
         }
 
         toast({ 
