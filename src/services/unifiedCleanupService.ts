@@ -11,6 +11,9 @@ export class UnifiedCleanupService {
     try {
       console.log('🧹 [UNIFIED CLEANUP] Démarrage du nettoyage ULTRA-SÉCURISÉ...');
       
+      // 0. NOUVEAU: Transition des groupes confirmés vers completed après meeting time
+      await this.transitionGroupsToCompleted();
+      
       // 1. Nettoyage des participants inactifs (24 heures pour ultra-sécurité)
       await this.cleanupInactiveParticipants();
       
@@ -33,6 +36,25 @@ export class UnifiedCleanupService {
     } catch (error) {
       ErrorHandler.logError('UNIFIED_CLEANUP_SERVICE', error);
       console.error('❌ [UNIFIED CLEANUP] Erreur dans le nettoyage unifié:', error);
+    }
+  }
+
+  /**
+   * NOUVEAU: Transition des groupes confirmés vers completed après meeting time
+   */
+  private static async transitionGroupsToCompleted(): Promise<void> {
+    try {
+      console.log('🔄 [UNIFIED CLEANUP] Transition groupes confirmés vers completed...');
+      
+      const { error } = await supabase.rpc('transition_groups_to_completed');
+      
+      if (error) {
+        ErrorHandler.logError('TRANSITION_GROUPS_TO_COMPLETED', error);
+      } else {
+        console.log('✅ [UNIFIED CLEANUP] Groupes transférés vers completed');
+      }
+    } catch (error) {
+      ErrorHandler.logError('TRANSITION_GROUPS_TO_COMPLETED', error);
     }
   }
 
@@ -175,24 +197,24 @@ export class UnifiedCleanupService {
   }
 
   /**
-   * Nettoyage des groupes terminés (délai augmenté à 6 heures)
+   * Nettoyage des groupes terminés (délai augmenté à 6 heures après completion)
    */
   private static async cleanupCompletedGroups(): Promise<void> {
     try {
       const threshold = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(); // 6 heures
-      console.log('🗑️ [UNIFIED CLEANUP] Suppression groupes terminés (6h+ après meeting)...');
+      console.log('🗑️ [UNIFIED CLEANUP] Suppression groupes completed (6h+ après completion)...');
       
       const { error } = await supabase
         .from('groups')
         .delete()
-        .eq('status', 'confirmed')
-        .not('meeting_time', 'is', null)
-        .lt('meeting_time', threshold);
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .lt('completed_at', threshold);
 
       if (error) {
         ErrorHandler.logError('CLEANUP_COMPLETED_GROUPS', error);
       } else {
-        console.log('✅ [UNIFIED CLEANUP] Groupes terminés supprimés');
+        console.log('✅ [UNIFIED CLEANUP] Groupes completed supprimés');
       }
     } catch (error) {
       ErrorHandler.logError('CLEANUP_COMPLETED_GROUPS', error);
