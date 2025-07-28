@@ -91,6 +91,12 @@ const verifyBarBusinessStatus = async (placeId: string, apiKey: string): Promise
   }
 };
 
+// Liste noire manuelle des bars à exclure
+const MANUAL_BLACKLIST = [
+  'ti plage',
+  // Ajouter d'autres bars problématiques ici
+];
+
 // Fonction AMÉLIORÉE de filtrage intelligent contre les lieux non désirés
 const isRealBarOrPub = (place: any): boolean => {
   const name = place.displayName?.text?.toLowerCase() || '';
@@ -104,6 +110,16 @@ const isRealBarOrPub = (place: any): boolean => {
     primaryType: primaryType,
     address: place.formattedAddress
   });
+
+  // ÉTAPE 0: Vérification de la liste noire manuelle
+  const isBlacklisted = MANUAL_BLACKLIST.some(blacklistedName => 
+    name.includes(blacklistedName)
+  );
+
+  if (isBlacklisted) {
+    console.log('❌ [LISTE NOIRE] Bar exclu manuellement:', place.displayName?.text);
+    return false;
+  }
 
   // ÉTAPE 1: Exclusion STRICTE des fast-foods - types
   const strictFastFoodTypes = [
