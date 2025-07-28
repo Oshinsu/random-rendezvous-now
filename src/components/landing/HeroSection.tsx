@@ -19,13 +19,12 @@ const HeroSection = () => {
 
   return (
     <section 
-      className="relative py-16 md:py-24 text-white animate-fade-in overflow-hidden"
+      className="relative py-8 md:py-12 text-white animate-fade-in overflow-hidden h-[50vh] max-h-[400px]"
       style={{
         backgroundImage: `url(${heroBanner})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        aspectRatio: '2/1'
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Overlay pour améliorer la lisibilité */}
