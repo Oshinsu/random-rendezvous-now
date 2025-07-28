@@ -25,7 +25,7 @@ const HeroSection = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        aspectRatio: '16/9'
+        aspectRatio: '2/1'
       }}
     >
       {/* Overlay pour améliorer la lisibilité */}
