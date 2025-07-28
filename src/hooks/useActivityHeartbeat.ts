@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { IntelligentHeartbeatService } from '@/services/intelligentHeartbeatService';
+import { EnhancedGroupService } from '@/services/enhancedGroupService';
 import { useAuth } from '@/contexts/AuthContext';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
@@ -28,7 +28,7 @@ export const useActivityHeartbeat = ({
       // Mise à jour immédiate quand la page devient visible
       if (isActiveRef.current && groupId && user) {
         console.log('👁️ [HEARTBEAT INTELLIGENT] Page visible - mise à jour immédiate');
-        IntelligentHeartbeatService.updateUserActivity(groupId, user.id, true);
+        EnhancedGroupService.updateUserActivity(groupId, user.id, true);
       }
     };
 
@@ -50,16 +50,16 @@ export const useActivityHeartbeat = ({
     console.log('💓 [HEARTBEAT INTELLIGENT] Activation pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
 
     // Mise à jour initiale immédiate avec état actif
-    IntelligentHeartbeatService.updateUserActivity(groupId, user.id, true);
+    EnhancedGroupService.updateUserActivity(groupId, user.id, true);
 
     // Configuration de l'intervalle intelligent
     intervalRef.current = setInterval(() => {
       if (isActiveRef.current) {
         console.log('💓 [HEARTBEAT INTELLIGENT] Pulse - utilisateur actif');
-        IntelligentHeartbeatService.updateUserActivity(groupId, user.id, true);
+        EnhancedGroupService.updateUserActivity(groupId, user.id, true);
       } else {
         console.log('💓 [HEARTBEAT INTELLIGENT] Pulse - utilisateur passif (page cachée)');
-        IntelligentHeartbeatService.updateUserActivity(groupId, user.id, false);
+        EnhancedGroupService.updateUserActivity(groupId, user.id, false);
       }
     }, intervalMs);
 
@@ -76,7 +76,7 @@ export const useActivityHeartbeat = ({
     isActive: isActiveRef.current,
     updateActivity: () => {
       if (groupId && user) {
-        IntelligentHeartbeatService.updateUserActivity(groupId, user.id, isActiveRef.current);
+        EnhancedGroupService.updateUserActivity(groupId, user.id, isActiveRef.current);
       }
     }
   };

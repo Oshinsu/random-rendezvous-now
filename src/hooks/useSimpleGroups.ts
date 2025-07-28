@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { GeolocationService, LocationData } from '@/services/geolocation';
-import { TempGroupService } from '@/services/tempGroupService';
+import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { showUniqueToast } from '@/utils/toastUtils';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -22,7 +22,7 @@ export const useSimpleGroups = () => {
     queryKey: ['simpleUserGroups', user?.id],
     queryFn: async (): Promise<Group[]> => {
       if (!user) return [];
-      return TempGroupService.getUserGroups(user.id);
+      return UnifiedGroupService.getUserGroupsSimple(user.id);
     },
     enabled: !!user,
     refetchInterval: 15000,
@@ -64,7 +64,7 @@ export const useSimpleGroups = () => {
     setLoading(true);
     
     try {
-      const isAuth = await TempGroupService.verifyAuth();
+      const isAuth = await UnifiedGroupService.verifyAuth();
       if (!isAuth) {
         toast({ 
           title: 'Session expirée', 
@@ -85,7 +85,7 @@ export const useSimpleGroups = () => {
       }
 
       // Pour le moment, créer toujours un nouveau groupe pour éviter les erreurs RLS
-      const success = await TempGroupService.createSimpleGroup(location, user.id);
+      const success = await UnifiedGroupService.createSimpleGroup(location, user.id);
       
       if (success) {
         await refetchGroups();
