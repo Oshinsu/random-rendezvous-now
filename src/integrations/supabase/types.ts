@@ -139,6 +139,7 @@ export type Database = {
           bar_longitude: number | null
           bar_name: string | null
           bar_place_id: string | null
+          completed_at: string | null
           created_at: string
           current_participants: number
           id: string
@@ -156,6 +157,7 @@ export type Database = {
           bar_longitude?: number | null
           bar_name?: string | null
           bar_place_id?: string | null
+          completed_at?: string | null
           created_at?: string
           current_participants?: number
           id?: string
@@ -173,6 +175,7 @@ export type Database = {
           bar_longitude?: number | null
           bar_name?: string | null
           bar_place_id?: string | null
+          completed_at?: string | null
           created_at?: string
           current_participants?: number
           id?: string
@@ -315,6 +318,10 @@ export type Database = {
       is_user_in_group: {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
+      }
+      transition_groups_to_completed: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       validate_and_clean_message: {
         Args: { input_message: string }
