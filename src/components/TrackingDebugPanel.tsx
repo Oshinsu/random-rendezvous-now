@@ -1,12 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useTrackingDebug } from '@/hooks/useTrackingDebug';
+
+// Safe debug info without dependencies
+const useSafeTrackingDebug = () => {
+  const [debugInfo, setDebugInfo] = useState({
+    totalEvents: 0,
+    recentEvents: [] as Array<{
+      event: string;
+      timestamp: string;
+      properties?: Record<string, any>;
+    }>,
+    gtmStatus: 'unknown' as 'connected' | 'disconnected' | 'unknown'
+  });
+
+  useEffect(() => {
+    const updateDebugInfo = () => {
+      try {
+        // Get analytics events from localStorage
+        const analyticsEvents = JSON.parse(localStorage.getItem('analytics_events') || '[]');
+        const performanceEvents = JSON.parse(localStorage.getItem('performance_events') || '[]');
+        const allEvents = [...analyticsEvents, ...performanceEvents];
+        
+        const recentEvents = allEvents.slice(-10).map(event => ({
+          event: event.event,
+          timestamp: event.properties?.timestamp || event.timestamp || new Date().toISOString(),
+          properties: event.properties
+        }));
+
+        // Check GTM status
+        const gtmStatus = typeof window !== 'undefined' && window.dataLayer 
+          ? 'connected' 
+          : 'disconnected';
+
+        setDebugInfo({
+          totalEvents: allEvents.length,
+          recentEvents,
+          gtmStatus
+        });
+      } catch (error) {
+        console.warn('Failed to load debug info:', error);
+      }
+    };
+
+    // Update initially
+    updateDebugInfo();
+
+    // Update every 5 seconds
+    const interval = setInterval(updateDebugInfo, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const logTrackingStatus = () => {
+    console.group('🔍 Tracking Debug Status');
+    console.log('Total Events:', debugInfo.totalEvents);
+    console.log('GTM Status:', debugInfo.gtmStatus);
+    console.log('Recent Events:', debugInfo.recentEvents);
+    console.log('DataLayer:', typeof window !== 'undefined' ? window.dataLayer : 'Not available');
+    console.groupEnd();
+  };
+
+  const validateGTMEvents = () => {
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      const gtmEvents = window.dataLayer.filter(item => item.event);
+      console.log('🏷️ GTM Events in DataLayer:', gtmEvents.length);
+      console.table(gtmEvents.slice(-5));
+      return gtmEvents.length;
+    }
+    return 0;
+  };
+
+  return {
+    debugInfo,
+    logTrackingStatus,
+    validateGTMEvents
+  };
+};
 
 const TrackingDebugPanel = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const { debugInfo, logTrackingStatus, validateGTMEvents } = useTrackingDebug();
+  const { debugInfo, logTrackingStatus, validateGTMEvents } = useSafeTrackingDebug();
 
   if (!isVisible) {
     return (

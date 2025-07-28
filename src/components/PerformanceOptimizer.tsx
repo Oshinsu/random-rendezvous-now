@@ -1,6 +1,35 @@
 
 import { memo, useEffect, useState, ReactNode } from 'react';
-import { useAnalytics } from '@/hooks/useAnalytics';
+
+// Safe analytics hook that doesn't require auth context
+const useSafeAnalytics = () => {
+  const track = (event: string, properties?: Record<string, any>) => {
+    // Direct GTM tracking without auth dependency
+    if (typeof window !== 'undefined' && window.dataLayer) {
+      window.dataLayer.push({
+        event,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        page_title: document.title,
+        ...properties
+      });
+    }
+    
+    // Store in localStorage for debugging
+    try {
+      const storedEvents = JSON.parse(localStorage.getItem('performance_events') || '[]');
+      storedEvents.push({ event, properties, timestamp: new Date().toISOString() });
+      if (storedEvents.length > 50) {
+        storedEvents.splice(0, storedEvents.length - 50);
+      }
+      localStorage.setItem('performance_events', JSON.stringify(storedEvents));
+    } catch (error) {
+      console.warn('Failed to store performance event:', error);
+    }
+  };
+
+  return { track };
+};
 
 interface PerformanceOptimizerProps {
   children: ReactNode;
@@ -8,7 +37,7 @@ interface PerformanceOptimizerProps {
 
 // Hook pour surveiller les performances
 export const usePerformanceMonitor = () => {
-  const { track } = useAnalytics();
+  const { track } = useSafeAnalytics();
   const [metrics, setMetrics] = useState({
     loadTime: 0,
     renderTime: 0,
