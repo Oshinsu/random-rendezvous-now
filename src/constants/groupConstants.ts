@@ -1,17 +1,31 @@
 
-// Constantes CORRIGÉES pour résoudre les problèmes de groupes zombies
+// CONSTANTES INTELLIGENTES - Plan de nettoyage optimisé
 export const GROUP_CONSTANTS = {
-  // NOUVELLES CONSTANTES - Seuils d'activité RENFORCÉS
-  PARTICIPANT_ACTIVITY_THRESHOLD: 2 * 60 * 60 * 1000, // 2 heures - seuil pour participant "actif"
-  MAX_GROUP_AGE_FOR_JOIN: 3 * 60 * 60 * 1000, // 3 heures - âge max pour rejoindre un groupe
-  CONNECTION_THRESHOLD: 10 * 60 * 1000, // 10 minutes - statut "connecté" en temps réel
+  // === PROTECTION DES GROUPES VIVANTS ===
+  // Temps considéré comme "connecté en temps réel"
+  CONNECTION_THRESHOLD: 5 * 60 * 1000, // 5 minutes - vraiment connecté
   
-  // RÉTROCOMPATIBILITÉ - Alias pour les anciens noms
-  PARTICIPANT_INACTIVE_THRESHOLD: 2 * 60 * 60 * 1000, // Alias pour PARTICIPANT_ACTIVITY_THRESHOLD
+  // Temps pour groupes "en formation active" (protection totale)
+  ACTIVE_GROUP_PROTECTION: 30 * 60 * 1000, // 30 minutes - protection totale
+  
+  // Temps d'attente maximum pour formation de groupe
+  GROUP_FORMATION_TIMEOUT: 60 * 60 * 1000, // 1 HEURE - délai d'attente réaliste
+  
+  // === NETTOYAGE INTELLIGENT ===
+  // Participants considérés comme "abandonnés"
+  PARTICIPANT_ABANDONED_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures pour abandon
+  
+  // Groupes très anciens - nettoyage final
+  VERY_OLD_GROUP_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures pour nettoyage final
+  
+  // === RÉTROCOMPATIBILITÉ ===
+  PARTICIPANT_ACTIVITY_THRESHOLD: 6 * 60 * 60 * 1000, // Compatible avec logique existante
+  MAX_GROUP_AGE_FOR_JOIN: 60 * 60 * 1000, // 1 heure maximum pour rejoindre
+  PARTICIPANT_INACTIVE_THRESHOLD: 6 * 60 * 60 * 1000, // Alias pour compatibilité
   PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Alias pour compatibilité
   
-  // Nettoyage périodique
-  CLEANUP_FREQUENCY: 2 * 60 * 60 * 1000, // 2 heures - fréquence de nettoyage automatique
+  // Nettoyage périodique - plus fréquent mais intelligent
+  CLEANUP_FREQUENCY: 30 * 60 * 1000, // 30 minutes - fréquence pour détecter rapidement
   HEARTBEAT_INTERVAL: 30 * 1000, // 30 secondes - battement de cœur d'activité
   
   // Paramètres de groupe INCHANGÉS

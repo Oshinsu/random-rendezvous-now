@@ -4,7 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
-import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
+import { IntelligentCleanupService } from '@/services/intelligentCleanupService';
+import { NotificationService } from '@/services/notificationService';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,9 +16,16 @@ const queryClient = new QueryClient({
   },
 });
 
-// 🚀 DÉMARRAGE DU SERVICE DE NETTOYAGE UNIFIÉ
-console.log('🚀 [MAIN] Initialisation du service de nettoyage unifié...');
-UnifiedCleanupService.startPeriodicCleanup();
+// 🚀 DÉMARRAGE DES SERVICES INTELLIGENTS
+console.log('🚀 [MAIN] Initialisation des services intelligents...');
+
+// Service de nettoyage intelligent
+IntelligentCleanupService.startPeriodicIntelligentCleanup();
+
+// Service de notifications (demande permission au premier usage)
+NotificationService.initialize().then(enabled => {
+  console.log('📱 [MAIN] Notifications:', enabled ? 'activées' : 'désactivées');
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

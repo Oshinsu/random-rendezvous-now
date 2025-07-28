@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
 import { OptimizedCleanupService } from './optimizedCleanupService';
+import { IntelligentCleanupService } from './intelligentCleanupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { toast } from '@/hooks/use-toast';
@@ -20,15 +21,15 @@ import type { GroupMember } from '@/types/groups';
 export class EnhancedGroupService {
   
   /**
-   * Initialisation du service avec nettoyage automatique
+   * Initialisation du service avec nettoyage intelligent
    */
   static initialize(): void {
-    console.log('🚀 [ENHANCED GROUP SERVICE] Initialisation avec nettoyage automatique...');
+    console.log('🚀 [ENHANCED GROUP SERVICE] Initialisation avec nettoyage intelligent...');
     
-    // Démarrer le nettoyage périodique
-    OptimizedCleanupService.startPeriodicRealtimeCleanup();
+    // Démarrer le nettoyage périodique intelligent
+    IntelligentCleanupService.startPeriodicIntelligentCleanup();
     
-    console.log('✅ [ENHANCED GROUP SERVICE] Service initialisé');
+    console.log('✅ [ENHANCED GROUP SERVICE] Service initialisé avec logique intelligente');
   }
 
   /**
