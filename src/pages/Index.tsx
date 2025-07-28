@@ -11,16 +11,25 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { useEffect } from "react";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const { trackPageView, trackUserAction } = useAnalytics();
+
+  useEffect(() => {
+    trackPageView('landing_page');
+  }, [trackPageView]);
 
   const handleSignOut = async () => {
+    trackUserAction('logout_clicked', { source: 'landing_page' });
     await signOut();
   };
 
   const handleGoToDashboard = () => {
+    trackUserAction('navigate_to_dashboard', { source: 'landing_page' });
     navigate('/dashboard');
   };
 

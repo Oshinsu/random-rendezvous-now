@@ -12,12 +12,15 @@ import NoActiveGroupMessage from '@/components/groups/NoActiveGroupMessage';
 import GroupDetails from '@/components/groups/GroupDetails';
 import GroupMudra from '@/components/groups/GroupMudra';
 import LoadingState from '@/components/groups/LoadingState';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const GroupsPage = () => {
   const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useUnifiedGroups();
+  const { trackPageView, trackUserAction, trackGroupAction } = useAnalytics();
 
   // Déclenchement du système unifié au montage
   useEffect(() => {
+    trackPageView('groups_page');
     console.log('🔄 [GROUPS PAGE UNIFIÉ] Déclenchement récupération avec système unifié');
     
     // Déclenchement du nettoyage unifié si nécessaire
@@ -28,18 +31,20 @@ const GroupsPage = () => {
     
     // Force un refetch immédiat pour la récupération
     refetchGroups();
-  }, []);
+  }, [trackPageView]);
 
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
   );
 
   const handleRefresh = () => {
+    trackUserAction('group_refresh', { source: 'groups_page' });
     console.log('🔄 Refresh manuel avec système unifié (page Groups)');
     refetchGroups();
   };
 
   const handleBack = () => {
+    trackUserAction('navigate_back', { source: 'groups_page' });
     window.history.back();
   };
 
@@ -127,7 +132,10 @@ const GroupsPage = () => {
 
                     <GroupDetails
                       group={currentGroup}
-                      onLeaveGroup={() => leaveGroup(currentGroup.id)}
+                      onLeaveGroup={() => {
+                        trackGroupAction('leave_group', currentGroup.id);
+                        leaveGroup(currentGroup.id);
+                      }}
                       loading={loading}
                     />
                   </div>

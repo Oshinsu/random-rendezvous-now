@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
 import { clearActiveToasts } from '@/utils/toastUtils'
+import { useAnalytics } from '@/hooks/useAnalytics'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -14,18 +15,21 @@ const Dashboard = () => {
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
   const hasInitialized = useRef(false)
+  const { trackPageView, trackUserAction } = useAnalytics()
 
   // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
   useEffect(() => {
     if (!hasInitialized.current) {
       clearActiveToasts()
       hasInitialized.current = true
+      trackPageView('dashboard')
     }
-  }, [])
+  }, [trackPageView])
 
   const handleButtonClick = async () => {
     if (isSearching) {
       // Annuler la recherche
+      trackUserAction('group_search_cancelled', { source: 'dashboard' })
       setIsSearching(false)
       setRedirectCountdown(0)
       clearActiveToasts()
@@ -34,19 +38,23 @@ const Dashboard = () => {
     }
 
     // Démarrer la recherche
+    trackUserAction('group_search_started', { source: 'dashboard' })
     setIsSearching(true)
     console.log('🎲 Recherche démarrée - animation devrait commencer')
     
     try {
       const success = await joinRandomGroup()
       if (success) {
+        trackUserAction('group_join_success', { source: 'dashboard' })
         console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
         setRedirectCountdown(15)
       } else {
+        trackUserAction('group_join_failed', { source: 'dashboard', reason: 'no_success' })
         console.log('❌ Échec de la recherche/création de groupe')
         setIsSearching(false)
       }
     } catch (error) {
+      trackUserAction('group_join_error', { source: 'dashboard', error: error.message })
       console.error('❌ Erreur lors de la recherche:', error)
       setIsSearching(false)
     }
@@ -172,13 +180,14 @@ const Dashboard = () => {
           {/* Bouton d'accès rapide pendant le countdown */}
           {redirectCountdown > 0 && (
             <button
-              onClick={() => {
-                console.log('🔄 Redirection manuelle vers /groups')
-                clearActiveToasts()
-                navigate('/groups')
-                setIsSearching(false)
-                setRedirectCountdown(0)
-              }}
+            onClick={() => {
+              trackUserAction('group_redirect_manual', { source: 'dashboard' })
+              console.log('🔄 Redirection manuelle vers /groups')
+              clearActiveToasts()
+              navigate('/groups')
+              setIsSearching(false)
+              setRedirectCountdown(0)
+            }}
               className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors"
             >
               Voir mon groupe maintenant

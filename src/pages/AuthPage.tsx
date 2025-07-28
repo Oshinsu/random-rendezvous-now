@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -17,6 +18,11 @@ const AuthPage = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
+  const { trackPageView, trackUserAction } = useAnalytics();
+
+  useEffect(() => {
+    trackPageView('auth_page');
+  }, [trackPageView]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +30,7 @@ const AuthPage = () => {
 
     if (activeTab === 'signup') {
       // Sign Up
+      trackUserAction('signup_attempt', { email: email.split('@')[1] }); // Track domain only for privacy
       console.log('🔐 Attempting signup for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -38,22 +45,27 @@ const AuthPage = () => {
       });
 
       if (error) {
+        trackUserAction('signup_failed', { error: error.message });
         console.error('❌ Signup error:', error);
         toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
+        trackUserAction('signup_success_confirmation_required');
         console.log('✅ Signup successful, email confirmation required');
         toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       } else if (data.user) {
+        trackUserAction('signup_success_auto_confirmed');
         console.log('✅ Signup successful, user auto-confirmed');
         toast({ title: 'Inscription réussie!', description: 'Vous êtes maintenant connecté.' });
         navigate('/');
       } else {
+        trackUserAction('signup_initiated');
         console.log('✅ Signup initiated, email confirmation needed');
         toast({ title: 'Inscription initiée', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       }
     } else {
       // Sign In
+      trackUserAction('signin_attempt', { email: email.split('@')[1] }); // Track domain only for privacy
       console.log('🔐 Attempting signin for:', email);
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -61,9 +73,11 @@ const AuthPage = () => {
       });
 
       if (error) {
+        trackUserAction('signin_failed', { error: error.message });
         console.error('❌ Signin error:', error);
         toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
       } else {
+        trackUserAction('signin_success');
         console.log('✅ Signin successful');
         toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
         navigate('/');
@@ -74,7 +88,10 @@ const AuthPage = () => {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        trackUserAction('auth_tab_change', { tab: value });
+        setActiveTab(value);
+      }} className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="signin">Se Connecter</TabsTrigger>
           <TabsTrigger value="signup">S'inscrire</TabsTrigger>
