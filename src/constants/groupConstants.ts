@@ -10,8 +10,8 @@ export const GROUP_CONSTANTS = {
   PARTICIPANT_INACTIVE_THRESHOLD: 2 * 60 * 60 * 1000, // Alias pour PARTICIPANT_ACTIVITY_THRESHOLD
   PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Alias pour compatibilité
   
-  // Nettoyage en temps réel AGRESSIF
-  CLEANUP_FREQUENCY: 30 * 60 * 1000, // 30 minutes - fréquence de nettoyage automatique
+  // Nettoyage périodique
+  CLEANUP_FREQUENCY: 2 * 60 * 60 * 1000, // 2 heures - fréquence de nettoyage automatique
   HEARTBEAT_INTERVAL: 30 * 1000, // 30 secondes - battement de cœur d'activité
   
   // Paramètres de groupe INCHANGÉS
@@ -40,15 +40,12 @@ export const GROUP_CONSTANTS = {
     EMPTY_GROUPS: 30 * 60 * 1000,
   },
   
-  // NOUVELLES CONSTANTES pour la priorité de création vs rejoint
-  CREATION_PRIORITY: {
-    // Probabilité de créer un nouveau groupe au lieu de rejoindre (70%)
-    CREATE_NEW_PROBABILITY: 0.7,
-    
+  // Constantes pour rejoindre des groupes existants
+  GROUP_JOIN: {
     // Seuil minimum de participants dans un groupe pour considérer le rejoindre
-    MIN_PARTICIPANTS_TO_JOIN: 2,
+    MIN_PARTICIPANTS_TO_JOIN: 1,
     
-    // Âge maximum d'un groupe pour le considérer "frais" (1 heure)
-    FRESH_GROUP_MAX_AGE: 1 * 60 * 60 * 1000,
+    // Âge maximum d'un groupe pour le considérer viable (2 heures)
+    MAX_GROUP_AGE: 2 * 60 * 60 * 1000,
   }
 };

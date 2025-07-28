@@ -22,7 +22,7 @@ export class GroupGeolocationService {
 
   static async findCompatibleGroup(userLocation: LocationData): Promise<Group | null> {
     try {
-      console.log('🌍 Recherche de groupe compatible avec filtres anti-zombies...');
+      console.log('🌍 Recherche de groupe compatible...');
       
       // NOUVEAU: Filtrer les groupes par âge (max 3 heures)
       const maxGroupAge = new Date(Date.now() - GROUP_CONSTANTS.MAX_GROUP_AGE_FOR_JOIN).toISOString();
@@ -43,28 +43,22 @@ export class GroupGeolocationService {
       }
 
       if (!waitingGroups || waitingGroups.length === 0) {
-        console.log('📍 Aucun groupe FRAIS trouvé (âge < 3h)');
+        console.log('📍 Aucun groupe trouvé (âge < 3h)');
         return null;
       }
 
-      console.log(`🔍 ${waitingGroups.length} groupes frais trouvés (âge < 3h)`);
+      console.log(`🔍 ${waitingGroups.length} groupes trouvés (âge < 3h)`);
 
-      // NOUVEAU: Implémenter la priorité de création vs rejoint
-      const shouldCreateNew = Math.random() < GROUP_CONSTANTS.CREATION_PRIORITY.CREATE_NEW_PROBABILITY;
-      
-      if (shouldCreateNew) {
-        console.log('🎲 [PRIORITÉ CRÉATION] Décision de créer un nouveau groupe (70% chance)');
-        return null; // Forcer la création d'un nouveau groupe
-      }
-
-      // Filtrer les groupes avec un minimum de participants (éviter les groupes avec 1 seul participant inactif)
-      const viableGroups = waitingGroups.filter(group => 
-        group.current_participants >= GROUP_CONSTANTS.CREATION_PRIORITY.MIN_PARTICIPANTS_TO_JOIN
-      );
+      // Filtrer les groupes viables (âge et participants)
+      const viableGroups = waitingGroups.filter(group => {
+        const groupAge = Date.now() - new Date(group.created_at).getTime();
+        return group.current_participants >= GROUP_CONSTANTS.GROUP_JOIN.MIN_PARTICIPANTS_TO_JOIN &&
+               groupAge <= GROUP_CONSTANTS.GROUP_JOIN.MAX_GROUP_AGE;
+      });
 
       // Si pas de groupes viables, créer un nouveau
       if (viableGroups.length === 0) {
-        console.log('📍 Aucun groupe viable trouvé (min 2 participants) - création recommandée');
+        console.log('📍 Aucun groupe viable trouvé - création recommandée');
         return null;
       }
 
@@ -81,19 +75,14 @@ export class GroupGeolocationService {
           );
           
           if (distance <= maxDistance) {
-            // Vérifier que le groupe est vraiment "frais" (moins d'1 heure)
             const groupAge = Date.now() - new Date(group.created_at).getTime();
-            if (groupAge <= GROUP_CONSTANTS.CREATION_PRIORITY.FRESH_GROUP_MAX_AGE) {
-              console.log(`✅ Groupe FRAIS compatible trouvé à ${Math.round(distance / 1000)}km (âge: ${Math.round(groupAge/60000)}min):`, group.id);
-              return group as Group;
-            } else {
-              console.log(`⏰ Groupe trop ancien ignoré (âge: ${Math.round(groupAge/60000)}min):`, group.id);
-            }
+            console.log(`✅ Groupe compatible trouvé à ${Math.round(distance / 1000)}km (âge: ${Math.round(groupAge/60000)}min):`, group.id);
+            return group as Group;
           }
         }
       }
 
-      console.log('📍 Aucun groupe FRAIS et viable dans la zone géographique de 10km - création recommandée');
+      console.log('📍 Aucun groupe viable dans la zone géographique de 10km - création recommandée');
       return null;
     } catch (error) {
       console.error('❌ Erreur findCompatibleGroup:', error);
