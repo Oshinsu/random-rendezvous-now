@@ -486,19 +486,27 @@ export class UnifiedGroupService {
 
       console.log('✅ Adhésion réussie avec vérification sécurisée');
       
-      // Vérification post-ajout pour attribution automatique
+      // Vérification post-ajout pour attribution automatique et notification
       setTimeout(async () => {
         console.log('🔍 Vérification attribution automatique après ajout...');
         const { data: updatedGroup } = await supabase
           .from('groups')
-          .select('current_participants, status, bar_name')
+          .select('current_participants, status, bar_name, max_participants')
           .eq('id', groupId)
           .single();
           
-        if (updatedGroup && updatedGroup.current_participants === 5 && 
-            updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
-          console.log('🤖 Déclenchement attribution automatique après ajout participant...');
-          await AutomaticBarAssignmentService.assignBarToGroup(groupId);
+        if (updatedGroup && updatedGroup.current_participants === updatedGroup.max_participants) {
+          // Show celebratory notification when group becomes full
+          toast({
+            title: '🎉 Groupe complet !',
+            description: `Félicitations ! Votre groupe de ${updatedGroup.max_participants} personnes est maintenant complet. Un bar va être assigné automatiquement !`,
+            duration: 5000,
+          });
+          
+          if (updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
+            console.log('🤖 Déclenchement attribution automatique après ajout participant...');
+            await AutomaticBarAssignmentService.assignBarToGroup(groupId);
+          }
         }
       }, 2000);
       

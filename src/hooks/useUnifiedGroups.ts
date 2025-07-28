@@ -112,6 +112,22 @@ export const useUnifiedGroups = () => {
         await EnhancedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
         const members = await EnhancedGroupRetrievalService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
+        
+        // Check if group just became full and show notification
+        const currentGroup = validGroups[0];
+        if (currentGroup.current_participants === currentGroup.max_participants && 
+            currentGroup.status === 'confirmed') {
+          // Only show notification if this is a recently updated group
+          const groupAge = Date.now() - new Date(currentGroup.created_at).getTime();
+          const recentThreshold = 30 * 1000; // 30 seconds
+          
+          if (groupAge > recentThreshold) {
+            showUniqueToast(
+              `Votre groupe de ${currentGroup.max_participants} personnes est complet ! Un bar va être assigné.`,
+              "🎉 Groupe complet"
+            );
+          }
+        }
       } else {
         setGroupMembers([]);
       }
