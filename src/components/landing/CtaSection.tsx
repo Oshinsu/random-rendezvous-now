@@ -21,10 +21,10 @@ const CtaSection = () => {
       <div className="container mx-auto px-6 text-center">
         <Rocket className="w-12 h-12 text-primary mx-auto mb-6 animate-bounce" />
         <h2 className="text-3xl md:text-4xl font-heading font-bold mb-6">
-          Prêt à <span className="text-primary gradient-text">Tenter l'Aventure</span> ?
+          Prêt pour ta <span className="text-primary gradient-text">Prochaine Aventure</span> ?
         </h2>
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Rejoins Random. Ceux qui ont testé ne regrettent jamais.
+          Rejoins Random ! Les premiers testeurs adorent déjà l'expérience.
         </p>
         <Button 
           onClick={handleMainAction}
@@ -35,7 +35,7 @@ const CtaSection = () => {
           {user ? 'Chercher un groupe' : 'Rejoindre l\'Aventure'}
         </Button>
         <p className="mt-6 text-sm text-muted-foreground">
-          Gratuit et sans prise de tête. Juste l'envie de vivre quelque chose de cool.
+          Beta gratuite à Paris tout le mois d'août ! Lyon arrive en septembre.
         </p>
       </div>
     </section>

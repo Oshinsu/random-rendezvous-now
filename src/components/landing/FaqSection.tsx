@@ -9,19 +9,19 @@ import {
 const faqs = [
   {
     question: "Vraiment 100% random ? Et si je tombe avec des gens bizarres ?",
-    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote à raconter. Le risque fait partie du charme, non ?",
+    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote à raconter ! Le risque fait partie du charme.",
   },
   {
     question: "Pourquoi je ne vois pas le bar avant de confirmer ?",
-    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection croissante de bars partenaires.",
+    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection soigneuse de bars partenaires.",
   },
   {
     question: "Et si le groupe ne me plaît pas ?",
-    answer: "Random n'est pas Tinder en groupe. L'objectif : passer un bon moment et élargir ton cercle social. Reste ouvert, la magie opère souvent quand on s'y attend le moins !",
+    answer: "Random n'est pas un dating app ! L'objectif : passer un super moment et élargir ton cercle social. Reste ouvert, la magie opère souvent quand on s'y attend le moins !",
   },
   {
     question: "C'est vraiment gratuit ?",
-    answer: "Oui, complètement ! On veut que tu découvres l'expérience Random sans barrière. Notre mission : révolutionner tes soirées, pas vider ton portefeuille.",
+    answer: "Oui, complètement ! Beta gratuite à Paris du 1er août au 1er septembre. Notre mission : révolutionner tes soirées, pas vider ton portefeuille !",
   },
   {
     question: "C'est sécurisé ?",
@@ -37,7 +37,7 @@ const FaqSection = () => {
           Questions <span className="text-primary">Brûlantes</span> ?
         </h2>
         <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          On répond cash, sans détour. Comme on aime chez Random.
+          On répond franchement, sans détour. Comme on aime chez Random !
         </p>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
           {faqs.map((faq, index) => (

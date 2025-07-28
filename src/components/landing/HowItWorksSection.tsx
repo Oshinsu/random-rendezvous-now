@@ -10,7 +10,7 @@ const steps = [
   {
     icon: <Users className="w-10 h-10 text-primary mb-4" />,
     title: "2. On forme ton groupe",
-    description: "4 personnes au hasard. Même envie d'aventure que toi.",
+    description: "5 personnes au total : toi + 4 inconnus qui ont la même envie d'aventure.",
   },
   {
     icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
@@ -20,7 +20,7 @@ const steps = [
   {
     icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
     title: "4. Tu y vas",
-    description: "Rendez-vous dans 2h. La magie du hasard fait le reste.",
+    description: "Rendez-vous dans 1h. La magie du hasard fait le reste !",
   },
 ];
 
@@ -32,7 +32,7 @@ const HowItWorksSection = () => {
           Comment <span className="text-primary">Ça Marche</span> ?
         </h2>
         <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-          Simple comme bonjour. Pas de blabla.
+          Simple comme bonjour. Direct et efficace !
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (

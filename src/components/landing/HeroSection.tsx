@@ -23,8 +23,8 @@ const HeroSection = () => {
           Random: <span className="text-primary">1 Clic = 1 Groupe = 1 Bar</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-          Dis <span className="font-semibold text-foreground">"oui"</span> à l'inattendu. 
-          <span className="font-semibold text-foreground"> C'est pas un date. C'est un dé.</span>
+          Dis <span className="font-semibold text-foreground">"oui"</span> à l'aventure ! 
+          <span className="font-semibold text-foreground"> Rencontre 4 personnes géniales autour d'un verre.</span>
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
           <Button 
@@ -38,7 +38,7 @@ const HeroSection = () => {
         </div>
         <div className="max-w-2xl mx-auto">
           <p className="text-sm text-muted-foreground mb-4">
-            {user ? '🎲 Votre prochaine aventure Random vous attend' : '✨ Rejoignez déjà +500 aventuriers'}
+            {user ? '🎲 Ta prochaine aventure Random t\'attend !' : '✨ Beta gratuite - Paris : 1er août au 1er septembre'}
           </p>
           <div className="flex justify-center items-center gap-6 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -51,7 +51,7 @@ const HeroSection = () => {
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              Partout en France
+              Paris puis Lyon
             </span>
           </div>
         </div>
