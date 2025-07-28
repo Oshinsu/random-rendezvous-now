@@ -11,13 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import { useEffect } from "react";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
-  // Removed page tracking
 
   const handleSignOut = async () => {
     await signOut();
