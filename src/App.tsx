@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import PerformanceOptimizer from "./components/PerformanceOptimizer";
+import TrackingDebugPanel from "./components/TrackingDebugPanel";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <AppRoutes />
+            <TrackingDebugPanel />
           </TooltipProvider>
         </PerformanceOptimizer>
       </AuthProvider>

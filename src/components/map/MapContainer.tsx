@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { MapContainerProps } from './types';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const MapContainer = ({
   barName,
@@ -17,6 +18,7 @@ const MapContainer = ({
   const markerRef = useRef<any>(null);
   const [barLocationUpdated, setBarLocationUpdated] = useState(false);
   const lastCoordinatesRef = useRef<{ lat?: number; lng?: number }>({});
+  const { track } = useAnalytics();
 
   // Coordonnées par défaut pour Paris si les coordonnées du bar ne sont pas disponibles
   const defaultLat = 48.8566;
@@ -178,7 +180,29 @@ const MapContainer = ({
         });
 
         marker.addListener('click', () => {
+          // Track map marker interaction
+          track('map_marker_click', {
+            bar_name: barName,
+            bar_address: barAddress,
+            has_coordinates: !!(barLatitude && barLongitude),
+            coordinates: barLatitude && barLongitude ? { lat: barLatitude, lng: barLongitude } : null
+          });
           infoWindow.open(map, marker);
+        });
+
+        // Track map interactions
+        map.addListener('zoom_changed', () => {
+          track('map_zoom', {
+            zoom_level: map.getZoom(),
+            bar_name: barName
+          });
+        });
+
+        map.addListener('dragend', () => {
+          track('map_drag', {
+            bar_name: barName,
+            center: map.getCenter()?.toJSON()
+          });
         });
 
         // Ouvrir l'infobulle par défaut seulement si on a des coordonnées précises

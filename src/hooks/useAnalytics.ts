@@ -38,13 +38,17 @@ class SimpleAnalytics {
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         url: window.location.href,
+        page_title: document.title,
+        session_id: this.getSessionId()
       }
     };
 
     this.events.push(analyticsEvent);
     
-    // Log to console for development
-    console.log('📊 Analytics Event:', analyticsEvent);
+    // Log to console for development (less verbose for performance events)
+    if (event !== 'performance_metrics') {
+      console.log('📊 Analytics Event:', analyticsEvent);
+    }
     
     // Envoyer à Google Tag Manager
     this.sendToGTM(event, analyticsEvent.properties);
@@ -63,6 +67,15 @@ class SimpleAnalytics {
     } catch (error) {
       console.warn('Failed to store analytics event:', error);
     }
+  }
+
+  private getSessionId(): string {
+    let sessionId = sessionStorage.getItem('analytics_session_id');
+    if (!sessionId) {
+      sessionId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      sessionStorage.setItem('analytics_session_id', sessionId);
+    }
+    return sessionId;
   }
 
   private sendToGTM(event: string, properties?: Record<string, any>) {
@@ -84,7 +97,10 @@ class SimpleAnalytics {
         // Envoyer à GTM
         window.dataLayer.push(gtmData);
         
-        console.log('🏷️ GTM Event Sent:', gtmData);
+        // Less verbose logging for performance events
+        if (event !== 'performance_metrics') {
+          console.log('🏷️ GTM Event Sent:', gtmData);
+        }
       }
     } catch (error) {
       console.warn('Failed to send event to GTM:', error);

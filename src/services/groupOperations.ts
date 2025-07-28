@@ -292,6 +292,15 @@ export class GroupOperationsService {
 
       console.log('✅ [LEAVE] Participation supprimée avec succès');
 
+      // Track group leave event
+      if (typeof window !== 'undefined' && window.dataLayer) {
+        window.dataLayer.push({
+          event: 'group_leave',
+          group_id: groupId,
+          user_id: user.id
+        });
+      }
+
       const realCount = await GroupService.getCurrentParticipantCount(groupId);
       console.log('📊 [LEAVE] Participants restants après départ:', realCount);
 
