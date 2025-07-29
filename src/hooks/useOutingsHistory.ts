@@ -26,24 +26,41 @@ export const useOutingsHistory = () => {
   return useQuery({
     queryKey: ['outings-history', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('🔍 [useOutingsHistory] No user ID, returning empty array');
+        return [];
+      }
       
       console.log('🔍 [useOutingsHistory] Fetching outings history for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('user_outings_history')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('completed_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('user_outings_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ [useOutingsHistory] Error fetching outings history:', error);
-        throw error;
+        if (error) {
+          console.error('❌ [useOutingsHistory] Supabase error:', error);
+          throw new Error(`Failed to fetch outings history: ${error.message}`);
+        }
+
+        console.log(`✅ [useOutingsHistory] Fetched ${data?.length || 0} outings for user ${user.id}`);
+        
+        // Log some debug info about the data structure
+        if (data && data.length > 0) {
+          console.log('📊 [useOutingsHistory] Sample outing:', data[0]);
+        }
+        
+        return (data || []) as OutingHistory[];
+      } catch (err) {
+        console.error('❌ [useOutingsHistory] Unexpected error:', err);
+        throw err;
       }
-
-      console.log('✅ [useOutingsHistory] Fetched outings history:', data);
-      return data as OutingHistory[];
     },
     enabled: !!user?.id,
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 };

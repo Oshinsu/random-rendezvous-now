@@ -7,9 +7,38 @@ import { MapPin, Calendar, Users, Clock, Star } from 'lucide-react';
 import { useOutingsHistory } from '@/hooks/useOutingsHistory';
 import { formatMeetingTime } from '@/components/map/utils';
 import BarRatingDialog from '@/components/BarRatingDialog';
+import { createTestOutingHistory, cleanupTestData } from '@/utils/testOutingsHistory';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const OutingsHistory = () => {
   const { data: outings, isLoading, error } = useOutingsHistory();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const handleCreateTestData = async () => {
+    if (!user?.id) return;
+    
+    try {
+      await createTestOutingHistory(user.id);
+      // Refetch the outings history
+      queryClient.invalidateQueries({ queryKey: ['outings-history', user.id] });
+    } catch (error) {
+      console.error('Failed to create test data:', error);
+    }
+  };
+
+  const handleCleanupTestData = async () => {
+    if (!user?.id) return;
+    
+    try {
+      await cleanupTestData(user.id);
+      // Refetch the outings history
+      queryClient.invalidateQueries({ queryKey: ['outings-history', user.id] });
+    } catch (error) {
+      console.error('Failed to cleanup test data:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -70,6 +99,26 @@ const OutingsHistory = () => {
               <p className="text-xs text-gray-600 mt-1">
                 Rejoignez votre premier groupe pour commencer votre aventure !
               </p>
+              
+              {/* Test buttons for development */}
+              <div className="flex gap-2 mt-4 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateTestData}
+                  className="text-xs border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  🧪 Créer test data
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCleanupTestData}
+                  className="text-xs border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  🧹 Nettoyer test data
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

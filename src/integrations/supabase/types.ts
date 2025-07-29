@@ -319,6 +319,10 @@ export type Database = {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      repair_missing_outings_history: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       transition_groups_to_completed: {
         Args: Record<PropertyKey, never>
         Returns: undefined
