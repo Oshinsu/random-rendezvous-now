@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-// Image supprimée
+import heroBanner from "@/assets/hero-banner.jpg";
 
 const HeroSection = () => {
   const { user } = useAuth();
@@ -19,7 +19,13 @@ const HeroSection = () => {
 
   return (
     <section 
-      className="relative py-8 md:py-12 text-white animate-fade-in overflow-hidden h-[50vh] max-h-[400px] bg-gradient-to-br from-primary via-amber-500 to-amber-600"
+      className="relative py-8 md:py-12 text-white animate-fade-in overflow-hidden h-[50vh] max-h-[400px]"
+      style={{
+        backgroundImage: `url(${heroBanner})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
     >
       {/* Overlay pour améliorer la lisibilité */}
       <div className="absolute inset-0 bg-black/50"></div>
