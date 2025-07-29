@@ -1,19 +1,22 @@
 
-import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
+import { GlassWater } from "lucide-react";
+import step1 from "@/assets/step-1.png";
+import step2 from "@/assets/step-2.png";
+import step3 from "@/assets/step-3.png";
 
 const steps = [
   {
-    icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
+    icon: <img src={step1} alt="Tu cliques" className="w-16 h-20 object-cover rounded-lg mb-4 mx-auto" />,
     title: "1. Tu cliques",
     description: "Un bouton, c'est tout. Pas de profil à remplir, pas de questions.",
   },
   {
-    icon: <Users className="w-10 h-10 text-primary mb-4" />,
+    icon: <img src={step2} alt="On forme ton groupe" className="w-16 h-20 object-cover rounded-lg mb-4 mx-auto" />,
     title: "2. On forme ton groupe",
     description: "5 personnes au total : toi + 4 inconnus qui ont la même envie d'aventure.",
   },
   {
-    icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
+    icon: <img src={step3} alt="On révèle le bar" className="w-16 h-20 object-cover rounded-lg mb-4 mx-auto" />,
     title: "3. On révèle le bar",
     description: "Le lieu s'affiche. Gratuit pour découvrir l'expérience.",
   },

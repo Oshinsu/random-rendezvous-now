@@ -19,7 +19,7 @@ const HeroSection = () => {
 
   return (
     <section 
-      className="relative py-8 md:py-12 text-white animate-fade-in overflow-hidden h-[50vh] max-h-[400px]"
+      className="relative py-8 md:py-12 text-white animate-fade-in overflow-hidden h-[60vh] max-h-[500px]"
       style={{
         backgroundImage: `url(${heroBanner})`,
         backgroundSize: 'cover',
@@ -55,15 +55,15 @@ const HeroSection = () => {
           <div className="flex justify-center items-center gap-6 text-xs text-white/70">
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Groupes actifs
+              BETA TEST en Août
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-              Bars partenaires
+              Bars aléatoires
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              Paris puis Lyon
+              GRATUIT PENDANT TOUTES LES VACANCES
             </span>
           </div>
         </div>
