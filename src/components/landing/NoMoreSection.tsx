@@ -15,17 +15,17 @@ const NoMoreSection = () => {
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-background/10 rounded-xl backdrop-blur-sm animate-fade-in hover:bg-background/20 transition-all duration-300 group" style={{animationDelay: `0ms`}}>
-            <img src={step1} alt="Exit le Swipe Sans Fin" className="w-24 h-30 object-cover rounded-lg mx-auto mb-4" />
+            <img src={step1} alt="Exit le Swipe Sans Fin" className="w-40 h-48 object-cover rounded-lg mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-3">Exit le Swipe Sans Fin</h3>
             <p className="text-sm opacity-90 leading-relaxed">Le hasard choisit pour toi ! Plus de scroll infini, plus de choix impossibles.</p>
           </div>
           <div className="p-6 bg-background/10 rounded-xl backdrop-blur-sm animate-fade-in hover:bg-background/20 transition-all duration-300 group" style={{animationDelay: `150ms`}}>
-            <img src={step2} alt="Fini les Profils Bidons" className="w-24 h-30 object-cover rounded-lg mx-auto mb-4" />
+            <img src={step2} alt="Fini les Profils Bidons" className="w-40 h-48 object-cover rounded-lg mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-3">Fini les Profils Bidons</h3>
             <p className="text-sm opacity-90 leading-relaxed">On se découvre en vrai, sans filtre ni faux-semblant !</p>
           </div>
           <div className="p-6 bg-background/10 rounded-xl backdrop-blur-sm animate-fade-in hover:bg-background/20 transition-all duration-300 group" style={{animationDelay: `300ms`}}>
-            <img src={step3} alt="Bye Bye le Blabla" className="w-24 h-30 object-cover rounded-lg mx-auto mb-4" />
+            <img src={step3} alt="Bye Bye le Blabla" className="w-40 h-48 object-cover rounded-lg mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-3">Bye Bye le Blabla</h3>
             <p className="text-sm opacity-90 leading-relaxed">Moins de "salut ça va ?" sans fin, plus de vraies discussions !</p>
           </div>
