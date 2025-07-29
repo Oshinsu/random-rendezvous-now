@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import heroBanner from "@/assets/hero-banner.jpg";
+import heroBanner from "@/assets/new-hero-banner.jpg";
 
 const HeroSection = () => {
   const { user } = useAuth();
