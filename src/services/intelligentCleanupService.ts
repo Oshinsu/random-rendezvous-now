@@ -121,15 +121,20 @@ export class IntelligentCleanupService {
       // Éviter de nettoyer les participants des groupes protégés (récents)
       const protectionThreshold = new Date(Date.now() - GROUP_CONSTANTS.ACTIVE_GROUP_PROTECTION).toISOString();
       
+      // CORRECTION CRITIQUE: Éviter les erreurs SQL UUID avec requête corrigée
+      const { data: protectedGroupIds } = await supabase
+        .from('groups')
+        .select('id')
+        .gt('created_at', protectionThreshold)
+        .in('status', ['waiting', 'confirmed']);
+
+      const protectedIds = protectedGroupIds?.map(g => g.id) || [];
+
       const { error } = await supabase
         .from('group_participants')
         .delete()
         .lt('last_seen', abandonedThreshold)
-        .not('group_id', 'in', `(
-          SELECT id FROM groups 
-          WHERE created_at > '${protectionThreshold}' 
-          AND status IN ('waiting', 'confirmed')
-        )`);
+        .not('group_id', 'in', `(${protectedIds.map(id => `'${id}'`).join(',')})`);
 
       if (error) {
         ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);

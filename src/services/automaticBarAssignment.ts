@@ -97,10 +97,24 @@ export class AutomaticBarAssignmentService {
   }
 
   /**
-   * Envoi de message système
+   * Envoi de message système avec réduction des doublons
    */
   private static async sendSystemMessage(groupId: string, message: string): Promise<void> {
     try {
+      // NOUVEAU: Vérifier s'il n'y a pas déjà un message système récent similaire
+      const { data: recentMessages } = await supabase
+        .from('group_messages')
+        .select('id')
+        .eq('group_id', groupId)
+        .eq('is_system', true)
+        .gte('created_at', new Date(Date.now() - 2 * 60 * 1000).toISOString()) // 2 minutes
+        .ilike('message', '%bar%'); // Messages contenant "bar"
+
+      if (recentMessages && recentMessages.length > 0) {
+        console.log('⏭️ [AUTOMATIC BAR ASSIGNMENT] Message système similaire récent trouvé, éviter le doublon');
+        return;
+      }
+
       await supabase
         .from('group_messages')
         .insert({

@@ -2,62 +2,97 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export class GroupMessagingService {
+  // Cache pour éviter les messages en double - AUGMENTÉ pour plus d'efficacité
   private static sentSystemMessages = new Set<string>();
+  
+  // Cache pour les derniers messages d'attribution de bar (délai augmenté à 5 minutes)
   private static lastBarAssignmentTime = new Map<string, number>();
+  
+  // NOUVEAU: Filtre plus strict pour réduire les messages système
+  private static readonly CRITICAL_MESSAGE_PATTERNS = [
+    'Rendez-vous au',
+    'groupe complet',
+    'bar assigné',
+    'Attribution automatique'
+  ];
 
+  /**
+   * Envoyer un message système à un groupe avec filtrage STRICT pour réduire le spam
+   */
   static async sendGroupSystemMessage(groupId: string, message: string): Promise<void> {
     try {
-      // Filtrer les messages système - ne garder que les plus importants
-      const isImportantMessage = message.includes('Rendez-vous au') || 
-                                message.includes('bar assigné') ||
-                                message.includes('groupe complet');
-
-      if (!isImportantMessage) {
-        console.log('🚫 Message système non important, ignoré:', message);
-        return;
-      }
-
-      // Créer une clé unique pour ce message et groupe
-      const messageKey = `${groupId}:${message}`;
+      // NOUVEAU: Filtrage plus strict - seulement les messages vraiment critiques
+      const isCriticalMessage = this.CRITICAL_MESSAGE_PATTERNS.some(pattern => 
+        message.includes(pattern)
+      );
       
-      // Vérifier si ce message a déjà été envoyé récemment
-      if (this.sentSystemMessages.has(messageKey)) {
-        console.log('🚫 Message système déjà envoyé récemment, ignoré:', message);
+      if (!isCriticalMessage) {
+        console.log('⏭️ [GROUP MESSAGING] Message système filtré (non critique):', message);
         return;
       }
 
-      // Vérifier spécifiquement pour les messages de bar assigné
-      if (message.includes('Rendez-vous au')) {
-        const lastTime = this.lastBarAssignmentTime.get(groupId) || 0;
+      // Rate limiting AUGMENTÉ pour les messages d'attribution de bar (délai de 5 minutes)
+      if (message.includes('Rendez-vous au') || message.includes('bar assigné')) {
+        const lastTime = this.lastBarAssignmentTime.get(groupId);
         const now = Date.now();
-        if (now - lastTime < 120000) { // 2 minutes minimum entre les messages d'assignation
-          console.log('🚫 Message d\'assignation de bar trop récent, ignoré');
+        
+        if (lastTime && (now - lastTime) < 5 * 60 * 1000) { // 5 minutes (augmenté)
+          console.log('⏳ [GROUP MESSAGING] Message d\'attribution de bar rate limited pour groupe:', groupId);
           return;
         }
+        
         this.lastBarAssignmentTime.set(groupId, now);
       }
 
+      // NOUVEAU: Vérifier les messages récents en base pour éviter les doublons
+      const { data: recentMessages } = await supabase
+        .from('group_messages')
+        .select('id, message')
+        .eq('group_id', groupId)
+        .eq('is_system', true)
+        .gte('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString()) // 5 minutes
+        .limit(5);
+
+      if (recentMessages && recentMessages.some(msg => 
+        msg.message.includes(message.substring(0, 30)) || 
+        message.includes(msg.message.substring(0, 30))
+      )) {
+        console.log('⏭️ [GROUP MESSAGING] Message système similaire récent trouvé, éviter le doublon');
+        return;
+      }
+
+      // Clé unique pour éviter les doublons en mémoire
+      const messageKey = `${groupId}-${message.substring(0, 50)}`;
+      
+      if (this.sentSystemMessages.has(messageKey)) {
+        console.log('⏭️ [GROUP MESSAGING] Message système déjà envoyé, éviter le doublon:', messageKey);
+        return;
+      }
+
+      // Envoyer le message
       const { error } = await supabase
         .from('group_messages')
         .insert({
           group_id: groupId,
-          user_id: '00000000-0000-0000-0000-000000000000', // ID factice pour les messages système
+          user_id: '00000000-0000-0000-0000-000000000000', // ID système
           message: message,
           is_system: true
         });
 
       if (error) {
-        console.error('❌ Erreur envoi message système groupe:', error);
-      } else {
-        console.log('✅ Message système important envoyé au groupe:', message);
-        // Ajouter au cache et supprimer après 5 minutes
-        this.sentSystemMessages.add(messageKey);
-        setTimeout(() => {
-          this.sentSystemMessages.delete(messageKey);
-        }, 300000);
+        console.error('❌ [GROUP MESSAGING] Erreur envoi message système:', error);
+        return;
       }
+
+      // Ajouter au cache pour éviter les doublons (expire après 10 minutes)
+      this.sentSystemMessages.add(messageKey);
+      setTimeout(() => {
+        this.sentSystemMessages.delete(messageKey);
+      }, 10 * 60 * 1000); // 10 minutes (augmenté)
+
+      console.log('✅ [GROUP MESSAGING] Message système critique envoyé:', { groupId, message: message.substring(0, 100) });
     } catch (error) {
-      console.error('❌ Erreur sendGroupSystemMessage:', error);
+      console.error('❌ [GROUP MESSAGING] Erreur dans sendGroupSystemMessage:', error);
     }
   }
 }
