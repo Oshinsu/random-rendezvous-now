@@ -99,9 +99,9 @@ export class RateLimiter {
 // Predefined rate limit configurations
 export const RATE_LIMITS = {
   GROUP_CREATION: {
-    maxAttempts: 3,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 300000 // 5 minutes
+    maxAttempts: 2, // Reduced from 3 to 2 to be more restrictive
+    windowMs: 90000, // Increased from 60s to 90s window
+    blockDurationMs: 600000 // Increased from 5 to 10 minutes
   },
   GROUP_JOIN: {
     maxAttempts: 5,

@@ -130,17 +130,30 @@ export class IntelligentCleanupService {
 
       const protectedIds = protectedGroupIds?.map(g => g.id) || [];
 
-      const { error } = await supabase
-        .from('group_participants')
-        .delete()
-        .lt('last_seen', abandonedThreshold)
-        .not('group_id', 'in', `(${protectedIds.map(id => `'${id}'`).join(',')})`);
-
-      if (error) {
-        ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);
+      // FIX: Prevent UUID errors and empty filter by checking for protected IDs
+      if (protectedIds.length > 0) {
+        const { error } = await supabase
+          .from('group_participants')
+          .delete()
+          .lt('last_seen', abandonedThreshold)
+          .not('group_id', 'in', `(${protectedIds.join(',')})`);
+          
+        if (error) {
+          ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);
+        }
       } else {
-        console.log('✅ [INTELLIGENT CLEANUP] Participants abandonnés (6h+) supprimés, groupes vivants protégés');
+        // If no protected groups, clean all abandoned participants
+        const { error } = await supabase
+          .from('group_participants')
+          .delete()
+          .lt('last_seen', abandonedThreshold);
+          
+        if (error) {
+          ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);
+        }
       }
+
+      console.log('✅ [INTELLIGENT CLEANUP] Participants abandonnés (6h+) supprimés, groupes vivants protégés');
     } catch (error) {
       ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);
     }
