@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { useSessionProtection } from '@/hooks/useSessionProtection';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
@@ -21,7 +20,6 @@ import type { GroupMember } from '@/types/groups';
 export const useUnifiedGroups = () => {
   const { user } = useAuth();
   const { trackGroupCreate, trackGroupJoin } = useAnalytics();
-  const { protectOperation } = useSessionProtection();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
@@ -152,10 +150,10 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: false, // DISABLED automatic refetching
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false, // Only refetch if stale
-    refetchOnWindowFocus: false, // DISABLED
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   // Battement de cœur d'activité UNIFIÉ
@@ -173,141 +171,122 @@ export const useUnifiedGroups = () => {
     heartbeatInterval: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
   });
 
-  // Fonction de création de groupe avec rate limiting et protection de session
+  // Fonction de création de groupe avec rate limiting
   const joinRandomGroup = async (): Promise<boolean> => {
-    return protectOperation(async () => {
-      if (!user) {
-        toast({ 
-          title: 'Erreur', 
-          description: 'Vous devez être connecté pour rejoindre un groupe.', 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      if (loading) {
-        return false;
-      }
-
-      // Apply rate limiting
-      if (RateLimiter.isRateLimited(`group_creation_${user.id}`, RATE_LIMITS.GROUP_CREATION)) {
-        const status = RateLimiter.getStatus(`group_creation_${user.id}`);
-        const remainingMinutes = Math.ceil(status.remainingTime / 60000);
-        
-        toast({ 
-          title: 'Trop de tentatives', 
-          description: `Veuillez attendre ${remainingMinutes} minute(s) avant de créer un nouveau groupe.`, 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      // Enhanced authentication check with session monitoring
-      console.log('🚀 [SESSION PROTECTION] Starting group operation with enhanced monitoring', {
-        userId: user.id,
-        timestamp: new Date().toISOString(),
-        sessionExists: !!user,
-        hasLocation: !!userLocation
+    if (!user) {
+      toast({ 
+        title: 'Erreur', 
+        description: 'Vous devez être connecté pour rejoindre un groupe.', 
+        variant: 'destructive' 
       });
+      return false;
+    }
 
-      const isAuthenticated = await UnifiedGroupService.verifyUserAuthentication();
-      if (!isAuthenticated) {
-        console.error('🚨 [SESSION PROTECTION] Authentication verification failed');
+    if (loading) {
+      return false;
+    }
+
+    // Apply rate limiting
+    if (RateLimiter.isRateLimited(`group_creation_${user.id}`, RATE_LIMITS.GROUP_CREATION)) {
+      const status = RateLimiter.getStatus(`group_creation_${user.id}`);
+      const remainingMinutes = Math.ceil(status.remainingTime / 60000);
+      
+      toast({ 
+        title: 'Trop de tentatives', 
+        description: `Veuillez attendre ${remainingMinutes} minute(s) avant de créer un nouveau groupe.`, 
+        variant: 'destructive' 
+      });
+      return false;
+    }
+
+    const isAuthenticated = await UnifiedGroupService.verifyUserAuthentication();
+    if (!isAuthenticated) {
+      toast({ 
+        title: 'Session expirée', 
+        description: 'Veuillez vous reconnecter.', 
+        variant: 'destructive' 
+      });
+      return false;
+    }
+
+    setLoading(true);
+    
+    try {
+      console.log('🎯 DÉBUT - Recherche/Création de groupe avec nouveau système');
+      
+      // 1. Géolocalisation fraîche
+      console.log('📍 Géolocalisation...');
+      const location = await getUserLocation(true);
+      if (!location) {
         toast({ 
-          title: 'Session expirée', 
-          description: 'Veuillez vous reconnecter.', 
+          title: 'Géolocalisation requise', 
+          description: 'Votre position est nécessaire pour créer un groupe.', 
           variant: 'destructive' 
         });
         return false;
       }
 
-      setLoading(true);
+      // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
+      console.log('🔍 Vérification des participations avec nouveau système...');
+      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
+      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
       
-      try {
-        console.log('🎯 DÉBUT - Recherche/Création de groupe avec nouveau système et protection de session');
-        
-        // 1. Géolocalisation fraîche
-        console.log('📍 Géolocalisation...');
-        const location = await getUserLocation(true);
-        if (!location) {
-          toast({ 
-            title: 'Géolocalisation requise', 
-            description: 'Votre position est nécessaire pour créer un groupe.', 
-            variant: 'destructive' 
-          });
-          return false;
-        }
-
-        // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
-        console.log('🔍 Vérification des participations avec nouveau système...');
-        const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
-        const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
-        
-        if (activeParticipations.length > 0) {
-          console.log('⚠️ Participation active détectée avec nouveau système');
-          toast({ 
-            title: 'Déjà dans un groupe', 
-            description: 'Vous êtes déjà dans un groupe actif.', 
-            variant: 'destructive' 
-          });
-          return false;
-        }
-
-        // 3. Recherche de groupe compatible
-        console.log('🌍 Recherche de groupe compatible...');
-        const targetGroup = await GroupGeolocationService.findCompatibleGroup(location);
-
-        if (!targetGroup) {
-          // 4. Création de groupe neuf
-          console.log('🆕 Création d\'un groupe neuf...');
-          const newGroup = await UnifiedGroupService.createGroup(location, user.id);
-          
-          if (newGroup) {
-            console.log('✅ [SESSION PROTECTION] Group creation successful');
-            trackGroupCreate(newGroup.id);
-            queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
-            setTimeout(() => refetchGroups(), 500);
-            
-            toast({ 
-              title: '🎉 Nouveau groupe créé', 
-              description: `Groupe créé à ${location.locationName}. Vous pouvez maintenant fermer l'app !`, 
-            });
-            return true;
-          }
-          return false;
-        } else {
-          // 5. Rejoindre groupe existant
-          console.log('🔗 Rejoindre groupe compatible existant...');
-          const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
-          
-          if (success) {
-            console.log('✅ [SESSION PROTECTION] Group join successful');
-            trackGroupJoin(targetGroup.id);
-            queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
-            setTimeout(() => refetchGroups(), 500);
-            
-            toast({ 
-              title: '✅ Groupe rejoint', 
-              description: `Vous avez rejoint un groupe à ${location.locationName}. Vous pouvez fermer l'app !`, 
-            });
-          }
-          return success;
-        }
-      } catch (error) {
-        console.error('🚨 [SESSION PROTECTION] Group operation failed', {
-          userId: user.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
+      if (activeParticipations.length > 0) {
+        console.log('⚠️ Participation active détectée avec nouveau système');
+        toast({ 
+          title: 'Déjà dans un groupe', 
+          description: 'Vous êtes déjà dans un groupe actif.', 
+          variant: 'destructive' 
         });
-        
-        ErrorHandler.logError('JOIN_RANDOM_GROUP', error);
-        const appError = ErrorHandler.handleGenericError(error as Error);
-        ErrorHandler.showErrorToast(appError);
         return false;
-      } finally {
-        setLoading(false);
       }
-    });
+
+      // 3. Recherche de groupe compatible
+      console.log('🌍 Recherche de groupe compatible...');
+      const targetGroup = await GroupGeolocationService.findCompatibleGroup(location);
+
+      if (!targetGroup) {
+        // 4. Création de groupe neuf
+        console.log('🆕 Création d\'un groupe neuf...');
+        const newGroup = await UnifiedGroupService.createGroup(location, user.id);
+        
+        if (newGroup) {
+          trackGroupCreate(newGroup.id);
+          queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
+          setTimeout(() => refetchGroups(), 500);
+          
+          toast({ 
+            title: '🎉 Nouveau groupe créé', 
+            description: `Groupe créé à ${location.locationName}. Vous pouvez maintenant fermer l'app !`, 
+          });
+          return true;
+        }
+        return false;
+      } else {
+        // 5. Rejoindre groupe existant
+        console.log('🔗 Rejoindre groupe compatible existant...');
+        const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
+        
+        if (success) {
+          trackGroupJoin(targetGroup.id);
+          queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
+          setTimeout(() => refetchGroups(), 500);
+          
+          toast({ 
+            title: '✅ Groupe rejoint', 
+            description: `Vous avez rejoint un groupe à ${location.locationName}. Vous pouvez fermer l'app !`, 
+          });
+        }
+        return success;
+      }
+    } catch (error) {
+      ErrorHandler.logError('JOIN_RANDOM_GROUP', error);
+      const appError = ErrorHandler.handleGenericError(error as Error);
+      ErrorHandler.showErrorToast(appError);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Fonction de sortie avec nettoyage LOCAL seulement

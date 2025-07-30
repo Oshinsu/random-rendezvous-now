@@ -11,7 +11,7 @@ export class EnhancedGroupRetrievalService {
    */
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
-      // Log silently reduced to avoid spam
+      console.log('🔍 [ENHANCED] Récupération participations avec filtrage unifié:', userId);
       
       // Utiliser le seuil unifié pour la récupération
       const thresholdTime = new Date(Date.now() - GROUP_CONSTANTS.CLEANUP_THRESHOLDS.VERY_OLD_GROUPS).toISOString();
@@ -52,7 +52,7 @@ export class EnhancedGroupRetrievalService {
         return [];
       }
 
-      // Silent logging - reduced spam
+      console.log('✅ [ENHANCED] Participations trouvées (filtrage unifié):', data?.length || 0);
       return data || [];
     } catch (error) {
       ErrorHandler.logError('ENHANCED_GET_USER_PARTICIPATIONS', error);
@@ -85,7 +85,7 @@ export class EnhancedGroupRetrievalService {
       return isActive;
     });
     
-    // Silent logging - reduced spam
+    console.log('✅ [ENHANCED] Participations actives après filtrage unifié:', activeParticipations.length);
     return activeParticipations;
   }
 
@@ -210,7 +210,7 @@ export class EnhancedGroupRetrievalService {
       validGroups.push(group as Group);
     }
     
-    // Silent logging - reduced spam
+    console.log('✅ [ENHANCED] Groupes valides extraits avec validation:', validGroups.length);
     return validGroups;
   }
 }
