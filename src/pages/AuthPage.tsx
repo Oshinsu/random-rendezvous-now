@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useAuth } from '@/contexts/AuthContext';
+import { RateLimitNotification } from '@/components/RateLimitNotification';
+import AuthRateLimitHandler from '@/utils/authRateLimitHandler';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -43,7 +45,11 @@ const AuthPage = () => {
 
       if (error) {
         console.error('❌ Signup error:', error);
-        toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
+        
+        // Handle rate limiting
+        if (!AuthRateLimitHandler.handleRateLimitError(error)) {
+          toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
+        }
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
         console.log('✅ Signup successful, email confirmation required');
@@ -67,7 +73,11 @@ const AuthPage = () => {
 
       if (error) {
         console.error('❌ Signin error:', error);
-        toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
+        
+        // Handle rate limiting
+        if (!AuthRateLimitHandler.handleRateLimitError(error)) {
+          toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
+        }
       } else {
         trackLogin();
         console.log('✅ Signin successful');
@@ -96,7 +106,9 @@ const AuthPage = () => {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+      <div className="w-[400px]">
+        <RateLimitNotification />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="signin">Se Connecter</TabsTrigger>
           <TabsTrigger value="signup">S'inscrire</TabsTrigger>
@@ -211,7 +223,8 @@ const AuthPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 };
