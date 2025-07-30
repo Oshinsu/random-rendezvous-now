@@ -67,8 +67,8 @@ export const useSimpleGroupManagement = () => {
       }
     },
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Optimized: 90 seconds
   });
 
   // Activity heartbeat - activate when user has an active group
@@ -76,7 +76,7 @@ export const useSimpleGroupManagement = () => {
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
     enabled: !!activeGroupId,
-    intervalMs: 30000 // 30 seconds
+    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // Optimized: 10 minutes
   });
 
   console.log('💓 [SIMPLE] Heartbeat status:', { 

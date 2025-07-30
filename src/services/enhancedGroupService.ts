@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
-import { OptimizedCleanupService } from './optimizedCleanupService';
 import { IntelligentCleanupService } from './intelligentCleanupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
@@ -83,8 +82,8 @@ export class EnhancedGroupService {
         .filter(group => {
           if (!group) return false;
           
-          // Appliquer le filtrage d'âge des groupes (3 heures max)
-          return OptimizedCleanupService.isGroupActive(group);
+          // Appliquer le filtrage d'âge des groupes via IntelligentCleanupService
+          return IntelligentCleanupService.isGroupLive(group);
         }) as Group[];
 
       console.log(`✅ [ENHANCED] ${validGroups.length} groupes actifs trouvés`);
@@ -339,8 +338,7 @@ export class EnhancedGroupService {
 
       console.log('✅ [ENHANCED] Participation supprimée avec succès');
 
-      // Déclencher un nettoyage immédiat pour ce groupe
-      await OptimizedCleanupService.runRealtimeCleanup();
+      // Le nettoyage se fera automatiquement via IntelligentCleanupService
 
       toast({ 
         title: '✅ Groupe quitté', 

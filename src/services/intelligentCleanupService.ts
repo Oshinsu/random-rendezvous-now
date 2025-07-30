@@ -42,6 +42,8 @@ export class IntelligentCleanupService {
       // 7. Transition des groupes confirmés terminés
       await this.transitionCompletedGroups();
       
+      // Pas d'autres services de nettoyage - ce service est UNIQUE
+      
       console.log('✅ [INTELLIGENT CLEANUP] Nettoyage intelligent terminé');
     } catch (error) {
       ErrorHandler.logError('INTELLIGENT_CLEANUP', error);
@@ -323,15 +325,15 @@ export class IntelligentCleanupService {
   }
 
   /**
-   * Démarrage du nettoyage périodique intelligent (toutes les 30 minutes)
+   * Démarrage du nettoyage périodique intelligent - SERVICE UNIQUE
    */
   static startPeriodicIntelligentCleanup(): void {
-    console.log('⏰ [INTELLIGENT CLEANUP] Démarrage nettoyage périodique intelligent (30 min)');
+    console.log('⏰ [INTELLIGENT CLEANUP] SEUL SERVICE DE NETTOYAGE ACTIF - Démarrage (30 min)');
     
     // Nettoyage immédiat
     this.runIntelligentCleanup();
     
-    // Puis nettoyage toutes les 30 minutes
+    // Puis nettoyage toutes les 30 minutes selon GROUP_CONSTANTS.CLEANUP_FREQUENCY
     setInterval(() => {
       this.runIntelligentCleanup();
     }, GROUP_CONSTANTS.CLEANUP_FREQUENCY);

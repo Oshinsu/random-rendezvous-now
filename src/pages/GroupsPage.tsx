@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
-import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
+// UnifiedCleanupService désactivé - nettoyage géré par IntelligentCleanupService
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
 import GroupMap from '@/components/GroupMap';
@@ -22,11 +22,7 @@ const GroupsPage = () => {
   useEffect(() => {
     console.log('🔄 [GROUPS PAGE UNIFIÉ] Déclenchement récupération avec système unifié');
     
-    // Déclenchement du nettoyage unifié si nécessaire
-    if (userGroups.length === 0) {
-      console.log('🧹 [GROUPS PAGE UNIFIÉ] Pas de groupes trouvés - nettoyage préventif');
-      UnifiedCleanupService.forceEmergencyCleanup();
-    }
+    // Le nettoyage est géré automatiquement par IntelligentCleanupService
     
     // Force un refetch immédiat pour la récupération
     refetchGroups();

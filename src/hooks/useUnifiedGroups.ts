@@ -6,7 +6,7 @@ import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
-import { UnifiedCleanupService } from '@/services/unifiedCleanupService';
+// UnifiedCleanupService désactivé - utilisation d'IntelligentCleanupService uniquement
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
@@ -150,8 +150,8 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Optimized: 90 seconds
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });

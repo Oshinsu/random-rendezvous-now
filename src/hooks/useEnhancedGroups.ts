@@ -41,8 +41,8 @@ export const useEnhancedGroups = () => {
       return await EnhancedGroupService.getUserActiveGroups(user.id);
     },
     enabled: !!user?.id,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // 30 secondes
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // 15 secondes
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Optimized: 90 seconds
   });
 
   // Récupération des membres du premier groupe actif
@@ -57,8 +57,8 @@ export const useEnhancedGroups = () => {
       return await EnhancedGroupService.getGroupActiveMembers(activeGroup.id);
     },
     enabled: !!activeGroup?.id,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // 30 secondes
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // 15 secondes
+    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
+    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Optimized: 90 seconds
   });
 
   // Battement de cœur d'activité pour le groupe actif

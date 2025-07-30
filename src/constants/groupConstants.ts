@@ -1,9 +1,9 @@
 
-// CONSTANTES INTELLIGENTES - Plan de nettoyage optimisé
+// CONSTANTES HARMONISÉES - IntelligentCleanupService UNIQUEMENT
 export const GROUP_CONSTANTS = {
   // === PROTECTION DES GROUPES VIVANTS ===
-  // Temps considéré comme "connecté en temps réel"
-  CONNECTION_THRESHOLD: 5 * 60 * 1000, // 5 minutes - vraiment connecté
+  // Temps considéré comme "connecté en temps réel" - AUGMENTÉ pour réduire le stress
+  CONNECTION_THRESHOLD: 10 * 60 * 1000, // 10 minutes - vraiment connecté (plus patient)
   
   // Temps pour groupes "en formation active" (protection totale)
   ACTIVE_GROUP_PROTECTION: 30 * 60 * 1000, // 30 minutes - protection totale
@@ -11,47 +11,47 @@ export const GROUP_CONSTANTS = {
   // Temps d'attente maximum pour formation de groupe
   GROUP_FORMATION_TIMEOUT: 60 * 60 * 1000, // 1 HEURE - délai d'attente réaliste
   
-  // === NETTOYAGE INTELLIGENT ===
-  // Participants considérés comme "abandonnés"
-  PARTICIPANT_ABANDONED_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures pour abandon
+  // === NETTOYAGE INTELLIGENT UNIFIÉ ===
+  // Participants considérés comme "abandonnés" - RÉDUIT pour harmoniser
+  PARTICIPANT_ABANDONED_THRESHOLD: 2 * 60 * 60 * 1000, // 2 heures pour abandon (réduit)
   
-  // Groupes très anciens - nettoyage final
-  VERY_OLD_GROUP_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures pour nettoyage final
+  // Groupes très anciens - nettoyage final - RÉDUIT pour harmoniser
+  VERY_OLD_GROUP_THRESHOLD: 12 * 60 * 60 * 1000, // 12 heures pour nettoyage final (réduit)
   
-  // === RÉTROCOMPATIBILITÉ ===
-  PARTICIPANT_ACTIVITY_THRESHOLD: 6 * 60 * 60 * 1000, // Compatible avec logique existante
+  // === HARMONISATION DES SEUILS ===
+  PARTICIPANT_ACTIVITY_THRESHOLD: 2 * 60 * 60 * 1000, // Aligné avec PARTICIPANT_ABANDONED
   MAX_GROUP_AGE_FOR_JOIN: 60 * 60 * 1000, // 1 heure maximum pour rejoindre
-  PARTICIPANT_INACTIVE_THRESHOLD: 6 * 60 * 60 * 1000, // Alias pour compatibilité
-  PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Alias pour compatibilité
+  PARTICIPANT_INACTIVE_THRESHOLD: 2 * 60 * 60 * 1000, // Aligné avec PARTICIPANT_ABANDONED
+  PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Désactivé mais alias conservé
   
-  // Nettoyage périodique - plus fréquent mais intelligent
-  CLEANUP_FREQUENCY: 30 * 60 * 1000, // 30 minutes - fréquence pour détecter rapidement
-  HEARTBEAT_INTERVAL: 30 * 1000, // 30 secondes - battement de cœur d'activité
+  // Nettoyage INTELLIGENT UNIQUEMENT - Fréquence réduite pour réduire le stress
+  CLEANUP_FREQUENCY: 30 * 60 * 1000, // 30 minutes - IntelligentCleanupService uniquement
+  HEARTBEAT_INTERVAL: 10 * 60 * 1000, // 10 minutes - battement de cœur moins fréquent
   
   // Paramètres de groupe INCHANGÉS
   MAX_PARTICIPANTS: 5,
   SEARCH_RADIUS: 10000, // 10km en mètres
   
-  // Intervalles de rafraîchissement OPTIMISÉS pour détecter changements rapidement
-  GROUP_REFETCH_INTERVAL: 30000, // 30 secondes (plus rapide)
-  GROUP_STALE_TIME: 15000, // 15 secondes (plus réactif)
+  // Intervalles de rafraîchissement OPTIMISÉS pour réduire la charge serveur
+  GROUP_REFETCH_INTERVAL: 2 * 60 * 1000, // 2 minutes (moins de stress)
+  GROUP_STALE_TIME: 90 * 1000, // 90 secondes (plus patient)
   
-  // Seuils de nettoyage AGRESSIFS pour éliminer les groupes zombies
+  // Seuils de nettoyage HARMONISÉS pour IntelligentCleanupService UNIQUEMENT
   CLEANUP_THRESHOLDS: {
-    // Participants inactifs depuis 2 heures (au lieu de 6h)
+    // Participants inactifs alignés avec PARTICIPANT_ABANDONED_THRESHOLD
     INACTIVE_PARTICIPANTS: 2 * 60 * 60 * 1000,
     
-    // Groupes en attente anciens depuis 1 heure (au lieu de 12h)
-    OLD_WAITING_GROUPS: 1 * 60 * 60 * 1000,
+    // Groupes en attente avec plus de patience
+    OLD_WAITING_GROUPS: 45 * 60 * 1000, // 45 minutes (plus patient)
     
-    // Groupes terminés après 3 heures (au lieu de 6h)
-    COMPLETED_GROUPS: 3 * 60 * 60 * 1000,
+    // Groupes terminés - standard
+    COMPLETED_GROUPS: 6 * 60 * 60 * 1000, // Retour à 6h (plus patient)
     
-    // Groupes très anciens après 12 heures (au lieu de 48h)
+    // Groupes très anciens alignés avec VERY_OLD_GROUP_THRESHOLD
     VERY_OLD_GROUPS: 12 * 60 * 60 * 1000,
     
-    // NOUVEAU: Groupes vides depuis 30 minutes
-    EMPTY_GROUPS: 30 * 60 * 1000,
+    // Groupes vides avec plus de patience
+    EMPTY_GROUPS: 10 * 60 * 1000, // 10 minutes (plus patient)
   },
   
   // Constantes pour rejoindre des groupes existants
