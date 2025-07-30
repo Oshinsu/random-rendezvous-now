@@ -96,27 +96,27 @@ export class RateLimiter {
   }
 }
 
-// Predefined rate limit configurations
+// Predefined rate limit configurations - RELAXED for debugging
 export const RATE_LIMITS = {
   GROUP_CREATION: {
-    maxAttempts: 2, // Reduced from 3 to 2 to be more restrictive
-    windowMs: 90000, // Increased from 60s to 90s window
-    blockDurationMs: 600000 // Increased from 5 to 10 minutes
+    maxAttempts: 10, // Much more relaxed
+    windowMs: 30000, // Reduced window
+    blockDurationMs: 60000 // Only 1 minute block
   },
   GROUP_JOIN: {
-    maxAttempts: 5,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 180000 // 3 minutes
-  },
-  MESSAGE_SENDING: {
     maxAttempts: 20,
     windowMs: 60000, // 1 minute
     blockDurationMs: 60000 // 1 minute
   },
+  MESSAGE_SENDING: {
+    maxAttempts: 50,
+    windowMs: 60000, // 1 minute
+    blockDurationMs: 30000 // 30 seconds
+  },
   GEOLOCATION: {
-    maxAttempts: 10,
-    windowMs: 300000, // 5 minutes
-    blockDurationMs: 600000 // 10 minutes
+    maxAttempts: 50,
+    windowMs: 60000, // 1 minute
+    blockDurationMs: 30000 // 30 seconds
   }
 };
 

@@ -152,10 +152,10 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL,
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    refetchInterval: false, // DISABLED automatic refetching
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false, // Only refetch if stale
+    refetchOnWindowFocus: false, // DISABLED
   });
 
   // Battement de cœur d'activité UNIFIÉ
