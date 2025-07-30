@@ -89,6 +89,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         bar_address: selectedBar.formatted_address,
         bar_place_id: selectedBar.place_id,
         meeting_time: meetingTime.toISOString(),
+        assignment_type: 'manual',
         location: userLocation ? {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,

@@ -74,7 +74,21 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 6. Message de confirmation avec détails
+      // 6. Track bar visit assignment
+      if (typeof window !== 'undefined') {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'bar_visit',
+          group_id: groupId,
+          bar_name: barResponse.bar.name,
+          bar_address: barResponse.bar.formatted_address,
+          bar_place_id: barResponse.bar.place_id,
+          meeting_time: meetingTime.toISOString(),
+          assignment_type: 'automatic'
+        });
+      }
+
+      // 7. Message de confirmation avec détails
       await this.sendSystemMessage(
         groupId, 
         `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} 🎉`

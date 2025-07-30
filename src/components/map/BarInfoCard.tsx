@@ -3,13 +3,9 @@ import React from 'react';
 import { MapPin, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BarInfoCardProps } from './types';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 const BarInfoCard = ({ barName, barAddress, hasExactLocation, onOpenInGoogleMaps }: BarInfoCardProps) => {
-  const { trackBarVisit } = useAnalytics();
-
   const handleOpenInGoogleMaps = () => {
-    trackBarVisit(barName);
     onOpenInGoogleMaps();
   };
 
