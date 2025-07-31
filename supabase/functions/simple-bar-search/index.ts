@@ -328,11 +328,11 @@ serve(async (req) => {
 
     // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT
     let selectedBars = [];
-    let searchRadius = 8000; // Rayon initial
+    let searchRadius = 12000; // Rayon initial augmenté
     let fallbackLevel = 0;
 
     // NIVEAU 1: Recherche normale avec rayon initial
-    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 8km');
+    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 12km');
     let allPlaces = await searchBarsWithRadius(latitude, longitude, searchRadius, apiKey);
     
     if (allPlaces.length === 0) {
