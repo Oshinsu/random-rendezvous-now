@@ -53,7 +53,7 @@ const Index = () => {
                 size="sm"
               >
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Chercher un </span>groupe
+                <span className="hidden xs:inline">Chercher un </span>Groupe
               </Button>
               <Button 
                 onClick={handleSignOut} 
