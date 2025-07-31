@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         if (event === 'SIGNED_OUT') {
           console.log('👋 User signed out');
-          navigate('/auth');
+          navigate('/');
         }
         
         // Only set loading to false after we've processed the auth state
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Still clear local state on error
       setSession(null);
       setUser(null);
-      navigate('/auth');
+      navigate('/');
     } finally {
       setLoading(false);
     }
