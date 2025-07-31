@@ -90,14 +90,14 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50">
-        <div className="text-center space-y-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
+        <div className="text-center space-y-6 sm:space-y-8 w-full max-w-md mx-auto">
           {/* Bouton circulaire avec logo Random */}
           <button
             onClick={handleButtonClick}
             disabled={loading}
             className="
-              relative w-40 h-40 rounded-full 
+              relative w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto
               bg-gradient-to-br from-brand-400 to-brand-600 
               shadow-glow hover:shadow-glow-strong
               transition-all duration-300 transform-gpu
@@ -119,7 +119,7 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-center w-full h-full">
                 <RandomLogo 
-                  size={80} 
+                  size={window.innerWidth < 640 ? 60 : 80} 
                   withAura={false}
                   className="drop-shadow-lg"
                 />
@@ -127,18 +127,18 @@ const Dashboard = () => {
             </div>
             
             {/* Indicateur de statut */}
-            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
+            <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
               {isSearching ? (
-                <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500 animate-pulse"></div>
               ) : (
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
               )}
             </div>
           </button>
 
           {/* Texte d'état avec countdown */}
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-gray-800">
+          <div className="space-y-2 px-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               {redirectCountdown > 0 
                 ? 'Groupe trouvé !' 
                 : isSearching 
@@ -146,7 +146,7 @@ const Dashboard = () => {
                 : 'Prêt pour l\'aventure'
               }
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
               {redirectCountdown > 0
                 ? `Redirection vers votre groupe dans ${redirectCountdown}s`
                 : isSearching 
@@ -157,14 +157,14 @@ const Dashboard = () => {
             
             {/* Barre de progression pour le countdown */}
             {redirectCountdown > 0 && (
-              <div className="w-64 mx-auto mt-4">
+              <div className="w-full max-w-xs mx-auto mt-4">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-brand-500 h-2 rounded-full transition-all duration-1000 ease-linear"
                     style={{ width: `${((15 - redirectCountdown) / 15) * 100}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-2 px-2">
                   Ou cliquez pour accéder immédiatement à votre groupe
                 </p>
               </div>
@@ -181,7 +181,7 @@ const Dashboard = () => {
               setIsSearching(false)
               setRedirectCountdown(0)
             }}
-              className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base w-full max-w-xs"
             >
               Voir mon groupe maintenant
             </button>

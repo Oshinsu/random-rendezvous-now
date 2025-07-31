@@ -61,7 +61,7 @@ const GroupsPage = () => {
   return (
     <AppLayout>
       <div className="min-h-full bg-gradient-to-br from-white via-brand-50/30 to-brand-100/20">
-        <div className="px-4 md:px-8 py-6">
+        <div className="px-3 sm:px-4 md:px-8 py-4 sm:py-6">
           <div className="max-w-6xl mx-auto">
             
             {loading && userGroups.length === 0 && <LoadingState />}
@@ -78,8 +78,8 @@ const GroupsPage = () => {
                   loading={loading}
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
                     <GroupMembersList
                       members={groupMembers}
                       maxParticipants={currentGroup.max_participants}
@@ -93,14 +93,14 @@ const GroupsPage = () => {
                     />
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
                     {needsBarAssignment && (
-                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
                         <div className="text-center">
-                          <h3 className="text-base font-heading font-semibold text-amber-800 mb-2">
+                          <h3 className="text-sm sm:text-base font-heading font-semibold text-amber-800 mb-2">
                             🍺 Recherche de destination
                           </h3>
-                          <p className="text-sm text-amber-700 mb-4">
+                          <p className="text-xs sm:text-sm text-amber-700 mb-3 sm:mb-4 leading-relaxed">
                             Votre groupe est complet ! Trouvons le bar parfait pour votre aventure.
                           </p>
                           <BarAssignmentButton

@@ -33,32 +33,32 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Membres du Groupe ({displayParticipants}/{maxParticipants})
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+          <span className="truncate">Membres du Groupe ({displayParticipants}/{maxParticipants})</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {/* Membres connectés (tous les membres sont connectés maintenant) */}
         {connectedMembers.length > 0 && (
           <div>
-            <h4 className="flex items-center gap-2 text-green-700 font-semibold mb-3">
-              <UserCheck className="h-4 w-4" />
-              Connectés ({connectedMembers.length})
+            <h4 className="flex items-center gap-2 text-green-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+              <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span>Connectés ({connectedMembers.length})</span>
             </h4>
             <div className="space-y-2">
               {connectedMembers.map((member, index) => {
                 const maskedName = getMaskedName(index);
                 return (
-                  <div key={member.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  <div key={member.id} className="flex items-center justify-between p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0">
                         {maskedName.charAt(0)}
                       </div>
-                      <span className="font-medium text-green-900">{maskedName}</span>
+                      <span className="font-medium text-green-900 text-sm sm:text-base truncate">{maskedName}</span>
                     </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs flex-shrink-0">
                       En ligne
                     </Badge>
                   </div>
@@ -71,17 +71,17 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
         {/* Places libres */}
         {emptySlots > 0 && (
           <div>
-            <h4 className="flex items-center gap-2 text-gray-700 font-semibold mb-3">
-              <UserX className="h-4 w-4" />
-              Places libres ({emptySlots})
+            <h4 className="flex items-center gap-2 text-gray-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+              <UserX className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span>Places libres ({emptySlots})</span>
             </h4>
             <div className="space-y-2">
               {Array.from({ length: emptySlots }).map((_, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <UserX className="h-4 w-4 text-gray-600" />
+                <div key={index} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                    <UserX className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
                   </div>
-                  <span className="text-gray-600 italic">En attente d'un participant...</span>
+                  <span className="text-gray-600 italic text-xs sm:text-sm">En attente d'un participant...</span>
                 </div>
               ))}
             </div>

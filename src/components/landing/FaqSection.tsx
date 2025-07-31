@@ -31,21 +31,21 @@ const faqs = [
 
 const FaqSection = () => {
   return (
-    <section className="py-16 md:py-20 bg-secondary">
-      <div className="container mx-auto px-6">
-        <h2 className="text-3xl md:text-4xl font-heading font-bold text-center mb-4">
+    <section className="py-12 sm:py-16 md:py-20 bg-secondary">
+      <div className="container mx-auto px-4 sm:px-6">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
           Questions <span className="text-primary">Brûlantes</span> ?
         </h2>
-        <p className="text-base text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+        <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           On répond franchement, sans détour. Comme on aime chez Random !
         </p>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
           {faqs.map((faq, index) => (
             <AccordionItem value={`item-${index}`} key={index} className="border-b-muted/50 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
-              <AccordionTrigger className="text-left text-base hover:no-underline py-4 font-semibold hover:text-primary transition-colors duration-300">
+              <AccordionTrigger className="text-left text-sm sm:text-base hover:no-underline py-3 sm:py-4 font-semibold hover:text-primary transition-colors duration-300">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4 pt-2 text-sm leading-relaxed">
+              <AccordionContent className="text-muted-foreground pb-3 sm:pb-4 pt-2 text-xs sm:text-sm leading-relaxed">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
