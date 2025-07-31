@@ -21,7 +21,7 @@ const steps = [
   {
     icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
     title: "4. Tu y vas",
-    description: "Rendez-vous dans 1h. La magie du hasard fait le reste !",
+    description: "Rendez-vous dans exactement 1 heure ! Le temps parfait pour se préparer à vivre quelque chose d'inattendu.",
   },
 ];
 

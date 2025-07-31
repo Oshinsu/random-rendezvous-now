@@ -8,7 +8,7 @@ const NoMoreSection = () => {
     <section className="py-12 sm:py-16 md:py-20 bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 sm:px-6 text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold mb-4 sm:mb-6">
-          On Casse les Codes des <span className="underline decoration-wavy">Applis Classiques</span>
+          On Casse les Codes des <span>Applis Classiques</span>
         </h2>
         <p className="text-base sm:text-lg md:text-xl mb-8 sm:mb-10 max-w-3xl mx-auto opacity-90 leading-relaxed">
           Random, c'est différent ! Prépare-toi à vivre quelque chose de totalement nouveau.
