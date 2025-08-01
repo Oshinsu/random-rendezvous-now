@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
+import { useRealtimeGroups } from '@/hooks/useRealtimeGroups';
 // UnifiedCleanupService désactivé - nettoyage géré par IntelligentCleanupService
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
@@ -15,7 +15,15 @@ import LoadingState from '@/components/groups/LoadingState';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 const GroupsPage = () => {
-  const { userGroups, groupMembers, loading, refetchGroups, leaveGroup, userLocation } = useUnifiedGroups();
+  const { 
+    userGroups, 
+    groupMembers, 
+    loading, 
+    refetchGroups, 
+    leaveGroup, 
+    userLocation,
+    realtimeActive 
+  } = useRealtimeGroups();
   // No tracking for page views - only core business events
 
   // Déclenchement du système unifié au montage
