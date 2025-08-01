@@ -35,8 +35,7 @@ const HeroSection = () => {
           Random: <span className="text-primary block sm:inline">1 Clic = 1 Groupe = 1 Bar</span>
         </h1>
         <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
-          Dis <span className="font-semibold text-white">"oui"</span> à l'aventure ! 
-          <span className="font-semibold text-white"> Rencontre 4 personnes géniales autour d'un verre.</span>
+          Clique, on forme ton groupe de 5 et on choisit un bar ouvert près de toi !
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button 
