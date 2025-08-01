@@ -11,6 +11,7 @@ import GroupsPage from "./pages/GroupsPage";
 import ProfilePage from "./pages/ProfilePage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -50,6 +51,7 @@ const AppRoutes = () => (
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
+    <Route path="/contact" element={<ContactPage />} />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>

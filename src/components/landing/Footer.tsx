@@ -18,9 +18,9 @@ const Footer = () => {
             <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               Politique de confidentialité
             </Link>
-            <a href="mailto:contact@random-app.fr" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/contact" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               Contact
-            </a>
+            </Link>
           </div>
         </div>
       </div>
