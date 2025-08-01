@@ -118,11 +118,45 @@ export const useSimpleGroupManagement = () => {
         return false;
       }
 
-      // Import the UnifiedGroupService here to avoid circular dependencies
+      // Import services here to avoid circular dependencies
       const { UnifiedGroupService } = await import('@/services/unifiedGroupService');
+      const { GroupGeolocationService } = await import('@/services/groupGeolocation');
+      
+      console.log('🔍 Recherche de groupe compatible...');
+      
+      // First, try to find a compatible existing group
+      const compatibleGroup = await GroupGeolocationService.findCompatibleGroup(location);
+      
+      if (compatibleGroup) {
+        console.log('✅ Groupe compatible trouvé, tentative de rejoindre:', compatibleGroup.id);
+        
+        // Try to join the existing group
+        const joinSuccess = await UnifiedGroupService.joinGroup(compatibleGroup.id, user.id, location);
+        
+        if (joinSuccess) {
+          console.log('✅ Rejoint avec succès le groupe:', compatibleGroup.id);
+          toast({ 
+            title: 'Groupe trouvé !', 
+            description: 'Vous avez rejoint un groupe existant.', 
+          });
+          await refetchGroups();
+          return true;
+        } else {
+          console.log('❌ Échec pour rejoindre le groupe, création d\'un nouveau...');
+        }
+      } else {
+        console.log('📍 Aucun groupe compatible trouvé, création d\'un nouveau...');
+      }
+      
+      // If no compatible group found or failed to join, create a new one
       const success = await UnifiedGroupService.createSimpleGroup(location, user.id);
       
       if (success) {
+        console.log('✅ Nouveau groupe créé avec succès');
+        toast({ 
+          title: 'Nouveau groupe créé !', 
+          description: 'En attente d\'autres participants...', 
+        });
         await refetchGroups();
       }
       
@@ -131,7 +165,7 @@ export const useSimpleGroupManagement = () => {
       console.error('❌ Erreur joinRandomGroup:', error);
       toast({ 
         title: 'Erreur', 
-        description: 'Impossible de créer un groupe pour le moment.', 
+        description: 'Impossible de rejoindre ou créer un groupe pour le moment.', 
         variant: 'destructive' 
       });
       return false;
