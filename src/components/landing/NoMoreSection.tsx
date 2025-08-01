@@ -10,9 +10,26 @@ const NoMoreSection = () => {
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold mb-4 sm:mb-6">
           On Casse les Codes des <span>Applis Classiques</span>
         </h2>
-        <p className="text-base sm:text-lg md:text-xl mb-8 sm:mb-10 max-w-3xl mx-auto opacity-90 leading-relaxed">
-          Random, c'est différent ! Prépare-toi à vivre quelque chose de totalement nouveau.
-        </p>
+        <div className="mb-8 sm:mb-10 max-w-4xl mx-auto space-y-4 sm:space-y-6">
+          <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚧 Version Beta en cours !</h3>
+            <p className="text-sm sm:text-base opacity-90 leading-relaxed">
+              L'appli est encore en test, alors soyez cool avec nous ! Si vous trouvez des petits bugs, pas de panique - c'est gratuit et on bosse dessus 🛠️
+            </p>
+          </div>
+          <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">⏰ Les Randers se réveillent le soir !</h3>
+            <p className="text-sm sm:text-base opacity-90 leading-relaxed">
+              Évitez les heures de bureau ! Les meilleurs moments pour trouver d'autres Randers ? Entre 17h et 23h. C'est là que ça bouge vraiment 🌙
+            </p>
+          </div>
+          <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚀 Plus on est de fous, plus on rit !</h3>
+            <p className="text-sm sm:text-base opacity-90 leading-relaxed">
+              On lance le 1er août avec nos petits moyens et beaucoup d'espoir ! Alors parlez-en autour de vous et aidez-nous à faire grandir cette French Touch 🇫🇷
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <div className="p-4 sm:p-6 bg-background/10 rounded-xl backdrop-blur-sm animate-fade-in hover:bg-background/20 transition-all duration-300 group" style={{animationDelay: `0ms`}}>
             <img src={step1} alt="Exit le Swipe Sans Fin" className="w-32 h-40 sm:w-40 sm:h-48 object-cover rounded-lg mx-auto mb-3 sm:mb-4" />
