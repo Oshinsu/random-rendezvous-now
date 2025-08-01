@@ -94,6 +94,52 @@ export const useSimpleGroupManagement = () => {
     }
   }, [user, userLocation]);
 
+  const joinRandomGroup = async (): Promise<boolean> => {
+    if (!user) {
+      toast({ 
+        title: 'Erreur', 
+        description: 'Vous devez être connecté.', 
+        variant: 'destructive' 
+      });
+      return false;
+    }
+
+    if (loading) return false;
+
+    setLoading(true);
+    try {
+      const location = await GeolocationService.getCurrentLocation();
+      if (!location) {
+        toast({ 
+          title: 'Géolocalisation requise', 
+          description: 'Impossible d\'obtenir votre position.', 
+          variant: 'destructive' 
+        });
+        return false;
+      }
+
+      // Import the UnifiedGroupService here to avoid circular dependencies
+      const { UnifiedGroupService } = await import('@/services/unifiedGroupService');
+      const success = await UnifiedGroupService.createSimpleGroup(location, user.id);
+      
+      if (success) {
+        await refetchGroups();
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('❌ Erreur joinRandomGroup:', error);
+      toast({ 
+        title: 'Erreur', 
+        description: 'Impossible de créer un groupe pour le moment.', 
+        variant: 'destructive' 
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const leaveGroup = async (groupId: string): Promise<void> => {
     if (!user || loading) return;
 
@@ -141,6 +187,7 @@ export const useSimpleGroupManagement = () => {
     groupMembers,
     loading: loading || groupsLoading,
     userLocation,
+    joinRandomGroup,
     leaveGroup,
     refetchGroups,
     // Debug info

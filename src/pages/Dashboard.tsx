@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRealtimeGroups } from '@/hooks/useRealtimeGroups'
+import { useSimpleGroupManagement } from '@/hooks/useSimpleGroupManagement'
 import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
@@ -10,7 +10,7 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 
 const Dashboard = () => {
   const { user } = useAuth()
-  const { joinRandomGroup, loading, userGroups } = useRealtimeGroups()
+  const { joinRandomGroup, loading, userGroups } = useSimpleGroupManagement()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
