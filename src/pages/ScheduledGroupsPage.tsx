@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { ScheduleGroupButton } from '@/components/ScheduleGroupButton';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/AppLayout';
+import FullGroupDisplay from '@/components/FullGroupDisplay';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -217,132 +218,208 @@ export default function ScheduledGroupsPage() {
     return format(new Date(dateTime), 'PPP à HH:mm', { locale: fr });
   };
 
-  const renderGroupCard = (group: ScheduledGroup, showJoinButton = false) => (
-    <Card key={group.id}>
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">
-                {group.bar_name || 'Groupe en attente de bar'}
-              </CardTitle>
-              {getStatusBadge(group.status)}
-            </div>
-            {group.scheduled_for && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                {formatDateTime(group.scheduled_for)}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {showJoinButton && (
-              <Button
-                onClick={() => handleJoinGroup(group.id)}
-                disabled={joiningId === group.id}
-                size="sm"
-                className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium"
-              >
-                <UserPlus className="h-4 w-4" />
-                {joiningId === group.id ? 'Rejoindre...' : 'Rejoindre'}
-              </Button>
-            )}
-            {!showJoinButton && (
-              <div className="flex gap-2">
-                {group.status !== 'completed' && group.status !== 'cancelled' && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={cancellingId === group.id}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
-                          Cette action ne peut pas être annulée.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Garder</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleCancelGroup(group.id)}
+  const renderGroupCard = (group: ScheduledGroup, showJoinButton = false) => {
+    // Si le groupe est confirmé avec un bar assigné, afficher l'expérience complète
+    if (group.status === 'confirmed' && group.bar_name && !showJoinButton) {
+      return (
+        <div key={group.id} className="space-y-6">
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg text-emerald-800">
+                      🎉 {group.bar_name}
+                    </CardTitle>
+                    {getStatusBadge(group.status)}
+                  </div>
+                  {group.scheduled_for && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-700">
+                      <Clock className="h-4 w-4" />
+                      Planifié pour {formatDateTime(group.scheduled_for)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {group.status === 'confirmed' && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           disabled={cancellingId === group.id}
                         >
-                          {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                {(group.status === 'waiting' || group.status === 'cancelled') && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={deletingId === group.id}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer le groupe</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer définitivement ce groupe ? 
-                          Cette action ne peut pas être annulée.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteGroup(group.id)}
-                          disabled={deletingId === group.id}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
+                            Cette action ne peut pas être annulée.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Garder</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleCancelGroup(group.id)}
+                            disabled={cancellingId === group.id}
+                          >
+                            {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-emerald-700 text-sm mb-4">
+                Votre groupe est complet et votre destination est confirmée ! Profitez de l'expérience complète ci-dessous.
+              </p>
+            </CardContent>
+          </Card>
+          
+          {/* Affichage complet du groupe avec carte, chat, etc. */}
+          <FullGroupDisplay
+            group={group}
+            showChat={true}
+            showMudra={true}
+          />
+        </div>
+      );
+    }
+
+    // Affichage standard pour les autres groupes
+    return (
+      <Card key={group.id}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">
+                  {group.bar_name || 'Groupe en attente de bar'}
+                </CardTitle>
+                {getStatusBadge(group.status)}
+              </div>
+              {group.scheduled_for && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  {formatDateTime(group.scheduled_for)}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {showJoinButton && (
+                <Button
+                  onClick={() => handleJoinGroup(group.id)}
+                  disabled={joiningId === group.id}
+                  size="sm"
+                  className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {joiningId === group.id ? 'Rejoindre...' : 'Rejoindre'}
+                </Button>
+              )}
+              {!showJoinButton && (
+                <div className="flex gap-2">
+                  {group.status !== 'completed' && group.status !== 'cancelled' && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={cancellingId === group.id}
                         >
-                          {deletingId === group.id ? 'Suppression...' : 'Supprimer'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
+                            Cette action ne peut pas être annulée.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Garder</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleCancelGroup(group.id)}
+                            disabled={cancellingId === group.id}
+                          >
+                            {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  {(group.status === 'waiting' || group.status === 'cancelled') && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={deletingId === group.id}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer le groupe</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer définitivement ce groupe ? 
+                            Cette action ne peut pas être annulée.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteGroup(group.id)}
+                            disabled={deletingId === group.id}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {deletingId === group.id ? 'Suppression...' : 'Supprimer'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span>{group.current_participants}/{group.max_participants} participants</span>
+            </div>
+            {group.location_name && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate">{group.location_name}</span>
               </div>
             )}
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span>{group.current_participants}/{group.max_participants} participants</span>
-          </div>
-          {group.location_name && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate">{group.location_name}</span>
+          
+          {group.meeting_time && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm font-medium">Heure de rendez-vous confirmée :</p>
+              <p className="text-sm text-muted-foreground">
+                {formatDateTime(group.meeting_time)}
+              </p>
             </div>
           )}
-        </div>
-        
-        {group.meeting_time && (
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm font-medium">Heure de rendez-vous confirmée :</p>
-            <p className="text-sm text-muted-foreground">
-              {formatDateTime(group.meeting_time)}
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (isLoading) {
     return (
