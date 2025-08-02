@@ -114,9 +114,9 @@ export const RATE_LIMITS = {
     blockDurationMs: 60000 // 1 minute
   },
   GEOLOCATION: {
-    maxAttempts: 10,
+    maxAttempts: 50,
     windowMs: 300000, // 5 minutes
-    blockDurationMs: 600000 // 10 minutes
+    blockDurationMs: 60000 // 1 minute
   }
 };
 

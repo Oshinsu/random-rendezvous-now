@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, MapPin, Users, X, UserPlus } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, X, UserPlus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ export default function ScheduledGroupsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchMyScheduledGroups = async () => {
     if (!user) return;
@@ -156,6 +157,45 @@ export default function ScheduledGroupsPage() {
     }
   };
 
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!user) return;
+
+    setDeletingId(groupId);
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId)
+        .eq('created_by_user_id', user.id)
+        .in('status', ['waiting', 'cancelled']);
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer le groupe",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Groupe supprimé",
+        description: "Le groupe a été supprimé avec succès"
+      });
+      
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'waiting':
@@ -207,36 +247,73 @@ export default function ScheduledGroupsPage() {
                 {joiningId === group.id ? 'Rejoindre...' : 'Rejoindre'}
               </Button>
             )}
-            {!showJoinButton && group.status !== 'completed' && group.status !== 'cancelled' && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={cancellingId === group.id}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
-                      Cette action ne peut pas être annulée.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Garder</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleCancelGroup(group.id)}
-                      disabled={cancellingId === group.id}
-                    >
-                      {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+            {!showJoinButton && (
+              <div className="flex gap-2">
+                {group.status !== 'completed' && group.status !== 'cancelled' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={cancellingId === group.id}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
+                          Cette action ne peut pas être annulée.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Garder</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleCancelGroup(group.id)}
+                          disabled={cancellingId === group.id}
+                        >
+                          {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {(group.status === 'waiting' || group.status === 'cancelled') && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={deletingId === group.id}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer le groupe</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Êtes-vous sûr de vouloir supprimer définitivement ce groupe ? 
+                          Cette action ne peut pas être annulée.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteGroup(group.id)}
+                          disabled={deletingId === group.id}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {deletingId === group.id ? 'Suppression...' : 'Supprimer'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             )}
           </div>
         </div>
