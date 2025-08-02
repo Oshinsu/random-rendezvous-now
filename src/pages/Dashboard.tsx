@@ -7,7 +7,6 @@ import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
 import { clearActiveToasts } from '@/utils/toastUtils'
 import { useAnalytics } from '@/hooks/useAnalytics'
-import { ScheduleGroupButton } from '@/components/ScheduleGroupButton'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -188,12 +187,6 @@ const Dashboard = () => {
             </button>
           )}
 
-          {/* Bouton de planification - toujours visible quand pas en recherche */}
-          {!isSearching && redirectCountdown === 0 && (
-            <div className="pt-4">
-              <ScheduleGroupButton />
-            </div>
-          )}
         </div>
       </div>
     </AppLayout>

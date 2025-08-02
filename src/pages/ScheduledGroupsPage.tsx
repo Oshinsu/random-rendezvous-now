@@ -201,7 +201,7 @@ export default function ScheduledGroupsPage() {
                 onClick={() => handleJoinGroup(group.id)}
                 disabled={joiningId === group.id}
                 size="sm"
-                className="gap-2"
+                className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium"
               >
                 <UserPlus className="h-4 w-4" />
                 {joiningId === group.id ? 'Rejoindre...' : 'Rejoindre'}
@@ -300,9 +300,19 @@ export default function ScheduledGroupsPage() {
           </div>
 
           <Tabs defaultValue="my-groups" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="my-groups">Mes groupes ({myScheduledGroups.length})</TabsTrigger>
-              <TabsTrigger value="all-groups">Rejoindre un groupe ({allScheduledGroups.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-neutral-100 p-1 rounded-xl">
+              <TabsTrigger 
+                value="my-groups" 
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-brand-500 data-[state=active]:to-brand-600 data-[state=active]:text-white data-[state=active]:shadow-medium transition-all duration-200"
+              >
+                Mes groupes ({myScheduledGroups.length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="all-groups"
+                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-brand-500 data-[state=active]:to-brand-600 data-[state=active]:text-white data-[state=active]:shadow-medium transition-all duration-200"
+              >
+                Rejoindre un groupe ({allScheduledGroups.length})
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="my-groups" className="space-y-4 mt-6">
