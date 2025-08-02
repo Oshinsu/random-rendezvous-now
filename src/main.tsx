@@ -17,14 +17,14 @@ const queryClient = new QueryClient({
 });
 
 // 🚀 DÉMARRAGE DES SERVICES INTELLIGENTS
-console.log('🚀 [MAIN] Initialisation des services intelligents...');
+// Service initialization
 
 // Service de nettoyage intelligent
 IntelligentCleanupService.startPeriodicIntelligentCleanup();
 
 // Service de notifications (demande permission au premier usage)
 NotificationService.initialize().then(enabled => {
-  console.log('📱 [MAIN] Notifications:', enabled ? 'activées' : 'désactivées');
+  // Notifications status
 });
 
 createRoot(document.getElementById('root')!).render(

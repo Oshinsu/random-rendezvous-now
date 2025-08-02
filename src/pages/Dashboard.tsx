@@ -80,7 +80,7 @@ const Dashboard = () => {
 
   // Effect pour surveiller les groupes et déclencher le countdown
   useEffect(() => {
-    console.log('📊 Groupes actuels:', userGroups.length, 'isSearching:', isSearching, 'countdown:', redirectCountdown);
+    // Groups status check
     
     if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
       console.log('🎯 Groupe détecté, démarrage du countdown')

@@ -32,55 +32,41 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
   useChatRealtime(groupId, updateMessagesCache, invalidateMessages);
 
-  // Nettoyage ULTRA agressif lors du changement de groupe
+  // Clean group change handling without excessive logging
   useEffect(() => {
     if (!groupId || !user) return;
 
-    // Détecter le changement de groupe
+    // Detect group change
     if (previousGroupIdRef.current && previousGroupIdRef.current !== groupId) {
-      console.log('🔄 CHANGEMENT DE GROUPE détecté:', {
-        ancien: previousGroupIdRef.current,
-        nouveau: groupId
-      });
-      
-      // Nettoyage immédiat et complet
+      // Clean invalidation
       invalidateMessages();
       
-      // Attendre un cycle complet avant de recharger
-      setTimeout(() => {
-        console.log('🔄 Rechargement forcé après nettoyage pour:', groupId);
+      // Debounced reload
+      const timeoutId = setTimeout(() => {
         refreshMessages();
-      }, 200);
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     }
 
-    // Mémoriser le groupe actuel
+    // Remember current group
     previousGroupIdRef.current = groupId;
   }, [groupId, user?.id, invalidateMessages, refreshMessages]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {
-    if (!groupId || !user) {
-      console.error('❌ Impossible d\'envoyer un message sans groupe ou utilisateur');
+    if (!groupId || !user || !messageText.trim()) {
       return false;
     }
 
-    // Vérification STRICTE avant envoi
-    if (!messageText.trim()) {
-      console.error('❌ Message vide, envoi annulé');
-      return false;
-    }
-
-    // Vérifier que nous sommes toujours sur le bon groupe
+    // Verify group consistency
     if (previousGroupIdRef.current !== groupId) {
-      console.error('❌ Changement de groupe détecté, envoi annulé');
       return false;
     }
 
     try {
-      console.log('📤 Envoi message pour groupe STRICT:', groupId);
       await sendMessageMutation.mutateAsync(messageText);
       return true;
     } catch (error) {
-      console.error('❌ Erreur sendMessage:', error);
       return false;
     }
   };

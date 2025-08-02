@@ -1,10 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-// Removed analytics - only core business events needed
+import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
 
 const LogoutButton = () => {
-  const { signOut } = useAuth();
+  const { signOut } = useEnhancedAuth();
 
   const handleLogout = async () => {
     await signOut();

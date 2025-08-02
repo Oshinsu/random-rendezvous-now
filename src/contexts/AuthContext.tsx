@@ -25,20 +25,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('🔐 Auth state change:', event, session?.user?.id);
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Handle navigation based on auth events
-        if (event === 'SIGNED_IN' && session) {
-          console.log('✅ User signed in successfully');
-          // Don't auto-navigate here to avoid conflicts
-        }
         if (event === 'SIGNED_OUT') {
-          console.log('👋 User signed out');
           navigate('/');
         }
         
@@ -47,21 +45,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('❌ Error getting session:', error);
-        setLoading(false);
-        return;
-      }
+    // THEN check for existing session with debouncing
+    const checkSession = async () => {
+      if (!isMounted) return;
       
-      console.log('🔍 Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    checkSession();
 
     return () => {
+      isMounted = false;
       subscription?.unsubscribe();
     };
   }, [navigate]);
@@ -69,19 +80,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      console.log('🚪 Signing out user...');
       
       const { error } = await supabase.auth.signOut();
       
-      if (error) {
-        console.error('❌ Error signing out:', error);
+      if (error && error.message !== '429') {
         throw error;
       }
       
       // onAuthStateChange will handle state updates and navigation
-      console.log('✅ Sign out successful');
-    } catch (error) {
-      console.error('❌ Sign out failed:', error);
+    } catch (error: any) {
       // Still clear local state on error
       setSession(null);
       setUser(null);
@@ -94,7 +101,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      console.log('🔐 Signing in with Google...');
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -104,13 +110,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
       
       if (error) {
-        console.error('❌ Google sign in error:', error);
         throw error;
       }
-      
-      console.log('✅ Google sign in initiated');
     } catch (error) {
-      console.error('❌ Google sign in failed:', error);
       throw error;
     } finally {
       setLoading(false);

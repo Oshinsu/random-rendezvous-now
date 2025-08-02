@@ -27,7 +27,7 @@ const GroupsPage = () => {
 
   // Déclenchement du système unifié au montage
   useEffect(() => {
-    console.log('🔄 [GROUPS PAGE UNIFIÉ] Déclenchement récupération avec système unifié');
+    // Fetching groups data
     
     // Le nettoyage est géré automatiquement par IntelligentCleanupService
     
@@ -40,7 +40,7 @@ const GroupsPage = () => {
   );
 
   const handleRefresh = () => {
-    console.log('🔄 Refresh manuel avec système unifié (page Groups)');
+    // Manual refresh
     refetchGroups();
   };
 

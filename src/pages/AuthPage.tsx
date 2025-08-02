@@ -28,7 +28,7 @@ const AuthPage = () => {
 
     if (activeTab === 'signup') {
       // Sign Up
-      console.log('🔐 Attempting signup for:', email);
+      // Attempting signup
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -42,35 +42,35 @@ const AuthPage = () => {
       });
 
       if (error) {
-        console.error('❌ Signup error:', error);
+        // Signup error
         toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
-        console.log('✅ Signup successful, email confirmation required');
+        // Signup successful
         toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       } else if (data.user) {
         trackSignUp();
-        console.log('✅ Signup successful, user auto-confirmed');
+        // Signup auto-confirmed
         toast({ title: 'Inscription réussie!', description: 'Vous êtes maintenant connecté.' });
         navigate('/');
       } else {
-        console.log('✅ Signup initiated, email confirmation needed');
+        // Signup initiated
         toast({ title: 'Inscription initiée', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       }
     } else {
       // Sign In
-      console.log('🔐 Attempting signin for:', email);
+      // Attempting signin
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('❌ Signin error:', error);
+        // Signin error
         toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
       } else {
         trackLogin();
-        console.log('✅ Signin successful');
+        // Signin successful
         toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
         navigate('/');
       }
@@ -83,7 +83,7 @@ const AuthPage = () => {
       setGoogleLoading(true);
       await signInWithGoogle();
     } catch (error: any) {
-      console.error('❌ Google auth error:', error);
+      // Google auth error
       toast({ 
         title: 'Erreur Google', 
         description: 'Impossible de se connecter avec Google. Veuillez réessayer.', 

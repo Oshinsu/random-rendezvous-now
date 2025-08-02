@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ScheduledGroupService, ScheduledGroup } from '@/services/scheduledGroupService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { ScheduleGroupButton } from '@/components/ScheduleGroupButton';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
+import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,29 +28,30 @@ import {
 
 export default function ScheduledGroupsPage() {
   const { user } = useAuth();
+  const { debouncedFetch } = useOptimizedDataFetching();
   const [myScheduledGroups, setMyScheduledGroups] = useState<ScheduledGroup[]>([]);
   const [allScheduledGroups, setAllScheduledGroups] = useState<ScheduledGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [joiningId, setJoiningId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<{
+    type: 'joining' | 'cancelling' | 'deleting';
+    id: string;
+  } | null>(null);
 
-  const fetchMyScheduledGroups = async () => {
+  const fetchMyScheduledGroups = useCallback(async () => {
     if (!user) return;
     
     try {
       const groups = await ScheduledGroupService.getUserScheduledGroups(user.id);
       setMyScheduledGroups(groups);
     } catch (error) {
-      console.error('Error fetching my scheduled groups:', error);
+      // Silent error handling - no console spam
     }
-  };
+  }, [user]);
 
-  const fetchAllScheduledGroups = async () => {
+  const fetchAllScheduledGroups = useCallback(async () => {
     if (!user) return;
     
     try {
-      // Fetch all scheduled groups that are not full and not created by current user
       const { data: groups, error } = await supabase
         .from('groups')
         .select('*')
@@ -60,36 +62,34 @@ export default function ScheduledGroupsPage() {
         .gte('scheduled_for', new Date().toISOString())
         .order('scheduled_for', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching all scheduled groups:', error);
-        return;
+      if (!error) {
+        setAllScheduledGroups((groups || []) as ScheduledGroup[]);
       }
-
-      setAllScheduledGroups((groups || []) as ScheduledGroup[]);
     } catch (error) {
-      console.error('Error fetching all scheduled groups:', error);
+      // Silent error handling - no console spam
     }
-  };
+  }, [user]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      await Promise.all([fetchMyScheduledGroups(), fetchAllScheduledGroups()]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchData = useCallback(async () => {
+    return debouncedFetch(async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([fetchMyScheduledGroups(), fetchAllScheduledGroups()]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 2000); // Debounce for 2 seconds
+  }, [debouncedFetch, fetchMyScheduledGroups, fetchAllScheduledGroups]);
 
   useEffect(() => {
     fetchData();
   }, [user]);
 
   const handleJoinGroup = async (groupId: string) => {
-    if (!user) return;
+    if (!user || actionInProgress) return;
 
-    setJoiningId(groupId);
+    setActionInProgress({ type: 'joining', id: groupId });
     try {
-      // Add user as participant
       const { error } = await supabase
         .from('group_participants')
         .insert({
@@ -109,59 +109,57 @@ export default function ScheduledGroupsPage() {
       }
 
       toast({
-        title: "Groupe rejoint !",
-        description: "Vous avez rejoint le groupe planifié"
+        title: "Succès",
+        description: "Vous avez rejoint le groupe"
       });
       
-      await fetchData(); // Refresh both lists
+      await fetchData();
     } catch (error) {
-      console.error('Error joining group:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
+        description: "Une erreur s'est produite",
         variant: "destructive"
       });
     } finally {
-      setJoiningId(null);
+      setActionInProgress(null);
     }
   };
 
   const handleCancelGroup = async (groupId: string) => {
-    if (!user) return;
+    if (!user || actionInProgress) return;
 
-    setCancellingId(groupId);
+    setActionInProgress({ type: 'cancelling', id: groupId });
     try {
       const result = await ScheduledGroupService.cancelScheduledGroup(groupId, user.id);
       
       if (result.success) {
         toast({
-          title: "Groupe annulé",
-          description: "Votre groupe planifié a été annulé"
+          title: "Annulé",
+          description: "Groupe annulé"
         });
         await fetchData();
       } else {
         toast({
           title: "Erreur",
-          description: result.error || "Impossible d'annuler le groupe",
+          description: "Impossible d'annuler",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Error cancelling group:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
+        description: "Une erreur s'est produite",
         variant: "destructive"
       });
     } finally {
-      setCancellingId(null);
+      setActionInProgress(null);
     }
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!user) return;
+    if (!user || actionInProgress) return;
 
-    setDeletingId(groupId);
+    setActionInProgress({ type: 'deleting', id: groupId });
     try {
       const { error } = await supabase
         .from('groups')
@@ -173,27 +171,26 @@ export default function ScheduledGroupsPage() {
       if (error) {
         toast({
           title: "Erreur",
-          description: "Impossible de supprimer le groupe",
+          description: "Impossible de supprimer",
           variant: "destructive"
         });
         return;
       }
 
       toast({
-        title: "Groupe supprimé",
-        description: "Le groupe a été supprimé avec succès"
+        title: "Supprimé",
+        description: "Groupe supprimé"
       });
       
       await fetchData();
     } catch (error) {
-      console.error('Error deleting group:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
+        description: "Une erreur s'est produite",
         variant: "destructive"
       });
     } finally {
-      setDeletingId(null);
+      setActionInProgress(null);
     }
   };
 
@@ -247,7 +244,7 @@ export default function ScheduledGroupsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={cancellingId === group.id}
+                          disabled={actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -264,9 +261,9 @@ export default function ScheduledGroupsPage() {
                           <AlertDialogCancel>Garder</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleCancelGroup(group.id)}
-                            disabled={cancellingId === group.id}
+                            disabled={actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id}
                           >
-                            {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
+                            {actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id ? 'Annulation...' : 'Annuler'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -315,12 +312,12 @@ export default function ScheduledGroupsPage() {
               {showJoinButton && (
                 <Button
                   onClick={() => handleJoinGroup(group.id)}
-                  disabled={joiningId === group.id}
+                  disabled={actionInProgress?.type === 'joining' && actionInProgress?.id === group.id}
                   size="sm"
                   className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium"
                 >
                   <UserPlus className="h-4 w-4" />
-                  {joiningId === group.id ? 'Rejoindre...' : 'Rejoindre'}
+                  {actionInProgress?.type === 'joining' && actionInProgress?.id === group.id ? 'Joining...' : 'Rejoindre'}
                 </Button>
               )}
               {!showJoinButton && (
@@ -331,7 +328,7 @@ export default function ScheduledGroupsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={cancellingId === group.id}
+                          disabled={actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -348,9 +345,9 @@ export default function ScheduledGroupsPage() {
                           <AlertDialogCancel>Garder</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleCancelGroup(group.id)}
-                            disabled={cancellingId === group.id}
+                            disabled={actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id}
                           >
-                            {cancellingId === group.id ? 'Annulation...' : 'Annuler le groupe'}
+                            {actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id ? 'Annulation...' : 'Annuler'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -362,7 +359,7 @@ export default function ScheduledGroupsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={deletingId === group.id}
+                          disabled={actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id}
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -380,10 +377,10 @@ export default function ScheduledGroupsPage() {
                           <AlertDialogCancel>Annuler</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDeleteGroup(group.id)}
-                            disabled={deletingId === group.id}
+                            disabled={actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {deletingId === group.id ? 'Suppression...' : 'Supprimer'}
+                            {actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id ? 'Suppression...' : 'Supprimer'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
