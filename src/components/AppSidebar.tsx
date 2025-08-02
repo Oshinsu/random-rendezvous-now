@@ -1,5 +1,5 @@
 
-import { Home, Users, User, ExternalLink } from 'lucide-react';
+import { Home, Users, User, ExternalLink, Calendar } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -21,6 +21,7 @@ import RandomLogo from './RandomLogo';
 const navigationItems = [
   { title: 'Chercher un groupe', url: '/dashboard', icon: Home },
   { title: 'Mon groupe', url: '/groups', icon: Users },
+  { title: 'Groupes planifiés', url: '/scheduled-groups', icon: Calendar },
   { title: 'Profil', url: '/profile', icon: User },
   { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
 ];

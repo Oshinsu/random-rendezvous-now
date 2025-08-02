@@ -141,13 +141,17 @@ export type Database = {
           bar_place_id: string | null
           completed_at: string | null
           created_at: string
+          created_by_user_id: string | null
           current_participants: number
           id: string
+          is_scheduled: boolean | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
           max_participants: number
           meeting_time: string | null
+          reminder_sent: boolean | null
+          scheduled_for: string | null
           search_radius: number | null
           status: string
         }
@@ -159,13 +163,17 @@ export type Database = {
           bar_place_id?: string | null
           completed_at?: string | null
           created_at?: string
+          created_by_user_id?: string | null
           current_participants?: number
           id?: string
+          is_scheduled?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
           max_participants?: number
           meeting_time?: string | null
+          reminder_sent?: boolean | null
+          scheduled_for?: string | null
           search_radius?: number | null
           status?: string
         }
@@ -177,13 +185,17 @@ export type Database = {
           bar_place_id?: string | null
           completed_at?: string | null
           created_at?: string
+          created_by_user_id?: string | null
           current_participants?: number
           id?: string
+          is_scheduled?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
           max_participants?: number
           meeting_time?: string | null
+          reminder_sent?: boolean | null
+          scheduled_for?: string | null
           search_radius?: number | null
           status?: string
         }

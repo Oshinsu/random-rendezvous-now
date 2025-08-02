@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import GroupsPage from "./pages/GroupsPage";
 import ProfilePage from "./pages/ProfilePage";
+import ScheduledGroupsPage from "./pages/ScheduledGroupsPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from "./pages/ContactPage";
@@ -48,6 +49,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
+    <Route path="/scheduled-groups" element={<ProtectedRoute><ScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
