@@ -57,6 +57,7 @@ const AppRoutes = () => (
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/callback" element={<AuthCallbackPage />} />
+    <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
