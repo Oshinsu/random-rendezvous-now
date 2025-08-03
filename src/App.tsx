@@ -15,6 +15,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 
@@ -55,6 +56,7 @@ const AppRoutes = () => (
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/auth" element={<AuthPage />} />
+    <Route path="/auth/callback" element={<AuthCallbackPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
