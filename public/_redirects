@@ -1,4 +1,4 @@
-# Redirect non-www to www
-https://random-app.fr/* https://www.random-app.fr/:splat 301!
+# Redirect www to non-www
+https://www.random-app.fr/* https://random-app.fr/:splat 301!
 
 /*    /index.html   200
