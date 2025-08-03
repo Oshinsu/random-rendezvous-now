@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://www.random-app.fr/auth/v1/callback',
+          redirectTo: `${window.location.origin}/auth/v1/callback`,
         },
       });
       
