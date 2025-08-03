@@ -45,7 +45,7 @@ file_transform_enabled = false
 [auth]
 enabled = true
 port = 54326
-site_url = "https://www.random-app.fr"
+site_url = "https://random-app.fr"
 additional_redirect_urls = ["https://xhrievvdnajvylyrowwu.supabase.co", "https://random-app.fr", "https://www.random-app.fr", "https://random-app.fr/auth/v1/callback", "https://www.random-app.fr/auth/v1/callback"]
 jwt_expiry = 3600
 enable_signup = true
