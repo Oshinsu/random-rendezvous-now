@@ -9,8 +9,13 @@ const AuthCallbackPage = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      console.log('AuthCallbackPage: Starting auth callback handling');
+      console.log('Current URL:', window.location.href);
+      console.log('URL params:', window.location.search);
+      
       try {
         const { data, error } = await supabase.auth.getSession();
+        console.log('AuthCallbackPage: Session data:', data);
         
         if (error) {
           console.error('Auth callback error:', error);

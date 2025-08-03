@@ -102,10 +102,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
       
+      console.log('Starting Google OAuth with redirect to:', `${window.location.origin}/auth/callback`);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/v1/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
