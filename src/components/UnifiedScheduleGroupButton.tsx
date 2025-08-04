@@ -119,13 +119,13 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[95vw] max-w-lg mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-brand-700">
+      <DialogContent className="w-[90vw] max-w-md mx-auto bg-white border border-gray-200 shadow-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader className="space-y-3 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             <Clock className="h-5 w-5 text-brand-500" />
             Planifier un groupe
           </DialogTitle>
-          <div className="text-sm text-muted-foreground bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
+          <div className="text-sm text-gray-600 bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
             <p>Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
           </div>
         </DialogHeader>
@@ -240,7 +240,7 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
           <Button 
             variant="outline" 
             onClick={() => setOpen(false)}
-            className="hover:bg-muted/50"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             Annuler
           </Button>
