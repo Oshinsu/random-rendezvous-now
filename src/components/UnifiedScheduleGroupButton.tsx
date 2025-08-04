@@ -119,7 +119,7 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto bg-background border rounded-lg shadow-lg p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95">
+      <DialogContent className="w-[90vw] max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader className="space-y-3 pb-4">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
             <Clock className="h-5 w-5 text-primary" />
