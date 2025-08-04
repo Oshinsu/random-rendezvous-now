@@ -293,6 +293,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_ready_scheduled_groups: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       calculate_distance: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number

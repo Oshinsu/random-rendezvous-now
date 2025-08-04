@@ -39,7 +39,10 @@ export class IntelligentCleanupService {
       // 6. Corriger les compteurs avec logique intelligente
       await this.correctCountersIntelligently();
       
-      // 7. Transition des groupes confirmés terminés
+      // 7. Activer les groupes planifiés arrivés à échéance
+      await this.activateScheduledGroups();
+      
+      // 8. Transition des groupes confirmés terminés
       await this.transitionCompletedGroups();
       
       // Pas d'autres services de nettoyage - ce service est UNIQUE
@@ -63,9 +66,8 @@ export class IntelligentCleanupService {
       
       const { data: liveGroups, error } = await supabase
         .from('groups')
-        .select('id, status, created_at, current_participants')
-        .in('status', ['waiting', 'confirmed'])
-        .gt('created_at', protectionThreshold);
+        .select('id, status, created_at, current_participants, is_scheduled, scheduled_for')
+        .or(`and(created_at.gt.${protectionThreshold},status.in.(waiting,confirmed)),and(is_scheduled.eq.true,scheduled_for.gt.${new Date().toISOString()},status.neq.cancelled)`);
 
       if (error) {
         ErrorHandler.logError('IDENTIFY_LIVE_GROUPS', error);
@@ -73,8 +75,20 @@ export class IntelligentCleanupService {
       }
 
       if (liveGroups && liveGroups.length > 0) {
-        console.log(`🛡️ [INTELLIGENT CLEANUP] ${liveGroups.length} groupes vivants protégés:`, 
-          liveGroups.map(g => `${g.id.slice(0,8)} (${g.current_participants} participants, âge: ${Math.round((Date.now() - new Date(g.created_at).getTime()) / 60000)}min)`));
+        const recentGroups = liveGroups.filter(g => !g.is_scheduled);
+        const scheduledGroups = liveGroups.filter(g => g.is_scheduled);
+        
+        console.log(`🛡️ [INTELLIGENT CLEANUP] ${recentGroups.length} groupes récents protégés, ${scheduledGroups.length} groupes planifiés protégés`);
+        
+        if (recentGroups.length > 0) {
+          console.log('📍 Groupes récents:', recentGroups.map(g => 
+            `${g.id.slice(0,8)} (${g.current_participants} participants, âge: ${Math.round((Date.now() - new Date(g.created_at).getTime()) / 60000)}min)`));
+        }
+        
+        if (scheduledGroups.length > 0) {
+          console.log('📅 Groupes planifiés:', scheduledGroups.map(g => 
+            `${g.id.slice(0,8)} (prévu: ${new Date(g.scheduled_for!).toLocaleString()})`));
+        }
       }
     } catch (error) {
       ErrorHandler.logError('PROTECT_LIVE_GROUPS', error);
@@ -82,22 +96,24 @@ export class IntelligentCleanupService {
   }
 
   /**
-   * ÉTAPE 2: Suppression IMMÉDIATE des groupes vides
+   * ÉTAPE 2: Suppression IMMÉDIATE des groupes vides (sauf groupes planifiés actifs)
    */
   private static async cleanupEmptyGroupsImmediately(): Promise<void> {
     try {
       console.log('🗑️ [INTELLIGENT CLEANUP] Suppression immédiate des groupes vides...');
       
+      // Ne pas supprimer les groupes planifiés même s'ils sont vides
       const { data: deletedGroups, error } = await supabase
         .from('groups')
         .delete()
         .eq('current_participants', 0)
+        .or('is_scheduled.is.null,is_scheduled.eq.false')
         .select('id, created_at');
 
       if (error) {
         ErrorHandler.logError('CLEANUP_EMPTY_GROUPS_IMMEDIATELY', error);
       } else if (deletedGroups && deletedGroups.length > 0) {
-        console.log(`🗑️ [INTELLIGENT CLEANUP] ${deletedGroups.length} groupes vides supprimés immédiatement`);
+        console.log(`🗑️ [INTELLIGENT CLEANUP] ${deletedGroups.length} groupes vides supprimés (groupes planifiés protégés)`);
       }
     } catch (error) {
       ErrorHandler.logError('CLEANUP_EMPTY_GROUPS_IMMEDIATELY', error);
@@ -274,7 +290,26 @@ export class IntelligentCleanupService {
   }
 
   /**
-   * ÉTAPE 7: Transition des groupes confirmés terminés
+   * ÉTAPE 7: Activation des groupes planifiés arrivés à échéance
+   */
+  private static async activateScheduledGroups(): Promise<void> {
+    try {
+      console.log('📅 [INTELLIGENT CLEANUP] Activation des groupes planifiés...');
+      
+      const { data: activatedCount, error } = await supabase.rpc('activate_ready_scheduled_groups');
+      
+      if (error) {
+        ErrorHandler.logError('ACTIVATE_SCHEDULED_GROUPS', error);
+      } else {
+        console.log(`✅ [INTELLIGENT CLEANUP] ${activatedCount || 0} groupes planifiés activés`);
+      }
+    } catch (error) {
+      ErrorHandler.logError('ACTIVATE_SCHEDULED_GROUPS', error);
+    }
+  }
+
+  /**
+   * ÉTAPE 8: Transition des groupes confirmés terminés
    */
   private static async transitionCompletedGroups(): Promise<void> {
     try {
@@ -297,6 +332,11 @@ export class IntelligentCleanupService {
    */
   static isGroupLive(group: any): boolean {
     if (!group) return false;
+    
+    // Groupes planifiés avec une date future = toujours vivants
+    if (group.is_scheduled && group.scheduled_for && new Date(group.scheduled_for) > new Date()) {
+      return true;
+    }
     
     // Groupes récents (moins de 30 minutes) = toujours vivants
     const groupAge = Date.now() - new Date(group.created_at).getTime();
