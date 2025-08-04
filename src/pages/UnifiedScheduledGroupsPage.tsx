@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ScheduledGroupService, ScheduledGroup } from '@/services/scheduledGroupService';
+import { UnifiedScheduledGroupService, UnifiedScheduledGroup } from '@/services/unifiedScheduledGroupService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,7 @@ import { Calendar, Clock, MapPin, Users, X, UserPlus, Trash2 } from 'lucide-reac
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
-import { ScheduleGroupButton } from '@/components/ScheduleGroupButton';
-import { supabase } from '@/integrations/supabase/client';
+import UnifiedScheduleGroupButton from '@/components/UnifiedScheduleGroupButton';
 import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
 import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
@@ -26,11 +25,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-export default function ScheduledGroupsPage() {
+export default function UnifiedScheduledGroupsPage() {
   const { user } = useAuth();
   const { debouncedFetch } = useOptimizedDataFetching();
-  const [myScheduledGroups, setMyScheduledGroups] = useState<ScheduledGroup[]>([]);
-  const [allScheduledGroups, setAllScheduledGroups] = useState<ScheduledGroup[]>([]);
+  const [myScheduledGroups, setMyScheduledGroups] = useState<UnifiedScheduledGroup[]>([]);
+  const [allScheduledGroups, setAllScheduledGroups] = useState<UnifiedScheduledGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState<{
     type: 'joining' | 'cancelling' | 'deleting';
@@ -41,7 +40,7 @@ export default function ScheduledGroupsPage() {
     if (!user) return;
     
     try {
-      const groups = await ScheduledGroupService.getUserScheduledGroups(user.id);
+      const groups = await UnifiedScheduledGroupService.getUserScheduledGroups(user.id);
       setMyScheduledGroups(groups);
     } catch (error) {
       // Silent error handling - no console spam
@@ -52,19 +51,8 @@ export default function ScheduledGroupsPage() {
     if (!user) return;
     
     try {
-      const { data: groups, error } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('is_scheduled', true)
-        .eq('status', 'waiting')
-        .neq('created_by_user_id', user.id)
-        .lt('current_participants', 5)
-        .gte('scheduled_for', new Date().toISOString())
-        .order('scheduled_for', { ascending: true });
-
-      if (!error) {
-        setAllScheduledGroups((groups || []) as ScheduledGroup[]);
-      }
+      const groups = await UnifiedScheduledGroupService.getAllAvailableScheduledGroups(user.id);
+      setAllScheduledGroups(groups);
     } catch (error) {
       // Silent error handling - no console spam
     }
@@ -90,30 +78,21 @@ export default function ScheduledGroupsPage() {
 
     setActionInProgress({ type: 'joining', id: groupId });
     try {
-      const { error } = await supabase
-        .from('group_participants')
-        .insert({
-          group_id: groupId,
-          user_id: user.id,
-          status: 'confirmed',
-          last_seen: new Date().toISOString()
-        });
+      const result = await UnifiedScheduledGroupService.joinScheduledGroup(groupId, user.id);
 
-      if (error) {
+      if (result.success) {
+        toast({
+          title: "Succès",
+          description: "Vous avez rejoint le groupe"
+        });
+        await fetchData();
+      } else {
         toast({
           title: "Erreur",
-          description: "Impossible de rejoindre le groupe",
+          description: result.error || "Impossible de rejoindre le groupe",
           variant: "destructive"
         });
-        return;
       }
-
-      toast({
-        title: "Succès",
-        description: "Vous avez rejoint le groupe"
-      });
-      
-      await fetchData();
     } catch (error) {
       toast({
         title: "Erreur",
@@ -130,7 +109,7 @@ export default function ScheduledGroupsPage() {
 
     setActionInProgress({ type: 'cancelling', id: groupId });
     try {
-      const result = await ScheduledGroupService.cancelScheduledGroup(groupId, user.id);
+      const result = await UnifiedScheduledGroupService.cancelScheduledGroup(groupId, user.id);
       
       if (result.success) {
         toast({
@@ -141,7 +120,7 @@ export default function ScheduledGroupsPage() {
       } else {
         toast({
           title: "Erreur",
-          description: "Impossible d'annuler",
+          description: result.error || "Impossible d'annuler",
           variant: "destructive"
         });
       }
@@ -161,28 +140,21 @@ export default function ScheduledGroupsPage() {
 
     setActionInProgress({ type: 'deleting', id: groupId });
     try {
-      const { error } = await supabase
-        .from('groups')
-        .delete()
-        .eq('id', groupId)
-        .eq('created_by_user_id', user.id)
-        .in('status', ['waiting', 'cancelled']);
+      const result = await UnifiedScheduledGroupService.deleteScheduledGroup(groupId, user.id);
 
-      if (error) {
+      if (result.success) {
+        toast({
+          title: "Supprimé",
+          description: "Groupe supprimé"
+        });
+        await fetchData();
+      } else {
         toast({
           title: "Erreur",
-          description: "Impossible de supprimer",
+          description: result.error || "Impossible de supprimer",
           variant: "destructive"
         });
-        return;
       }
-
-      toast({
-        title: "Supprimé",
-        description: "Groupe supprimé"
-      });
-      
-      await fetchData();
     } catch (error) {
       toast({
         title: "Erreur",
@@ -215,8 +187,26 @@ export default function ScheduledGroupsPage() {
     return format(new Date(dateTime), 'PPP à HH:mm', { locale: fr });
   };
 
-  const renderGroupCard = (group: ScheduledGroup, showJoinButton = false) => {
-    // Si le groupe est confirmé avec un bar assigné, afficher l'expérience complète
+  const getGroupDisplayName = (group: UnifiedScheduledGroup) => {
+    // Manual mode - show manual bar name
+    if (group.bar_name_manual) {
+      return group.bar_name_manual;
+    }
+    // Automatic mode - show assigned bar name or default
+    return group.bar_name || 'Groupe en attente de bar';
+  };
+
+  const getGroupLocation = (group: UnifiedScheduledGroup) => {
+    // Manual mode - show city and address
+    if (group.city_name && group.bar_address_manual) {
+      return `${group.city_name} - ${group.bar_address_manual}`;
+    }
+    // Automatic mode - show location name or coordinates
+    return group.location_name || `${group.latitude?.toFixed(4)}, ${group.longitude?.toFixed(4)}`;
+  };
+
+  const renderGroupCard = (group: UnifiedScheduledGroup, showJoinButton = false) => {
+    // If the group is confirmed with a bar assigned, show full experience
     if (group.status === 'confirmed' && group.bar_name && !showJoinButton) {
       return (
         <div key={group.id} className="space-y-6">
@@ -226,7 +216,7 @@ export default function ScheduledGroupsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg text-emerald-800">
-                      🎉 {group.bar_name}
+                      🎉 {getGroupDisplayName(group)}
                     </CardTitle>
                     {getStatusBadge(group.status)}
                   </div>
@@ -279,7 +269,7 @@ export default function ScheduledGroupsPage() {
             </CardContent>
           </Card>
           
-          {/* Affichage complet du groupe avec carte, chat, etc. */}
+          {/* Full group display with chat, map, etc. */}
           <FullGroupDisplay
             group={group}
             showChat={true}
@@ -289,7 +279,7 @@ export default function ScheduledGroupsPage() {
       );
     }
 
-    // Affichage standard pour les autres groupes
+    // Standard display for other groups
     return (
       <Card key={group.id}>
         <CardHeader className="pb-4">
@@ -297,9 +287,14 @@ export default function ScheduledGroupsPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg">
-                  {group.bar_name || 'Groupe en attente de bar'}
+                  {getGroupDisplayName(group)}
                 </CardTitle>
                 {getStatusBadge(group.status)}
+                {group.city_name && (
+                  <Badge variant="outline" className="ml-2">
+                    {group.city_name}
+                  </Badge>
+                )}
               </div>
               {group.scheduled_for && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -397,10 +392,10 @@ export default function ScheduledGroupsPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
               <span>{group.current_participants}/{group.max_participants} participants</span>
             </div>
-            {group.location_name && (
-              <div className="flex items-center gap-2">
+            {getGroupLocation(group) && (
+              <div className="flex items-center gap-2 col-span-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="truncate">{group.location_name}</span>
+                <span className="truncate">{getGroupLocation(group)}</span>
               </div>
             )}
           </div>
@@ -447,60 +442,61 @@ export default function ScheduledGroupsPage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <h1 className="text-3xl font-bold">Groupes planifiés</h1>
-            <ScheduleGroupButton onScheduled={fetchData} />
+            <UnifiedScheduleGroupButton onScheduled={fetchData} />
           </div>
 
           <Tabs defaultValue="my-groups" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-neutral-100 p-1 rounded-xl">
               <TabsTrigger 
                 value="my-groups" 
-                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-brand-500 data-[state=active]:to-brand-600 data-[state=active]:text-white data-[state=active]:shadow-medium transition-all duration-200"
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold"
               >
                 Mes groupes ({myScheduledGroups.length})
               </TabsTrigger>
               <TabsTrigger 
-                value="all-groups"
-                className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-brand-500 data-[state=active]:to-brand-600 data-[state=active]:text-white data-[state=active]:shadow-medium transition-all duration-200"
+                value="join-groups"
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold"
               >
                 Rejoindre un groupe ({allScheduledGroups.length})
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="my-groups" className="space-y-4 mt-6">
-              {myScheduledGroups.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Aucun groupe planifié</h2>
-                    <p className="text-muted-foreground mb-6">
-                      Planifiez votre prochain groupe pour une sortie future !
-                    </p>
-                    <ScheduleGroupButton onScheduled={fetchData} />
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {myScheduledGroups.map((group) => renderGroupCard(group, false))}
-                </div>
-              )}
+
+            <TabsContent value="my-groups" className="mt-6">
+              <div className="space-y-6">
+                {myScheduledGroups.length === 0 ? (
+                  <Card className="text-center py-8">
+                    <CardContent>
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Aucun groupe planifié</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Créez votre premier groupe planifié pour organiser une sortie à l'avance
+                      </p>
+                      <UnifiedScheduleGroupButton onScheduled={fetchData} />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  myScheduledGroups.map(group => renderGroupCard(group, false))
+                )}
+              </div>
             </TabsContent>
 
-            <TabsContent value="all-groups" className="space-y-4 mt-6">
-              {allScheduledGroups.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">Aucun groupe disponible</h2>
-                    <p className="text-muted-foreground">
-                      Il n'y a actuellement aucun groupe planifié que vous pouvez rejoindre.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {allScheduledGroups.map((group) => renderGroupCard(group, true))}
-                </div>
-              )}
+            <TabsContent value="join-groups" className="mt-6">
+              <div className="space-y-6">
+                {allScheduledGroups.length === 0 ? (
+                  <Card className="text-center py-8">
+                    <CardContent>
+                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Aucun groupe disponible</h3>
+                      <p className="text-muted-foreground">
+                        Il n'y a actuellement aucun groupe planifié disponible à rejoindre. 
+                        Revenez plus tard ou créez votre propre groupe !
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  allScheduledGroups.map(group => renderGroupCard(group, true))
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>

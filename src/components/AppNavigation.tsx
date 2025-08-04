@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink, MapPin } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, Clock } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 
 const AppNavigation = () => {
@@ -93,7 +93,7 @@ const AppNavigation = () => {
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <NavLink 
-                      to="/explore-by-city" 
+                      to="/scheduled-groups" 
                       className={({ isActive }) => 
                         `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                           isActive 
@@ -102,8 +102,8 @@ const AppNavigation = () => {
                         }`
                       }
                     >
-                      <MapPin className="h-4 w-4" />
-                      <span>Explorer par ville</span>
+                      <Clock className="h-4 w-4" />
+                      <span>Groupes planifiés</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -201,7 +201,7 @@ const AppNavigation = () => {
               </NavLink>
 
               <NavLink 
-                to="/explore-by-city" 
+                to="/scheduled-groups" 
                 className={({ isActive }) => 
                   `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
                     isActive 
@@ -211,8 +211,8 @@ const AppNavigation = () => {
                 }
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <MapPin className="h-4 w-4" />
-                <span>Explorer par ville</span>
+                <Clock className="h-4 w-4" />
+                <span>Groupes planifiés</span>
               </NavLink>
 
               <NavLink 

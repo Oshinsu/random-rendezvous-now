@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ScheduledGroup } from '@/services/scheduledGroupService';
+import { UnifiedScheduledGroup } from '@/services/unifiedScheduledGroupService';
 
 export const useScheduledGroupEnhancement = (groupId: string) => {
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
