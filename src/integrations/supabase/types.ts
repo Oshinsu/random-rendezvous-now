@@ -135,10 +135,13 @@ export type Database = {
       groups: {
         Row: {
           bar_address: string | null
+          bar_address_manual: string | null
           bar_latitude: number | null
           bar_longitude: number | null
           bar_name: string | null
+          bar_name_manual: string | null
           bar_place_id: string | null
+          city_name: string | null
           completed_at: string | null
           created_at: string
           created_by_user_id: string | null
@@ -157,10 +160,13 @@ export type Database = {
         }
         Insert: {
           bar_address?: string | null
+          bar_address_manual?: string | null
           bar_latitude?: number | null
           bar_longitude?: number | null
           bar_name?: string | null
+          bar_name_manual?: string | null
           bar_place_id?: string | null
+          city_name?: string | null
           completed_at?: string | null
           created_at?: string
           created_by_user_id?: string | null
@@ -179,10 +185,13 @@ export type Database = {
         }
         Update: {
           bar_address?: string | null
+          bar_address_manual?: string | null
           bar_latitude?: number | null
           bar_longitude?: number | null
           bar_name?: string | null
+          bar_name_manual?: string | null
           bar_place_id?: string | null
+          city_name?: string | null
           completed_at?: string | null
           created_at?: string
           created_by_user_id?: string | null

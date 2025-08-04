@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, MapPin } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 
 const AppNavigation = () => {
@@ -86,6 +86,24 @@ const AppNavigation = () => {
                     >
                       <Users className="h-4 w-4" />
                       <span>Mon groupe</span>
+                    </NavLink>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <NavLink 
+                      to="/explore-by-city" 
+                      className={({ isActive }) => 
+                        `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
+                          isActive 
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        }`
+                      }
+                    >
+                      <MapPin className="h-4 w-4" />
+                      <span>Explorer par ville</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -180,6 +198,21 @@ const AppNavigation = () => {
               >
                 <Users className="h-4 w-4" />
                 <span>Mon groupe</span>
+              </NavLink>
+
+              <NavLink 
+                to="/explore-by-city" 
+                className={({ isActive }) => 
+                  `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  }`
+                }
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <MapPin className="h-4 w-4" />
+                <span>Explorer par ville</span>
               </NavLink>
 
               <NavLink 

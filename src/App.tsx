@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import GroupsPage from "./pages/GroupsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ScheduledGroupsPage from "./pages/ScheduledGroupsPage";
+import ExploreByCityPage from "./pages/ExploreByCityPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from "./pages/ContactPage";
@@ -51,6 +52,7 @@ const AppRoutes = () => (
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
     <Route path="/scheduled-groups" element={<ProtectedRoute><ScheduledGroupsPage /></ProtectedRoute>} />
+    <Route path="/explore-by-city" element={<ProtectedRoute><ExploreByCityPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
