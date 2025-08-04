@@ -113,37 +113,37 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium">
+        <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
           <Clock className="h-4 w-4" />
           Planifier un groupe
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[95vw] max-w-md bg-background border max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg md:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            <Clock className="h-5 w-5 text-brand-500" />
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
+            <Clock className="h-5 w-5 text-primary" />
             Planifier un groupe
           </DialogTitle>
-          <div className="text-sm text-muted-foreground bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
+          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg border-l-4 border-primary">
             <p>Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
           </div>
         </DialogHeader>
         
-        <div className="space-y-5 py-1">
+        <div className="space-y-4 py-2">
           {/* City Selection */}
           <div className="space-y-2">
             <Label htmlFor="city" className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-brand-500" />
+              <MapPin className="h-4 w-4 text-primary" />
               Ville
             </Label>
             <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20">
+              <SelectTrigger className="h-12 border-input focus:border-primary focus:ring-primary/20">
                 <SelectValue placeholder="Sélectionnez une ville" />
               </SelectTrigger>
-              <SelectContent className="bg-background border-border">
+              <SelectContent className="bg-background border-border shadow-lg z-50 max-h-60">
                 {FRENCH_CITIES.map((city) => (
-                  <SelectItem key={city} value={city} className="hover:bg-brand-50">
+                  <SelectItem key={city} value={city} className="hover:bg-accent hover:text-accent-foreground cursor-pointer">
                     {city}
                   </SelectItem>
                 ))}
@@ -154,7 +154,7 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
           {/* Bar Name */}
           <div className="space-y-2">
             <Label htmlFor="barName" className="flex items-center gap-2 text-sm font-medium">
-              <Building2 className="h-4 w-4 text-brand-500" />
+              <Building2 className="h-4 w-4 text-primary" />
               Nom du bar
             </Label>
             <Input
@@ -162,14 +162,14 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
               value={barName}
               onChange={(e) => setBarName(e.target.value)}
               placeholder="Ex: Le Comptoir du 7ème"
-              className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20"
+              className="h-12 border-input focus:border-primary focus:ring-primary/20"
             />
           </div>
           
           {/* Bar Address */}
           <div className="space-y-2">
             <Label htmlFor="barAddress" className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-brand-500" />
+              <MapPin className="h-4 w-4 text-primary" />
               Adresse du bar
             </Label>
             <Input
@@ -177,14 +177,14 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
               value={barAddress}
               onChange={(e) => setBarAddress(e.target.value)}
               placeholder="Ex: 123 rue de la République"
-              className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20"
+              className="h-12 border-input focus:border-primary focus:ring-primary/20"
             />
           </div>
           
           {/* Date Selection */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
-              <CalendarIcon className="h-4 w-4 text-brand-500" />
+              <CalendarIcon className="h-4 w-4 text-primary" />
               Date
             </Label>
             <Popover>
@@ -192,16 +192,16 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full h-11 justify-start text-left font-normal border-border",
+                    "w-full h-12 justify-start text-left font-normal border-input",
                     !selectedDate && "text-muted-foreground",
-                    "hover:bg-brand-50 focus:border-brand-500 focus:ring-brand-500/20"
+                    "hover:bg-accent focus:border-primary focus:ring-primary/20"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : "Choisir une date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-background border-border" align="start">
+              <PopoverContent className="w-auto p-0 bg-background border-border shadow-lg z-50" align="start">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -217,16 +217,16 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
           {/* Time Selection */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
-              <Clock className="h-4 w-4 text-brand-500" />
+              <Clock className="h-4 w-4 text-primary" />
               Heure
             </Label>
             <Select value={selectedTime} onValueChange={setSelectedTime}>
-              <SelectTrigger className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20">
+              <SelectTrigger className="h-12 border-input focus:border-primary focus:ring-primary/20">
                 <SelectValue placeholder="Choisir une heure" />
               </SelectTrigger>
-              <SelectContent className="bg-background border-border">
+              <SelectContent className="bg-background border-border shadow-lg z-50 max-h-60">
                 {TIME_SLOTS.map((time) => (
-                  <SelectItem key={time} value={time} className="hover:bg-brand-50">
+                  <SelectItem key={time} value={time} className="hover:bg-accent hover:text-accent-foreground cursor-pointer">
                     {time}
                   </SelectItem>
                 ))}
@@ -236,18 +236,18 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </div>
         
         {/* Actions */}
-        <div className="flex flex-col-reverse gap-3 pt-6 border-t border-border sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 pt-6 border-t sm:flex-row sm:justify-end">
           <Button 
             variant="outline" 
             onClick={() => setOpen(false)}
-            className="border-border text-muted-foreground hover:bg-muted"
+            className="h-12 border-input hover:bg-accent"
           >
             Annuler
           </Button>
           <Button 
             onClick={handleScheduleGroup}
             disabled={!canSchedule || loading}
-            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-md disabled:opacity-50"
+            className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50"
           >
             {loading ? 'Planification...' : 'Planifier'}
           </Button>
