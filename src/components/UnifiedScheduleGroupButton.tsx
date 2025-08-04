@@ -119,18 +119,18 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[90vw] max-w-md bg-background border shadow-lg max-h-[85vh] overflow-y-auto sm:w-full">
+      <DialogContent className="w-[95vw] max-w-md bg-background border max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader className="space-y-3 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Clock className="h-5 w-5 text-brand-500" />
             Planifier un groupe
           </DialogTitle>
-          <div className="text-sm text-gray-600 bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
+          <div className="text-sm text-muted-foreground bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
             <p>Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
           </div>
         </DialogHeader>
         
-        <div className="space-y-6 py-2">
+        <div className="space-y-5 py-1">
           {/* City Selection */}
           <div className="space-y-2">
             <Label htmlFor="city" className="flex items-center gap-2 text-sm font-medium">
@@ -236,11 +236,11 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </div>
         
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-border">
+        <div className="flex flex-col-reverse gap-3 pt-6 border-t border-border sm:flex-row sm:justify-end">
           <Button 
             variant="outline" 
             onClick={() => setOpen(false)}
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-border text-muted-foreground hover:bg-muted"
           >
             Annuler
           </Button>
