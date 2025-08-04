@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -119,15 +119,15 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="w-[90vw] max-w-md max-h-[80vh] overflow-y-auto">
-        <DialogHeader className="space-y-3 pb-4">
+      <DialogContent>
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
             <Clock className="h-5 w-5 text-primary" />
             Planifier un groupe
           </DialogTitle>
-          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg border-l-4 border-primary">
-            <p>Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
-          </div>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Choisissez le bar et la ville où vous souhaitez vous retrouver.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-2">
