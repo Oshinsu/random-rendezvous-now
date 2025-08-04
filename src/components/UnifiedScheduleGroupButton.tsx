@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,12 +8,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, MapPin, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { UnifiedScheduledGroupService, CreateScheduledGroupData } from '@/services/unifiedScheduledGroupService';
-import { GeolocationService } from '@/services/geolocation';
 
 // French cities for manual selection
 const FRENCH_CITIES = [
@@ -37,13 +35,10 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'automatic' | 'manual'>('automatic');
   
-  // Common fields
+  // Form fields
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
-  
-  // Manual mode fields
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [barName, setBarName] = useState<string>('');
   const [barAddress, setBarAddress] = useState<string>('');
@@ -57,7 +52,9 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
     selectedDate && 
     selectedTime && 
     isValidDate(selectedDate) &&
-    (mode === 'automatic' || (selectedCity && barName && barAddress))
+    selectedCity && 
+    barName && 
+    barAddress
   );
 
   const handleScheduleGroup = async () => {
@@ -70,28 +67,12 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
       const scheduledFor = new Date(selectedDate!);
       scheduledFor.setHours(hours, minutes, 0, 0);
 
-      let createData: CreateScheduledGroupData = {
-        scheduledFor
+      const createData: CreateScheduledGroupData = {
+        scheduledFor,
+        cityName: selectedCity,
+        barName: barName,
+        barAddress: barAddress
       };
-
-      if (mode === 'automatic') {
-        // Get user location for automatic mode
-        const userLocation = await GeolocationService.getCurrentLocation();
-        if (!userLocation) {
-          toast({
-            title: "Erreur de géolocalisation",
-            description: "Impossible d'obtenir votre position actuelle",
-            variant: "destructive"
-          });
-          return;
-        }
-        createData.userLocation = userLocation;
-      } else {
-        // Manual mode data
-        createData.cityName = selectedCity;
-        createData.barName = barName;
-        createData.barAddress = barAddress;
-      }
 
       const result = await UnifiedScheduledGroupService.createScheduledGroup(createData, user.id);
 
@@ -138,97 +119,89 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+      <DialogContent className="sm:max-w-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border">
+        <DialogHeader className="space-y-3">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-brand-700">
+            <Clock className="h-5 w-5 text-brand-500" />
             Planifier un groupe
           </DialogTitle>
+          <div className="text-sm text-muted-foreground bg-brand-50 p-3 rounded-lg border-l-4 border-brand-500">
+            <p>Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
+          </div>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Mode Selection */}
-          <Tabs value={mode} onValueChange={(value) => setMode(value as 'automatic' | 'manual')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="automatic" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Automatique
-              </TabsTrigger>
-              <TabsTrigger value="manual" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Manuel
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="automatic" className="space-y-4 mt-4">
-              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                <p>Mode automatique : Un bar sera automatiquement sélectionné près de votre position lorsque le groupe sera complet.</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="manual" className="space-y-4 mt-4">
-              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                <p>Mode manuel : Choisissez le bar et la ville où vous souhaitez vous retrouver.</p>
-              </div>
-              
-              {/* City Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="city">Ville</Label>
-                <Select value={selectedCity} onValueChange={setSelectedCity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez une ville" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FRENCH_CITIES.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Bar Name */}
-              <div className="space-y-2">
-                <Label htmlFor="barName">Nom du bar</Label>
-                <Input
-                  id="barName"
-                  value={barName}
-                  onChange={(e) => setBarName(e.target.value)}
-                  placeholder="Ex: Le Comptoir du 7ème"
-                />
-              </div>
-              
-              {/* Bar Address */}
-              <div className="space-y-2">
-                <Label htmlFor="barAddress">Adresse du bar</Label>
-                <Input
-                  id="barAddress"
-                  value={barAddress}
-                  onChange={(e) => setBarAddress(e.target.value)}
-                  placeholder="Ex: 123 rue de la République"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+        <div className="space-y-6 py-2">
+          {/* City Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="city" className="flex items-center gap-2 text-sm font-medium">
+              <MapPin className="h-4 w-4 text-brand-500" />
+              Ville
+            </Label>
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20">
+                <SelectValue placeholder="Sélectionnez une ville" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                {FRENCH_CITIES.map((city) => (
+                  <SelectItem key={city} value={city} className="hover:bg-brand-50">
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Bar Name */}
+          <div className="space-y-2">
+            <Label htmlFor="barName" className="flex items-center gap-2 text-sm font-medium">
+              <Building2 className="h-4 w-4 text-brand-500" />
+              Nom du bar
+            </Label>
+            <Input
+              id="barName"
+              value={barName}
+              onChange={(e) => setBarName(e.target.value)}
+              placeholder="Ex: Le Comptoir du 7ème"
+              className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20"
+            />
+          </div>
+          
+          {/* Bar Address */}
+          <div className="space-y-2">
+            <Label htmlFor="barAddress" className="flex items-center gap-2 text-sm font-medium">
+              <MapPin className="h-4 w-4 text-brand-500" />
+              Adresse du bar
+            </Label>
+            <Input
+              id="barAddress"
+              value={barAddress}
+              onChange={(e) => setBarAddress(e.target.value)}
+              placeholder="Ex: 123 rue de la République"
+              className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20"
+            />
+          </div>
           
           {/* Date Selection */}
           <div className="space-y-2">
-            <Label>Date</Label>
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <CalendarIcon className="h-4 w-4 text-brand-500" />
+              Date
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
+                    "w-full h-11 justify-start text-left font-normal border-border",
+                    !selectedDate && "text-muted-foreground",
+                    "hover:bg-brand-50 focus:border-brand-500 focus:ring-brand-500/20"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate ? format(selectedDate, "PPP", { locale: fr }) : "Choisir une date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 bg-background border-border" align="start">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -243,14 +216,17 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
           
           {/* Time Selection */}
           <div className="space-y-2">
-            <Label>Heure</Label>
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Clock className="h-4 w-4 text-brand-500" />
+              Heure
+            </Label>
             <Select value={selectedTime} onValueChange={setSelectedTime}>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 border-border focus:border-brand-500 focus:ring-brand-500/20">
                 <SelectValue placeholder="Choisir une heure" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border-border">
                 {TIME_SLOTS.map((time) => (
-                  <SelectItem key={time} value={time}>
+                  <SelectItem key={time} value={time} className="hover:bg-brand-50">
                     {time}
                   </SelectItem>
                 ))}
@@ -260,14 +236,18 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </div>
         
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-6">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        <div className="flex justify-end gap-3 pt-6 border-t border-border">
+          <Button 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+            className="hover:bg-muted/50"
+          >
             Annuler
           </Button>
           <Button 
             onClick={handleScheduleGroup}
             disabled={!canSchedule || loading}
-            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white"
+            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-md disabled:opacity-50"
           >
             {loading ? 'Planification...' : 'Planifier'}
           </Button>
