@@ -119,7 +119,7 @@ const UnifiedScheduleGroupButton: React.FC<UnifiedScheduleGroupButtonProps> = ({
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border">
+      <DialogContent className="w-[95vw] max-w-lg mx-auto bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-brand-700">
             <Clock className="h-5 w-5 text-brand-500" />
