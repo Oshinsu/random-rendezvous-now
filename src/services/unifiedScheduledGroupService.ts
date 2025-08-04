@@ -31,9 +31,17 @@ export class UnifiedScheduledGroupService {
     userId: string
   ): Promise<{ success: boolean; groupId?: string; error?: string }> {
     try {
-      // Validate scheduled time is in the future
-      if (data.scheduledFor <= new Date()) {
-        return { success: false, error: 'La date planifiée doit être dans le futur' };
+      // Validate scheduled time is at least 30 minutes in the future
+      const now = new Date();
+      const minFutureTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes d'avance minimum
+      const maxFutureTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 jours maximum
+      
+      if (data.scheduledFor <= minFutureTime) {
+        return { success: false, error: 'La planification doit être au moins 30 minutes dans le futur' };
+      }
+      
+      if (data.scheduledFor > maxFutureTime) {
+        return { success: false, error: 'Impossible de planifier plus de 7 jours à l\'avance' };
       }
 
       const isManualMode = Boolean(data.cityName && data.barName && data.barAddress);

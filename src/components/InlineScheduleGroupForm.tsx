@@ -45,13 +45,56 @@ const InlineScheduleGroupForm: React.FC<InlineScheduleGroupFormProps> = ({ onSch
 
   const isValidDate = (date: Date | undefined): boolean => {
     if (!date) return false;
-    return date > new Date();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selectedDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const maxFutureDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 jours max
+    
+    return selectedDay >= today && selectedDay <= maxFutureDate;
+  };
+
+  // Filtrer les créneaux horaires pour aujourd'hui
+  const getAvailableTimeSlots = (): string[] => {
+    if (!selectedDate) return TIME_SLOTS;
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const selectedDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    
+    // Si la date sélectionnée n'est pas aujourd'hui, tous les créneaux sont disponibles
+    if (selectedDay.getTime() !== today.getTime()) {
+      return TIME_SLOTS;
+    }
+    
+    // Pour aujourd'hui, filtrer les créneaux qui sont au moins 30 minutes dans le futur
+    const minFutureTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes d'avance
+    
+    return TIME_SLOTS.filter(timeSlot => {
+      const [hours, minutes] = timeSlot.split(':').map(Number);
+      const slotDateTime = new Date(selectedDate);
+      slotDateTime.setHours(hours, minutes, 0, 0);
+      return slotDateTime >= minFutureTime;
+    });
+  };
+
+  const canScheduleAtTime = (timeSlot: string): boolean => {
+    if (!selectedDate) return false;
+    
+    const now = new Date();
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    const slotDateTime = new Date(selectedDate);
+    slotDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Vérifier que c'est au moins 30 minutes dans le futur
+    const minFutureTime = new Date(now.getTime() + 30 * 60 * 1000);
+    return slotDateTime >= minFutureTime;
   };
 
   const canSchedule = Boolean(
     selectedDate && 
     selectedTime && 
     isValidDate(selectedDate) &&
+    canScheduleAtTime(selectedTime) &&
     selectedCity && 
     barName && 
     barAddress
@@ -214,7 +257,12 @@ const InlineScheduleGroupForm: React.FC<InlineScheduleGroupFormProps> = ({ onSch
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  disabled={(date) => date <= new Date()}
+                  disabled={(date) => {
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const maxFutureDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    return date < today || date > maxFutureDate;
+                  }}
                   initialFocus
                 />
               </PopoverContent>
@@ -232,9 +280,14 @@ const InlineScheduleGroupForm: React.FC<InlineScheduleGroupFormProps> = ({ onSch
                 <SelectValue placeholder="Choisir une heure" />
               </SelectTrigger>
               <SelectContent>
-                {TIME_SLOTS.map((time) => (
-                  <SelectItem key={time} value={time}>
+                {getAvailableTimeSlots().map((time) => (
+                  <SelectItem 
+                    key={time} 
+                    value={time}
+                    disabled={!canScheduleAtTime(time)}
+                  >
                     {time}
+                    {!canScheduleAtTime(time) && ' (passé)'}
                   </SelectItem>
                 ))}
               </SelectContent>
