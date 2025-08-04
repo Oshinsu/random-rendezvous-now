@@ -9,7 +9,7 @@ import { Calendar, Clock, MapPin, Users, X, UserPlus, Trash2 } from 'lucide-reac
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
-import UnifiedScheduleGroupButton from '@/components/UnifiedScheduleGroupButton';
+import InlineScheduleGroupForm from '@/components/InlineScheduleGroupForm';
 import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
 import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
@@ -440,9 +440,11 @@ export default function UnifiedScheduledGroupsPage() {
     <AppLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <h1 className="text-3xl font-bold">Groupes planifiés</h1>
-            <UnifiedScheduleGroupButton onScheduled={fetchData} />
+          <div className="space-y-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h1 className="text-3xl font-bold">Groupes planifiés</h1>
+            </div>
+            <InlineScheduleGroupForm onScheduled={fetchData} />
           </div>
 
           <Tabs defaultValue="my-groups" className="w-full">
@@ -471,7 +473,7 @@ export default function UnifiedScheduledGroupsPage() {
                       <p className="text-muted-foreground mb-4">
                         Créez votre premier groupe planifié pour organiser une sortie à l'avance
                       </p>
-                      <UnifiedScheduleGroupButton onScheduled={fetchData} />
+                      <InlineScheduleGroupForm onScheduled={fetchData} />
                     </CardContent>
                   </Card>
                 ) : (
