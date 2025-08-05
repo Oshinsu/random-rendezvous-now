@@ -128,7 +128,7 @@ export class IntelligentCleanupService {
         .from('groups')
         .delete()
         .eq('current_participants', 0)
-        .neq('is_scheduled', true)
+        .not('is_scheduled', 'eq', true)
         .select('id, created_at');
       
       console.log(`🗑️ [DEBUG] Tentative suppression groupes vides - Query: current_participants=0 AND (is_scheduled IS NULL OR is_scheduled = false)`);
@@ -227,7 +227,7 @@ export class IntelligentCleanupService {
         .from('groups')
         .delete()
         .lt('created_at', veryOldThreshold)
-        .neq('is_scheduled', true)
+        .not('is_scheduled', 'eq', true)
         .select('id, status, created_at');
 
       if (error) {
