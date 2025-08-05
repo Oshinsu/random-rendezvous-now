@@ -21,6 +21,15 @@ export class IntelligentCleanupService {
     try {
       console.log('🧠 [INTELLIGENT CLEANUP] Démarrage du nettoyage intelligent...');
       
+      // Debug: Compter les groupes planifiés avant nettoyage
+      const { data: scheduledGroups } = await supabase
+        .from('groups')
+        .select('id, is_scheduled, scheduled_for, status')
+        .eq('is_scheduled', true);
+      
+      console.log(`📅 [DEBUG] ${scheduledGroups?.length || 0} groupes planifiés trouvés avant nettoyage:`, 
+        scheduledGroups?.map(g => `${g.id.slice(0,8)} (${g.status}, prévu: ${g.scheduled_for})`));
+      
       // 1. Identifier et protéger les groupes vivants
       await this.protectLiveGroups();
       
@@ -47,6 +56,15 @@ export class IntelligentCleanupService {
       
       // Pas d'autres services de nettoyage - ce service est UNIQUE
       
+      // Debug: Compter les groupes planifiés après nettoyage
+      const { data: scheduledGroupsAfter } = await supabase
+        .from('groups')
+        .select('id, is_scheduled, scheduled_for, status')
+        .eq('is_scheduled', true);
+      
+      console.log(`📅 [DEBUG] ${scheduledGroupsAfter?.length || 0} groupes planifiés restants après nettoyage:`, 
+        scheduledGroupsAfter?.map(g => `${g.id.slice(0,8)} (${g.status}, prévu: ${g.scheduled_for})`));
+      
       console.log('✅ [INTELLIGENT CLEANUP] Nettoyage intelligent terminé');
     } catch (error) {
       ErrorHandler.logError('INTELLIGENT_CLEANUP', error);
@@ -68,6 +86,8 @@ export class IntelligentCleanupService {
         .from('groups')
         .select('id, status, created_at, current_participants, is_scheduled, scheduled_for')
         .or(`and(created_at.gt.${protectionThreshold},status.in.(waiting,confirmed)),and(is_scheduled.eq.true,scheduled_for.gt.${new Date().toISOString()},status.neq.cancelled)`);
+      
+      console.log(`🛡️ [DEBUG] Protection des groupes vivants - Seuil: ${protectionThreshold}`);
 
       if (error) {
         ErrorHandler.logError('IDENTIFY_LIVE_GROUPS', error);
@@ -103,12 +123,15 @@ export class IntelligentCleanupService {
       console.log('🗑️ [INTELLIGENT CLEANUP] Suppression immédiate des groupes vides...');
       
       // Ne pas supprimer les groupes planifiés même s'ils sont vides
+      // CORRECTION CRITIQUE: Syntaxe correcte pour exclure les groupes planifiés
       const { data: deletedGroups, error } = await supabase
         .from('groups')
         .delete()
         .eq('current_participants', 0)
-        .or('is_scheduled.is.null,is_scheduled.eq.false')
+        .neq('is_scheduled', true)
         .select('id, created_at');
+      
+      console.log(`🗑️ [DEBUG] Tentative suppression groupes vides - Query: current_participants=0 AND (is_scheduled IS NULL OR is_scheduled = false)`);
 
       if (error) {
         ErrorHandler.logError('CLEANUP_EMPTY_GROUPS_IMMEDIATELY', error);
@@ -199,10 +222,12 @@ export class IntelligentCleanupService {
       
       const veryOldThreshold = new Date(Date.now() - GROUP_CONSTANTS.VERY_OLD_GROUP_THRESHOLD).toISOString();
       
+      // Protéger les groupes planifiés même s'ils sont très anciens
       const { data: veryOldGroups, error } = await supabase
         .from('groups')
         .delete()
         .lt('created_at', veryOldThreshold)
+        .neq('is_scheduled', true)
         .select('id, status, created_at');
 
       if (error) {
@@ -247,13 +272,28 @@ export class IntelligentCleanupService {
         if (realCount !== group.current_participants) {
           console.log(`🔧 [INTELLIGENT CLEANUP] Correction groupe ${group.id}: ${group.current_participants} → ${realCount}`);
           
-          // Si le groupe devient vide, le supprimer immédiatement
+          // Si le groupe devient vide, vérifier s'il est planifié avant suppression
           if (realCount === 0) {
-            await supabase
+            const { data: groupDetails } = await supabase
               .from('groups')
-              .delete()
-              .eq('id', group.id);
-            console.log(`🗑️ [INTELLIGENT CLEANUP] Groupe vide supprimé: ${group.id}`);
+              .select('is_scheduled, scheduled_for')
+              .eq('id', group.id)
+              .single();
+            
+            // Ne pas supprimer les groupes planifiés même s'ils sont vides
+            const isScheduledGroup = groupDetails?.is_scheduled && 
+              groupDetails?.scheduled_for && 
+              new Date(groupDetails.scheduled_for) > new Date();
+            
+            if (!isScheduledGroup) {
+              await supabase
+                .from('groups')
+                .delete()
+                .eq('id', group.id);
+              console.log(`🗑️ [INTELLIGENT CLEANUP] Groupe vide supprimé: ${group.id}`);
+            } else {
+              console.log(`📅 [INTELLIGENT CLEANUP] Groupe planifié vide protégé: ${group.id}`);
+            }
             continue;
           }
 
