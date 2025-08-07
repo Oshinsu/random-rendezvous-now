@@ -7,23 +7,23 @@ import benefit4 from "@/assets/new-benefit-4.jpg";
 const benefits = [
   {
     image: benefit1,
-    title: "100% Vrai",
-    description: "Pas de filtres, pas de faux-semblants. Tu es toi-même, les autres aussi !",
+    title: "Authentique",
+    description: "Pas de filtres, pas de blabla. Des gens vrais, des moments vrais.",
   },
   {
     image: benefit2,
-    title: "La Magie du Hasard",
-    description: "Chaque soirée est une surprise ! Tu ne sais jamais qui tu vas rencontrer.",
+    title: "La magie du hasard",
+    description: "Chaque soirée est unique. Laisse la surprise opérer.",
   },
   {
     image: benefit3,
-    title: "Super Simple",
-    description: "Un clic et c'est parti ! Moins de temps sur ton téléphone, plus de vrais moments.",
+    title: "Ultra simple",
+    description: "1 clic, c'est tout. Moins d'écran, plus d'instant.",
   },
   {
     image: benefit4,
-    title: "Gratuit & Sûr",
-    description: "Beta gratuite à Paris ! Bars soigneusement sélectionnés, ta sécurité avant tout.",
+    title: "Gratuit et sûr",
+    description: "Beta gratuite à Paris. Bars triés et ambiances conviviales.",
   },
 ];
 
@@ -44,7 +44,8 @@ const WhyRandomSection = () => {
               <div className="relative h-40 sm:h-48 w-full overflow-hidden">
                 <img 
                   src={benefit.image} 
-                  alt={benefit.title}
+                  alt={`Random - ${benefit.title}`}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-80"></div>

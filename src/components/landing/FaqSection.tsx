@@ -8,24 +8,24 @@ import {
 
 const faqs = [
   {
-    question: "Vraiment 100% random ? Et si je tombe avec des gens bizarres ?",
-    answer: "C'est tout l'intérêt ! Le 'bizarre' d'aujourd'hui pourrait être ton nouveau meilleur pote demain. Au pire, tu auras une super anecdote à raconter ! Le risque fait partie du charme.",
+    question: "C'est vraiment 100% random ?",
+    answer: "Oui. Le hasard crée la magie des rencontres. Et à 5, on se sent toujours à l'aise.",
   },
   {
-    question: "Pourquoi je ne vois pas le bar avant de confirmer ?",
-    answer: "Le mystère fait partie de l'expérience ! On te garantit un lieu sympa et accessible. Fais confiance au hasard et à notre sélection soigneuse de bars partenaires.",
+    question: "Pourquoi le bar est révélé après ?",
+    answer: "Pour garder la surprise. Nous choisissons un bar ouvert, accessible et validé.",
   },
   {
-    question: "Et si le groupe ne me plaît pas ?",
-    answer: "Random n'est pas un dating app ! L'objectif : passer un super moment et élargir ton cercle social. Reste ouvert, la magie opère souvent quand on s'y attend le moins !",
+    question: "Et si le groupe ne me convient pas ?",
+    answer: "Le but : passer un bon moment et élargir ton cercle. Garde l'esprit ouvert.",
   },
   {
-    question: "C'est vraiment gratuit ?",
-    answer: "Oui, complètement ! Beta gratuite à Paris du 1er août au 1er septembre. Notre mission : révolutionner tes soirées, pas vider ton portefeuille !",
+    question: "C'est gratuit ?",
+    answer: "Oui, la beta est gratuite à Paris jusqu'au 1er septembre.",
   },
   {
     question: "C'est sécurisé ?",
-    answer: "Totalement. Lieux publics uniquement, et l'effet de groupe ajoute une sécurité naturelle. Ta tranquillité d'esprit = notre obsession."
+    answer: "Oui. Lieux publics uniquement, groupe de 5, et suivi en temps réel dans l'app.",
   }
 ];
 

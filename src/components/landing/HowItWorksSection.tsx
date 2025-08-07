@@ -5,23 +5,23 @@ import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
 const steps = [
   {
     icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
-    title: "1. Tu cliques",
-    description: "Un bouton, c'est tout. Pas de profil à remplir, pas de questions.",
+    title: "1. Clique",
+    description: "Un bouton et c'est parti. Zéro profil, zéro friction.",
   },
   {
     icon: <Users className="w-10 h-10 text-primary mb-4" />,
-    title: "2. On forme ton groupe",
-    description: "5 personnes au total : toi + 4 inconnus qui ont la même envie d'aventure.",
+    title: "2. Ton groupe se forme",
+    description: "5 personnes, toi compris, prêtes pour une vraie rencontre.",
   },
   {
     icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
-    title: "3. On révèle le bar",
-    description: "Le lieu s'affiche. Gratuit pour découvrir l'expérience.",
+    title: "3. On dévoile le bar",
+    description: "Un lieu ouvert, proche et validé par Random.",
   },
   {
     icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
-    title: "4. Tu y vas",
-    description: "Rendez-vous dans exactement 1 heure ! Le temps parfait pour se préparer à vivre quelque chose d'inattendu.",
+    title: "4. Rendez-vous",
+    description: "Dans 1 heure. Juste assez de temps pour te préparer.",
   },
 ];
 

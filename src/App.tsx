@@ -18,6 +18,7 @@ import AuthPage from "./pages/AuthPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
+import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient();
 
@@ -67,13 +68,15 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <AnalyticsProvider>
-          <TooltipProvider>
-            <div className="min-h-screen bg-background font-sans antialiased">
-              <Toaster />
-              <Sonner />
-              <AppRoutes />
-            </div>
-          </TooltipProvider>
+          <HelmetProvider>
+            <TooltipProvider>
+              <div className="min-h-screen bg-background font-sans antialiased">
+                <Toaster />
+                <Sonner />
+                <AppRoutes />
+              </div>
+            </TooltipProvider>
+          </HelmetProvider>
         </AnalyticsProvider>
       </AuthProvider>
     </BrowserRouter>

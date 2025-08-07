@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
+import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -26,6 +27,22 @@ const Index = () => {
 
   return (
     <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col">
+      <Helmet>
+        <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
+        <meta name="description" content="Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies. Beta gratuite à Paris." />
+        <link rel="canonical" href={typeof window !== "undefined" ? `${window.location.origin}/` : "/"} />
+        <meta property="og:title" content="Random • 1 clic, 1 groupe, 1 bar" />
+        <meta property="og:description" content="Clique, on forme ton groupe de 5 et on choisit un bar près de toi." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context":"https://schema.org",
+          "@type":"WebSite",
+          "name":"Random",
+          "url": typeof window !== "undefined" ? `${window.location.origin}/` : "https://random.app/",
+          "description":"Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies."
+        })}</script>
+      </Helmet>
       <header className="p-3 sm:p-4 bg-white/90 backdrop-blur-sm border-b border-amber-200/50 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2 sm:space-x-3">

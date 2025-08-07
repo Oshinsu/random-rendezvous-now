@@ -8,25 +8,25 @@ const NoMoreSection = () => {
     <section className="py-12 sm:py-16 md:py-20 bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 sm:px-6 text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold mb-4 sm:mb-6">
-          On Casse les Codes des <span>Applis Classiques</span>
+          On casse les codes des <span>applis classiques</span>
         </h2>
         <div className="mb-8 sm:mb-10 max-w-4xl mx-auto space-y-4 sm:space-y-6">
           <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚧 Version Beta en cours !</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚧 Version beta en cours</h3>
             <p className="text-sm sm:text-base opacity-90 leading-relaxed">
-              L'appli est encore en test, alors soyez cool avec nous ! Si vous trouvez des petits bugs, pas de panique - c'est gratuit et on bosse dessus 🛠️
+              C'est gratuit et on améliore l'expérience chaque jour. Merci pour vos retours !
             </p>
           </div>
           <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">⏰ Les Randers se réveillent le soir !</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">⏰ Les Randers sortent le soir</h3>
             <p className="text-sm sm:text-base opacity-90 leading-relaxed">
-              Évitez les heures de bureau ! Les meilleurs moments pour trouver d'autres Randers ? Entre 17h et 23h. C'est là que ça bouge vraiment 🌙
+              Les meilleurs moments pour trouver du monde : 17h–23h. À tout à l'heure 🌙
             </p>
           </div>
           <div className="bg-background/10 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚀 Plus on est de fous, plus on rit !</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 text-accent">🚀 Plus on est de fous, plus on rit</h3>
             <p className="text-sm sm:text-base opacity-90 leading-relaxed">
-              On lance le 1er août avec nos petits moyens et beaucoup d'espoir ! Alors parlez-en autour de vous et aidez-nous à faire grandir cette French Touch 🇫🇷
+              On démarre petit, avec une grande ambition. Parlez-en et écrivons la suite ensemble 🇫🇷
             </p>
           </div>
         </div>

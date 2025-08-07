@@ -32,10 +32,10 @@ const HeroSection = () => {
       
       <div className="relative container mx-auto px-4 sm:px-6 text-center z-10 h-full flex flex-col justify-center">
         <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-heading font-extrabold mb-4 sm:mb-6 tracking-tight leading-tight">
-          Random: <span className="text-primary block sm:inline">1 Clic = 1 Groupe = 1 Bar</span>
+          Random • <span className="text-primary block sm:inline">1 clic. 5 inconnus. 1 bar.</span>
         </h1>
         <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
-          Clique, on forme ton groupe de 5 et on choisit un bar ouvert près de toi !
+          En un clic, on crée ton groupe de 5 et on choisit un bar ouvert près de toi. Des rencontres vraies, sans swipe.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button 
@@ -49,20 +49,20 @@ const HeroSection = () => {
         </div>
         <div className="max-w-2xl mx-auto px-2">
           <p className="text-xs sm:text-sm text-white/80 mb-3 sm:mb-4">
-            {user ? '🎲 Ta prochaine aventure Random t\'attend !' : '✨ Beta gratuite - Paris : 1er août au 1er septembre'}
+            {user ? "🎲 Ta prochaine aventure Random t'attend !" : "✨ Beta gratuite à Paris jusqu'au 1er septembre"}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-xs text-white/70">
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap">BETA TEST en Août</span>
+              <span className="whitespace-nowrap">Beta en août</span>
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap">Bars aléatoires</span>
+              <span className="whitespace-nowrap">Bars sélectionnés au hasard</span>
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap text-center">GRATUIT PENDANT TOUTES LES VACANCES</span>
+              <span className="whitespace-nowrap text-center">Gratuit pendant les vacances</span>
             </span>
           </div>
         </div>
