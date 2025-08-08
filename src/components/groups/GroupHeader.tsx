@@ -35,12 +35,12 @@ const GroupHeader = ({ onBack, onRefresh, loading }: GroupHeaderProps) => {
         <Button
           onClick={onRefresh}
           disabled={loading}
-          variant="outline"
           size="sm"
-          className="bg-white/50 backdrop-blur-sm border-brand-300 text-brand-700 hover:bg-brand-50 text-xs"
+          className={`gap-2 text-xs px-3 h-8 bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-glow hover:shadow-glow-strong hover:-translate-y-0.5 transition-transform ${loading ? 'animate-pulse' : 'animate-glow'}`}
+          aria-label="Relancer la recherche de groupe"
         >
-          <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          Actualiser
+          <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : 'group-hover:rotate-12'} transition-transform`} />
+          <span>Relancer</span>
         </Button>
       </div>
     </div>
