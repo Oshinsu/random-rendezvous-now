@@ -45,9 +45,9 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
 
   if (loading && messages.length === 0) {
     return (
-      <div className="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50 space-y-3">
-        <div className="text-center text-gray-500 mt-8">
-          <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+      <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
+        <div className="text-center text-muted-foreground mt-8">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p>Chargement des messages...</p>
         </div>
       </div>
@@ -56,11 +56,11 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
 
   if (messages.length === 0) {
     return (
-      <div className="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50 space-y-3">
-        <div className="text-center text-gray-500 mt-8">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-blue-800 font-medium">💬 Bienvenue dans le chat !</p>
-            <p className="text-blue-600 text-sm mt-1">
+      <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
+        <div className="text-center text-muted-foreground mt-8">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
+            <p className="text-primary font-medium">💬 Bienvenue dans le chat !</p>
+            <p className="text-sm mt-1">
               Présentez-vous et préparez votre aventure ensemble
             </p>
           </div>
@@ -71,7 +71,7 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
   }
 
   return (
-    <div className="h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50 space-y-3">
+    <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
       {messages.map((message, index) => {
         const sender = getMessageSender(message, index);
         const isOwnMessage = message.user_id === userId && !message.is_system;

@@ -71,17 +71,17 @@ const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
           onKeyPress={handleKeyPress}
           onFocus={handleFocus}
           disabled={sending}
-          className="flex-1"
+          className="flex-1 rounded-2xl bg-muted/50 placeholder:text-muted-foreground"
           maxLength={500}
         />
         <Button
           onClick={handleSendMessage}
           disabled={!newMessage.trim() || sending}
           size="sm"
-          className="px-4 bg-brand-500 hover:bg-brand-600"
+          aria-label="Envoyer le message"
         >
           {sending ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
           ) : (
             <Send className="h-4 w-4" />
           )}
@@ -89,7 +89,7 @@ const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
       </div>
       
       {newMessage.length > 400 && (
-        <div className="text-xs text-gray-500 text-right">
+        <div className="text-2xs text-muted-foreground text-right">
           {newMessage.length}/500 caractères
         </div>
       )}

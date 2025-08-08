@@ -68,7 +68,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full glass-card">
       <ChatHeader 
         messageCount={messages.length}
         loading={loading}

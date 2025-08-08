@@ -12,14 +12,14 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
   return (
-    <CardHeader>
+    <CardHeader className="pb-2">
       <CardTitle className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
-          Chat du groupe
+          <span>Chat du groupe</span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
+          <Badge variant="secondary">
             <Users className="h-3 w-3 mr-1" />
             {messageCount}
           </Badge>
@@ -29,6 +29,7 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0"
+            aria-label="Rafraîchir les messages"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
           </Button>
