@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
 import ChatInput from '@/components/chat/ChatInput';
+import { logger } from '@/utils/cleanLogging';
 
 interface GroupChatProps {
   groupId: string;
@@ -34,7 +35,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   }, [loading, groupId]); // Retirer messages.length des dépendances
 
   const handleRefresh = () => {
-    console.log('🔄 Actualisation manuelle du chat');
+    logger.info('Manual chat refresh');
     refreshMessages();
   };
 

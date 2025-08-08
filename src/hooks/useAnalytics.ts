@@ -30,7 +30,7 @@ class SimpleAnalytics {
 
   track(event: string, properties?: Record<string, any>) {
     // Only track the 5 essential events
-    const allowedEvents = ['bar_visit', 'group_create', 'group_join', 'login', 'sign_up'];
+    const allowedEvents = ['bar_visit', 'group_create', 'group_join', 'login', 'sign_up', 'scheduled_group_activated'];
     if (!allowedEvents.includes(event)) {
       return;
     }

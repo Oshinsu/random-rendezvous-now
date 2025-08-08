@@ -11,6 +11,8 @@ import { toast } from '@/hooks/use-toast';
 import { ErrorHandler } from '@/utils/errorHandling';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
+import { logger } from '@/utils/cleanLogging';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 /**
  * Optimized hook with Realtime subscriptions for instant group updates
@@ -25,6 +27,8 @@ export const useRealtimeGroups = () => {
   
   const channelRef = useRef<any>(null);
   const lastGroupCompletionRef = useRef<Set<string>>(new Set());
+
+  const { track } = useAnalytics();
 
   // Optimized intervals for reduced latency
   const OPTIMIZED_INTERVALS = {
@@ -84,7 +88,7 @@ export const useRealtimeGroups = () => {
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔴 Setting up Realtime subscriptions for instant group updates');
+    logger.info('Setting up Realtime subscriptions for instant group updates');
 
     // Clean up existing channel
     if (channelRef.current) {
@@ -103,7 +107,7 @@ export const useRealtimeGroups = () => {
           filter: `status=eq.confirmed`,
         },
         async (payload) => {
-          console.log('🔴 Group confirmed via Realtime:', payload);
+          logger.debug('Group confirmed via Realtime', payload);
           
           const updatedGroup = payload.new as Group;
           
@@ -143,13 +147,18 @@ export const useRealtimeGroups = () => {
         },
         async (payload) => {
           const updatedGroup = payload.new as Group;
+
+          // Track scheduled group activation (is_scheduled: true -> false)
+          if ((payload as any).old && (payload as any).old.is_scheduled === true && (updatedGroup as any).is_scheduled === false) {
+            track('scheduled_group_activated', { group_id: updatedGroup.id });
+          }
           
           // Listen for bar assignments
           if (updatedGroup.bar_name && 
               (activeGroupId === updatedGroup.id || 
                userGroups.some(group => group.id === updatedGroup.id))) {
             
-            console.log('🍺 Bar assigned via Realtime:', updatedGroup.bar_name);
+            logger.info('Bar assigned via Realtime', { bar_name: updatedGroup.bar_name });
             
             showUniqueToast(
               `🍺 Bar assigné: ${updatedGroup.bar_name}`,
@@ -170,7 +179,7 @@ export const useRealtimeGroups = () => {
           table: 'group_participants',
         },
         async (payload) => {
-          console.log('🔴 New participant joined via Realtime:', payload);
+          logger.debug('New participant joined via Realtime', payload);
           
           // Check if it's for user's active group
           if (activeGroupId === payload.new.group_id) {
@@ -182,11 +191,11 @@ export const useRealtimeGroups = () => {
       )
       .subscribe();
 
-    console.log('✅ Realtime subscriptions established');
+    logger.info('Realtime subscriptions established');
 
     return () => {
       if (channelRef.current) {
-        console.log('🔴 Cleaning up Realtime subscriptions');
+        logger.info('Cleaning up Realtime subscriptions');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
