@@ -26,9 +26,6 @@ export class EnhancedGroupService {
   static initialize(): void {
     console.log('🚀 [ENHANCED GROUP SERVICE] Initialisation avec nettoyage intelligent...');
     
-    // Démarrer le nettoyage périodique intelligent
-    IntelligentCleanupService.startPeriodicIntelligentCleanup();
-    
     console.log('✅ [ENHANCED GROUP SERVICE] Service initialisé avec logique intelligente');
   }
 

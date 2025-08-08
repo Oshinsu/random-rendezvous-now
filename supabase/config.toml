@@ -88,3 +88,6 @@ verify_jwt = false
 
 [functions.scheduled-group-activation-cron]
 verify_jwt = false
+
+[functions.cleanup-groups]
+verify_jwt = false
