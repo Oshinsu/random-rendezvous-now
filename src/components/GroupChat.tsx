@@ -44,7 +44,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
       <Card className="w-full">
         <ChatHeader messageCount={0} loading={false} onRefresh={() => {}} />
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>Connectez-vous pour accéder au chat</p>
           </div>
@@ -58,7 +58,7 @@ const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
       <Card className="w-full">
         <ChatHeader messageCount={0} loading={false} onRefresh={() => {}} />
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>En attente de membres...</p>
           </div>

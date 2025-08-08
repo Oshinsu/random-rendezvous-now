@@ -30,7 +30,7 @@ export const useChatMessages = (groupId: string) => {
       try {
         const { data, error } = await supabase
           .from('group_messages')
-          .select('*')
+          .select('id, group_id, user_id, message, created_at, is_system, reactions')
           .eq('group_id', groupId)
           .order('created_at', { ascending: true })
           .limit(100);

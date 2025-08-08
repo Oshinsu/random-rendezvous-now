@@ -45,7 +45,12 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
 
   if (loading && messages.length === 0) {
     return (
-      <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
+      <div
+        className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in"
+        role="log"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="text-center text-muted-foreground mt-8">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
           <p>Chargement des messages...</p>
@@ -56,7 +61,12 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
 
   if (messages.length === 0) {
     return (
-      <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
+      <div
+        className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in"
+        role="log"
+        aria-live="polite"
+        aria-busy="false"
+      >
         <div className="text-center text-muted-foreground mt-8">
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-4">
             <p className="text-primary font-medium">💬 Bienvenue dans le chat !</p>
@@ -71,7 +81,12 @@ const ChatMessages = ({ messages, loading, userId }: ChatMessagesProps) => {
   }
 
   return (
-    <div className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in">
+    <div
+      className="h-72 overflow-y-auto rounded-2xl p-4 bg-muted/40 border border-border space-y-3 animate-fade-in"
+      role="log"
+      aria-live="polite"
+      aria-busy={false}
+    >
       {messages.map((message, index) => {
         const sender = getMessageSender(message, index);
         const isOwnMessage = message.user_id === userId && !message.is_system;
