@@ -14,6 +14,16 @@ export const useChatRealtime = (
   const currentGroupIdRef = useRef<string>('');
   const isActiveRef = useRef<boolean>(true);
 
+  // Keep stable refs for callbacks to avoid resubscribing
+  const updateMessagesCacheRef = useRef(updateMessagesCache);
+  const invalidateMessagesRef = useRef(invalidateMessages);
+
+  // Update refs when callbacks change without recreating subscription
+  useEffect(() => {
+    updateMessagesCacheRef.current = updateMessagesCache;
+    invalidateMessagesRef.current = invalidateMessages;
+  }, [updateMessagesCache, invalidateMessages]);
+
   useEffect(() => {
     if (!groupId || !user) {
       return;
@@ -36,7 +46,7 @@ export const useChatRealtime = (
     // Détecter changement de groupe et nettoyer
     if (currentGroupIdRef.current && currentGroupIdRef.current !== groupId) {
       console.log('🧹 CHANGEMENT DE GROUPE - nettoyage immédiat du cache');
-      invalidateMessages();
+      invalidateMessagesRef.current();
     }
 
     console.log('🛰️ Configuration STRICTE realtime pour groupe:', groupId);
@@ -112,7 +122,7 @@ export const useChatRealtime = (
         channelRef.current = null;
       }
     };
-  }, [groupId, user?.id, updateMessagesCache, invalidateMessages]);
+  }, [groupId, user?.id]);
 
   // Nettoyage final BRUTAL au démontage
   useEffect(() => {
