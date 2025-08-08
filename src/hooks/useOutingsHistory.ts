@@ -36,7 +36,7 @@ export const useOutingsHistory = () => {
       try {
         const { data, error } = await supabase
           .from('user_outings_history')
-          .select('*')
+          .select('id, bar_name, bar_address, meeting_time, participants_count, completed_at, user_rating, user_review')
           .eq('user_id', user.id)
           .order('completed_at', { ascending: false });
 
