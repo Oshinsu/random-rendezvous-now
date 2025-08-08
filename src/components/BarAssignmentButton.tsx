@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+// Removed RefreshCw icon import to avoid "relaunch" icon
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { GooglePlacesService } from '@/services/googlePlaces';
@@ -123,7 +123,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
       size="sm"
       className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
     >
-      <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+      
       {loading ? 'Recherche...' : 'Assigner un bar'}
     </Button>
   );

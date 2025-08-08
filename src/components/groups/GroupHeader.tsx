@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { RefreshCw, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface GroupHeaderProps {
   onBack: () => void;
@@ -8,7 +8,7 @@ interface GroupHeaderProps {
   loading: boolean;
 }
 
-const GroupHeader = ({ onBack, onRefresh, loading }: GroupHeaderProps) => {
+const GroupHeader = ({ onBack, onRefresh: _onRefresh, loading: _loading }: GroupHeaderProps) => {
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-3">
@@ -29,19 +29,6 @@ const GroupHeader = ({ onBack, onRefresh, loading }: GroupHeaderProps) => {
             Suivez l'évolution en temps réel
           </p>
         </div>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={onRefresh}
-          disabled={loading}
-          size="sm"
-          className={`gap-2 text-xs px-3 h-8 bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-glow hover:shadow-glow-strong hover:-translate-y-0.5 transition-transform ${loading ? 'animate-pulse' : 'animate-glow'}`}
-          aria-label="Relancer la recherche de groupe"
-        >
-          <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : 'group-hover:rotate-12'} transition-transform`} />
-          <span>Relancer</span>
-        </Button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 
-import { MessageCircle, Users, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MessageCircle, Users } from 'lucide-react';
+// Button import removed (no manual refresh)
 import { Badge } from '@/components/ui/badge';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -10,7 +10,7 @@ interface ChatHeaderProps {
   onRefresh: () => void;
 }
 
-const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
+const ChatHeader = ({ messageCount, loading: _loading, onRefresh: _onRefresh }: ChatHeaderProps) => {
   return (
     <CardHeader className="pb-2">
       <CardTitle className="flex items-center justify-between">
@@ -23,16 +23,6 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
             <Users className="h-3 w-3 mr-1" />
             {messageCount}
           </Badge>
-          <Button
-            onClick={onRefresh}
-            disabled={loading}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            aria-label="Rafraîchir les messages"
-          >
-            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </CardTitle>
     </CardHeader>
