@@ -86,29 +86,29 @@ const AuthPage = () => {
 
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
-        <TabsList className="grid w-full grid-cols-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md animate-fade-in">
+        <TabsList className="grid w-full grid-cols-2 rounded-2xl">
           <TabsTrigger value="signin">Se Connecter</TabsTrigger>
           <TabsTrigger value="signup">S'inscrire</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
-          <Card>
+          <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <CardTitle>Se Connecter</CardTitle>
-              <CardDescription>Accédez à votre compte Random.</CardDescription>
+              <CardTitle className="text-center gradient-text">Se Connecter</CardTitle>
+              <CardDescription className="text-center">Accédez à votre compte Random.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <form onSubmit={handleAuth}>
+              <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email-signin">Email</Label>
-                  <Input id="email-signin" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input id="email-signin" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   <Label htmlFor="password-signin">Mot de passe</Label>
-                  <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <Button type="submit" className="w-full mt-6" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Chargement...' : 'Se Connecter'}
                 </Button>
               </form>
@@ -116,30 +116,30 @@ const AuthPage = () => {
           </Card>
         </TabsContent>
         <TabsContent value="signup">
-          <Card>
+          <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <CardTitle>S'inscrire</CardTitle>
-              <CardDescription>Créez un nouveau compte Random pour commencer l'aventure.</CardDescription>
+              <CardTitle className="text-center gradient-text">S'inscrire</CardTitle>
+              <CardDescription className="text-center">Créez un nouveau compte Random pour commencer l'aventure.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <form onSubmit={handleAuth}>
+              <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName-signup">Prénom</Label>
-                  <Input id="firstName-signup" type="text" placeholder="Votre prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  <Input id="firstName-signup" type="text" placeholder="Votre prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   <Label htmlFor="lastName-signup">Nom</Label>
-                  <Input id="lastName-signup" type="text" placeholder="Votre nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                  <Input id="lastName-signup" type="text" placeholder="Votre nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   <Label htmlFor="email-signup">Email</Label>
-                  <Input id="email-signup" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input id="email-signup" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   <Label htmlFor="password-signup">Mot de passe</Label>
-                  <Input id="password-signup" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="password-signup" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
-                <Button type="submit" className="w-full mt-6" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Chargement...' : 'S\'inscrire'}
                 </Button>
               </form>

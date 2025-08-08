@@ -442,7 +442,7 @@ export default function UnifiedScheduledGroupsPage() {
         <div className="max-w-4xl mx-auto">
           <div className="space-y-6 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h1 className="text-3xl font-bold">Groupes planifiés</h1>
+              <h1 className="text-xl font-heading font-bold gradient-text">Groupes planifiés</h1>
             </div>
             <InlineScheduleGroupForm onScheduled={fetchData} />
           </div>
