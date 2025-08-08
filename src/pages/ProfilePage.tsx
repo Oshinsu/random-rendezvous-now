@@ -11,6 +11,7 @@ import { User, Mail, Calendar, Settings, Star, Trophy } from 'lucide-react';
 import OutingsHistory from '@/components/OutingsHistory';
 import { useOutingsHistory } from '@/hooks/useOutingsHistory';
 import { useProfileUpdate } from '@/hooks/useProfileUpdate';
+import { Helmet } from 'react-helmet-async';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
@@ -43,6 +44,19 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
+      <Helmet>
+        <title>Profil • Random — Historique et paramètres</title>
+        <meta name="description" content="Profil Random: modifiez vos informations et consultez l’historique de vos sorties." />
+        <link rel="canonical" href={`${window.location.origin}/profile`} />
+        <meta property="og:title" content="Profil • Random" />
+        <meta property="og:description" content="Gérez votre profil et votre historique de sorties." />
+        <meta property="og:type" content="profile" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": `${firstName} ${lastName}`.trim() || 'Utilisateur Random'
+        })}</script>
+      </Helmet>
       <div className="container mx-auto px-2 py-6 space-y-5">
         {/* Header */}
         <div className="text-center space-y-2">

@@ -1,10 +1,11 @@
 
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { useRealtimeGroups } from '@/hooks/useRealtimeGroups';
 // UnifiedCleanupService désactivé - nettoyage géré par IntelligentCleanupService
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
-import GroupMap from '@/components/GroupMap';
+// GroupMap is heavy (Google Maps). Lazy-load it for performance.
+// import GroupMap from '@/components/GroupMap';
 import GroupChat from '@/components/GroupChat';
 import BarAssignmentButton from '@/components/BarAssignmentButton';
 import GroupHeader from '@/components/groups/GroupHeader';
@@ -13,6 +14,9 @@ import GroupDetails from '@/components/groups/GroupDetails';
 import GroupMudra from '@/components/groups/GroupMudra';
 import LoadingState from '@/components/groups/LoadingState';
 import { useAnalytics } from '@/hooks/useAnalytics';
+
+// Lazy-load heavy map component to improve initial load
+const LazyGroupMap = lazy(() => import('@/components/GroupMap'));
 
 const GroupsPage = () => {
   const { 
@@ -120,14 +124,22 @@ const GroupsPage = () => {
                     )}
 
                     {canShowMap && (
-                      <GroupMap
-                        barName={currentGroup.bar_name || "Destination en cours de sélection"}
-                        barAddress={getBarAddress()}
-                        meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
-                        isGroupComplete={isGroupComplete}
-                        barLatitude={currentGroup.bar_latitude}
-                        barLongitude={currentGroup.bar_longitude}
-                      />
+                      <Suspense
+                        fallback={
+                          <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-800 text-center">
+                            Chargement de la carte…
+                          </div>
+                        }
+                      >
+                        <LazyGroupMap
+                          barName={currentGroup.bar_name || "Destination en cours de sélection"}
+                          barAddress={getBarAddress()}
+                          meetingTime={currentGroup.meeting_time || new Date(Date.now() + 60 * 60 * 1000).toISOString()}
+                          isGroupComplete={isGroupComplete}
+                          barLatitude={currentGroup.bar_latitude}
+                          barLongitude={currentGroup.bar_longitude}
+                        />
+                      </Suspense>
                     )}
 
                     <GroupDetails
