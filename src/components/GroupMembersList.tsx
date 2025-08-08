@@ -2,6 +2,7 @@
 import { Users, UserCheck, UserX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
 
 interface GroupMember {
   id: string;
@@ -21,6 +22,17 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
   // Maintenant tous les membres affichés sont connectés par définition
   const connectedMembers = members; // Tous sont connectés
   
+  // Animation joyeuse à l'arrivée d'un membre
+  const [animateJoin, setAnimateJoin] = useState(false);
+  useEffect(() => {
+    const handler = () => {
+      setAnimateJoin(true);
+      setTimeout(() => setAnimateJoin(false), 900);
+    };
+    window.addEventListener('group:member-joined', handler);
+    return () => window.removeEventListener('group:member-joined', handler);
+  }, []);
+  
   // Calcul correct des places libres basé sur les membres réels
   const actualParticipants = members.length;
   const emptySlots = Math.max(0, maxParticipants - actualParticipants);
@@ -32,7 +44,7 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
   const getMaskedName = (index: number) => `Rander ${index + 1}`;
 
   return (
-    <Card className="w-full">
+    <Card className={`w-full ${animateJoin ? 'animate-enter pulse ring-2 ring-amber-300' : ''}`}>
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />

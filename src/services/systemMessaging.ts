@@ -62,4 +62,35 @@ export class SystemMessagingService {
       return false;
     }
   }
+
+  /**
+   * Créer un message système pour confirmer qu'un utilisateur a quitté
+   */
+  static async createLeaveMessage(groupId: string, userName?: string): Promise<boolean> {
+    try {
+      const leaveMessage = userName 
+        ? `${userName} a quitté le groupe.` 
+        : "Un aventurier a quitté le groupe.";
+      
+      const { error } = await supabase
+        .from('group_messages')
+        .insert({
+          group_id: groupId,
+          user_id: '00000000-0000-0000-0000-000000000000', // ID système
+          message: leaveMessage,
+          is_system: true
+        });
+
+      if (error) {
+        ErrorHandler.logError('CREATE_LEAVE_MESSAGE', error);
+        return false;
+      }
+
+      console.log('✅ Message de départ créé pour le groupe:', groupId);
+      return true;
+    } catch (error) {
+      ErrorHandler.logError('CREATE_LEAVE_MESSAGE', error);
+      return false;
+    }
+  }
 }

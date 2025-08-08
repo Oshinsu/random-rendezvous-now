@@ -1,8 +1,6 @@
 
-import React, { useState } from 'react';
-import { Smile, Plus } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useMessageReactions, MessageReactions } from '@/hooks/useMessageReactions';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,13 +15,9 @@ const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏',
 const MessageReactionsComponent = ({ messageId, reactions, className = '' }: MessageReactionsProps) => {
   const { user } = useAuth();
   const { toggleReaction, loading } = useMessageReactions();
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleReactionClick = async (emoji: string) => {
-    const success = await toggleReaction(messageId, emoji);
-    if (success) {
-      setShowEmojiPicker(false);
-    }
+    await toggleReaction(messageId, emoji);
   };
 
   const getReactionCount = (emoji: string) => {
@@ -57,33 +51,8 @@ const MessageReactionsComponent = ({ messageId, reactions, className = '' }: Mes
         </Button>
       ))}
 
-      {/* Bouton pour ajouter une réaction */}
-      <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-2" side="top">
-          <div className="grid grid-cols-4 gap-1">
-            {COMMON_EMOJIS.map((emoji) => (
-              <Button
-                key={emoji}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-lg hover:bg-gray-100"
-                onClick={() => handleReactionClick(emoji)}
-              >
-                {emoji}
-              </Button>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
+      {/* Ajout manuel retiré pour simplifier l’UI */}
+
     </div>
   );
 };
