@@ -1,8 +1,9 @@
 
-import { MessageCircle, Users, RefreshCcw } from 'lucide-react';
+import { MessageCircle, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface ChatHeaderProps {
   messageCount: number;
@@ -11,6 +12,17 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
+  const handleEnableNotifications = async () => {
+    try {
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        toast({ title: 'Notifications activées', description: 'Vous recevrez des alertes pour vos groupes.' });
+      } else {
+        toast({ title: 'Notifications bloquées', description: 'Activez-les dans les paramètres du navigateur.', variant: 'destructive' });
+      }
+    } catch {}
+  };
   return (
     <CardHeader className="pb-2">
       <CardTitle className="flex items-center justify-between">
@@ -20,7 +32,7 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" aria-label={`Messages: ${messageCount}`}>
-            <Users className="h-3 w-3 mr-1" />
+            <MessageCircle className="h-3 w-3 mr-1" />
             {messageCount}
           </Badge>
           <Button
@@ -36,6 +48,16 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
               <RefreshCcw className="h-4 w-4" />
             )}
           </Button>
+          {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnableNotifications}
+              aria-label="Activer les notifications"
+            >
+              Activer
+            </Button>
+          )}
         </div>
       </CardTitle>
     </CardHeader>

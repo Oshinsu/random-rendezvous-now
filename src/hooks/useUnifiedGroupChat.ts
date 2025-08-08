@@ -36,8 +36,12 @@ export const useUnifiedGroupChat = (groupId: string) => {
   useEffect(() => {
     if (!groupId || !user) return;
 
-    // Detect group change
-    if (previousGroupIdRef.current && previousGroupIdRef.current !== groupId) {
+    const isGroupChange = previousGroupIdRef.current && previousGroupIdRef.current !== groupId;
+
+    // Always remember current group immediately
+    previousGroupIdRef.current = groupId;
+
+    if (isGroupChange) {
       // Clean invalidation
       invalidateMessages();
       
@@ -48,9 +52,6 @@ export const useUnifiedGroupChat = (groupId: string) => {
 
       return () => clearTimeout(timeoutId);
     }
-
-    // Remember current group
-    previousGroupIdRef.current = groupId;
   }, [groupId, user?.id, invalidateMessages, refreshMessages]);
 
   const sendMessage = async (messageText: string): Promise<boolean> => {

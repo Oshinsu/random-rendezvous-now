@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAnalytics } from '@/hooks/useAnalytics';
+
 
 interface ChatInputProps {
   onSendMessage: (message: string) => Promise<boolean>;
@@ -13,29 +13,14 @@ interface ChatInputProps {
 
 const ChatInput = ({ onSendMessage, sending, inputRef }: ChatInputProps) => {
   const [newMessage, setNewMessage] = useState('');
-  const { track } = useAnalytics();
+  
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || sending) return;
 
-    // Track message sending
-    track('message_send', {
-      message_length: newMessage.length,
-      message_type: 'text',
-      timestamp: new Date().toISOString()
-    });
-
     const success = await onSendMessage(newMessage);
     if (success) {
-      track('message_sent_success', {
-        message_length: newMessage.length
-      });
       setNewMessage('');
-      // Retirer l'auto-focus agressif qui interfère avec Lovable
-    } else {
-      track('message_sent_error', {
-        message_length: newMessage.length
-      });
     }
   };
 

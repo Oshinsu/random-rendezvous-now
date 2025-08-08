@@ -152,15 +152,9 @@ export const useRealtimeGroups = () => {
 
               // Browser notification
               try {
-                if ('Notification' in window) {
-                  if (Notification.permission === 'granted') {
+                  if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('Groupe complet 🎉', { body: 'Votre groupe est prêt, bar en attribution.', icon: '/favicon.ico' });
-                  } else if (Notification.permission === 'default') {
-                    Notification.requestPermission().then((perm) => {
-                      if (perm === 'granted') new Notification('Groupe complet 🎉', { body: 'Votre groupe est prêt, bar en attribution.', icon: '/favicon.ico' });
-                    });
                   }
-                }
               } catch {}
               
               // Clean up the completion tracking after 30 seconds

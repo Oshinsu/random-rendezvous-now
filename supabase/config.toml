@@ -91,3 +91,6 @@ verify_jwt = false
 
 [functions.cleanup-groups]
 verify_jwt = false
+
+[functions.system-messaging]
+verify_jwt = false

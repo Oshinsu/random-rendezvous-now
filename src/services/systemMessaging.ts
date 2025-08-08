@@ -8,19 +8,15 @@ export class SystemMessagingService {
    */
   static async createWelcomeMessage(groupId: string): Promise<boolean> {
     try {
-      const welcomeMessage = "🎉 Bienvenue dans votre nouveau groupe Random ! Présentez-vous et préparez cette aventure ensemble.";
-      
-      const { error } = await supabase
-        .from('group_messages')
-        .insert({
-          group_id: groupId,
-          user_id: '00000000-0000-0000-0000-000000000000', // ID système
-          message: welcomeMessage,
-          is_system: true
-        });
+      const { data, error } = await supabase.functions.invoke('system-messaging', {
+        body: {
+          action: 'welcome',
+          group_id: groupId
+        }
+      });
 
-      if (error) {
-        ErrorHandler.logError('CREATE_WELCOME_MESSAGE', error);
+      if (error || !(data as any)?.success) {
+        ErrorHandler.logError('CREATE_WELCOME_MESSAGE', error || (data as any));
         return false;
       }
 
@@ -41,17 +37,16 @@ export class SystemMessagingService {
         ? `${userName} a rejoint le groupe !` 
         : "Un nouvel aventurier a rejoint le groupe !";
       
-      const { error } = await supabase
-        .from('group_messages')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('system-messaging', {
+        body: {
+          action: 'join',
           group_id: groupId,
-          user_id: '00000000-0000-0000-0000-000000000000', // ID système
-          message: joinMessage,
-          is_system: true
-        });
+          user_name: userName
+        }
+      });
 
-      if (error) {
-        ErrorHandler.logError('CREATE_JOIN_MESSAGE', error);
+      if (error || !(data as any)?.success) {
+        ErrorHandler.logError('CREATE_JOIN_MESSAGE', error || (data as any));
         return false;
       }
 
@@ -72,17 +67,16 @@ export class SystemMessagingService {
         ? `${userName} a quitté le groupe.` 
         : "Un aventurier a quitté le groupe.";
       
-      const { error } = await supabase
-        .from('group_messages')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('system-messaging', {
+        body: {
+          action: 'leave',
           group_id: groupId,
-          user_id: '00000000-0000-0000-0000-000000000000', // ID système
-          message: leaveMessage,
-          is_system: true
-        });
+          user_name: userName
+        }
+      });
 
-      if (error) {
-        ErrorHandler.logError('CREATE_LEAVE_MESSAGE', error);
+      if (error || !(data as any)?.success) {
+        ErrorHandler.logError('CREATE_LEAVE_MESSAGE', error || (data as any));
         return false;
       }
 
