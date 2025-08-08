@@ -353,46 +353,26 @@ export class UnifiedGroupService {
     try {
       console.log('🆕 Création de groupe simple');
       
-      const newGroupData = {
-        status: 'waiting' as const,
-        max_participants: 5,
-        current_participants: 1,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        location_name: location.locationName,
-        search_radius: 10000
-      };
+      // Utiliser la fonction atomique côté base pour éviter les timeouts et garantir la cohérence
+      const { data: result, error: rpcError } = await supabase.rpc('create_group_with_participant', {
+        p_latitude: location.latitude,
+        p_longitude: location.longitude,
+        p_location_name: location.locationName,
+        p_user_id: userId
+      });
 
-      const { data: newGroup, error: createError } = await supabase
-        .from('groups')
-        .insert(newGroupData)
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('❌ Erreur création groupe:', createError);
-        throw createError;
+      if (rpcError) {
+        console.error('❌ Erreur RPC create_group_with_participant:', rpcError);
+        throw rpcError;
       }
 
-      console.log('✅ Groupe créé:', newGroup.id);
-      
-      // Ajouter l'utilisateur au groupe avec une requête simple
-      const { error: joinError } = await supabase
-        .from('group_participants')
-        .insert({
-          group_id: newGroup.id,
-          user_id: userId,
-          status: 'confirmed' as const,
-          last_seen: new Date().toISOString(),
-          latitude: location.latitude,
-          longitude: location.longitude,
-          location_name: location.locationName
-        });
-
-      if (joinError) {
-        console.error('❌ Erreur ajout participant:', joinError);
-        return false;
+      if (!result || (Array.isArray(result) && result.length === 0)) {
+        console.error('❌ Aucun groupe retourné par la fonction atomique');
+        throw new Error('Atomic group creation returned no result');
       }
+
+      const created = Array.isArray(result) ? result[0] : result;
+      console.log('✅ Groupe créé (atomique):', created.id);
 
       toast({ 
         title: '🎉 Groupe créé', 
