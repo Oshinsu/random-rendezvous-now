@@ -11,7 +11,7 @@ const steps = [
   {
     icon: <Users className="w-10 h-10 text-primary mb-4" />,
     title: "2. Ton groupe se forme",
-    description: "5 personnes, toi compris, prêtes pour une vraie rencontre. Attente médiane ~7 min.",
+    description: "5 personnes, toi compris, prêtes pour une vraie rencontre.",
   },
   {
     icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
@@ -27,7 +27,7 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section id="how-it-works" className="py-12 sm:py-16 md:py-20 bg-secondary">
+    <section className="py-12 sm:py-16 md:py-20 bg-secondary">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
           Comment <span className="text-primary">Ça Marche</span> ?

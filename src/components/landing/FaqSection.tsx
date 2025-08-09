@@ -5,37 +5,28 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { pushEvent } from "@/utils/marketingAnalytics";
 
 const faqs = [
   {
-    question: "C’est vraiment non-dating ?",
-    answer:
-      "Oui. Random, c’est du social en groupe (5 personnes), pas du 1‑to‑1 romantique.",
-  },
-  {
-    question: "C'est sécurisé ?",
-    answer:
-      "Oui : bars publics, groupe de 5, bouton report, modération sous 24h.",
-  },
-  {
-    question: "Et si le groupe ne me convient pas ?",
-    answer:
-      "Tu peux quitter et relancer. Zéro pression.",
-  },
-  {
-    question: "Paris uniquement ?",
-    answer: "Oui, jusqu'au 30 sept. (bêta gratuite).",
-  },
-  {
-    question: "C'est gratuit ?",
-    answer: "Oui, la bêta est gratuite à Paris jusqu'au 30 septembre.",
+    question: "C'est vraiment 100% random ?",
+    answer: "Oui. Le hasard crée la magie des rencontres. Et à 5, on se sent toujours à l'aise.",
   },
   {
     question: "Pourquoi le bar est révélé après ?",
-    answer:
-      "Pour garder la surprise. Nous choisissons un bar ouvert, accessible et validé.",
+    answer: "Pour garder la surprise. Nous choisissons un bar ouvert, accessible et validé.",
   },
+  {
+    question: "Et si le groupe ne me convient pas ?",
+    answer: "Le but : passer un bon moment et élargir ton cercle. Garde l'esprit ouvert.",
+  },
+  {
+    question: "C'est gratuit ?",
+    answer: "Oui, la beta est gratuite à Paris jusqu'au 1er septembre.",
+  },
+  {
+    question: "C'est sécurisé ?",
+    answer: "Oui. Lieux publics uniquement, groupe de 5, et suivi en temps réel dans l'app.",
+  }
 ];
 
 const FaqSection = () => {
@@ -48,10 +39,10 @@ const FaqSection = () => {
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           On répond franchement, sans détour. Comme on aime chez Random !
         </p>
-        <Accordion type="multiple" defaultValue={["item-0","item-1","item-2"]} className="w-full max-w-3xl mx-auto">
+        <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
           {faqs.map((faq, index) => (
             <AccordionItem value={`item-${index}`} key={index} className="border-b-muted/50 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
-              <AccordionTrigger onClick={() => pushEvent('faq_open', { question: faq.question })} className="text-left text-sm sm:text-base hover:no-underline py-3 sm:py-4 font-semibold hover:text-primary transition-colors duration-300">
+              <AccordionTrigger className="text-left text-sm sm:text-base hover:no-underline py-3 sm:py-4 font-semibold hover:text-primary transition-colors duration-300">
                 {faq.question}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-3 sm:pb-4 pt-2 text-xs sm:text-sm leading-relaxed">
