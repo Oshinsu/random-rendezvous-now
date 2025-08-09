@@ -6,12 +6,16 @@ import NoMoreSection from "@/components/landing/NoMoreSection";
 import FaqSection from "@/components/landing/FaqSection";
 import CtaSection from "@/components/landing/CtaSection";
 import Footer from "@/components/landing/Footer";
+import TrustSection from "@/components/landing/TrustSection";
+import StickyCta from "@/components/landing/StickyCta";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
 import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
+import { pushEvent } from "@/utils/marketingAnalytics";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -23,7 +27,20 @@ const Index = () => {
 
   const handleGoToDashboard = () => {
     navigate('/dashboard');
-  };
+  useEffect(() => {
+    let fired = false;
+    const onScroll = () => {
+      if (fired) return;
+      const scrolled = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
+      if (scrolled >= 0.75) {
+        pushEvent('scroll_75');
+        fired = true;
+        window.removeEventListener('scroll', onScroll);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col">
@@ -104,12 +121,14 @@ const Index = () => {
       <main className="flex-grow">
         <HeroSection />
         <HowItWorksSection />
+        <FaqSection />
+        <TrustSection />
         <WhyRandomSection />
         <NoMoreSection />
-        <FaqSection />
         <CtaSection />
       </main>
       <Footer />
+      <StickyCta />
     </div>
   );
 };
