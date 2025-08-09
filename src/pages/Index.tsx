@@ -27,6 +27,7 @@ const Index = () => {
 
   const handleGoToDashboard = () => {
     navigate('/dashboard');
+  };
   useEffect(() => {
     let fired = false;
     const onScroll = () => {
