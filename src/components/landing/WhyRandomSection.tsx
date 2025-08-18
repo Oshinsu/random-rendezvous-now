@@ -1,38 +1,40 @@
 
+import { useTranslation } from "react-i18next";
 import benefit1 from "@/assets/new-benefit-1.jpg";
 import benefit2 from "@/assets/new-benefit-2.jpg";
 import benefit3 from "@/assets/new-benefit-3.jpg";
 import benefit4 from "@/assets/new-benefit-4.jpg";
 
-const benefits = [
-  {
-    image: benefit1,
-    title: "Authentique",
-    description: "Pas de filtres, pas de blabla. Des gens vrais, des moments vrais.",
-  },
-  {
-    image: benefit2,
-    title: "La magie du hasard",
-    description: "Chaque soirée est unique. Laisse la surprise opérer.",
-  },
-  {
-    image: benefit3,
-    title: "Ultra simple",
-    description: "1 clic, c'est tout. Moins d'écran, plus d'instant.",
-  },
-  {
-    image: benefit4,
-    title: "Gratuit et sûr",
-    description: "Beta gratuite à Paris. Bars triés et ambiances conviviales.",
-  },
-];
-
 const WhyRandomSection = () => {
+  const { t } = useTranslation();
+  
+  const benefits = [
+    {
+      image: benefit1,
+      title: t('whyRandom.authenticTitle'),
+      description: t('whyRandom.authenticDescription'),
+    },
+    {
+      image: benefit2,
+      title: t('whyRandom.spontaneousTitle'),
+      description: t('whyRandom.spontaneousDescription'),
+    },
+    {
+      image: benefit3,
+      title: t('whyRandom.secureTitle'),
+      description: t('whyRandom.secureDescription'),
+    },
+    {
+      image: benefit4,
+      title: t('whyRandom.localTitle'),
+      description: t('whyRandom.localDescription'),
+    },
+  ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          Pourquoi <span className="text-primary">Random</span> Change Tout ?
+          {t('whyRandom.title')}
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           Parce qu'il est temps de retrouver des soirées authentiques et des vraies rencontres !

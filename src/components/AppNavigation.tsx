@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { 
   NavigationMenu,
@@ -21,9 +22,11 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, Users, User, LogOut, Menu, ExternalLink, Clock } from 'lucide-react';
 import RandomLogo from './RandomLogo';
+import { LanguageToggle } from './LanguageToggle';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -67,7 +70,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Home className="h-4 w-4" />
-                      <span>Chercher un groupe</span>
+                       <span>{t('common.dashboard')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -85,7 +88,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Users className="h-4 w-4" />
-                      <span>Mon groupe</span>
+                       <span>{t('common.groups')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -103,7 +106,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Clock className="h-4 w-4" />
-                      <span>Groupes planifiés</span>
+                       <span>{t('common.scheduledGroups')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -113,6 +116,9 @@ const AppNavigation = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
+            {/* Language Toggle */}
+            <LanguageToggle />
+            
             {/* Mobile menu button */}
             <Button
               variant="ghost"
@@ -147,19 +153,19 @@ const AppNavigation = () => {
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profil</span>
+                    <span>{t('common.profile')}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <NavLink to="/" className="flex items-center font-heading">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    <span>Page d'accueil</span>
+                     <span>{t('common.homepage')}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
+                  <span>{t('common.logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -182,7 +188,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Home className="h-4 w-4" />
-                <span>Chercher un groupe</span>
+                <span>{t('common.dashboard')}</span>
               </NavLink>
               
               <NavLink 
@@ -197,7 +203,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Users className="h-4 w-4" />
-                <span>Mon groupe</span>
+                <span>{t('common.groups')}</span>
               </NavLink>
 
               <NavLink 
@@ -212,7 +218,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Clock className="h-4 w-4" />
-                <span>Groupes planifiés</span>
+                <span>{t('common.scheduledGroups')}</span>
               </NavLink>
 
               <NavLink 
@@ -221,7 +227,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ExternalLink className="h-4 w-4" />
-                <span>Page d'accueil</span>
+                <span>{t('common.homepage')}</span>
               </NavLink>
             </nav>
           </div>

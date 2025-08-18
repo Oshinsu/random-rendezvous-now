@@ -26,8 +26,10 @@ import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
+import { useTranslation } from "react-i18next";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +47,7 @@ const queryClient = new QueryClient({
 // Composant pour les routes protégées
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
 
   if (loading) {
@@ -52,7 +55,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
       <div className="flex justify-center items-center h-screen">
         <div className="text-center space-y-4">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p>Chargement...</p>
+          <p>{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -153,17 +156,19 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <AnalyticsProvider>
-          <HelmetProvider>
-            <TooltipProvider>
-              <div className="min-h-screen bg-background font-sans antialiased">
-                <Toaster />
-                <Sonner />
-                <AppRoutes />
-              </div>
-            </TooltipProvider>
-          </HelmetProvider>
-        </AnalyticsProvider>
+        <LanguageProvider>
+          <AnalyticsProvider>
+            <HelmetProvider>
+              <TooltipProvider>
+                <div className="min-h-screen bg-background font-sans antialiased">
+                  <Toaster />
+                  <Sonner />
+                  <AppRoutes />
+                </div>
+              </TooltipProvider>
+            </HelmetProvider>
+          </AnalyticsProvider>
+        </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
