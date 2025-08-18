@@ -149,6 +149,37 @@ const AppNavigation = () => {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                
+                {/* Language Selection */}
+                <div className="px-2 py-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Langue / Language</p>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={i18n.language === 'fr' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => {
+                        i18n.changeLanguage('fr');
+                        localStorage.setItem('language', 'fr');
+                      }}
+                      className="h-8 px-2 text-xs"
+                    >
+                      🇫🇷 FR
+                    </Button>
+                    <Button
+                      variant={i18n.language === 'en' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => {
+                        i18n.changeLanguage('en');
+                        localStorage.setItem('language', 'en');
+                      }}
+                      className="h-8 px-2 text-xs"
+                    >
+                      🇬🇧 EN
+                    </Button>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
