@@ -151,35 +151,33 @@ const AppNavigation = () => {
                 <DropdownMenuSeparator />
                 
                 {/* Language Selection */}
-                <div className="px-2 py-2">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 px-2">
+                <div className="px-2 py-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1 px-2">
                     {t('common.language', { defaultValue: 'Langue / Language' })}
                   </p>
-                  <div className="flex gap-1 px-2">
-                    <Button
-                      variant={i18n.language === 'fr' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => {
-                        i18n.changeLanguage('fr');
-                        localStorage.setItem('language', 'fr');
-                      }}
-                      className="h-8 px-3 text-xs font-medium"
-                    >
-                      🇫🇷 FR
-                    </Button>
-                    <Button
-                      variant={i18n.language === 'en' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => {
-                        i18n.changeLanguage('en');
-                        localStorage.setItem('language', 'en');
-                      }}
-                      className="h-8 px-3 text-xs font-medium"
-                    >
-                      🇬🇧 EN
-                    </Button>
-                  </div>
                 </div>
+                
+                <DropdownMenuItem 
+                  onClick={() => {
+                    i18n.changeLanguage('fr');
+                    localStorage.setItem('language', 'fr');
+                  }}
+                  className={`font-heading ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                  <span className="text-sm font-bold mr-2">FR</span>
+                  <span className="text-sm">Français</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem 
+                  onClick={() => {
+                    i18n.changeLanguage('en');
+                    localStorage.setItem('language', 'en');
+                  }}
+                  className={`font-heading ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : ''}`}
+                >
+                  <span className="text-sm font-bold mr-2">EN</span>
+                  <span className="text-sm">English</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 
                 <DropdownMenuItem asChild>
