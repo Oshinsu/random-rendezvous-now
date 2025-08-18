@@ -113,30 +113,41 @@ export const useEnhancedGroups = () => {
       description: 'Détection de votre position pour créer le groupe',
     });
 
-    const locationToUse = await GeolocationService.getCurrentLocation();
-    setUserLocation(locationToUse);
-    
-    toast({
-      title: '📍 Position détectée',
-      description: `Création du groupe à ${locationToUse.locationName}`,
-    });
+    try {
+      const locationToUse = await GeolocationService.getCurrentLocation();
+      setUserLocation(locationToUse);
+      
+      toast({
+        title: '📍 Position détectée',
+        description: `Création du groupe à ${locationToUse.locationName}`,
+      });
 
-    const success = await EnhancedGroupService.joinRandomGroup(
-      user,
-      locationToUse,
-      loading,
-      setLoading
-    );
+      const success = await EnhancedGroupService.joinRandomGroup(
+        user,
+        locationToUse,
+        loading,
+        setLoading
+      );
 
-    if (success) {
-      // Invalider et refetch les données
-      queryClient.invalidateQueries({ queryKey: ['enhancedUserGroups'] });
-      setTimeout(() => {
-        refetchGroups();
-      }, 1000);
+      if (success) {
+        // Invalider et refetch les données
+        queryClient.invalidateQueries({ queryKey: ['enhancedUserGroups'] });
+        setTimeout(() => {
+          refetchGroups();
+        }, 1000);
+      }
+
+      return success;
+    } catch (error) {
+      console.error('❌ Erreur géolocalisation:', error);
+      toast({
+        title: '❌ Géolocalisation échouée',
+        description: 'Impossible de détecter votre position. Réessayez.',
+        variant: 'destructive'
+      });
+      setLoading(false); // CRITIQUE pour débloquer l'UI
+      return false;
     }
-
-    return success;
   };
 
   // Fonction pour quitter un groupe
