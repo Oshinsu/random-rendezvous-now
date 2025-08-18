@@ -139,7 +139,7 @@ const AppNavigation = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background border shadow-md">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     <p className="font-heading font-medium">{userName}</p>
@@ -151,9 +151,11 @@ const AppNavigation = () => {
                 <DropdownMenuSeparator />
                 
                 {/* Language Selection */}
-                <div className="px-2 py-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Langue / Language</p>
-                  <div className="flex gap-1">
+                <div className="px-2 py-2">
+                  <p className="text-xs font-medium text-muted-foreground mb-2 px-2">
+                    {t('common.language', { defaultValue: 'Langue / Language' })}
+                  </p>
+                  <div className="flex gap-1 px-2">
                     <Button
                       variant={i18n.language === 'fr' ? 'default' : 'ghost'}
                       size="sm"
@@ -161,7 +163,7 @@ const AppNavigation = () => {
                         i18n.changeLanguage('fr');
                         localStorage.setItem('language', 'fr');
                       }}
-                      className="h-8 px-2 text-xs"
+                      className="h-8 px-3 text-xs font-medium"
                     >
                       🇫🇷 FR
                     </Button>
@@ -172,7 +174,7 @@ const AppNavigation = () => {
                         i18n.changeLanguage('en');
                         localStorage.setItem('language', 'en');
                       }}
-                      className="h-8 px-2 text-xs"
+                      className="h-8 px-3 text-xs font-medium"
                     >
                       🇬🇧 EN
                     </Button>

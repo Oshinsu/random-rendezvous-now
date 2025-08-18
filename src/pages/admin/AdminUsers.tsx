@@ -12,6 +12,7 @@ interface UserData {
   email: string;
   created_at: string;
   last_sign_in_at?: string;
+  email_confirmed_at?: string;
   profile?: {
     first_name?: string;
     last_name?: string;
@@ -33,46 +34,26 @@ export const AdminUsers = () => {
     try {
       setLoading(true);
       
-      // Fetch profiles with user data
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, created_at');
+      // Utiliser la nouvelle fonction admin pour récupérer tous les utilisateurs
+      const { data: users, error: usersError } = await supabase
+        .rpc('get_all_users_admin');
 
-      if (profilesError) throw profilesError;
+      if (usersError) throw usersError;
 
-      // Fetch active groups count for each user
-      const { data: activeGroups, error: groupsError } = await supabase
-        .from('group_participants')
-        .select('user_id, groups!inner(status)')
-        .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed']);
-
-      if (groupsError) throw groupsError;
-
-      // Fetch outings history count
-      const { data: outings, error: outingsError } = await supabase
-        .from('user_outings_history')
-        .select('user_id');
-
-      if (outingsError) throw outingsError;
-
-      // Process data
-      const processedUsers = profiles.map(profile => {
-        const userActiveGroups = activeGroups.filter(ag => ag.user_id === profile.id).length;
-        const userOutings = outings.filter(o => o.user_id === profile.id).length;
-
-        return {
-          id: profile.id,
-          email: profile.email || 'N/A',
-          created_at: profile.created_at,
-          profile: {
-            first_name: profile.first_name,
-            last_name: profile.last_name
-          },
-          active_groups: userActiveGroups,
-          total_outings: userOutings
-        };
-      });
+      // Formatter les données pour l'interface
+      const processedUsers = users.map(user => ({
+        id: user.id,
+        email: user.email || 'N/A',
+        created_at: user.created_at,
+        last_sign_in_at: user.last_sign_in_at,
+        email_confirmed_at: user.email_confirmed_at,
+        profile: {
+          first_name: user.first_name,
+          last_name: user.last_name
+        },
+        active_groups: user.active_groups_count || 0,
+        total_outings: user.total_outings_count || 0
+      }));
 
       setUsers(processedUsers);
       setError(null);
@@ -128,6 +109,7 @@ export const AdminUsers = () => {
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Inscription</TableHead>
+                  <TableHead>Dernière connexion</TableHead>
                   <TableHead>Groupes actifs</TableHead>
                   <TableHead>Sorties totales</TableHead>
                   <TableHead>Statut</TableHead>
@@ -155,6 +137,16 @@ export const AdminUsers = () => {
                         addSuffix: true, 
                         locale: fr 
                       })}
+                    </TableCell>
+                    <TableCell>
+                      {user.last_sign_in_at ? (
+                        formatDistanceToNow(new Date(user.last_sign_in_at), { 
+                          addSuffix: true, 
+                          locale: fr 
+                        })
+                      ) : (
+                        <span className="text-muted-foreground">Jamais</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.active_groups > 0 ? (

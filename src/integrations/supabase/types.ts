@@ -429,6 +429,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_all_users_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_groups_count: number
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          first_name: string
+          id: string
+          last_name: string
+          last_sign_in_at: string
+          total_outings_count: number
+        }[]
+      }
       get_signup_stats: {
         Args: { period_end: string; period_start: string }
         Returns: Json

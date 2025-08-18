@@ -246,6 +246,7 @@
     "modifications_content": "Cette politique peut être modifiée. Nous informerons les utilisateurs des changements importants."
   },
   "common": {
+    "language": "Langue / Language",
     "loading": "Chargement...",
     "error": "Erreur",
     "success": "Succès",
@@ -260,5 +261,44 @@
     "previous": "Précédent",
     "yes": "Oui",
     "no": "Non"
+  },
+  "scheduled_groups": {
+    "title": "Groupes planifiés",
+    "create_group": "Créer un Groupe",
+    "my_groups": "Mes Groupes",
+    "available_groups": "Groupes Disponibles",
+    "no_groups": "Aucun groupe planifié pour le moment",
+    "no_groups_desc": "Créez votre premier groupe ou rejoignez-en un disponible !",
+    "no_available": "Aucun groupe disponible à rejoindre",
+    "no_available_desc": "Tous les groupes actuels sont complets ou vous les avez déjà rejoints.",
+    "participants": "participants",
+    "join": "Rejoindre",
+    "joining": "Rejoignez...",
+    "cancel": "Annuler",
+    "cancelling": "Annulation...",
+    "delete": "Supprimer",
+    "deleting": "Suppression...",
+    "confirm_cancel_title": "Annuler le groupe",
+    "confirm_cancel_desc": "Êtes-vous sûr de vouloir annuler ce groupe planifié ? Cette action ne peut pas être annulée.",
+    "confirm_delete_title": "Supprimer le groupe",
+    "confirm_delete_desc": "Êtes-vous sûr de vouloir supprimer définitivement ce groupe ? Cette action ne peut pas être annulée.",
+    "keep": "Garder",
+    "confirmed_meeting": "Heure de rendez-vous confirmée :",
+    "scheduled_for": "Planifié pour",
+    "group_complete": "Votre groupe est complet et votre destination est confirmée ! Profitez de l'expérience complète ci-dessous.",
+    "status": {
+      "waiting": "En attente",
+      "confirmed": "Confirmé",
+      "full": "Complet", 
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    },
+    "success_join": "Vous avez rejoint le groupe",
+    "success_cancel": "Groupe annulé",
+    "success_delete": "Groupe supprimé",
+    "error_join": "Impossible de rejoindre le groupe",
+    "error_cancel": "Impossible d'annuler",
+    "error_delete": "Impossible de supprimer",
+    "error_occurred": "Une erreur s'est produite"
   }
 }

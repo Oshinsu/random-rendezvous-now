@@ -13,6 +13,7 @@ import InlineScheduleGroupForm from '@/components/InlineScheduleGroupForm';
 import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
 import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ import {
 
 export default function UnifiedScheduledGroupsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { debouncedFetch } = useOptimizedDataFetching();
   const [myScheduledGroups, setMyScheduledGroups] = useState<UnifiedScheduledGroup[]>([]);
   const [allScheduledGroups, setAllScheduledGroups] = useState<UnifiedScheduledGroup[]>([]);
@@ -82,21 +84,21 @@ export default function UnifiedScheduledGroupsPage() {
 
       if (result.success) {
         toast({
-          title: "Succès",
-          description: "Vous avez rejoint le groupe"
+          title: t('scheduled_groups.success_join'),
+          description: t('scheduled_groups.success_join')
         });
         await fetchData();
       } else {
         toast({
-          title: "Erreur",
-          description: result.error || "Impossible de rejoindre le groupe",
+          title: t('common.error'),
+          description: result.error || t('scheduled_groups.error_join'),
           variant: "destructive"
         });
       }
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite",
+        title: t('common.error'),
+        description: t('scheduled_groups.error_occurred'),
         variant: "destructive"
       });
     } finally {
@@ -113,21 +115,21 @@ export default function UnifiedScheduledGroupsPage() {
       
       if (result.success) {
         toast({
-          title: "Annulé",
-          description: "Groupe annulé"
+          title: t('scheduled_groups.success_cancel'),
+          description: t('scheduled_groups.success_cancel')
         });
         await fetchData();
       } else {
         toast({
-          title: "Erreur",
-          description: result.error || "Impossible d'annuler",
+          title: t('common.error'),
+          description: result.error || t('scheduled_groups.error_cancel'),
           variant: "destructive"
         });
       }
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite",
+        title: t('common.error'),
+        description: t('scheduled_groups.error_occurred'),
         variant: "destructive"
       });
     } finally {
@@ -144,21 +146,21 @@ export default function UnifiedScheduledGroupsPage() {
 
       if (result.success) {
         toast({
-          title: "Supprimé",
-          description: "Groupe supprimé"
+          title: t('scheduled_groups.success_delete'),
+          description: t('scheduled_groups.success_delete')
         });
         await fetchData();
       } else {
         toast({
-          title: "Erreur",
-          description: result.error || "Impossible de supprimer",
+          title: t('common.error'),
+          description: result.error || t('scheduled_groups.error_delete'),
           variant: "destructive"
         });
       }
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite",
+        title: t('common.error'),
+        description: t('scheduled_groups.error_occurred'),
         variant: "destructive"
       });
     } finally {
@@ -169,15 +171,15 @@ export default function UnifiedScheduledGroupsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'waiting':
-        return <Badge variant="secondary">En attente</Badge>;
+        return <Badge variant="secondary">{t('scheduled_groups.status.waiting')}</Badge>;
       case 'confirmed':
-        return <Badge variant="default">Confirmé</Badge>;
+        return <Badge variant="default">{t('scheduled_groups.status.confirmed')}</Badge>;
       case 'full':
-        return <Badge variant="default">Complet</Badge>;
+        return <Badge variant="default">{t('scheduled_groups.status.full')}</Badge>;
       case 'completed':
-        return <Badge variant="outline">Terminé</Badge>;
+        return <Badge variant="outline">{t('scheduled_groups.status.completed')}</Badge>;
       case 'cancelled':
-        return <Badge variant="destructive">Annulé</Badge>;
+        return <Badge variant="destructive">{t('scheduled_groups.status.cancelled')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -193,7 +195,7 @@ export default function UnifiedScheduledGroupsPage() {
       return group.bar_name_manual;
     }
     // Automatic mode - show assigned bar name or default
-    return group.bar_name || 'Groupe en attente de bar';
+    return group.bar_name || t('scheduled_groups.waiting_bar', { defaultValue: 'Groupe en attente de bar' });
   };
 
   const getGroupLocation = (group: UnifiedScheduledGroup) => {
@@ -223,7 +225,7 @@ export default function UnifiedScheduledGroupsPage() {
                   {group.scheduled_for && (
                     <div className="flex items-center gap-2 text-sm text-emerald-700">
                       <Clock className="h-4 w-4" />
-                      Planifié pour {formatDateTime(group.scheduled_for)}
+                      {t('scheduled_groups.scheduled_for')} {formatDateTime(group.scheduled_for)}
                     </div>
                   )}
                 </div>
@@ -241,19 +243,18 @@ export default function UnifiedScheduledGroupsPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Annuler le groupe</AlertDialogTitle>
+                          <AlertDialogTitle>{t('scheduled_groups.confirm_cancel_title')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Êtes-vous sûr de vouloir annuler ce groupe planifié ? 
-                            Cette action ne peut pas être annulée.
+                            {t('scheduled_groups.confirm_cancel_desc')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Garder</AlertDialogCancel>
+                          <AlertDialogCancel>{t('scheduled_groups.keep')}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleCancelGroup(group.id)}
                             disabled={actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id}
                           >
-                            {actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id ? 'Annulation...' : 'Annuler'}
+                            {actionInProgress?.type === 'cancelling' && actionInProgress?.id === group.id ? t('scheduled_groups.cancelling') : t('scheduled_groups.cancel')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -264,7 +265,7 @@ export default function UnifiedScheduledGroupsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-emerald-700 text-sm mb-4">
-                Votre groupe est complet et votre destination est confirmée ! Profitez de l'expérience complète ci-dessous.
+                {t('scheduled_groups.group_complete')}
               </p>
             </CardContent>
           </Card>
@@ -312,7 +313,7 @@ export default function UnifiedScheduledGroupsPage() {
                   className="gap-2 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium"
                 >
                   <UserPlus className="h-4 w-4" />
-                  {actionInProgress?.type === 'joining' && actionInProgress?.id === group.id ? 'Joining...' : 'Rejoindre'}
+                  {actionInProgress?.type === 'joining' && actionInProgress?.id === group.id ? t('scheduled_groups.joining') : t('scheduled_groups.join')}
                 </Button>
               )}
               {!showJoinButton && (
@@ -362,20 +363,19 @@ export default function UnifiedScheduledGroupsPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Supprimer le groupe</AlertDialogTitle>
+                          <AlertDialogTitle>{t('scheduled_groups.confirm_delete_title')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Êtes-vous sûr de vouloir supprimer définitivement ce groupe ? 
-                            Cette action ne peut pas être annulée.
+                            {t('scheduled_groups.confirm_delete_desc')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDeleteGroup(group.id)}
                             disabled={actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            {actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id ? 'Suppression...' : 'Supprimer'}
+                            {actionInProgress?.type === 'deleting' && actionInProgress?.id === group.id ? t('scheduled_groups.deleting') : t('scheduled_groups.delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -390,7 +390,7 @@ export default function UnifiedScheduledGroupsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{group.current_participants}/{group.max_participants} participants</span>
+              <span>{group.current_participants}/{group.max_participants} {t('scheduled_groups.participants')}</span>
             </div>
             {getGroupLocation(group) && (
               <div className="flex items-center gap-2 col-span-2">
@@ -402,7 +402,7 @@ export default function UnifiedScheduledGroupsPage() {
           
           {group.meeting_time && (
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm font-medium">Heure de rendez-vous confirmée :</p>
+              <p className="text-sm font-medium">{t('scheduled_groups.confirmed_meeting')}</p>
               <p className="text-sm text-muted-foreground">
                 {formatDateTime(group.meeting_time)}
               </p>
@@ -418,7 +418,7 @@ export default function UnifiedScheduledGroupsPage() {
       <AppLayout>
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Groupes planifiés</h1>
+            <h1 className="text-3xl font-bold mb-8">{t('scheduled_groups.title')}</h1>
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse">
@@ -442,7 +442,7 @@ export default function UnifiedScheduledGroupsPage() {
         <div className="max-w-4xl mx-auto">
           <div className="space-y-6 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h1 className="text-xl font-heading font-bold gradient-text">Groupes planifiés</h1>
+              <h1 className="text-xl font-heading font-bold gradient-text">{t('scheduled_groups.title')}</h1>
             </div>
             <InlineScheduleGroupForm onScheduled={fetchData} />
           </div>
@@ -453,13 +453,13 @@ export default function UnifiedScheduledGroupsPage() {
                 value="my-groups" 
                 className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold"
               >
-                Mes groupes ({myScheduledGroups.length})
+                {t('scheduled_groups.my_groups')} ({myScheduledGroups.length})
               </TabsTrigger>
               <TabsTrigger 
                 value="join-groups"
                 className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-semibold"
               >
-                Rejoindre un groupe ({allScheduledGroups.length})
+                {t('scheduled_groups.available_groups')} ({allScheduledGroups.length})
               </TabsTrigger>
             </TabsList>
 
@@ -469,9 +469,9 @@ export default function UnifiedScheduledGroupsPage() {
                   <Card className="text-center py-8">
                     <CardContent>
                       <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Aucun groupe planifié</h3>
+                      <h3 className="text-lg font-semibold mb-2">{t('scheduled_groups.no_groups')}</h3>
                       <p className="text-muted-foreground mb-4">
-                        Créez votre premier groupe planifié pour organiser une sortie à l'avance
+                        {t('scheduled_groups.no_groups_desc')}
                       </p>
                       <InlineScheduleGroupForm onScheduled={fetchData} />
                     </CardContent>
@@ -488,10 +488,9 @@ export default function UnifiedScheduledGroupsPage() {
                   <Card className="text-center py-8">
                     <CardContent>
                       <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Aucun groupe disponible</h3>
+                      <h3 className="text-lg font-semibold mb-2">{t('scheduled_groups.no_available')}</h3>
                       <p className="text-muted-foreground">
-                        Il n'y a actuellement aucun groupe planifié disponible à rejoindre. 
-                        Revenez plus tard ou créez votre propre groupe !
+                        {t('scheduled_groups.no_available_desc')}
                       </p>
                     </CardContent>
                   </Card>

@@ -242,6 +242,7 @@
     "modifications_content": "This policy may be modified. We will notify users of important changes."
   },
   "common": {
+    "language": "Langue / Language",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -256,5 +257,44 @@
     "previous": "Previous",
     "yes": "Yes",
     "no": "No"
+  },
+  "scheduled_groups": {
+    "title": "Scheduled Groups",
+    "create_group": "Create Group",
+    "my_groups": "My Groups",
+    "available_groups": "Available Groups",
+    "no_groups": "No scheduled groups yet",
+    "no_groups_desc": "Create your first group or join an available one!",
+    "no_available": "No groups available to join",
+    "no_available_desc": "All current groups are full or you've already joined them.",
+    "participants": "participants",
+    "join": "Join",
+    "joining": "Joining...",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling...",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "confirm_cancel_title": "Cancel group",
+    "confirm_cancel_desc": "Are you sure you want to cancel this scheduled group? This action cannot be undone.",
+    "confirm_delete_title": "Delete group",
+    "confirm_delete_desc": "Are you sure you want to permanently delete this group? This action cannot be undone.",
+    "keep": "Keep",
+    "confirmed_meeting": "Confirmed meeting time:",
+    "scheduled_for": "Scheduled for",
+    "group_complete": "Your group is complete and your destination is confirmed! Enjoy the full experience below.",
+    "status": {
+      "waiting": "Waiting",
+      "confirmed": "Confirmed", 
+      "full": "Full",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "success_join": "Successfully joined the group",
+    "success_cancel": "Group cancelled",
+    "success_delete": "Group deleted",
+    "error_join": "Unable to join group",
+    "error_cancel": "Unable to cancel",
+    "error_delete": "Unable to delete",
+    "error_occurred": "An error occurred"
   }
 }
