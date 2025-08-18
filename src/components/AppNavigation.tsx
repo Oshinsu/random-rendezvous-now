@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -139,10 +140,10 @@ const AppNavigation = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
+              <DropdownMenuContent align="end" className="w-56 bg-popover text-popover-foreground border border-border shadow-lg z-[9999] !bg-white dark:!bg-gray-800">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-heading font-medium text-popover-foreground">{userName}</p>
+                    <p className="font-heading font-medium">{userName}</p>
                     <p className="w-[200px] truncate text-sm text-muted-foreground font-body">
                       {user?.email}
                     </p>
@@ -151,20 +152,18 @@ const AppNavigation = () => {
                 <DropdownMenuSeparator />
                 
                 {/* Language Selection */}
-                <div className="px-2 py-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-1 px-2">
-                    {t('common.language', { defaultValue: 'Langue / Language' })}
-                  </p>
-                </div>
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                  {t('common.language', { defaultValue: 'Langue / Language' })}
+                </DropdownMenuLabel>
                 
                 <DropdownMenuItem 
                   onClick={() => {
                     i18n.changeLanguage('fr');
                     localStorage.setItem('language', 'fr');
                   }}
-                  className={`font-heading cursor-pointer ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                  className={`font-heading cursor-pointer flex items-center gap-3 ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                 >
-                  <span className="text-sm font-bold mr-3 min-w-[24px]">FR</span>
+                  <span className="text-lg">🇫🇷</span>
                   <span className="text-sm">Français</span>
                 </DropdownMenuItem>
                 
@@ -173,9 +172,9 @@ const AppNavigation = () => {
                     i18n.changeLanguage('en');
                     localStorage.setItem('language', 'en');
                   }}
-                  className={`font-heading cursor-pointer ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
+                  className={`font-heading cursor-pointer flex items-center gap-3 ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent hover:text-accent-foreground'}`}
                 >
-                  <span className="text-sm font-bold mr-3 min-w-[24px]">EN</span>
+                  <span className="text-lg">🇬🇧</span>
                   <span className="text-sm">English</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
