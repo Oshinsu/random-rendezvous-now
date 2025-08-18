@@ -24,52 +24,38 @@ export class GeolocationService {
         return;
       }
 
-      // Stratégie 1: Haute précision avec timeout 30s
-      console.log('📍 [GEOLOC] Tentative haute précision (30s timeout)...');
+      console.log('📍 [GEOLOC] Demande de position (timeout 15s)...');
       
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          console.log('✅ [GEOLOC] Position haute précision obtenue:', position.coords);
-          await this.processLocationSuccess(position, resolve);
+          try {
+            console.log('✅ [GEOLOC] Position obtenue:', position.coords);
+            await this.processLocationSuccess(position, resolve, reject);
+          } catch (error) {
+            console.error('🚨 [GEOLOC] Erreur traitement position:', error);
+            reject(error);
+          }
         },
         (error) => {
-          console.warn('⚠️ [GEOLOC] Échec haute précision:', error.message);
-          
-          // Stratégie 2: Fallback avec précision normale
-          console.log('📍 [GEOLOC] Fallback précision normale (30s timeout)...');
-          
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              console.log('✅ [GEOLOC] Position précision normale obtenue:', position.coords);
-              await this.processLocationSuccess(position, resolve);
-            },
-            (fallbackError) => {
-              console.error('🚨 [GEOLOC] Échec total géolocalisation:', fallbackError.message);
-              let errorMessage = 'Erreur de géolocalisation';
-              switch (fallbackError.code) {
-                case fallbackError.PERMISSION_DENIED:
-                  errorMessage = 'Permission de géolocalisation refusée';
-                  break;
-                case fallbackError.POSITION_UNAVAILABLE:
-                  errorMessage = 'Position non disponible';
-                  break;
-                case fallbackError.TIMEOUT:
-                  errorMessage = 'Timeout de géolocalisation (30s)';
-                  break;
-              }
-              reject(new Error(errorMessage));
-            },
-            {
-              enableHighAccuracy: false, // Précision normale pour fallback
-              timeout: 30000, // 30 secondes
-              maximumAge: 300000 // 5 minutes
-            }
-          );
+          console.error('🚨 [GEOLOC] Échec géolocalisation:', error.message, 'Code:', error.code);
+          let errorMessage = 'Erreur de géolocalisation';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Permission de géolocalisation refusée. Veuillez autoriser la géolocalisation dans votre navigateur.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Position non disponible. Vérifiez votre connexion et réessayez.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Timeout de géolocalisation. Veuillez réessayer.';
+              break;
+          }
+          reject(new Error(errorMessage));
         },
         {
-          enableHighAccuracy: true, // Haute précision d'abord
-          timeout: 30000, // 30 secondes  
-          maximumAge: 300000 // 5 minutes
+          enableHighAccuracy: true,
+          timeout: 15000, // 15 secondes
+          maximumAge: 60000 // 1 minute
         }
       );
     });
@@ -77,7 +63,8 @@ export class GeolocationService {
 
   private static async processLocationSuccess(
     position: GeolocationPosition, 
-    resolve: (value: LocationData) => void
+    resolve: (value: LocationData) => void,
+    reject: (reason?: any) => void
   ): Promise<void> {
     const { latitude, longitude } = position.coords;
     
@@ -85,7 +72,8 @@ export class GeolocationService {
     const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
     if (!validation.isValid) {
       console.error('🚨 [GEOLOC] Coordonnées invalides:', validation.error);
-      throw new Error('Coordonnées de géolocalisation invalides');
+      reject(new Error('Coordonnées de géolocalisation invalides'));
+      return;
     }
 
     const sanitizedCoords = validation.sanitized!;
