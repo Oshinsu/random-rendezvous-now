@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -298,7 +298,7 @@ export type Database = {
         Returns: number
       }
       calculate_distance: {
-        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
       can_view_group: {
@@ -312,20 +312,20 @@ export type Database = {
       create_group_with_participant: {
         Args: {
           p_latitude: number
-          p_longitude: number
           p_location_name: string
+          p_longitude: number
           p_user_id: string
         }
         Returns: {
-          id: string
-          status: string
-          max_participants: number
-          current_participants: number
-          latitude: number
-          longitude: number
-          location_name: string
-          search_radius: number
           created_at: string
+          current_participants: number
+          id: string
+          latitude: number
+          location_name: string
+          longitude: number
+          max_participants: number
+          search_radius: number
+          status: string
         }[]
       }
       dissolve_old_groups: {
