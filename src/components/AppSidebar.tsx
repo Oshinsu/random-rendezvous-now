@@ -2,6 +2,7 @@
 import { Home, Users, User, ExternalLink, Calendar } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
   Sidebar,
   SidebarContent,

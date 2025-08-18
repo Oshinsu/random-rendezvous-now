@@ -16,6 +16,10 @@ import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import { AdminRoute } from "./components/admin/AdminRoute";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -70,6 +74,40 @@ const AppRoutes = () => (
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
+    
+    {/* Admin Routes */}
+    <Route path="/admin" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/users" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminUsers />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/*" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <div className="p-6">
+              <div className="text-center text-muted-foreground">
+                Cette page admin est en construction
+              </div>
+            </div>
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
