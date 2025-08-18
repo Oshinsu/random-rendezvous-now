@@ -107,30 +107,19 @@ export const useEnhancedGroups = () => {
       return false;
     }
 
-    // Géolocalisation OBLIGATOIRE au clic (pas de cache)
+    // Géolocalisation OBLIGATOIRE au clic
     toast({
       title: '🧭 Localisation en cours...',
       description: 'Détection de votre position pour créer le groupe',
     });
 
-    let locationToUse: LocationData;
-    try {
-      locationToUse = await GeolocationService.getCurrentLocation();
-      setUserLocation(locationToUse);
-      
-      toast({
-        title: '📍 Position détectée',
-        description: `Création du groupe à ${locationToUse.locationName}`,
-      });
-    } catch (error) {
-      console.error('❌ Géolocalisation échouée:', error);
-      toast({
-        title: 'Géolocalisation impossible',
-        description: 'Impossible de détecter votre position. Fallback activé.',
-        variant: 'destructive',
-      });
-      return false;
-    }
+    const locationToUse = await GeolocationService.getCurrentLocation();
+    setUserLocation(locationToUse);
+    
+    toast({
+      title: '📍 Position détectée',
+      description: `Création du groupe à ${locationToUse.locationName}`,
+    });
 
     const success = await EnhancedGroupService.joinRandomGroup(
       user,

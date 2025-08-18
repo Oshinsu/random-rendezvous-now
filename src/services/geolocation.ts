@@ -22,87 +22,43 @@ export class GeolocationService {
 
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        console.warn('❌ Géolocalisation non supportée, fallback Paris');
-        const parisLocation: LocationData = {
-          latitude: 48.8566,
-          longitude: 2.3522,
-          locationName: 'Paris Centre'
-        };
-        this.locationCache = { location: parisLocation, timestamp: Date.now() };
-        resolve(parisLocation);
+        reject(new Error('Géolocalisation non supportée'));
         return;
       }
 
-      let attemptCount = 0;
-      const maxAttempts = 3;
-
-      const tryGeolocation = (options: PositionOptions) => {
-        attemptCount++;
-        console.log(`📍 Tentative géolocalisation #${attemptCount}:`, options);
-        
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            console.log('✅ Position obtenue:', { latitude, longitude });
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('✅ Position obtenue:', { latitude, longitude });
+          
+          try {
+            const locationName = await this.reverseGeocode(latitude, longitude);
+            const location: LocationData = { latitude, longitude, locationName };
             
-            try {
-              const locationName = await this.reverseGeocode(latitude, longitude);
-              const location: LocationData = { latitude, longitude, locationName };
-              
-              // Mettre en cache
-              this.locationCache = { location, timestamp: Date.now() };
-              resolve(location);
-            } catch (error) {
-              console.warn('⚠️ Géocodage échoué, utilisation des coordonnées brutes');
-              const location: LocationData = { 
-                latitude, 
-                longitude, 
-                locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
-              };
-              this.locationCache = { location, timestamp: Date.now() };
-              resolve(location);
-            }
-          },
-          (error) => {
-            console.error(`❌ Erreur géolocalisation #${attemptCount}:`, error);
-            
-            // Essayer des options plus permissives
-            if (attemptCount === 1) {
-              tryGeolocation({
-                enableHighAccuracy: false,
-                timeout: 60000, // 60 secondes
-                maximumAge: 300000 // 5 minutes
-              });
-              return;
-            } else if (attemptCount === 2) {
-              tryGeolocation({
-                enableHighAccuracy: false,
-                timeout: 90000, // 90 secondes
-                maximumAge: 1800000 // 30 minutes
-              });
-              return;
-            }
-            
-            // Dernier recours: fallback sur Paris
-            console.warn('❌ Toutes les tentatives ont échoué, fallback sur Paris');
-            const parisLocation: LocationData = {
-              latitude: 48.8566,
-              longitude: 2.3522,
-              locationName: 'Paris Centre (fallback)'
+            // Mettre en cache
+            this.locationCache = { location, timestamp: Date.now() };
+            resolve(location);
+          } catch (error) {
+            console.warn('⚠️ Géocodage échoué, utilisation des coordonnées brutes');
+            const location: LocationData = { 
+              latitude, 
+              longitude, 
+              locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
             };
-            this.locationCache = { location: parisLocation, timestamp: Date.now() };
-            resolve(parisLocation);
-          },
-          options
-        );
-      };
-
-      // Première tentative avec paramètres optimisés
-      tryGeolocation({
-        enableHighAccuracy: true,
-        timeout: 30000, // 30 secondes
-        maximumAge: 120000 // 2 minutes
-      });
+            this.locationCache = { location, timestamp: Date.now() };
+            resolve(location);
+          }
+        },
+        (error) => {
+          console.error('❌ Erreur géolocalisation:', error);
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 60000
+        }
+      );
     });
   }
 
