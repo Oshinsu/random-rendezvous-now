@@ -10,12 +10,17 @@ export interface LocationData {
 
 export class GeolocationService {
   static async getCurrentLocation(): Promise<LocationData> {
-    // Apply rate limiting
-    if (RateLimiter.isRateLimited('geolocation', RATE_LIMITS.GEOLOCATION)) {
-      throw new Error('Trop de demandes de géolocalisation. Veuillez attendre avant de réessayer.');
-    }
-
     console.log('🔍 [GEOLOC] Démarrage géolocalisation...');
+    
+    // Check rate limiting with detailed logging
+    const rateLimitStatus = RateLimiter.getStatus('geolocation');
+    console.log('🔍 [GEOLOC] Rate limit status:', rateLimitStatus);
+    
+    if (RateLimiter.isRateLimited('geolocation', RATE_LIMITS.GEOLOCATION)) {
+      console.warn('🚫 [GEOLOC] Rate limited! Status:', rateLimitStatus);
+      const remainingTime = Math.ceil(rateLimitStatus.remainingTime / 1000);
+      throw new Error(`Rate limit atteint. Veuillez attendre ${remainingTime} secondes avant de réessayer.`);
+    }
 
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
