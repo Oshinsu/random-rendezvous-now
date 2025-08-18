@@ -107,9 +107,38 @@ export const useEnhancedGroups = () => {
       return false;
     }
 
+    let locationToUse = userLocation;
+
+    // Si pas de géolocalisation, tenter immédiatement
+    if (!locationToUse) {
+      toast({
+        title: '🧭 Localisation en cours...',
+        description: 'Détection de votre position',
+      });
+
+      try {
+        locationToUse = await GeolocationService.getCurrentLocation();
+        setUserLocation(locationToUse);
+        
+        if (locationToUse) {
+          toast({
+            title: '📍 Position détectée',
+            description: `Recherche dans ${locationToUse.locationName}`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Géolocalisation impossible',
+          description: 'Impossible de détecter votre position actuelle.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    }
+
     const success = await EnhancedGroupService.joinRandomGroup(
       user,
-      userLocation,
+      locationToUse,
       loading,
       setLoading
     );
