@@ -6,65 +6,102 @@ export interface LocationData {
 }
 
 export class GeolocationService {
+  private static locationCache: { location: LocationData; timestamp: number } | null = null;
+  private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
   static async getCurrentLocation(): Promise<LocationData> {
+    // Vérifier le cache d'abord
+    if (this.locationCache) {
+      const now = Date.now();
+      const age = now - this.locationCache.timestamp;
+      if (age < this.CACHE_DURATION) {
+        console.log('📍 Position récupérée du cache:', this.locationCache.location.locationName);
+        return this.locationCache.location;
+      }
+    }
+
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('La géolocalisation n\'est pas supportée par ce navigateur'));
+        console.warn('❌ Géolocalisation non supportée, fallback Paris');
+        const parisLocation: LocationData = {
+          latitude: 48.8566,
+          longitude: 2.3522,
+          locationName: 'Paris Centre'
+        };
+        this.locationCache = { location: parisLocation, timestamp: Date.now() };
+        resolve(parisLocation);
         return;
       }
 
-      // D'abord essayer avec les paramètres standards
+      let attemptCount = 0;
+      const maxAttempts = 3;
+
       const tryGeolocation = (options: PositionOptions) => {
+        attemptCount++;
+        console.log(`📍 Tentative géolocalisation #${attemptCount}:`, options);
+        
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords;
+            console.log('✅ Position obtenue:', { latitude, longitude });
             
             try {
               const locationName = await this.reverseGeocode(latitude, longitude);
-              resolve({ latitude, longitude, locationName });
+              const location: LocationData = { latitude, longitude, locationName };
+              
+              // Mettre en cache
+              this.locationCache = { location, timestamp: Date.now() };
+              resolve(location);
             } catch (error) {
-              // Si le géocodage échoue, on utilise quand même les coordonnées
-              resolve({ 
+              console.warn('⚠️ Géocodage échoué, utilisation des coordonnées brutes');
+              const location: LocationData = { 
                 latitude, 
                 longitude, 
                 locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
-              });
+              };
+              this.locationCache = { location, timestamp: Date.now() };
+              resolve(location);
             }
           },
           (error) => {
-            // Si échec avec les premières options, essayer des options encore plus permissives
-            if (!options.enableHighAccuracy && options.timeout === 15000) {
+            console.error(`❌ Erreur géolocalisation #${attemptCount}:`, error);
+            
+            // Essayer des options plus permissives
+            if (attemptCount === 1) {
               tryGeolocation({
                 enableHighAccuracy: false,
-                timeout: 30000,
+                timeout: 60000, // 60 secondes
+                maximumAge: 300000 // 5 minutes
+              });
+              return;
+            } else if (attemptCount === 2) {
+              tryGeolocation({
+                enableHighAccuracy: false,
+                timeout: 90000, // 90 secondes
                 maximumAge: 1800000 // 30 minutes
               });
               return;
             }
             
-            let errorMessage = 'Erreur de géolocalisation';
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = 'Permission de géolocalisation refusée';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = 'Position non disponible';
-                break;
-              case error.TIMEOUT:
-                errorMessage = 'Timeout de géolocalisation';
-                break;
-            }
-            reject(new Error(errorMessage));
+            // Dernier recours: fallback sur Paris
+            console.warn('❌ Toutes les tentatives ont échoué, fallback sur Paris');
+            const parisLocation: LocationData = {
+              latitude: 48.8566,
+              longitude: 2.3522,
+              locationName: 'Paris Centre (fallback)'
+            };
+            this.locationCache = { location: parisLocation, timestamp: Date.now() };
+            resolve(parisLocation);
           },
           options
         );
       };
 
-      // Première tentative avec paramètres plus tolérants
+      // Première tentative avec paramètres optimisés
       tryGeolocation({
-        enableHighAccuracy: false,
-        timeout: 15000,
-        maximumAge: 600000
+        enableHighAccuracy: true,
+        timeout: 30000, // 30 secondes
+        maximumAge: 120000 // 2 minutes
       });
     });
   }

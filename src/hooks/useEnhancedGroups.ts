@@ -69,33 +69,9 @@ export const useEnhancedGroups = () => {
     intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
   });
 
-  // Récupération de la géolocalisation
-  useEffect(() => {
-    const getUserLocation = async () => {
-      try {
-        const location = await GeolocationService.getCurrentLocation();
-        setUserLocation(location);
-        
-        if (location) {
-          toast({
-            title: '📍 Position détectée',
-            description: `Recherche dans ${location.locationName}`,
-          });
-        }
-      } catch (error) {
-        console.warn('Géolocalisation non disponible:', error);
-        toast({
-          title: 'Géolocalisation indisponible',
-          description: 'Certaines fonctionnalités peuvent être limitées.',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    if (user) {
-      getUserLocation();
-    }
-  }, [user]);
+  // SUPPRESSION: Géolocalisation automatique retirée
+  // La géolocalisation ne se déclenche plus automatiquement
+  // Elle sera demandée seulement au clic sur "Rejoindre un groupe"
 
   // Fonction pour rejoindre un groupe aléatoire
   const joinRandomGroup = async (): Promise<boolean> => {
@@ -131,33 +107,29 @@ export const useEnhancedGroups = () => {
       return false;
     }
 
-    let locationToUse = userLocation;
+    // Géolocalisation OBLIGATOIRE au clic (pas de cache)
+    toast({
+      title: '🧭 Localisation en cours...',
+      description: 'Détection de votre position pour créer le groupe',
+    });
 
-    // Si pas de géolocalisation, tenter immédiatement
-    if (!locationToUse) {
+    let locationToUse: LocationData;
+    try {
+      locationToUse = await GeolocationService.getCurrentLocation();
+      setUserLocation(locationToUse);
+      
       toast({
-        title: '🧭 Localisation en cours...',
-        description: 'Détection de votre position',
+        title: '📍 Position détectée',
+        description: `Création du groupe à ${locationToUse.locationName}`,
       });
-
-      try {
-        locationToUse = await GeolocationService.getCurrentLocation();
-        setUserLocation(locationToUse);
-        
-        if (locationToUse) {
-          toast({
-            title: '📍 Position détectée',
-            description: `Recherche dans ${locationToUse.locationName}`,
-          });
-        }
-      } catch (error) {
-        toast({
-          title: 'Géolocalisation impossible',
-          description: 'Impossible de détecter votre position actuelle.',
-          variant: 'destructive',
-        });
-        return false;
-      }
+    } catch (error) {
+      console.error('❌ Géolocalisation échouée:', error);
+      toast({
+        title: 'Géolocalisation impossible',
+        description: 'Impossible de détecter votre position. Fallback activé.',
+        variant: 'destructive',
+      });
+      return false;
     }
 
     const success = await EnhancedGroupService.joinRandomGroup(
