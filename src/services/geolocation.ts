@@ -32,12 +32,12 @@ export class GeolocationService {
             }
           },
           (error) => {
-            // Si échec avec les premières options, essayer des options plus permissives
-            if (options.enableHighAccuracy && options.timeout === 5000) {
+            // Si échec avec les premières options, essayer des options encore plus permissives
+            if (!options.enableHighAccuracy && options.timeout === 15000) {
               tryGeolocation({
                 enableHighAccuracy: false,
-                timeout: 15000,
-                maximumAge: 600000 // 10 minutes
+                timeout: 30000,
+                maximumAge: 1800000 // 30 minutes
               });
               return;
             }
@@ -60,11 +60,11 @@ export class GeolocationService {
         );
       };
 
-      // Première tentative avec haute précision
+      // Première tentative avec paramètres plus tolérants
       tryGeolocation({
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 300000
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 600000
       });
     });
   }

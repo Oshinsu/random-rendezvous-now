@@ -19,9 +19,9 @@ export const GROUP_CONSTANTS = {
   VERY_OLD_GROUP_THRESHOLD: 12 * 60 * 60 * 1000, // 12 heures pour nettoyage final (réduit)
   
   // === HARMONISATION DES SEUILS ===
-  PARTICIPANT_ACTIVITY_THRESHOLD: 2 * 60 * 60 * 1000, // Aligné avec PARTICIPANT_ABANDONED
+  PARTICIPANT_ACTIVITY_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
   MAX_GROUP_AGE_FOR_JOIN: 60 * 60 * 1000, // 1 heure maximum pour rejoindre
-  PARTICIPANT_INACTIVE_THRESHOLD: 2 * 60 * 60 * 1000, // Aligné avec PARTICIPANT_ABANDONED
+  PARTICIPANT_INACTIVE_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
   PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Désactivé mais alias conservé
   
   // Nettoyage INTELLIGENT UNIQUEMENT - Fréquence réduite pour réduire le stress
