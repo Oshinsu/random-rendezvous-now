@@ -15,65 +15,102 @@ export class GeolocationService {
       throw new Error('Trop de demandes de géolocalisation. Veuillez attendre avant de réessayer.');
     }
 
+    console.log('🔍 [GEOLOC] Démarrage géolocalisation...');
+
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
+        console.error('🚨 [GEOLOC] Navigateur non supporté');
         reject(new Error('La géolocalisation n\'est pas supportée par ce navigateur'));
         return;
       }
 
+      // Stratégie 1: Haute précision avec timeout 30s
+      console.log('📍 [GEOLOC] Tentative haute précision (30s timeout)...');
+      
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          // Validate and sanitize coordinates
-          const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
-          if (!validation.isValid) {
-            console.error('🚨 Invalid coordinates from geolocation API:', validation.error);
-            reject(new Error('Coordonnées de géolocalisation invalides'));
-            return;
-          }
-
-          const sanitizedCoords = validation.sanitized!;
-          
-          try {
-            // Géocodage inversé pour obtenir le nom de la localisation
-            const locationName = await this.reverseGeocode(sanitizedCoords.latitude, sanitizedCoords.longitude);
-            resolve({ 
-              latitude: sanitizedCoords.latitude, 
-              longitude: sanitizedCoords.longitude, 
-              locationName 
-            });
-          } catch (error) {
-            // Si le géocodage échoue, on utilise quand même les coordonnées
-            resolve({ 
-              latitude: sanitizedCoords.latitude, 
-              longitude: sanitizedCoords.longitude, 
-              locationName: `${sanitizedCoords.latitude.toFixed(4)}, ${sanitizedCoords.longitude.toFixed(4)}` 
-            });
-          }
+          console.log('✅ [GEOLOC] Position haute précision obtenue:', position.coords);
+          await this.processLocationSuccess(position, resolve);
         },
         (error) => {
-          let errorMessage = 'Erreur de géolocalisation';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Permission de géolocalisation refusée';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Position non disponible';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Timeout de géolocalisation';
-              break;
-          }
-          reject(new Error(errorMessage));
+          console.warn('⚠️ [GEOLOC] Échec haute précision:', error.message);
+          
+          // Stratégie 2: Fallback avec précision normale
+          console.log('📍 [GEOLOC] Fallback précision normale (30s timeout)...');
+          
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              console.log('✅ [GEOLOC] Position précision normale obtenue:', position.coords);
+              await this.processLocationSuccess(position, resolve);
+            },
+            (fallbackError) => {
+              console.error('🚨 [GEOLOC] Échec total géolocalisation:', fallbackError.message);
+              let errorMessage = 'Erreur de géolocalisation';
+              switch (fallbackError.code) {
+                case fallbackError.PERMISSION_DENIED:
+                  errorMessage = 'Permission de géolocalisation refusée';
+                  break;
+                case fallbackError.POSITION_UNAVAILABLE:
+                  errorMessage = 'Position non disponible';
+                  break;
+                case fallbackError.TIMEOUT:
+                  errorMessage = 'Timeout de géolocalisation (30s)';
+                  break;
+              }
+              reject(new Error(errorMessage));
+            },
+            {
+              enableHighAccuracy: false, // Précision normale pour fallback
+              timeout: 30000, // 30 secondes
+              maximumAge: 300000 // 5 minutes
+            }
+          );
         },
         {
-          enableHighAccuracy: true,
-          timeout: 10000,
+          enableHighAccuracy: true, // Haute précision d'abord
+          timeout: 30000, // 30 secondes  
           maximumAge: 300000 // 5 minutes
         }
       );
     });
+  }
+
+  private static async processLocationSuccess(
+    position: GeolocationPosition, 
+    resolve: (value: LocationData) => void
+  ): Promise<void> {
+    const { latitude, longitude } = position.coords;
+    
+    // Validate and sanitize coordinates
+    const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
+    if (!validation.isValid) {
+      console.error('🚨 [GEOLOC] Coordonnées invalides:', validation.error);
+      throw new Error('Coordonnées de géolocalisation invalides');
+    }
+
+    const sanitizedCoords = validation.sanitized!;
+    console.log('✅ [GEOLOC] Coordonnées validées:', sanitizedCoords);
+    
+    try {
+      // Géocodage inversé pour obtenir le nom de la localisation
+      console.log('🔍 [GEOLOC] Démarrage géocodage inversé...');
+      const locationName = await this.reverseGeocode(sanitizedCoords.latitude, sanitizedCoords.longitude);
+      console.log('✅ [GEOLOC] Géocodage réussi:', locationName);
+      
+      resolve({ 
+        latitude: sanitizedCoords.latitude, 
+        longitude: sanitizedCoords.longitude, 
+        locationName 
+      });
+    } catch (error) {
+      console.warn('⚠️ [GEOLOC] Géocodage échoué, utilisation coordonnées brutes:', error);
+      // Si le géocodage échoue, on utilise quand même les coordonnées
+      resolve({ 
+        latitude: sanitizedCoords.latitude, 
+        longitude: sanitizedCoords.longitude, 
+        locationName: `${sanitizedCoords.latitude.toFixed(4)}, ${sanitizedCoords.longitude.toFixed(4)}` 
+      });
+    }
   }
 
   static async reverseGeocode(lat: number, lng: number): Promise<string> {
