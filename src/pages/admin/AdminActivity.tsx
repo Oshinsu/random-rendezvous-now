@@ -1,101 +1,23 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RealtimeChart } from "@/components/admin/RealtimeChart";
-import { supabase } from '@/integrations/supabase/client';
+import { useRealTimeActivity } from "@/hooks/useRealTimeActivity";
 import { useToast } from '@/hooks/use-toast';
-import { Activity, Users, MapPin, TrendingUp, AlertTriangle } from "lucide-react";
-
-interface ActivityEvent {
-  id: string;
-  type: 'user_join' | 'group_created' | 'group_confirmed' | 'group_completed' | 'user_signup';
-  description: string;
-  timestamp: string;
-  metadata?: any;
-}
+import { Activity, Users, MapPin, TrendingUp, AlertTriangle, MessageCircle } from "lucide-react";
 
 export const AdminActivity = () => {
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [liveStats, setLiveStats] = useState({
-    activeUsers: 0,
-    pendingGroups: 0,
-    completedToday: 0,
-    signupsToday: 0
-  });
+  const { activity, liveStats, chartData, loading, error, refetch } = useRealTimeActivity();
   const { toast } = useToast();
 
-  const fetchLiveActivity = async () => {
-    try {
-      // Simuler des événements d'activité récents
-      const mockActivity: ActivityEvent[] = [
-        {
-          id: '1',
-          type: 'user_signup',
-          description: 'Nouvel utilisateur inscrit',
-          timestamp: new Date(Date.now() - 2000).toISOString()
-        },
-        {
-          id: '2',
-          type: 'group_created',
-          description: 'Nouveau groupe créé à Paris 15ème',
-          timestamp: new Date(Date.now() - 15000).toISOString()
-        },
-        {
-          id: '3',
-          type: 'user_join',
-          description: 'Utilisateur a rejoint un groupe',
-          timestamp: new Date(Date.now() - 30000).toISOString()
-        },
-        {
-          id: '4',
-          type: 'group_confirmed',
-          description: 'Groupe confirmé avec bar assigné',
-          timestamp: new Date(Date.now() - 45000).toISOString()
-        },
-        {
-          id: '5',
-          type: 'group_completed',
-          description: 'Sortie terminée avec succès',
-          timestamp: new Date(Date.now() - 120000).toISOString()
-        }
-      ];
-
-      setActivity(mockActivity);
-
-      // Récupérer les vraies stats
-      const { data: stats } = await supabase.rpc('get_admin_stats');
-      if (stats) {
-        const statsData = stats as any;
-        setLiveStats({
-          activeUsers: Math.floor(Math.random() * 50) + 10, // Simulation
-          pendingGroups: statsData.waiting_groups || 0,
-          completedToday: statsData.groups_today || 0,
-          signupsToday: statsData.signups_today || 0
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching activity:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger l'activité",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLiveActivity();
-    
-    // Actualiser toutes les 30 secondes
-    const interval = setInterval(fetchLiveActivity, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  if (error) {
+    toast({
+      title: "Erreur",
+      description: error,
+      variant: "destructive",
+    });
+  }
 
   const getEventIcon = (type: string) => {
     switch (type) {
@@ -104,6 +26,7 @@ export const AdminActivity = () => {
       case 'user_join': return <Activity className="h-4 w-4 text-purple-600" />;
       case 'group_confirmed': return <TrendingUp className="h-4 w-4 text-orange-600" />;
       case 'group_completed': return <Activity className="h-4 w-4 text-red-600" />;
+      case 'message_sent': return <MessageCircle className="h-4 w-4 text-indigo-600" />;
       default: return <Activity className="h-4 w-4 text-gray-600" />;
     }
   };
@@ -115,6 +38,7 @@ export const AdminActivity = () => {
       case 'user_join': return 'bg-purple-50 border-purple-200';
       case 'group_confirmed': return 'bg-orange-50 border-orange-200';
       case 'group_completed': return 'bg-red-50 border-red-200';
+      case 'message_sent': return 'bg-indigo-50 border-indigo-200';
       default: return 'bg-gray-50 border-gray-200';
     }
   };
@@ -141,7 +65,7 @@ export const AdminActivity = () => {
             <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse" />
             Live
           </Badge>
-          <Button onClick={fetchLiveActivity} variant="outline" size="sm">
+          <Button onClick={refetch} variant="outline" size="sm">
             Actualiser
           </Button>
         </div>
@@ -197,15 +121,15 @@ export const AdminActivity = () => {
         <Card className="border-purple-200 bg-purple-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-purple-700 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Inscriptions
+              <MessageCircle className="h-4 w-4" />
+              Messages 24h
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-800">
-              {liveStats.signupsToday}
+              {liveStats.messagesLast24h}
             </div>
-            <p className="text-xs text-purple-600">Aujourd'hui</p>
+            <p className="text-xs text-purple-600">Dernières 24h</p>
           </CardContent>
         </Card>
       </div>
@@ -219,7 +143,7 @@ export const AdminActivity = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <RealtimeChart />
+            <RealtimeChart data={chartData} />
           </CardContent>
         </Card>
 
