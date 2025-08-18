@@ -1,11 +1,48 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Users, MapPin, CheckCircle, Clock, TrendingUp, UserPlus } from "lucide-react";
+import { Users, MapPin, CheckCircle, Clock, TrendingUp, UserPlus, Activity, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const AdminDashboard = () => {
-  const { stats, loading, error } = useAdminStats();
+  const { stats, loading, error, refetch } = useAdminStats();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+    toast({
+      title: "Données actualisées",
+      description: "Les statistiques ont été mises à jour",
+    });
+  };
+
+  const handleCleanup = async () => {
+    try {
+      const { error } = await supabase.rpc('dissolve_old_groups');
+      if (error) throw error;
+      
+      toast({
+        title: "Nettoyage effectué",
+        description: "Les anciens groupes ont été nettoyés",
+      });
+      
+      await refetch();
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du nettoyage",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -93,12 +130,32 @@ export const AdminDashboard = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Tableau de bord</h1>
-          <p className="text-red-600 mt-2">Vue d'ensemble de l'activité Random</p>
+          <h1 className="text-3xl font-bold text-red-800">Dashboard Admin</h1>
+          <p className="text-red-600 mt-2">Vue d'ensemble de l'activité Random en temps réel</p>
         </div>
-        <Badge variant="outline" className="text-red-700 border-red-300">
-          Temps réel
-        </Badge>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+            <Activity className="h-3 w-3 mr-1" />
+            Live
+          </Badge>
+          <Button 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            variant="outline" 
+            size="sm"
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            {isRefreshing ? <LoadingSpinner size="sm" /> : "Actualiser"}
+          </Button>
+          <Button 
+            onClick={handleCleanup} 
+            variant="outline" 
+            size="sm"
+            className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+          >
+            Nettoyer DB
+          </Button>
+        </div>
       </div>
 
       {/* Stats globales */}
@@ -140,25 +197,70 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Messages d'état */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="text-green-800">Système opérationnel</CardTitle>
-            <CardDescription className="text-green-600">
-              Tous les services fonctionnent normalement
-            </CardDescription>
-          </CardHeader>
-        </Card>
-        
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-blue-800">Accès rapide</CardTitle>
-            <CardDescription className="text-blue-600">
-              Utilisez la navigation latérale pour accéder aux différents modules d'administration
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-xl font-semibold text-red-800 mb-4">Actions rapides</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-blue-800 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Analytics détaillées
+              </CardTitle>
+              <CardDescription className="text-blue-600">
+                Voir les métriques d'usage et de performance
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          
+          <Card className="border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-purple-800 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Gestion utilisateurs
+              </CardTitle>
+              <CardDescription className="text-purple-600">
+                Modérer et gérer les comptes utilisateurs
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-orange-800 flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Surveillance temps réel
+              </CardTitle>
+              <CardDescription className="text-orange-600">
+                Monitorer l'activité des groupes en live
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+
+      {/* System Status */}
+      <div>
+        <h2 className="text-xl font-semibold text-red-800 mb-4">État du système</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="text-green-800">Système opérationnel</CardTitle>
+              <CardDescription className="text-green-600">
+                Tous les services fonctionnent normalement
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-800">Accès rapide</CardTitle>
+              <CardDescription className="text-blue-600">
+                Utilisez la navigation latérale pour accéder aux différents modules d'administration
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
       </div>
     </div>
   );
