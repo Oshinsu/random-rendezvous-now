@@ -12,15 +12,9 @@ export class GeolocationService {
   static async getCurrentLocation(): Promise<LocationData> {
     console.log('🔍 [GEOLOC] Démarrage géolocalisation...');
     
-    // Check rate limiting with detailed logging
-    const rateLimitStatus = RateLimiter.getStatus('geolocation');
-    console.log('🔍 [GEOLOC] Rate limit status:', rateLimitStatus);
-    
-    if (RateLimiter.isRateLimited('geolocation', RATE_LIMITS.GEOLOCATION)) {
-      console.warn('🚫 [GEOLOC] Rate limited! Status:', rateLimitStatus);
-      const remainingTime = Math.ceil(rateLimitStatus.remainingTime / 1000);
-      throw new Error(`Rate limit atteint. Veuillez attendre ${remainingTime} secondes avant de réessayer.`);
-    }
+    // Rate limiting temporairement désactivé pour debug
+    // const rateLimitStatus = RateLimiter.getStatus('geolocation');
+    // console.log('🔍 [GEOLOC] Rate limit status:', rateLimitStatus);
 
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -58,9 +52,9 @@ export class GeolocationService {
           reject(new Error(errorMessage));
         },
         {
-          enableHighAccuracy: true,
-          timeout: 15000, // 15 secondes
-          maximumAge: 60000 // 1 minute
+          enableHighAccuracy: false, // Moins exigeant
+          timeout: 30000, // 30 secondes 
+          maximumAge: 300000 // 5 minutes de cache
         }
       );
     });
