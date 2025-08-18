@@ -425,6 +425,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      find_compatible_group_fixed: {
+        Args: {
+          search_radius?: number
+          user_latitude: number
+          user_longitude: number
+        }
+        Returns: {
+          current_participants: number
+          distance_meters: number
+          id: string
+          latitude: number
+          location_name: string
+          longitude: number
+          max_participants: number
+          status: string
+        }[]
+      }
       get_admin_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
