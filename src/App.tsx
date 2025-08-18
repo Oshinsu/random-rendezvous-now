@@ -16,6 +16,7 @@ import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import { AdminApi } from "./pages/admin/AdminApi";
 import { AdminRoute } from "./components/admin/AdminRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
@@ -121,6 +122,15 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminLogs />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/api" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminApi />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

@@ -6,7 +6,8 @@ import {
   Activity, 
   Settings,
   Home,
-  FileText
+  FileText,
+  Globe
 } from "lucide-react";
 
 import {
@@ -26,6 +27,7 @@ const adminItems = [
   { title: "Groupes", url: "/admin/groups", icon: MapPin },
   { title: "Activité", url: "/admin/activity", icon: Activity },
   { title: "Logs", url: "/admin/logs", icon: FileText },
+  { title: "Analytics API", url: "/admin/api", icon: Globe },
   { title: "Paramètres", url: "/admin/settings", icon: Settings },
 ];
 

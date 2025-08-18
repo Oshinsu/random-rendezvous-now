@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { 
   Settings, 
   Database, 
@@ -19,52 +20,38 @@ import {
   AlertTriangle
 } from "lucide-react";
 
-interface SystemSettings {
-  maxGroupSize: number;
-  defaultSearchRadius: number;
-  maintenanceMode: boolean;
-  emailNotifications: boolean;
-  autoCleanupEnabled: boolean;
-  cleanupIntervalHours: number;
-}
-
 export const AdminSettings = () => {
-  const [settings, setSettings] = useState<SystemSettings>({
-    maxGroupSize: 5,
-    defaultSearchRadius: 10000,
-    maintenanceMode: false,
-    emailNotifications: true,
-    autoCleanupEnabled: true,
-    cleanupIntervalHours: 24
-  });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { settings, loading, saving, error, saveSettings } = useSystemSettings();
+  const [localSettings, setLocalSettings] = useState(settings);
   const { toast } = useToast();
 
+  // Sync local settings with fetched settings
+  React.useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
   const handleSaveSettings = async () => {
-    setSaving(true);
-    try {
-      // Simuler la sauvegarde des paramètres
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    const success = await saveSettings(localSettings);
+    
+    if (success) {
       toast({
         title: "Paramètres sauvegardés",
         description: "La configuration a été mise à jour avec succès",
       });
-    } catch (error) {
-      console.error('Error saving settings:', error);
+    } else {
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder les paramètres",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
+  const [exportLoading, setExportLoading] = useState(false);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+
   const handleExportDatabase = async () => {
-    setLoading(true);
+    setExportLoading(true);
     try {
       // Exporter les données principales
       const { data: groups, error: groupsError } = await supabase
@@ -110,7 +97,7 @@ export const AdminSettings = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setExportLoading(false);
     }
   };
 
@@ -119,7 +106,7 @@ export const AdminSettings = () => {
       return;
     }
 
-    setLoading(true);
+    setCleanupLoading(true);
     try {
       const { error } = await supabase.rpc('dissolve_old_groups');
       if (error) throw error;
@@ -136,25 +123,41 @@ export const AdminSettings = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setCleanupLoading(false);
     }
   };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-red-800">Paramètres système</h1>
-          <p className="text-red-600 mt-2">Configuration et maintenance de l'application</p>
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
         </div>
-        <Button 
-          onClick={handleSaveSettings} 
-          disabled={saving}
-          className="bg-red-600 hover:bg-red-700"
-        >
-          {saving ? <LoadingSpinner size="sm" /> : 'Sauvegarder'}
-        </Button>
-      </div>
+      )}
+      
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <p className="text-red-800">Erreur: {error}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && (
+        <>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-red-800">Paramètres système</h1>
+              <p className="text-red-600 mt-2">Configuration et maintenance de l'application</p>
+            </div>
+            <Button 
+              onClick={handleSaveSettings} 
+              disabled={saving || loading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {saving ? <LoadingSpinner size="sm" /> : 'Sauvegarder'}
+            </Button>
+          </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Paramètres généraux */}
@@ -173,8 +176,8 @@ export const AdminSettings = () => {
                 type="number"
                 min="3"
                 max="10"
-                value={settings.maxGroupSize}
-                onChange={(e) => setSettings(prev => ({
+                value={localSettings.maxGroupSize}
+                onChange={(e) => setLocalSettings(prev => ({
                   ...prev,
                   maxGroupSize: parseInt(e.target.value) || 5
                 }))}
@@ -188,8 +191,8 @@ export const AdminSettings = () => {
                 type="number"
                 min="1000"
                 max="50000"
-                value={settings.defaultSearchRadius}
-                onChange={(e) => setSettings(prev => ({
+                value={localSettings.defaultSearchRadius}
+                onChange={(e) => setLocalSettings(prev => ({
                   ...prev,
                   defaultSearchRadius: parseInt(e.target.value) || 10000
                 }))}
@@ -204,8 +207,8 @@ export const AdminSettings = () => {
                 <p className="text-sm text-gray-600">Désactive l'accès pour les utilisateurs</p>
               </div>
               <Switch
-                checked={settings.maintenanceMode}
-                onCheckedChange={(checked) => setSettings(prev => ({
+                checked={localSettings.maintenanceMode}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({
                   ...prev,
                   maintenanceMode: checked
                 }))}
@@ -218,8 +221,8 @@ export const AdminSettings = () => {
                 <p className="text-sm text-gray-600">Activer les notifications par email</p>
               </div>
               <Switch
-                checked={settings.emailNotifications}
-                onCheckedChange={(checked) => setSettings(prev => ({
+                checked={localSettings.emailNotifications}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({
                   ...prev,
                   emailNotifications: checked
                 }))}
@@ -243,8 +246,8 @@ export const AdminSettings = () => {
                 <p className="text-sm text-gray-600">Suppression automatique des anciennes données</p>
               </div>
               <Switch
-                checked={settings.autoCleanupEnabled}
-                onCheckedChange={(checked) => setSettings(prev => ({
+                checked={localSettings.autoCleanupEnabled}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({
                   ...prev,
                   autoCleanupEnabled: checked
                 }))}
@@ -258,12 +261,12 @@ export const AdminSettings = () => {
                 type="number"
                 min="1"
                 max="168"
-                value={settings.cleanupIntervalHours}
-                onChange={(e) => setSettings(prev => ({
+                value={localSettings.cleanupIntervalHours}
+                onChange={(e) => setLocalSettings(prev => ({
                   ...prev,
                   cleanupIntervalHours: parseInt(e.target.value) || 24
                 }))}
-                disabled={!settings.autoCleanupEnabled}
+                disabled={!localSettings.autoCleanupEnabled}
               />
             </div>
 
@@ -272,11 +275,11 @@ export const AdminSettings = () => {
             <div className="space-y-2">
               <Button 
                 onClick={handleCleanupDatabase}
-                disabled={loading}
+                disabled={cleanupLoading}
                 variant="outline"
                 className="w-full text-yellow-700 border-yellow-300 hover:bg-yellow-50"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                {cleanupLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4 mr-2" />}
                 Nettoyer maintenant
               </Button>
             </div>
@@ -295,11 +298,11 @@ export const AdminSettings = () => {
             <div className="space-y-2">
               <Button 
                 onClick={handleExportDatabase}
-                disabled={loading}
+                disabled={exportLoading}
                 variant="outline"
                 className="w-full text-blue-700 border-blue-300 hover:bg-blue-50"
               >
-                <Download className="h-4 w-4 mr-2" />
+                {exportLoading ? <LoadingSpinner size="sm" /> : <Download className="h-4 w-4 mr-2" />}
                 Exporter base de données
               </Button>
               
@@ -353,6 +356,8 @@ export const AdminSettings = () => {
           </CardContent>
         </Card>
       </div>
+        </>
+      )}
     </div>
   );
 };
