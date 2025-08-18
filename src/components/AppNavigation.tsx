@@ -70,7 +70,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Home className="h-4 w-4" />
-                      <span>Chercher un groupe</span>
+                      <span>{t('navigation.search_group')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -88,7 +88,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Users className="h-4 w-4" />
-                      <span>Mon groupe</span>
+                      <span>{t('navigation.my_group')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -106,7 +106,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Clock className="h-4 w-4" />
-                      <span>Groupes planifiés</span>
+                      <span>{t('navigation.scheduled_groups')}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -152,19 +152,19 @@ const AppNavigation = () => {
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
-                    <span>{i18n.language === 'en' ? t('navigation.profile') : 'Profil'}</span>
+                    <span>{t('navigation.profile')}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <NavLink to="/" className="flex items-center font-heading">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    <span>Page d'accueil</span>
+                    <span>{t('navigation.home_page')}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>{i18n.language === 'en' ? t('navigation.logout') : 'Se déconnecter'}</span>
+                  <span>{t('navigation.logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -187,7 +187,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Home className="h-4 w-4" />
-                <span>Chercher un groupe</span>
+                <span>{t('navigation.search_group')}</span>
               </NavLink>
               
               <NavLink 
@@ -202,7 +202,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Users className="h-4 w-4" />
-                <span>Mon groupe</span>
+                <span>{t('navigation.my_group')}</span>
               </NavLink>
 
               <NavLink 
@@ -217,7 +217,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Clock className="h-4 w-4" />
-                <span>Groupes planifiés</span>
+                <span>{t('navigation.scheduled_groups')}</span>
               </NavLink>
 
               <NavLink 
@@ -226,7 +226,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ExternalLink className="h-4 w-4" />
-                <span>Page d'accueil</span>
+                <span>{t('navigation.home_page')}</span>
               </NavLink>
             </nav>
           </div>
