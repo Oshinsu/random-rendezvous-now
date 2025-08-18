@@ -1,0 +1,83 @@
+{
+  "hero": {
+    "title": "Random • One click. 5 strangers. 1 bar.",
+    "subtitle": "In one click, we create your group of 5 and choose an open bar near you. Real encounters, no swiping.",
+    "cta": "Try the Adventure",
+    "cta_logged": "Find a group",
+    "beta_info": "✨ Free beta in Paris until September 1st",
+    "status_beta": "Beta in August",
+    "status_random_bars": "Randomly selected bars", 
+    "status_free": "Free during holidays"
+  },
+  "navigation": {
+    "groups": "Groups",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "login": "Login"
+  },
+  "how_it_works": {
+    "title": "How Random Works",
+    "subtitle": "Your adventure in 4 simple steps",
+    "step1_title": "Click Random",
+    "step1_desc": "One click and we handle everything",
+    "step2_title": "Join your group", 
+    "step2_desc": "Meet 4 other adventurers like you",
+    "step3_title": "Discover your bar",
+    "step3_desc": "We choose a random open bar near you",
+    "step4_title": "Live the moment",
+    "step4_desc": "Authentic encounters, real connections"
+  },
+  "why_random": {
+    "title": "Why Random?",
+    "subtitle": "The app that gives spontaneity back to your social life",
+    "benefit1_title": "Real Encounters",
+    "benefit1_desc": "No endless scrolling. Real people, authentic moments.",
+    "benefit2_title": "Zero Effort",
+    "benefit2_desc": "One click and everything is organized for you.",
+    "benefit3_title": "Local Discovery", 
+    "benefit3_desc": "Discover new places in your neighborhood.",
+    "benefit4_title": "Guaranteed Fun",
+    "benefit4_desc": "Every Random is an adventure to remember."
+  },
+  "no_more": {
+    "title": "No More...",
+    "subtitle": "Random breaks the codes of traditional apps",
+    "feature1_title": "Endless Choices",
+    "feature1_desc": "No more endless scrolling through options",
+    "feature2_title": "Planning Stress", 
+    "feature2_desc": "No more hours spent organizing outings",
+    "feature3_title": "Fake Connections",
+    "feature3_desc": "No more superficial online interactions",
+    "feature4_title": "Boring Routine",
+    "feature4_desc": "No more always going to the same places"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything you need to know about Random",
+    "q1": "How does Random work?",
+    "a1": "Simple: you click, we create a group of 5 people near you and choose a random bar. You just need to show up!",
+    "q2": "Is Random really free?",
+    "a2": "Yes, completely free during the beta in Paris until September 1st. Lyon is coming soon.",
+    "q3": "What if I don't like the chosen bar?",
+    "a3": "That's the magic of Random! The idea is to discover new places and live unexpected experiences. Trust us 😉",
+    "q4": "How are groups formed?",
+    "a4": "Our algorithm creates balanced groups of 5 people based on availability and proximity. Each Random is a surprise!",
+    "q5": "What if someone doesn't show up?",
+    "a5": "Don't worry, it happens! The group continues with the people present. The goal is to have fun with whoever comes."
+  },
+  "cta": {
+    "title": "Ready for your next adventure?",
+    "subtitle": "Join Random: 1 click, 1 group, 1 bar. Real encounters near you.",
+    "button": "Launch Random",
+    "button_logged": "Find a group",
+    "beta_info": "Free beta in Paris until September 1st. Lyon coming soon."
+  },
+  "footer": {
+    "tagline": "All rights reserved. Dare the unexpected.",
+    "made_in": "Designed with audacity in Coruscant for everyday adventurers.",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy", 
+    "contact": "Contact"
+  }
+}

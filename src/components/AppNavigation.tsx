@@ -21,11 +21,14 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, Users, User, LogOut, Menu, ExternalLink, Clock } from 'lucide-react';
 import RandomLogo from './RandomLogo';
+import LanguageToggle from './LanguageToggle';
+import { useTranslation } from 'react-i18next';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t, i18n } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -113,6 +116,8 @@ const AppNavigation = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
+            <LanguageToggle />
+            
             {/* Mobile menu button */}
             <Button
               variant="ghost"
@@ -147,7 +152,7 @@ const AppNavigation = () => {
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profil</span>
+                    <span>{i18n.language === 'en' ? t('navigation.profile') : 'Profil'}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -159,7 +164,7 @@ const AppNavigation = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
+                  <span>{i18n.language === 'en' ? t('navigation.logout') : 'Se déconnecter'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
