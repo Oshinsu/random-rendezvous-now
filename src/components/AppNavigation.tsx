@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink, Clock } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 import LanguageToggle from './LanguageToggle';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +39,12 @@ const AppNavigation = () => {
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const toggleLanguage = () => {
+    const newLanguage = i18n.language === 'fr' ? 'en' : 'fr';
+    i18n.changeLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
   };
 
   const userName = user?.user_metadata?.first_name || 'Utilisateur';
@@ -111,13 +117,25 @@ const AppNavigation = () => {
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <button 
+                      onClick={toggleLanguage}
+                      className="flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading text-muted-foreground hover:text-foreground hover:bg-accent"
+                    >
+                      <Globe className="h-4 w-4" />
+                      <span>{i18n.language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
+                      <span>{i18n.language === 'fr' ? 'English' : 'Français'}</span>
+                    </button>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
           </nav>
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <LanguageToggle />
             
             {/* Mobile menu button */}
             <Button
@@ -149,32 +167,6 @@ const AppNavigation = () => {
                     </p>
                   </div>
                 </div>
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuLabel>Langue / Language</DropdownMenuLabel>
-                
-                <DropdownMenuItem 
-                  onClick={() => {
-                    i18n.changeLanguage('fr');
-                    localStorage.setItem('language', 'fr');
-                  }}
-                  className={`font-heading cursor-pointer ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : ''}`}
-                >
-                  <span className="text-lg mr-3">🇫🇷</span>
-                  <span>Français</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem 
-                  onClick={() => {
-                    i18n.changeLanguage('en');
-                    localStorage.setItem('language', 'en');
-                  }}
-                  className={`font-heading cursor-pointer ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : ''}`}
-                >
-                  <span className="text-lg mr-3">🇬🇧</span>
-                  <span>English</span>
-                </DropdownMenuItem>
-                
                 <DropdownMenuSeparator />
                 
                 <DropdownMenuItem asChild>
@@ -247,6 +239,18 @@ const AppNavigation = () => {
                 <Clock className="h-4 w-4" />
                 <span>{t('navigation.scheduled_groups')}</span>
               </NavLink>
+
+              <button 
+                onClick={() => {
+                  toggleLanguage();
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading text-muted-foreground hover:text-foreground hover:bg-accent text-left"
+              >
+                <Globe className="h-4 w-4" />
+                <span>{i18n.language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
+                <span>{i18n.language === 'fr' ? 'English' : 'Français'}</span>
+              </button>
 
               <NavLink 
                 to="/" 
