@@ -140,70 +140,42 @@ const AppNavigation = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-56 min-w-56" 
-                style={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e2e8f0', 
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  zIndex: 9999,
-                  display: 'block !important',
-                  opacity: 1,
-                  visibility: 'visible'
-                }}
-              >
-                <div className="flex items-center justify-start gap-2 p-2" style={{ color: '#1f2937' }}>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
                     <p className="font-heading font-medium">{userName}</p>
-                    <p className="w-[200px] truncate text-sm text-gray-600 font-body">
+                    <p className="w-[200px] truncate text-sm text-muted-foreground font-body">
                       {user?.email}
                     </p>
                   </div>
                 </div>
-                <DropdownMenuSeparator style={{ backgroundColor: '#e5e7eb', height: '1px', margin: '4px 0' }} />
+                <DropdownMenuSeparator />
                 
-                {/* Language Selection - FORCE DISPLAY */}
-                <div className="px-2 py-1" style={{ display: 'block', visibility: 'visible' }}>
-                  <p className="text-xs font-medium text-gray-500 mb-1">Langue / Language</p>
-                </div>
+                <DropdownMenuLabel>Langue / Language</DropdownMenuLabel>
                 
-                <div 
+                <DropdownMenuItem 
                   onClick={() => {
                     i18n.changeLanguage('fr');
                     localStorage.setItem('language', 'fr');
                   }}
-                  className="flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-gray-100"
-                  style={{ 
-                    display: 'flex', 
-                    visibility: 'visible',
-                    backgroundColor: i18n.language === 'fr' ? '#f59e0b' : 'transparent',
-                    color: i18n.language === 'fr' ? 'white' : '#374151'
-                  }}
+                  className={`font-heading cursor-pointer ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : ''}`}
                 >
-                  <span style={{ fontSize: '18px' }}>🇫🇷</span>
-                  <span style={{ fontSize: '14px' }}>Français</span>
-                </div>
+                  <span className="text-lg mr-3">🇫🇷</span>
+                  <span>Français</span>
+                </DropdownMenuItem>
                 
-                <div 
+                <DropdownMenuItem 
                   onClick={() => {
                     i18n.changeLanguage('en');
                     localStorage.setItem('language', 'en');
                   }}
-                  className="flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-gray-100"
-                  style={{ 
-                    display: 'flex', 
-                    visibility: 'visible',
-                    backgroundColor: i18n.language === 'en' ? '#f59e0b' : 'transparent',
-                    color: i18n.language === 'en' ? 'white' : '#374151'
-                  }}
+                  className={`font-heading cursor-pointer ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : ''}`}
                 >
-                  <span style={{ fontSize: '18px' }}>🇬🇧</span>
-                  <span style={{ fontSize: '14px' }}>English</span>
-                </div>
+                  <span className="text-lg mr-3">🇬🇧</span>
+                  <span>English</span>
+                </DropdownMenuItem>
                 
-                <DropdownMenuSeparator style={{ backgroundColor: '#e5e7eb', height: '1px', margin: '4px 0' }} />
+                <DropdownMenuSeparator />
                 
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
