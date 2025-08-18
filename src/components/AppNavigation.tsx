@@ -139,10 +139,10 @@ const AppNavigation = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background border shadow-md">
+              <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-heading font-medium">{userName}</p>
+                    <p className="font-heading font-medium text-popover-foreground">{userName}</p>
                     <p className="w-[200px] truncate text-sm text-muted-foreground font-body">
                       {user?.email}
                     </p>
@@ -162,9 +162,9 @@ const AppNavigation = () => {
                     i18n.changeLanguage('fr');
                     localStorage.setItem('language', 'fr');
                   }}
-                  className={`font-heading ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : ''}`}
+                  className={`font-heading cursor-pointer ${i18n.language === 'fr' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
                 >
-                  <span className="text-sm font-bold mr-2">FR</span>
+                  <span className="text-sm font-bold mr-3 min-w-[24px]">FR</span>
                   <span className="text-sm">Français</span>
                 </DropdownMenuItem>
                 
@@ -173,9 +173,9 @@ const AppNavigation = () => {
                     i18n.changeLanguage('en');
                     localStorage.setItem('language', 'en');
                   }}
-                  className={`font-heading ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : ''}`}
+                  className={`font-heading cursor-pointer ${i18n.language === 'en' ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'}`}
                 >
-                  <span className="text-sm font-bold mr-2">EN</span>
+                  <span className="text-sm font-bold mr-3 min-w-[24px]">EN</span>
                   <span className="text-sm">English</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
