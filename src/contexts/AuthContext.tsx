@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,20 +125,47 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const refreshSession = async () => {
     try {
       setLoading(true);
-      console.log('Forcing session refresh...');
+      console.log('🔄 Forcing session refresh...');
       
+      // First try to refresh the token
       const { data: { session }, error } = await supabase.auth.refreshSession();
       
       if (error) {
-        console.error('Session refresh error:', error);
-        return;
+        console.error('❌ Session refresh error:', error);
+        
+        // If refresh fails, try to get current session
+        const { data: { session: currentSession }, error: getError } = await supabase.auth.getSession();
+        
+        if (getError) {
+          console.error('❌ Get session error:', getError);
+          // Force sign out if both fail
+          setSession(null);
+          setUser(null);
+          return false;
+        }
+        
+        if (currentSession) {
+          console.log('✅ Using existing session instead');
+          setSession(currentSession);
+          setUser(currentSession.user);
+          return true;
+        } else {
+          console.log('❌ No valid session found');
+          setSession(null);
+          setUser(null);
+          return false;
+        }
       }
       
-      console.log('Session refreshed successfully:', !!session);
+      console.log('✅ Session refreshed successfully:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
+      return !!session;
     } catch (error) {
-      console.error('Unexpected error during session refresh:', error);
+      console.error('❌ Unexpected error during session refresh:', error);
+      setSession(null);
+      setUser(null);
+      return false;
     } finally {
       setLoading(false);
     }

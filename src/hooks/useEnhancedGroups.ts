@@ -6,6 +6,7 @@ import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { useActivityHeartbeat } from './useActivityHeartbeat';
 import { toast } from './use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -98,10 +99,33 @@ export const useEnhancedGroups = () => {
 
   // Fonction pour rejoindre un groupe aléatoire
   const joinRandomGroup = async (): Promise<boolean> => {
+    // Vérification d'authentification renforcée
     if (!user) {
       toast({
         title: 'Authentification requise',
         description: 'Vous devez être connecté pour rejoindre un groupe.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    // Double vérification: tester auth.uid() côté Supabase
+    try {
+      const { data: authTest, error: authError } = await supabase.from('profiles').select('id').limit(1);
+      if (authError && authError.message.includes('JWT')) {
+        console.error('❌ Session JWT corrompue détectée:', authError);
+        toast({
+          title: '🔒 Session expirée',
+          description: 'Veuillez vous reconnecter pour continuer.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erreur de vérification auth:', error);
+      toast({
+        title: '🔒 Problème d\'authentification',
+        description: 'Session corrompue. Reconnexion requise.',
         variant: 'destructive',
       });
       return false;
