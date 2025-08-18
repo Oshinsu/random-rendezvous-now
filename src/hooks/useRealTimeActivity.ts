@@ -3,10 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ActivityEvent {
   id: string;
-  type: 'user_join' | 'group_created' | 'group_confirmed' | 'group_completed' | 'user_signup' | 'message_sent';
-  description: string;
+  type: 'user_joined' | 'group_created' | 'group_confirmed' | 'group_completed' | 'message_sent';
   timestamp: string;
-  metadata?: any;
+  data: {
+    groupId?: string;
+    userName?: string;
+    barName?: string;
+    location?: string;
+    status?: string;
+  };
 }
 
 interface LiveStats {
@@ -24,101 +29,143 @@ interface ActivityMetrics {
   messages_sent: number;
 }
 
-export const useRealTimeActivity = () => {
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [liveStats, setLiveStats] = useState<LiveStats>({
-    activeUsers: 0,
-    pendingGroups: 0,
-    completedToday: 0,
-    signupsToday: 0,
-    messagesLast24h: 0
-  });
+type TimePeriod = 'day' | 'week' | 'month' | 'year';
+
+export const useRealTimeActivity = (period: TimePeriod = 'day') => {
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [chartData, setChartData] = useState<ActivityMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const getDateRange = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+    
+    return { startDate: startDate.toISOString(), endDate: now.toISOString() };
+  };
+
   const fetchRecentActivity = async () => {
     try {
-      const events: ActivityEvent[] = [];
+      const { startDate } = getDateRange();
       
-      // Récupérer les groupes récemment créés
+      // Fetch recent groups within time period
       const { data: recentGroups } = await supabase
         .from('groups')
-        .select('id, created_at, location_name, status')
+        .select('*')
+        .gte('created_at', startDate)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(100);
 
-      // Récupérer les participations récentes
-      const { data: recentParticipations } = await supabase
+      // Fetch recent participants within time period
+      const { data: recentParticipants } = await supabase
         .from('group_participants')
-        .select('id, joined_at, group_id, groups(location_name)')
+        .select('*')
+        .gte('joined_at', startDate)
         .order('joined_at', { ascending: false })
-        .limit(10);
+        .limit(100);
 
-      // Récupérer les messages récents
+      // Fetch recent messages within time period
       const { data: recentMessages } = await supabase
         .from('group_messages')
-        .select('id, created_at, group_id, is_system, groups(location_name)')
-        .eq('is_system', false)
+        .select('*')
+        .gte('created_at', startDate)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(100);
 
-      // Convertir en événements d'activité
+      const events: ActivityEvent[] = [];
+
+      // Process groups
       recentGroups?.forEach(group => {
         events.push({
-          id: `group-${group.id}`,
-          type: group.status === 'confirmed' ? 'group_confirmed' : 
-                group.status === 'completed' ? 'group_completed' : 'group_created',
-          description: `Groupe ${group.status === 'confirmed' ? 'confirmé' : 
-                       group.status === 'completed' ? 'terminé' : 'créé'} à ${group.location_name || 'localisation inconnue'}`,
+          id: group.id,
+          type: 'group_created',
           timestamp: group.created_at,
-          metadata: { groupId: group.id }
+          data: {
+            groupId: group.id,
+            location: group.location_name || 'Location inconnue',
+            status: group.status
+          }
+        });
+
+        if (group.status === 'confirmed' && group.bar_name) {
+          events.push({
+            id: `${group.id}_confirmed`,
+            type: 'group_confirmed',
+            timestamp: group.created_at,
+            data: {
+              groupId: group.id,
+              barName: group.bar_name
+            }
+          });
+        }
+      });
+
+      // Process participants
+      recentParticipants?.forEach(participant => {
+        events.push({
+          id: participant.id,
+          type: 'user_joined',
+          timestamp: participant.joined_at,
+          data: {
+            groupId: participant.group_id,
+            userName: 'Utilisateur'
+          }
         });
       });
 
-      recentParticipations?.forEach(participation => {
+      // Process messages
+      recentMessages?.filter(msg => !msg.is_system).forEach(message => {
         events.push({
-          id: `join-${participation.id}`,
-          type: 'user_join',
-          description: `Utilisateur a rejoint le groupe à ${(participation.groups as any)?.location_name || 'localisation inconnue'}`,
-          timestamp: participation.joined_at,
-          metadata: { groupId: participation.group_id }
-        });
-      });
-
-      recentMessages?.forEach(message => {
-        events.push({
-          id: `message-${message.id}`,
+          id: message.id,
           type: 'message_sent',
-          description: `Message envoyé dans le groupe à ${(message.groups as any)?.location_name || 'localisation inconnue'}`,
           timestamp: message.created_at,
-          metadata: { groupId: message.group_id }
+          data: {
+            groupId: message.group_id,
+            userName: 'Utilisateur'
+          }
         });
       });
 
-      // Trier par timestamp décroissant
+      // Sort events by timestamp (newest first)
       events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       
-      return events.slice(0, 15); // Garder les 15 plus récents
+      setActivityEvents(events.slice(0, 50)); // Keep more events for longer periods
     } catch (error) {
       console.error('Error fetching recent activity:', error);
-      return [];
     }
   };
 
   const fetchLiveStats = async () => {
     try {
-      // Utiliser la fonction get_admin_stats existante
+      // Use existing get_admin_stats function
       const { data: adminStats } = await supabase.rpc('get_admin_stats');
       
-      // Calculer les utilisateurs actifs (last_seen dans les 15 dernières minutes)
+      // Calculate active users (last_seen within 15 minutes)
       const { count: activeUsersCount } = await supabase
         .from('group_participants')
         .select('user_id', { count: 'exact', head: true })
         .gte('last_seen', new Date(Date.now() - 15 * 60 * 1000).toISOString())
         .eq('status', 'confirmed');
 
-      // Compter les messages des dernières 24h
+      // Count messages from last 24h
       const { count: messagesCount } = await supabase
         .from('group_messages')
         .select('*', { count: 'exact', head: true })
@@ -142,46 +189,81 @@ export const useRealTimeActivity = () => {
 
   const fetchChartData = async () => {
     try {
-      const last24Hours = Array.from({ length: 24 }, (_, i) => {
-        const hour = new Date(Date.now() - (23 - i) * 60 * 60 * 1000);
-        return {
-          hour: hour.getHours().toString().padStart(2, '0') + ':00',
-          startTime: new Date(hour.setMinutes(0, 0, 0)),
-          endTime: new Date(hour.setMinutes(59, 59, 999))
-        };
-      });
+      const { startDate } = getDateRange();
+      
+      // Different intervals based on period
+      let intervals: Date[] = [];
+      let formatOptions: Intl.DateTimeFormatOptions;
+      
+      if (period === 'day') {
+        // Last 24 hours by hour
+        intervals = Array.from({ length: 24 }, (_, i) => {
+          const hour = new Date();
+          hour.setHours(hour.getHours() - (23 - i), 0, 0, 0);
+          return hour;
+        });
+        formatOptions = { hour: '2-digit', minute: '2-digit' };
+      } else if (period === 'week') {
+        // Last 7 days
+        intervals = Array.from({ length: 7 }, (_, i) => {
+          const day = new Date();
+          day.setDate(day.getDate() - (6 - i));
+          day.setHours(0, 0, 0, 0);
+          return day;
+        });
+        formatOptions = { weekday: 'short' };
+      } else if (period === 'month') {
+        // Last 30 days, grouped by 3-day periods
+        intervals = Array.from({ length: 10 }, (_, i) => {
+          const day = new Date();
+          day.setDate(day.getDate() - (9 - i) * 3);
+          day.setHours(0, 0, 0, 0);
+          return day;
+        });
+        formatOptions = { day: '2-digit', month: '2-digit' };
+      } else {
+        // Last 12 months
+        intervals = Array.from({ length: 12 }, (_, i) => {
+          const month = new Date();
+          month.setMonth(month.getMonth() - (11 - i));
+          month.setDate(1);
+          month.setHours(0, 0, 0, 0);
+          return month;
+        });
+        formatOptions = { month: 'short' };
+      }
 
       const chartMetrics: ActivityMetrics[] = [];
 
-      for (const timeSlot of last24Hours) {
-        // Compter les utilisateurs actifs pour cette heure
-        const { count: activeUsers } = await supabase
-          .from('group_participants')
-          .select('user_id', { count: 'exact', head: true })
-          .gte('last_seen', timeSlot.startTime.toISOString())
-          .lte('last_seen', timeSlot.endTime.toISOString())
-          .eq('status', 'confirmed');
-
-        // Compter les groupes créés pour cette heure
-        const { count: groupsCreated } = await supabase
-          .from('groups')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', timeSlot.startTime.toISOString())
-          .lte('created_at', timeSlot.endTime.toISOString());
-
-        // Compter les messages envoyés pour cette heure
-        const { count: messagesSent } = await supabase
-          .from('group_messages')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', timeSlot.startTime.toISOString())
-          .lte('created_at', timeSlot.endTime.toISOString())
-          .eq('is_system', false);
+      for (let i = 0; i < intervals.length; i++) {
+        const currentInterval = intervals[i];
+        const nextInterval = intervals[i + 1] || new Date();
+        
+        // Count activities in this interval
+        const [groupsResult, participantsResult, messagesResult] = await Promise.all([
+          supabase
+            .from('groups')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', currentInterval.toISOString())
+            .lt('created_at', nextInterval.toISOString()),
+          supabase
+            .from('group_participants')
+            .select('*', { count: 'exact', head: true })
+            .gte('joined_at', currentInterval.toISOString())
+            .lt('joined_at', nextInterval.toISOString()),
+          supabase
+            .from('group_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_system', false)
+            .gte('created_at', currentInterval.toISOString())
+            .lt('created_at', nextInterval.toISOString())
+        ]);
 
         chartMetrics.push({
-          hour: timeSlot.hour,
-          users_active: activeUsers || 0,
-          groups_created: groupsCreated || 0,
-          messages_sent: messagesSent || 0
+          hour: currentInterval.toLocaleString('fr-FR', formatOptions),
+          users_active: participantsResult.count || 0,
+          groups_created: groupsResult.count || 0,
+          messages_sent: messagesResult.count || 0
         });
       }
 
@@ -196,13 +278,11 @@ export const useRealTimeActivity = () => {
     setError(null);
     
     try {
-      const [recentActivity] = await Promise.all([
+      await Promise.all([
         fetchRecentActivity(),
         fetchLiveStats(),
         fetchChartData()
       ]);
-      
-      setActivity(recentActivity);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -213,34 +293,58 @@ export const useRealTimeActivity = () => {
   useEffect(() => {
     fetchAllData();
 
-    // Actualiser toutes les 30 secondes
-    const interval = setInterval(fetchAllData, 30000);
+    // Set up polling for live updates (every 30 seconds for day, longer for other periods)
+    const pollInterval = period === 'day' ? 30000 : period === 'week' ? 60000 : 300000;
+    const interval = setInterval(fetchAllData, pollInterval);
 
-    // Écouter les changements en temps réel
-    const groupsChannel = supabase
-      .channel('admin-groups-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'groups' },
-        () => fetchAllData()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'group_participants' },
-        () => fetchAllData()
-      )
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'group_messages' },
-        () => fetchAllData()
-      )
-      .subscribe();
+    // Set up real-time subscriptions only for day view (most active)
+    let channels: any[] = [];
+    
+    if (period === 'day') {
+      const groupsChannel = supabase
+        .channel('admin_groups_changes')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'groups' 
+        }, () => {
+          fetchAllData();
+        })
+        .subscribe();
+
+      const participantsChannel = supabase
+        .channel('admin_participants_changes')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'group_participants' 
+        }, () => {
+          fetchAllData();
+        })
+        .subscribe();
+
+      const messagesChannel = supabase
+        .channel('admin_messages_changes')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'group_messages' 
+        }, () => {
+          fetchAllData();
+        })
+        .subscribe();
+      
+      channels = [groupsChannel, participantsChannel, messagesChannel];
+    }
 
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(groupsChannel);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
-  }, []);
+  }, [period]);
 
   return {
-    activity,
+    activityEvents,
     liveStats,
     chartData,
     loading,

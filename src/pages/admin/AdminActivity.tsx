@@ -1,45 +1,66 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { RealtimeChart } from "@/components/admin/RealtimeChart";
-import { useRealTimeActivity } from "@/hooks/useRealTimeActivity";
-import { useToast } from '@/hooks/use-toast';
-import { Activity, Users, MapPin, TrendingUp, AlertTriangle, MessageCircle } from "lucide-react";
+import { useState } from 'react';
+import { useRealTimeActivity } from '@/hooks/useRealTimeActivity';
+import { RealtimeChart } from '@/components/admin/RealtimeChart';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  Users, 
+  Clock, 
+  MessageSquare, 
+  TrendingUp,
+  UserPlus,
+  MapPin,
+  CheckCircle,
+  AlertTriangle,
+  Calendar,
+  CalendarDays,
+  CalendarRange
+} from 'lucide-react';
+
+type TimePeriod = 'day' | 'week' | 'month' | 'year';
 
 export const AdminActivity = () => {
-  const { activity, liveStats, chartData, loading, error, refetch } = useRealTimeActivity();
-  const { toast } = useToast();
-
-  if (error) {
-    toast({
-      title: "Erreur",
-      description: error,
-      variant: "destructive",
-    });
-  }
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('day');
+  const { activityEvents, liveStats, chartData, loading, error, refetch } = useRealTimeActivity(selectedPeriod);
 
   const getEventIcon = (type: string) => {
     switch (type) {
-      case 'user_signup': return <Users className="h-4 w-4 text-blue-600" />;
+      case 'user_joined': return <UserPlus className="h-4 w-4 text-blue-600" />;
       case 'group_created': return <MapPin className="h-4 w-4 text-green-600" />;
-      case 'user_join': return <Activity className="h-4 w-4 text-purple-600" />;
-      case 'group_confirmed': return <TrendingUp className="h-4 w-4 text-orange-600" />;
-      case 'group_completed': return <Activity className="h-4 w-4 text-red-600" />;
-      case 'message_sent': return <MessageCircle className="h-4 w-4 text-indigo-600" />;
-      default: return <Activity className="h-4 w-4 text-gray-600" />;
+      case 'group_confirmed': return <CheckCircle className="h-4 w-4 text-orange-600" />;
+      case 'group_completed': return <TrendingUp className="h-4 w-4 text-red-600" />;
+      case 'message_sent': return <MessageSquare className="h-4 w-4 text-indigo-600" />;
+      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getEventColor = (type: string) => {
     switch (type) {
-      case 'user_signup': return 'bg-blue-50 border-blue-200';
+      case 'user_joined': return 'bg-blue-50 border-blue-200';
       case 'group_created': return 'bg-green-50 border-green-200';
-      case 'user_join': return 'bg-purple-50 border-purple-200';
       case 'group_confirmed': return 'bg-orange-50 border-orange-200';
       case 'group_completed': return 'bg-red-50 border-red-200';
       case 'message_sent': return 'bg-indigo-50 border-indigo-200';
       default: return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getEventDescription = (event: typeof activityEvents[0]) => {
+    switch (event.type) {
+      case 'user_joined':
+        return `${event.data.userName} a rejoint un groupe${event.data.location ? ` à ${event.data.location}` : ''}`;
+      case 'group_created':
+        return `Nouveau groupe créé à ${event.data.location}`;
+      case 'group_confirmed':
+        return `Groupe confirmé${event.data.barName ? ` au bar ${event.data.barName}` : ''}`;
+      case 'group_completed':
+        return `Sortie terminée${event.data.barName ? ` au ${event.data.barName}` : ''}`;
+      case 'message_sent':
+        return `${event.data.userName} a envoyé un message`;
+      default:
+        return 'Activité inconnue';
     }
   };
 
@@ -53,26 +74,58 @@ export const AdminActivity = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <p className="text-red-800">Erreur: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-red-800">Activité en temps réel</h1>
-          <p className="text-red-600 mt-2">Surveillance live de l'activité utilisateurs et système</p>
+          <p className="text-red-600 mt-2">Surveillance des événements et métriques système</p>
         </div>
-        <div className="flex gap-2 items-center">
-          <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse" />
-            Live
-          </Badge>
-          <Button onClick={refetch} variant="outline" size="sm">
-            Actualiser
-          </Button>
+        <div className="flex items-center gap-4">
+          {selectedPeriod === 'day' && (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+              Live
+            </Badge>
+          )}
+          
+          {/* Time period selectors */}
+          <div className="flex gap-2">
+            {([
+              { key: 'day', label: 'Jour', icon: Clock },
+              { key: 'week', label: 'Semaine', icon: Calendar },
+              { key: 'month', label: 'Mois', icon: CalendarDays },
+              { key: 'year', label: 'Année', icon: CalendarRange }
+            ] as const).map(({ key, label, icon: Icon }) => (
+              <Button
+                key={key}
+                variant={selectedPeriod === key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedPeriod(key)}
+                className="flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Stats en temps réel */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Live Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
@@ -82,7 +135,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-800">
-              {liveStats.activeUsers}
+              {liveStats?.activeUsers || 0}
             </div>
             <p className="text-xs text-blue-600">En ligne maintenant</p>
           </CardContent>
@@ -97,7 +150,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-800">
-              {liveStats.pendingGroups}
+              {liveStats?.pendingGroups || 0}
             </div>
             <p className="text-xs text-yellow-600">Cherchent des membres</p>
           </CardContent>
@@ -112,7 +165,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-800">
-              {liveStats.completedToday}
+              {liveStats?.completedToday || 0}
             </div>
             <p className="text-xs text-green-600">Créés dans les 24h</p>
           </CardContent>
@@ -121,25 +174,42 @@ export const AdminActivity = () => {
         <Card className="border-purple-200 bg-purple-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-purple-700 flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Messages 24h
+              <UserPlus className="h-4 w-4" />
+              Inscriptions
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-800">
-              {liveStats.messagesLast24h}
+              {liveStats?.signupsToday || 0}
             </div>
-            <p className="text-xs text-purple-600">Dernières 24h</p>
+            <p className="text-xs text-purple-600">Aujourd'hui</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-indigo-200 bg-indigo-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-indigo-700 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Messages 24h
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-indigo-800">
+              {liveStats?.messagesLast24h || 0}
+            </div>
+            <p className="text-xs text-indigo-600">Dernières 24h</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Graphique temps réel */}
+        {/* Chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-red-800">
-              Activité des dernières 24h
+              Activité - {selectedPeriod === 'day' ? 'Dernières 24h' : 
+                         selectedPeriod === 'week' ? 'Dernière semaine' :
+                         selectedPeriod === 'month' ? 'Dernier mois' : 'Dernière année'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -147,16 +217,19 @@ export const AdminActivity = () => {
           </CardContent>
         </Card>
 
-        {/* Timeline des événements */}
+        {/* Recent Events */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-red-800">
+            <CardTitle className="text-lg font-semibold text-red-800 flex items-center gap-2">
               Événements récents
+              <Button onClick={refetch} variant="outline" size="sm">
+                Actualiser
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="max-h-96 overflow-y-auto">
             <div className="space-y-3">
-              {activity.map((event) => (
+              {activityEvents.map((event) => (
                 <div
                   key={event.id}
                   className={`p-3 rounded-lg border ${getEventColor(event.type)}`}
@@ -164,8 +237,8 @@ export const AdminActivity = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {getEventIcon(event.type)}
-                      <span className="font-medium text-gray-800">
-                        {event.description}
+                      <span className="font-medium text-gray-800 text-sm">
+                        {getEventDescription(event)}
                       </span>
                     </div>
                     <span className="text-xs text-gray-500">
@@ -174,12 +247,18 @@ export const AdminActivity = () => {
                   </div>
                 </div>
               ))}
+              
+              {activityEvents.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Aucune activité récente pour cette période
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Alertes système */}
+      {/* System Alerts */}
       <Card className="border-orange-200 bg-orange-50">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-orange-800 flex items-center gap-2">
