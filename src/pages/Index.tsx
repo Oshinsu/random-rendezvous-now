@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
+import LanguageToggle from "@/components/LanguageToggle";
 import { Helmet } from "react-helmet-async";
 
 const Index = () => {
@@ -58,6 +59,7 @@ const Index = () => {
             </div>
           ) : user ? (
             <div className="flex items-center gap-1 sm:gap-3">
+              <LanguageToggle />
               <div className="hidden md:flex items-center space-x-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
                 <Star className="h-4 w-4 text-amber-500" />
                 <span className="text-sm text-amber-700 font-medium">
@@ -84,6 +86,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="flex items-center gap-1 sm:gap-2">
+              <LanguageToggle />
               <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
                 <Link to="/auth?tab=signin">
                   <span className="hidden sm:inline">Connexion</span>
