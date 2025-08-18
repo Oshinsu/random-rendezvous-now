@@ -20,6 +20,10 @@ import { AdminRoute } from "./components/admin/AdminRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminUsers } from "./pages/admin/AdminUsers";
+import { AdminGroups } from "./pages/admin/AdminGroups";
+import { AdminActivity } from "./pages/admin/AdminActivity";
+import { AdminLogs } from "./pages/admin/AdminLogs";
+import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -94,15 +98,38 @@ const AppRoutes = () => (
         </AdminRoute>
       </ProtectedRoute>
     } />
-    <Route path="/admin/*" element={
+    <Route path="/admin/groups" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <div className="p-6">
-              <div className="text-center text-muted-foreground">
-                Cette page admin est en construction
-              </div>
-            </div>
+            <AdminGroups />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/activity" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminActivity />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/logs" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminLogs />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/settings" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminSettings />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

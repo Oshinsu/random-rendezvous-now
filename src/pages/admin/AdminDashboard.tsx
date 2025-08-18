@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const AdminDashboard = () => {
   const { stats, loading, error, refetch } = useAdminStats();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -201,7 +203,10 @@ export const AdminDashboard = () => {
       <div>
         <h2 className="text-xl font-semibold text-red-800 mb-4">Actions rapides</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer">
+          <Card 
+            className="border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+            onClick={() => navigate('/admin/activity')}
+          >
             <CardHeader>
               <CardTitle className="text-blue-800 flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
@@ -213,7 +218,10 @@ export const AdminDashboard = () => {
             </CardHeader>
           </Card>
           
-          <Card className="border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer">
+          <Card 
+            className="border-purple-200 bg-purple-50 hover:bg-purple-100 transition-colors cursor-pointer"
+            onClick={() => navigate('/admin/users')}
+          >
             <CardHeader>
               <CardTitle className="text-purple-800 flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -225,7 +233,10 @@ export const AdminDashboard = () => {
             </CardHeader>
           </Card>
 
-          <Card className="border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer">
+          <Card 
+            className="border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer"
+            onClick={() => navigate('/admin/groups')}
+          >
             <CardHeader>
               <CardTitle className="text-orange-800 flex items-center gap-2">
                 <Activity className="h-5 w-5" />
