@@ -429,6 +429,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_signup_stats: {
+        Args: { period_end: string; period_start: string }
+        Returns: Json
+      }
       get_system_setting: {
         Args: { setting_name: string }
         Returns: Json

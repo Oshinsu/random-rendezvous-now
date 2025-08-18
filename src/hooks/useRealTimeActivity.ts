@@ -17,9 +17,9 @@ interface ActivityEvent {
 interface LiveStats {
   activeUsers: number;
   pendingGroups: number;
-  completedToday: number;
-  signupsToday: number;
-  messagesLast24h: number;
+  completedGroups: number;
+  signups: number;
+  messages: number;
 }
 
 interface ActivityMetrics {
@@ -59,7 +59,7 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
         startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     }
     
-    return { startDate: startDate.toISOString(), endDate: now.toISOString() };
+    return { startDate, endDate: now };
   };
 
   const fetchRecentActivity = async () => {
@@ -70,7 +70,7 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
       const { data: recentGroups } = await supabase
         .from('groups')
         .select('*')
-        .gte('created_at', startDate)
+        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -78,7 +78,7 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
       const { data: recentParticipants } = await supabase
         .from('group_participants')
         .select('*')
-        .gte('joined_at', startDate)
+        .gte('joined_at', startDate.toISOString())
         .order('joined_at', { ascending: false })
         .limit(100);
 
@@ -86,7 +86,7 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
       const { data: recentMessages } = await supabase
         .from('group_messages')
         .select('*')
-        .gte('created_at', startDate)
+        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -155,48 +155,43 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
 
   const fetchLiveStats = async () => {
     try {
-      const { startDate } = getDateRange();
+      const { startDate, endDate } = getDateRange();
       
-      // Calculate active users for the selected period (users with last_seen in period)
-      const { count: activeUsersCount } = await supabase
-        .from('group_participants')
-        .select('user_id', { count: 'exact', head: true })
-        .gte('last_seen', startDate)
-        .eq('status', 'confirmed');
+      // Use the new secure RPC function to get accurate signup and user stats
+      const { data: signupStats } = await supabase
+        .rpc('get_signup_stats', {
+          period_start: startDate.toISOString(),
+          period_end: endDate.toISOString()
+        });
 
-      // Count pending groups created in the period
+      // Count pending groups (not filtered by period, as it's current state)
       const { count: pendingGroupsCount } = await supabase
         .from('groups')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'waiting')
-        .gte('created_at', startDate);
+        .eq('status', 'waiting');
 
       // Count completed groups in the period
       const { count: completedGroupsCount } = await supabase
         .from('groups')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
-        .gte('completed_at', startDate);
-
-      // Count new signups (profiles created in the period)
-      const { count: signupsCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startDate);
+        .gte('completed_at', startDate.toISOString())
+        .lte('completed_at', endDate.toISOString());
 
       // Count messages sent in the period
       const { count: messagesCount } = await supabase
         .from('group_messages')
         .select('*', { count: 'exact', head: true })
         .eq('is_system', false)
-        .gte('created_at', startDate);
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
 
       setLiveStats({
-        activeUsers: activeUsersCount || 0,
+        activeUsers: (signupStats as any)?.active_users_in_period || 0,
         pendingGroups: pendingGroupsCount || 0,
-        completedToday: completedGroupsCount || 0,
-        signupsToday: signupsCount || 0,
-        messagesLast24h: messagesCount || 0
+        completedGroups: completedGroupsCount || 0,
+        signups: (signupStats as any)?.signups_in_period || 0,
+        messages: messagesCount || 0
       });
     } catch (error) {
       console.error('Error fetching live stats:', error);
@@ -204,9 +199,9 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
       setLiveStats({
         activeUsers: 0,
         pendingGroups: 0,
-        completedToday: 0,
-        signupsToday: 0,
-        messagesLast24h: 0
+        completedGroups: 0,
+        signups: 0,
+        messages: 0
       });
     }
   };

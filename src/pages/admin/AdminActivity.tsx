@@ -165,7 +165,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-800">
-              {liveStats?.completedToday || 0}
+              {liveStats?.completedGroups || 0}
             </div>
             <p className="text-xs text-green-600">Créés dans les 24h</p>
           </CardContent>
@@ -180,7 +180,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-800">
-              {liveStats?.signupsToday || 0}
+              {liveStats?.signups || 0}
             </div>
             <p className="text-xs text-purple-600">Aujourd'hui</p>
           </CardContent>
@@ -195,7 +195,7 @@ export const AdminActivity = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-indigo-800">
-              {liveStats?.messagesLast24h || 0}
+              {liveStats?.messages || 0}
             </div>
             <p className="text-xs text-indigo-600">Dernières 24h</p>
           </CardContent>
