@@ -1,4 +1,3 @@
-
 import { useTranslation } from "react-i18next";
 import benefit1 from "@/assets/new-benefit-1.jpg";
 import benefit2 from "@/assets/new-benefit-2.jpg";
@@ -6,35 +5,35 @@ import benefit3 from "@/assets/new-benefit-3.jpg";
 import benefit4 from "@/assets/new-benefit-4.jpg";
 
 const WhyRandomSection = () => {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   
   const benefits = [
     {
       image: benefit1,
-      title: t('whyRandom.authenticTitle'),
-      description: t('whyRandom.authenticDescription'),
+      title: i18n.language === 'en' ? 'Authentic' : 'Authentique',
+      description: i18n.language === 'en' ? 'Meet real people in real life' : 'Rencontrez de vraies personnes dans la vraie vie',
     },
     {
       image: benefit2,
-      title: t('whyRandom.spontaneousTitle'),
-      description: t('whyRandom.spontaneousDescription'),
+      title: i18n.language === 'en' ? 'Spontaneous' : 'Spontané',
+      description: i18n.language === 'en' ? 'Break the routine with impromptu encounters' : 'Brisez la routine avec des rencontres impromptues',
     },
     {
       image: benefit3,
-      title: t('whyRandom.secureTitle'),
-      description: t('whyRandom.secureDescription'),
+      title: i18n.language === 'en' ? 'Secure' : 'Sécurisé',
+      description: i18n.language === 'en' ? 'Your data is protected and your safety is our priority' : 'Vos données sont protégées et votre sécurité est notre priorité',
     },
     {
       image: benefit4,
-      title: t('whyRandom.localTitle'),
-      description: t('whyRandom.localDescription'),
+      title: i18n.language === 'en' ? 'Local' : 'Local',
+      description: i18n.language === 'en' ? 'Discover your city in a new light' : 'Découvrez votre ville sous un nouveau jour',
     },
   ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          {t('whyRandom.title')}
+          {i18n.language === 'en' ? 'Why choose Random?' : 'Pourquoi choisir Random ?'}
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           Parce qu'il est temps de retrouver des soirées authentiques et des vraies rencontres !

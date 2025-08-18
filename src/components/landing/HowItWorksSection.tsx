@@ -4,35 +4,35 @@ import { useTranslation } from "react-i18next";
 import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
 
 const HowItWorksSection = () => {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   
   const steps = [
     {
       icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
-      title: t('howItWorks.step1Title'),
-      description: t('howItWorks.step1Description'),
+      title: i18n.language === 'en' ? 'Create your profile' : 'Créez votre profil',
+      description: i18n.language === 'en' ? 'Set up your preferences and define your interests' : 'Configurez vos préférences et définissez vos centres d\'intérêt',
     },
     {
       icon: <Users className="w-10 h-10 text-primary mb-4" />,
-      title: t('howItWorks.step2Title'),
-      description: t('howItWorks.step2Description'),
+      title: i18n.language === 'en' ? 'Join a group' : 'Rejoignez un groupe',
+      description: i18n.language === 'en' ? 'Discover groups near you and connect' : 'Découvrez des groupes près de chez vous et connectez-vous',
     },
     {
       icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
-      title: t('howItWorks.step3Title'),
-      description: t('howItWorks.step3Description'),
+      title: i18n.language === 'en' ? 'Live the adventure' : 'Vivez l\'aventure',
+      description: i18n.language === 'en' ? 'Participate in spontaneous activities and meet new people' : 'Participez à des activités spontanées et rencontrez de nouvelles personnes',
     },
     {
       icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
-      title: "4. " + t('howItWorks.step3Title'),
-      description: t('howItWorks.step3Description'),
+      title: i18n.language === 'en' ? 'Enjoy drinks' : 'Savourez vos verres',
+      description: i18n.language === 'en' ? 'Meet at the chosen bar and enjoy the moment together' : 'Retrouvez-vous dans le bar choisi et savourez le moment ensemble',
     },
   ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-secondary">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          {t('howItWorks.title')}
+          {i18n.language === 'en' ? 'How it works?' : 'Comment ça marche ?'}
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           Simple comme bonjour. Direct et efficace !

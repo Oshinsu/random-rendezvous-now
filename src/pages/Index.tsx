@@ -16,7 +16,7 @@ import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -56,7 +56,7 @@ const Index = () => {
           {loading ? (
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-amber-700 font-medium text-sm hidden xs:block">{t('common.loading')}</p>
+              <p className="text-amber-700 font-medium text-sm hidden xs:block">{i18n.language === 'en' ? 'Loading...' : 'Chargement...'}</p>
             </div>
           ) : user ? (
             <div className="flex items-center gap-1 sm:gap-3">
@@ -72,7 +72,7 @@ const Index = () => {
                 size="sm"
               >
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">{t('common.goToDashboard')}</span>
+                <span className="hidden xs:inline">{i18n.language === 'en' ? 'Go to Dashboard' : 'Aller au tableau de bord'}</span>
               </Button>
               <Button 
                 onClick={handleSignOut} 
@@ -80,7 +80,7 @@ const Index = () => {
                 className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4"
                 size="sm"
               >
-                <span className="hidden xs:inline">{t('common.logout')}</span>
+                <span className="hidden xs:inline">{i18n.language === 'en' ? 'Logout' : 'Déconnexion'}</span>
                 <span className="xs:hidden">✕</span>
               </Button>
             </div>
@@ -88,14 +88,14 @@ const Index = () => {
             <div className="flex items-center gap-1 sm:gap-2">
               <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
                 <Link to="/auth?tab=signin">
-                  <span className="hidden sm:inline">{t('common.signIn')}</span>
+                  <span className="hidden sm:inline">{i18n.language === 'en' ? 'Sign in' : 'Se connecter'}</span>
                   <span className="sm:hidden">👤</span>
                 </Link>
               </Button>
               <Button asChild className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
                 <Link to="/auth?tab=signup">
                   <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1" />
-                  <span className="hidden sm:inline">{t('common.signUp')}</span>
+                  <span className="hidden sm:inline">{i18n.language === 'en' ? 'Sign up' : 'S\'inscrire'}</span>
                   <span className="sm:hidden">⚡</span>
                 </Link>
               </Button>

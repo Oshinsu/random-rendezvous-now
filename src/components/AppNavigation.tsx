@@ -26,7 +26,7 @@ import { LanguageToggle } from './LanguageToggle';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -70,7 +70,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Home className="h-4 w-4" />
-                       <span>{t('common.dashboard')}</span>
+                       <span>{i18n.language === 'en' ? 'Dashboard' : 'Tableau de bord'}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -88,7 +88,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Users className="h-4 w-4" />
-                       <span>{t('common.groups')}</span>
+                        <span>{i18n.language === 'en' ? 'Groups' : 'Groupes'}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -106,7 +106,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Clock className="h-4 w-4" />
-                       <span>{t('common.scheduledGroups')}</span>
+                        <span>{i18n.language === 'en' ? 'Scheduled Groups' : 'Groupes programmés'}</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -153,19 +153,19 @@ const AppNavigation = () => {
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
-                    <span>{t('common.profile')}</span>
+                    <span>{i18n.language === 'en' ? 'Profile' : 'Profil'}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <NavLink to="/" className="flex items-center font-heading">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                     <span>{t('common.homepage')}</span>
+                     <span>{i18n.language === 'en' ? 'Homepage' : 'Accueil'}</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('common.logout')}</span>
+                  <span>{i18n.language === 'en' ? 'Logout' : 'Déconnexion'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -188,7 +188,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Home className="h-4 w-4" />
-                <span>{t('common.dashboard')}</span>
+                <span>{i18n.language === 'en' ? 'Dashboard' : 'Tableau de bord'}</span>
               </NavLink>
               
               <NavLink 
@@ -203,7 +203,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Users className="h-4 w-4" />
-                <span>{t('common.groups')}</span>
+                <span>{i18n.language === 'en' ? 'Groups' : 'Groupes'}</span>
               </NavLink>
 
               <NavLink 
@@ -218,7 +218,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Clock className="h-4 w-4" />
-                <span>{t('common.scheduledGroups')}</span>
+                <span>{i18n.language === 'en' ? 'Scheduled Groups' : 'Groupes programmés'}</span>
               </NavLink>
 
               <NavLink 
@@ -227,7 +227,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ExternalLink className="h-4 w-4" />
-                <span>{t('common.homepage')}</span>
+                <span>{i18n.language === 'en' ? 'Homepage' : 'Accueil'}</span>
               </NavLink>
             </nav>
           </div>

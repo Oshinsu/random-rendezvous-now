@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
 
 interface LanguageToggleProps {
@@ -14,13 +14,22 @@ interface LanguageToggleProps {
   size?: 'sm' | 'default' | 'lg';
 }
 
+const languages = [
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+];
+
 export const LanguageToggle: React.FC<LanguageToggleProps> = ({ 
   variant = 'ghost', 
   size = 'sm' 
 }) => {
-  const { currentLanguage, changeLanguage, languages } = useLanguage();
+  const { i18n } = useTranslation();
+  
+  const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
 
-  const currentLang = languages.find(lang => lang.code === currentLanguage);
+  const changeLanguage = (languageCode: string) => {
+    i18n.changeLanguage(languageCode);
+  };
 
   return (
     <DropdownMenu>
@@ -48,7 +57,7 @@ export const LanguageToggle: React.FC<LanguageToggleProps> = ({
           >
             <span className="text-lg">{language.flag}</span>
             <span>{language.name}</span>
-            {currentLanguage === language.code && (
+            {i18n.language === language.code && (
               <span className="ml-auto text-xs text-muted-foreground">✓</span>
             )}
           </DropdownMenuItem>
