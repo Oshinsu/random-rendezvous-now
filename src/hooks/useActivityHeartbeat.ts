@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { EnhancedGroupService } from '@/services/enhancedGroupService';
+import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
 import { useAuth } from '@/contexts/AuthContext';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 
@@ -28,7 +28,7 @@ export const useActivityHeartbeat = ({
       // Mise à jour immédiate quand la page devient visible
       if (isActiveRef.current && groupId && user) {
         console.log('👁️ [HEARTBEAT INTELLIGENT] Page visible - mise à jour immédiate');
-        EnhancedGroupService.updateUserActivity(groupId, user.id, true);
+        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
       }
     };
 
@@ -50,17 +50,12 @@ export const useActivityHeartbeat = ({
     console.log('💓 [HEARTBEAT INTELLIGENT] Activation pour groupe:', groupId, 'intervalle:', intervalMs + 'ms');
 
     // Mise à jour initiale immédiate avec état actif
-    EnhancedGroupService.updateUserActivity(groupId, user.id, true);
+    UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
 
     // Configuration de l'intervalle intelligent
     intervalRef.current = setInterval(() => {
-      if (isActiveRef.current) {
-        console.log('💓 [HEARTBEAT INTELLIGENT] Pulse - utilisateur actif');
-        EnhancedGroupService.updateUserActivity(groupId, user.id, true);
-      } else {
-        console.log('💓 [HEARTBEAT INTELLIGENT] Pulse - utilisateur passif (page cachée)');
-        EnhancedGroupService.updateUserActivity(groupId, user.id, false);
-      }
+      console.log('💓 [HEARTBEAT SIMPLIFIÉ] Pulse activité');
+      UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
     }, intervalMs);
 
     return () => {
@@ -76,7 +71,7 @@ export const useActivityHeartbeat = ({
     isActive: isActiveRef.current,
     updateActivity: () => {
       if (groupId && user) {
-        EnhancedGroupService.updateUserActivity(groupId, user.id, isActiveRef.current);
+        UnifiedGroupRetrievalService.updateUserActivity(groupId, user.id);
       }
     }
   };

@@ -1,6 +1,4 @@
-
 import { CoordinateValidator } from '@/utils/coordinateValidation';
-import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
 
 export interface LocationData {
   latitude: number;
@@ -8,13 +6,21 @@ export interface LocationData {
   locationName: string;
 }
 
+const LOCATION_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes - cache robuste
+
 export class GeolocationService {
-  static async getCurrentLocation(): Promise<LocationData> {
+  private static cachedLocation: LocationData | null = null;
+  private static lastCacheTime = 0;
+
+  static async getCurrentLocation(forceRefresh = false): Promise<LocationData> {
     console.log('🔍 [GEOLOC] Démarrage géolocalisation...');
     
-    // Rate limiting temporairement désactivé pour debug
-    // const rateLimitStatus = RateLimiter.getStatus('geolocation');
-    // console.log('🔍 [GEOLOC] Rate limit status:', rateLimitStatus);
+    // Vérifier le cache (30 minutes)
+    const now = Date.now();
+    if (!forceRefresh && this.cachedLocation && (now - this.lastCacheTime) < LOCATION_CACHE_DURATION) {
+      console.log('📍 [GEOLOC] Utilisation du cache:', this.cachedLocation.locationName);
+      return this.cachedLocation;
+    }
 
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -23,7 +29,7 @@ export class GeolocationService {
         return;
       }
 
-      console.log('📍 [GEOLOC] Demande de position (timeout 15s)...');
+      console.log('📍 [GEOLOC] Demande de position (timeout 30s)...');
       
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -52,9 +58,9 @@ export class GeolocationService {
           reject(new Error(errorMessage));
         },
         {
-          enableHighAccuracy: false, // Moins exigeant
-          timeout: 30000, // 30 secondes 
-          maximumAge: 300000 // 5 minutes de cache
+          enableHighAccuracy: false,
+          timeout: 30000, 
+          maximumAge: LOCATION_CACHE_DURATION
         }
       );
     });
@@ -79,24 +85,33 @@ export class GeolocationService {
     console.log('✅ [GEOLOC] Coordonnées validées:', sanitizedCoords);
     
     try {
-      // Géocodage inversé pour obtenir le nom de la localisation
-      console.log('🔍 [GEOLOC] Démarrage géocodage inversé...');
       const locationName = await this.reverseGeocode(sanitizedCoords.latitude, sanitizedCoords.longitude);
-      console.log('✅ [GEOLOC] Géocodage réussi:', locationName);
+      const locationData: LocationData = {
+        latitude: sanitizedCoords.latitude,
+        longitude: sanitizedCoords.longitude,
+        locationName
+      };
       
-      resolve({ 
-        latitude: sanitizedCoords.latitude, 
-        longitude: sanitizedCoords.longitude, 
-        locationName 
-      });
+      // Mettre en cache
+      this.cachedLocation = locationData;
+      this.lastCacheTime = Date.now();
+      
+      console.log('✅ [GEOLOC] Position obtenue avec succès:', locationData);
+      resolve(locationData);
     } catch (error) {
       console.warn('⚠️ [GEOLOC] Géocodage échoué, utilisation coordonnées brutes:', error);
       // Si le géocodage échoue, on utilise quand même les coordonnées
-      resolve({ 
+      const locationData: LocationData = {
         latitude: sanitizedCoords.latitude, 
         longitude: sanitizedCoords.longitude, 
         locationName: `${sanitizedCoords.latitude.toFixed(4)}, ${sanitizedCoords.longitude.toFixed(4)}` 
-      });
+      };
+      
+      // Mettre en cache même avec géocodage échoué
+      this.cachedLocation = locationData;
+      this.lastCacheTime = Date.now();
+      
+      resolve(locationData);
     }
   }
 

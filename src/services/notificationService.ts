@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedGroupService } from './enhancedGroupService';
+import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 
 /**
@@ -202,13 +202,10 @@ export class NotificationService {
    */
   static async notifyGroupParticipants(groupId: string, title: string, body: string, data?: any): Promise<void> {
     try {
-      // Obtenir les participants à notifier (pas abandonnés)
-      const participantsToNotify = await EnhancedGroupService.getParticipantsForNotification(groupId);
+      // Simplification - pas de notification broadcast pour le moment
+      console.log(`📱 [NOTIFICATIONS] Notification simplified pour groupe ${groupId}`);
       
-      console.log(`📱 [NOTIFICATIONS] Notification à ${participantsToNotify.length} participants du groupe ${groupId}`);
-      
-      // Pour l'instant, on envoie juste une notification locale
-      // Dans une vraie app, on enverrait via un service push
+      // Juste une notification locale basique
       await this.sendNotification(title, {
         body,
         tag: `group-broadcast-${groupId}`,
