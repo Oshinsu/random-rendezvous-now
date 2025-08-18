@@ -26,59 +26,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Enhanced session management with rate limiting
-let sessionCache: any = null;
-let lastSessionCheck = 0;
-const SESSION_CACHE_DURATION = 30000; // 30 seconds
-
-// Override getSession to implement caching and rate limiting
-const originalGetSession = supabase.auth.getSession.bind(supabase.auth);
-supabase.auth.getSession = async () => {
-  const now = Date.now();
-  
-  // Use cached session if recent and valid
-  if (sessionCache && (now - lastSessionCheck) < SESSION_CACHE_DURATION) {
-    return { data: { session: sessionCache }, error: null };
-  }
-  
-  // Check rate limit before making request
-  if (RateLimiter.isRateLimited('supabase_session_check', {
-    maxAttempts: 10,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 30000 // 30 seconds
-  })) {
-    // Return cached session if rate limited
-    if (sessionCache) {
-      return { data: { session: sessionCache }, error: null };
-    }
-    // Return null session if no cache and rate limited
-    return { data: { session: null }, error: null };
-  }
-  
-  try {
-    const result = await originalGetSession();
-    if (result.data.session) {
-      sessionCache = result.data.session;
-      lastSessionCheck = now;
-    }
-    return result;
-  } catch (error: any) {
-    // Handle 429 errors gracefully
-    if (error?.status === 429) {
-      if (sessionCache) {
-        return { data: { session: sessionCache }, error: null };
-      }
-    }
-    throw error;
-  }
-};
-
-// Clear session cache when auth state changes
+// Session management without problematic cache
 supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-    sessionCache = null;
-    lastSessionCheck = 0;
-  }
   if (event === 'SIGNED_IN') {
     // Reset rate limiter on successful sign in
     RateLimiter.reset('supabase_session_check');

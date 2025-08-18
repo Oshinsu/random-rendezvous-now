@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,12 +122,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const refreshSession = async () => {
+    try {
+      setLoading(true);
+      console.log('Forcing session refresh...');
+      
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Session refresh error:', error);
+        return;
+      }
+      
+      console.log('Session refreshed successfully:', !!session);
+      setSession(session);
+      setUser(session?.user ?? null);
+    } catch (error) {
+      console.error('Unexpected error during session refresh:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     session,
     user,
     loading,
     signOut,
     signInWithGoogle,
+    refreshSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
