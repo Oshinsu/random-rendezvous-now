@@ -3,12 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import heroBanner from "@/assets/new-hero-banner.jpg";
 
 const HeroSection = () => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
   const navigate = useNavigate();
 
   const handleMainAction = () => {
@@ -34,10 +32,10 @@ const HeroSection = () => {
       
       <div className="relative container mx-auto px-4 sm:px-6 text-center z-10 h-full flex flex-col justify-center">
         <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-heading font-extrabold mb-4 sm:mb-6 tracking-tight leading-tight">
-          {i18n.language === 'en' ? 'Discover the unexpected' : 'Découvrez l\'inattendu'}
+          Random • <span className="text-primary block sm:inline">1 clic. 5 inconnus. 1 bar.</span>
         </h1>
         <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
-          {i18n.language === 'en' ? 'Join spontaneous groups and create unforgettable memories' : 'Rejoignez des groupes spontanés et créez des souvenirs inoubliables'}
+          En un clic, on crée ton groupe de 5 et on choisit un bar ouvert près de toi. Des rencontres vraies, sans swipe.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button 
@@ -46,12 +44,12 @@ const HeroSection = () => {
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base w-full sm:w-auto max-w-xs sm:max-w-none transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group"
           >
             <Zap className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:animate-pulse" />
-            {user ? (i18n.language === 'en' ? 'Go to Dashboard' : 'Aller au tableau de bord') : (i18n.language === 'en' ? 'Start the adventure' : 'Commencer l\'aventure')}
+            {user ? 'Chercher un groupe' : 'Tenter l\'Aventure'}
           </Button>
         </div>
         <div className="max-w-2xl mx-auto px-2">
           <p className="text-xs sm:text-sm text-white/80 mb-3 sm:mb-4">
-            {i18n.language === 'en' ? 'Trusted by 1000+ urban adventurers' : 'Adopté par plus de 1000+ aventuriers urbains'}
+            {user ? "🎲 Ta prochaine aventure Random t'attend !" : "✨ Beta gratuite à Paris jusqu'au 1er septembre"}
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-xs text-white/70">
             <span className="flex items-center gap-1">

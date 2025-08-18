@@ -1,39 +1,38 @@
-import { useTranslation } from "react-i18next";
+
 import benefit1 from "@/assets/new-benefit-1.jpg";
 import benefit2 from "@/assets/new-benefit-2.jpg";
 import benefit3 from "@/assets/new-benefit-3.jpg";
 import benefit4 from "@/assets/new-benefit-4.jpg";
 
+const benefits = [
+  {
+    image: benefit1,
+    title: "Authentique",
+    description: "Pas de filtres, pas de blabla. Des gens vrais, des moments vrais.",
+  },
+  {
+    image: benefit2,
+    title: "La magie du hasard",
+    description: "Chaque soirée est unique. Laisse la surprise opérer.",
+  },
+  {
+    image: benefit3,
+    title: "Ultra simple",
+    description: "1 clic, c'est tout. Moins d'écran, plus d'instant.",
+  },
+  {
+    image: benefit4,
+    title: "Gratuit et sûr",
+    description: "Beta gratuite à Paris. Bars triés et ambiances conviviales.",
+  },
+];
+
 const WhyRandomSection = () => {
-  const { i18n } = useTranslation();
-  
-  const benefits = [
-    {
-      image: benefit1,
-      title: i18n.language === 'en' ? 'Authentic' : 'Authentique',
-      description: i18n.language === 'en' ? 'Meet real people in real life' : 'Rencontrez de vraies personnes dans la vraie vie',
-    },
-    {
-      image: benefit2,
-      title: i18n.language === 'en' ? 'Spontaneous' : 'Spontané',
-      description: i18n.language === 'en' ? 'Break the routine with impromptu encounters' : 'Brisez la routine avec des rencontres impromptues',
-    },
-    {
-      image: benefit3,
-      title: i18n.language === 'en' ? 'Secure' : 'Sécurisé',
-      description: i18n.language === 'en' ? 'Your data is protected and your safety is our priority' : 'Vos données sont protégées et votre sécurité est notre priorité',
-    },
-    {
-      image: benefit4,
-      title: i18n.language === 'en' ? 'Local' : 'Local',
-      description: i18n.language === 'en' ? 'Discover your city in a new light' : 'Découvrez votre ville sous un nouveau jour',
-    },
-  ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          {i18n.language === 'en' ? 'Why choose Random?' : 'Pourquoi choisir Random ?'}
+          Pourquoi <span className="text-primary">Random</span> Change Tout ?
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           Parce qu'il est temps de retrouver des soirées authentiques et des vraies rencontres !

@@ -1,5 +1,4 @@
 
-import { useTranslation } from "react-i18next";
 import {
   Accordion,
   AccordionContent,
@@ -7,32 +6,35 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+const faqs = [
+  {
+    question: "C'est vraiment 100% random ?",
+    answer: "Oui. Le hasard crée la magie des rencontres. Et à 5, on se sent toujours à l'aise.",
+  },
+  {
+    question: "Pourquoi le bar est révélé après ?",
+    answer: "Pour garder la surprise. Nous choisissons un bar ouvert, accessible et validé.",
+  },
+  {
+    question: "Et si le groupe ne me convient pas ?",
+    answer: "Le but : passer un bon moment et élargir ton cercle. Garde l'esprit ouvert.",
+  },
+  {
+    question: "C'est gratuit ?",
+    answer: "Oui, la beta est gratuite à Paris jusqu'au 1er septembre.",
+  },
+  {
+    question: "C'est sécurisé ?",
+    answer: "Oui. Lieux publics uniquement, groupe de 5, et suivi en temps réel dans l'app.",
+  }
+];
+
 const FaqSection = () => {
-  const { i18n } = useTranslation();
-  
-  const faqs = [
-    {
-      question: i18n.language === 'en' ? 'How does Random work?' : 'Comment fonctionne Random ?',
-      answer: i18n.language === 'en' ? 'Random connects you with people near you for spontaneous activities. Simply create your profile and join groups that interest you.' : 'Random vous connecte avec des personnes près de chez vous pour des activités spontanées. Créez simplement votre profil et rejoignez des groupes qui vous intéressent.',
-    },
-    {
-      question: i18n.language === 'en' ? 'Is the app free?' : 'L\'application est-elle gratuite ?',
-      answer: i18n.language === 'en' ? 'Yes, Random is completely free to use. You can create your profile, join groups and participate in activities at no cost.' : 'Oui, Random est entièrement gratuite à utiliser. Vous pouvez créer votre profil, rejoindre des groupes et participer aux activités sans aucun coût.',
-    },
-    {
-      question: i18n.language === 'en' ? 'How is my safety ensured?' : 'Comment ma sécurité est-elle assurée ?',
-      answer: i18n.language === 'en' ? 'We take safety very seriously. All profiles are verified and we have reporting and moderation systems in place.' : 'Nous prenons la sécurité très au sérieux. Tous les profils sont vérifiés et nous avons mis en place des systèmes de signalement et de modération.',
-    },
-    {
-      question: i18n.language === 'en' ? 'Can I choose my activities?' : 'Puis-je choisir mes activités ?',
-      answer: i18n.language === 'en' ? 'Absolutely! You can filter groups by your interests and choose the activities that appeal to you most.' : 'Absolument ! Vous pouvez filtrer les groupes selon vos centres d\'intérêt et choisir les activités qui vous attirent le plus.',
-    },
-  ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-secondary">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          {i18n.language === 'en' ? 'Frequently asked questions' : 'Questions fréquentes'}
+          Questions <span className="text-primary">Brûlantes</span> ?
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           On répond franchement, sans détour. Comme on aime chez Random !
