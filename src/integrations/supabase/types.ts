@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_requests_log: {
+        Row: {
+          api_name: string
+          cost_usd: number | null
+          created_at: string | null
+          endpoint: string
+          error_message: string | null
+          group_id: string | null
+          id: string
+          metadata: Json | null
+          request_type: string
+          response_time_ms: number | null
+          status_code: number | null
+          user_id: string | null
+        }
+        Insert: {
+          api_name?: string
+          cost_usd?: number | null
+          created_at?: string | null
+          endpoint: string
+          error_message?: string | null
+          group_id?: string | null
+          id?: string
+          metadata?: Json | null
+          request_type: string
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          api_name?: string
+          cost_usd?: number | null
+          created_at?: string | null
+          endpoint?: string
+          error_message?: string | null
+          group_id?: string | null
+          id?: string
+          metadata?: Json | null
+          request_type?: string
+          response_time_ms?: number | null
+          status_code?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bar_ratings: {
         Row: {
           average_rating: number
@@ -237,6 +282,33 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_outings_history: {
         Row: {
           bar_address: string
@@ -357,6 +429,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_system_setting: {
+        Args: { setting_name: string }
+        Returns: Json
+      }
       get_user_group_ids: {
         Args: { user_uuid: string }
         Returns: string[]
@@ -386,6 +462,10 @@ export type Database = {
       }
       transition_groups_to_completed: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_system_setting: {
+        Args: { new_value: Json; setting_name: string }
         Returns: undefined
       }
       validate_and_clean_message: {
