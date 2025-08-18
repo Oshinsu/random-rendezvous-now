@@ -27,9 +27,15 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 3. Coordonnées avec fallback sur Fort-de-France
-      const searchLatitude = group.latitude || 14.633945;
-      const searchLongitude = group.longitude || -61.027498;
+      // 3. Vérifier les coordonnées (géolocalisation obligatoire)
+      if (!group.latitude || !group.longitude) {
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Géolocalisation manquante pour le groupe');
+        await this.sendSystemMessage(groupId, '⚠️ Géolocalisation requise pour assigner un bar automatiquement.');
+        return false;
+      }
+
+      const searchLatitude = group.latitude;
+      const searchLongitude = group.longitude;
 
       console.log('📍 [AUTOMATIC BAR ASSIGNMENT] Recherche avec coordonnées:', { searchLatitude, searchLongitude });
 

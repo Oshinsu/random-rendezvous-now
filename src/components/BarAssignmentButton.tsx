@@ -47,8 +47,7 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
       }
       
       if (!searchLatitude) {
-        searchLatitude = 48.8566; // Paris par défaut
-        searchLongitude = 2.3522;
+        throw new Error('Géolocalisation requise pour assigner un bar');
       }
 
       console.log('🔍 Recherche de bar:', { searchLatitude, searchLongitude });
