@@ -13,43 +13,59 @@ export class GeolocationService {
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          try {
-            const locationName = await this.reverseGeocode(latitude, longitude);
-            resolve({ latitude, longitude, locationName });
-          } catch (error) {
-            // Si le géocodage échoue, on utilise quand même les coordonnées
-            resolve({ 
-              latitude, 
-              longitude, 
-              locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
-            });
-          }
-        },
-        (error) => {
-          let errorMessage = 'Erreur de géolocalisation';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Permission de géolocalisation refusée';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Position non disponible';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Timeout de géolocalisation';
-              break;
-          }
-          reject(new Error(errorMessage));
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 300000
-        }
-      );
+      // D'abord essayer avec les paramètres standards
+      const tryGeolocation = (options: PositionOptions) => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            try {
+              const locationName = await this.reverseGeocode(latitude, longitude);
+              resolve({ latitude, longitude, locationName });
+            } catch (error) {
+              // Si le géocodage échoue, on utilise quand même les coordonnées
+              resolve({ 
+                latitude, 
+                longitude, 
+                locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
+              });
+            }
+          },
+          (error) => {
+            // Si échec avec les premières options, essayer des options plus permissives
+            if (options.enableHighAccuracy && options.timeout === 5000) {
+              tryGeolocation({
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 600000 // 10 minutes
+              });
+              return;
+            }
+            
+            let errorMessage = 'Erreur de géolocalisation';
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = 'Permission de géolocalisation refusée';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = 'Position non disponible';
+                break;
+              case error.TIMEOUT:
+                errorMessage = 'Timeout de géolocalisation';
+                break;
+            }
+            reject(new Error(errorMessage));
+          },
+          options
+        );
+      };
+
+      // Première tentative avec haute précision
+      tryGeolocation({
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 300000
+      });
     });
   }
 
