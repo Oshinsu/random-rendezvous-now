@@ -1,8 +1,7 @@
 
-import { Home, Users, User, ExternalLink, Calendar, Shield } from 'lucide-react';
+import { Home, Users, User, ExternalLink, Calendar } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +28,6 @@ const navigationItems = [
 
 export function AppSidebar() {
   const { user } = useAuth();
-  const { isAdmin } = useAdminAuth();
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -84,23 +82,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              
-              {/* Admin Link - Only visible to admins */}
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive('/admin')}
-                    className="mx-0 rounded-2xl hover:bg-red-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-red-500 data-[active=true]:to-red-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12"
-                    tooltip={isCollapsed ? "Admin Panel" : undefined}
-                  >
-                    <NavLink to="/admin" className="flex items-center space-x-4 py-3 px-4 w-full">
-                      <Shield className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white text-red-600" />
-                      {!isCollapsed && <span className="font-heading font-semibold text-red-700">Admin Panel</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

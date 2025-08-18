@@ -15,21 +15,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, Clock } from 'lucide-react';
 import RandomLogo from './RandomLogo';
-import LanguageToggle from './LanguageToggle';
-import { useTranslation } from 'react-i18next';
 
 const AppNavigation = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { t, i18n } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,12 +35,6 @@ const AppNavigation = () => {
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const toggleLanguage = () => {
-    const newLanguage = i18n.language === 'fr' ? 'en' : 'fr';
-    i18n.changeLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
   };
 
   const userName = user?.user_metadata?.first_name || 'Utilisateur';
@@ -77,7 +67,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Home className="h-4 w-4" />
-                      <span>{t('navigation.search_group')}</span>
+                      <span>Chercher un groupe</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -95,7 +85,7 @@ const AppNavigation = () => {
                       }
                     >
                       <Users className="h-4 w-4" />
-                      <span>{t('navigation.my_group')}</span>
+                      <span>Mon groupe</span>
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -113,21 +103,8 @@ const AppNavigation = () => {
                       }
                     >
                       <Clock className="h-4 w-4" />
-                      <span>{t('navigation.scheduled_groups')}</span>
+                      <span>Groupes planifiés</span>
                     </NavLink>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <button 
-                      onClick={toggleLanguage}
-                      className="flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading text-muted-foreground hover:text-foreground hover:bg-accent"
-                    >
-                      <Globe className="h-4 w-4" />
-                      <span>{i18n.language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
-                      <span>{i18n.language === 'fr' ? 'English' : 'Français'}</span>
-                    </button>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
               </NavigationMenuList>
@@ -136,7 +113,6 @@ const AppNavigation = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            
             {/* Mobile menu button */}
             <Button
               variant="ghost"
@@ -168,23 +144,22 @@ const AppNavigation = () => {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                
                 <DropdownMenuItem asChild>
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
-                    <span>{t('navigation.profile')}</span>
+                    <span>Profil</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <NavLink to="/" className="flex items-center font-heading">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    <span>{t('navigation.home_page')}</span>
+                    <span>Page d'accueil</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="font-heading">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('navigation.logout')}</span>
+                  <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -207,7 +182,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Home className="h-4 w-4" />
-                <span>{t('navigation.search_group')}</span>
+                <span>Chercher un groupe</span>
               </NavLink>
               
               <NavLink 
@@ -222,7 +197,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Users className="h-4 w-4" />
-                <span>{t('navigation.my_group')}</span>
+                <span>Mon groupe</span>
               </NavLink>
 
               <NavLink 
@@ -237,20 +212,8 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Clock className="h-4 w-4" />
-                <span>{t('navigation.scheduled_groups')}</span>
+                <span>Groupes planifiés</span>
               </NavLink>
-
-              <button 
-                onClick={() => {
-                  toggleLanguage();
-                  setMobileMenuOpen(false);
-                }}
-                className="flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading text-muted-foreground hover:text-foreground hover:bg-accent text-left"
-              >
-                <Globe className="h-4 w-4" />
-                <span>{i18n.language === 'fr' ? '🇬🇧' : '🇫🇷'}</span>
-                <span>{i18n.language === 'fr' ? 'English' : 'Français'}</span>
-              </button>
 
               <NavLink 
                 to="/" 
@@ -258,7 +221,7 @@ const AppNavigation = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <ExternalLink className="h-4 w-4" />
-                <span>{t('navigation.home_page')}</span>
+                <span>Page d'accueil</span>
               </NavLink>
             </nav>
           </div>

@@ -8,7 +8,7 @@ export const useProfileUpdate = () => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateProfile = async (firstName: string, lastName: string, onSuccess?: () => void) => {
+  const updateProfile = async (firstName: string, lastName: string) => {
     if (!user) {
       toast({
         title: 'Erreur',
@@ -52,9 +52,6 @@ export const useProfileUpdate = () => {
         title: 'Profil mis à jour',
         description: 'Vos informations ont été sauvegardées avec succès.',
       });
-
-      // Call success callback to refresh data
-      onSuccess?.();
 
       return true;
     } catch (error) {

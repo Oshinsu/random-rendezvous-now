@@ -1,6 +1,6 @@
 
 import { useEffect, lazy, Suspense } from 'react';
-import { useSimpleGroupManagement } from '@/hooks/useSimpleGroupManagement';
+import { useRealtimeGroups } from '@/hooks/useRealtimeGroups';
 // UnifiedCleanupService désactivé - nettoyage géré par IntelligentCleanupService
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
@@ -26,7 +26,7 @@ const GroupsPage = () => {
     refetchGroups, 
     leaveGroup, 
     userLocation
-  } = useSimpleGroupManagement();
+  } = useRealtimeGroups();
   // No tracking for page views - only core business events
 
   // Déclenchement du système unifié au montage

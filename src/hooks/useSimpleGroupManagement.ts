@@ -8,7 +8,6 @@ import { UnifiedGroupRetrievalService } from '@/services/unifiedGroupRetrieval';
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { toast } from '@/hooks/use-toast';
-import { showUniqueToast } from '@/utils/toastUtils';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -86,35 +85,14 @@ export const useSimpleGroupManagement = () => {
     hasGroups: userGroups.length > 0 
   });
 
-  // Géolocalisation avec cache intelligent (comme l'ancien useSimpleGroups)
-  const getUserLocation = async (forceRefresh = false): Promise<LocationData | null> => {
-    if (userLocation && !forceRefresh) return userLocation;
-
-    try {
-      const location = await GeolocationService.getCurrentLocation();
-      setUserLocation(location);
-      showUniqueToast(
-        `Position: ${location.locationName}`,
-        "📍 Position détectée"
-      );
-      return location;
-    } catch (error) {
-      showUniqueToast(
-        'Géolocalisation indisponible - mode universel activé.',
-        "📍 Géolocalisation indisponible"
-      );
-      return null;
-    }
-  };
-
-  // Initialisation géolocalisation
+  // Géolocalisation
   useEffect(() => {
     if (user && !userLocation) {
-      getUserLocation().catch(() => {
-        console.log('Géolocalisation non disponible au démarrage');
-      });
+      GeolocationService.getCurrentLocation()
+        .then(setUserLocation)
+        .catch(() => console.log('Géolocalisation non disponible'));
     }
-  }, [user]);
+  }, [user, userLocation]);
 
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
@@ -130,30 +108,18 @@ export const useSimpleGroupManagement = () => {
 
     setLoading(true);
     try {
-      // Vérification auth comme dans l'ancien système
-      const { UnifiedGroupService } = await import('@/services/unifiedGroupService');
-      const isAuth = await UnifiedGroupService.verifyAuth();
-      if (!isAuth) {
-        toast({ 
-          title: 'Session expirée', 
-          description: 'Veuillez vous reconnecter.', 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      // Obtenir la position avec le système de cache robuste
-      const location = await getUserLocation();
+      const location = await GeolocationService.getCurrentLocation();
       if (!location) {
         toast({ 
           title: 'Géolocalisation requise', 
-          description: 'Votre position est nécessaire.', 
+          description: 'Impossible d\'obtenir votre position.', 
           variant: 'destructive' 
         });
         return false;
       }
 
-      // Import service géolocalisation
+      // Import services here to avoid circular dependencies
+      const { UnifiedGroupService } = await import('@/services/unifiedGroupService');
       const { GroupGeolocationService } = await import('@/services/groupGeolocation');
       
       console.log('🔍 Recherche de groupe compatible...');

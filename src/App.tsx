@@ -16,15 +16,6 @@ import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
-import { AdminApi } from "./pages/admin/AdminApi";
-import { AdminRoute } from "./components/admin/AdminRoute";
-import { AdminLayout } from "./components/admin/AdminLayout";
-import { AdminDashboard } from "./pages/admin/AdminDashboard";
-import { AdminUsers } from "./pages/admin/AdminUsers";
-import { AdminGroups } from "./pages/admin/AdminGroups";
-import { AdminActivity } from "./pages/admin/AdminActivity";
-import { AdminLogs } from "./pages/admin/AdminLogs";
-import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -79,72 +70,6 @@ const AppRoutes = () => (
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
-    
-    {/* Admin Routes */}
-    <Route path="/admin" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminDashboard />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/users" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminUsers />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/groups" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminGroups />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/activity" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminActivity />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/logs" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminLogs />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/api" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminApi />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    <Route path="/admin/settings" element={
-      <ProtectedRoute>
-        <AdminRoute>
-          <AdminLayout>
-            <AdminSettings />
-          </AdminLayout>
-        </AdminRoute>
-      </ProtectedRoute>
-    } />
-    
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

@@ -7,58 +7,13 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
-      api_requests_log: {
-        Row: {
-          api_name: string
-          cost_usd: number | null
-          created_at: string | null
-          endpoint: string
-          error_message: string | null
-          group_id: string | null
-          id: string
-          metadata: Json | null
-          request_type: string
-          response_time_ms: number | null
-          status_code: number | null
-          user_id: string | null
-        }
-        Insert: {
-          api_name?: string
-          cost_usd?: number | null
-          created_at?: string | null
-          endpoint: string
-          error_message?: string | null
-          group_id?: string | null
-          id?: string
-          metadata?: Json | null
-          request_type: string
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          api_name?: string
-          cost_usd?: number | null
-          created_at?: string | null
-          endpoint?: string
-          error_message?: string | null
-          group_id?: string | null
-          id?: string
-          metadata?: Json | null
-          request_type?: string
-          response_time_ms?: number | null
-          status_code?: number | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       bar_ratings: {
         Row: {
           average_rating: number
@@ -282,33 +237,6 @@ export type Database = {
         }
         Relationships: []
       }
-      system_settings: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          setting_key: string
-          setting_value: Json
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          setting_key: string
-          setting_value: Json
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          setting_key?: string
-          setting_value?: Json
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_outings_history: {
         Row: {
           bar_address: string
@@ -360,27 +288,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -391,7 +298,7 @@ export type Database = {
         Returns: number
       }
       calculate_distance: {
-        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
         Returns: number
       }
       can_view_group: {
@@ -405,66 +312,29 @@ export type Database = {
       create_group_with_participant: {
         Args: {
           p_latitude: number
-          p_location_name: string
           p_longitude: number
+          p_location_name: string
           p_user_id: string
         }
         Returns: {
-          created_at: string
-          current_participants: number
           id: string
-          latitude: number
-          location_name: string
-          longitude: number
-          max_participants: number
-          search_radius: number
           status: string
+          max_participants: number
+          current_participants: number
+          latitude: number
+          longitude: number
+          location_name: string
+          search_radius: number
+          created_at: string
         }[]
       }
       dissolve_old_groups: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      get_admin_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_all_users_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          active_groups_count: number
-          created_at: string
-          email: string
-          email_confirmed_at: string
-          first_name: string
-          id: string
-          last_name: string
-          last_sign_in_at: string
-          total_outings_count: number
-        }[]
-      }
-      get_signup_stats: {
-        Args: { period_end: string; period_start: string }
-        Returns: Json
-      }
-      get_system_setting: {
-        Args: { setting_name: string }
-        Returns: Json
-      }
       get_user_group_ids: {
         Args: { user_uuid: string }
         Returns: string[]
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
       }
       is_group_member: {
         Args: { group_uuid: string; user_uuid: string }
@@ -474,20 +344,12 @@ export type Database = {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      migrate_existing_users: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       repair_missing_outings_history: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
       transition_groups_to_completed: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_system_setting: {
-        Args: { new_value: Json; setting_name: string }
         Returns: undefined
       }
       validate_and_clean_message: {
@@ -508,7 +370,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -635,8 +497,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-    },
+    Enums: {},
   },
 } as const

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Users, LogOut, Calendar, Navigation } from 'lucide-react';
 import { GeolocationService, LocationData } from '@/services/geolocation';
-import { useTranslation } from 'react-i18next';
 
 interface GroupCardProps {
   group: Group;
@@ -16,33 +15,32 @@ interface GroupCardProps {
 }
 
 const GroupCard = ({ group, showLeaveButton = true, leaveGroup, loading, userLocation }: GroupCardProps) => {
-  const { t } = useTranslation();
 
   const getStatusBadge = (status: string) => {
     const variants = {
       waiting: { 
         variant: 'secondary' as const, 
-        text: t('groups.status.waiting'), 
+        text: 'En Attente', 
         className: 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-900 border-2 border-yellow-300 font-semibold px-4 py-2' 
       },
       full: { 
         variant: 'default' as const, 
-        text: t('groups.status.full'), 
+        text: 'Complet', 
         className: 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 border-2 border-blue-300 font-semibold px-4 py-2' 
       },
       confirmed: { 
         variant: 'default' as const, 
-        text: t('groups.status.confirmed'), 
+        text: 'Confirmé', 
         className: 'bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border-2 border-emerald-300 font-semibold px-4 py-2' 
       },
       completed: { 
         variant: 'outline' as const, 
-        text: t('groups.status.completed'), 
+        text: 'Terminé', 
         className: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 border-2 border-gray-300 font-semibold px-4 py-2' 
       },
       cancelled: { 
         variant: 'destructive' as const, 
-        text: t('groups.status.cancelled'), 
+        text: 'Annulé', 
         className: 'bg-gradient-to-r from-red-100 to-red-200 text-red-900 border-2 border-red-300 font-semibold px-4 py-2' 
       }
     };
@@ -103,10 +101,10 @@ const GroupCard = ({ group, showLeaveButton = true, leaveGroup, loading, userLoc
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div className="space-y-2 sm:space-y-3">
             <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800">
-              {t('groups.adventure_group')}
+              Groupe d'Aventure
             </CardTitle>
             <div className="text-xs sm:text-sm text-slate-600">
-              {t('groups.created_on')} {new Date(group.created_at).toLocaleDateString('fr-FR')}
+              Créé le {new Date(group.created_at).toLocaleDateString('fr-FR')}
             </div>
             
             {/* Informations de localisation */}
@@ -139,7 +137,7 @@ const GroupCard = ({ group, showLeaveButton = true, leaveGroup, loading, userLoc
             <div className="flex items-center space-x-1 sm:space-x-2">
               <Users className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 flex-shrink-0" />
               <span className="text-sm sm:text-base md:text-lg font-semibold text-slate-800">
-                {group.current_participants}/{group.max_participants} {t('groups.participants')}
+                {group.current_participants}/{group.max_participants} participants
               </span>
             </div>
             <span className="text-xs sm:text-sm text-slate-600 font-medium">

@@ -3,47 +3,39 @@ import benefit1 from "@/assets/new-benefit-1.jpg";
 import benefit2 from "@/assets/new-benefit-2.jpg";
 import benefit3 from "@/assets/new-benefit-3.jpg";
 import benefit4 from "@/assets/new-benefit-4.jpg";
-import { useTranslation } from 'react-i18next';
+
+const benefits = [
+  {
+    image: benefit1,
+    title: "Authentique",
+    description: "Pas de filtres, pas de blabla. Des gens vrais, des moments vrais.",
+  },
+  {
+    image: benefit2,
+    title: "La magie du hasard",
+    description: "Chaque soirée est unique. Laisse la surprise opérer.",
+  },
+  {
+    image: benefit3,
+    title: "Ultra simple",
+    description: "1 clic, c'est tout. Moins d'écran, plus d'instant.",
+  },
+  {
+    image: benefit4,
+    title: "Gratuit et sûr",
+    description: "Beta gratuite à Paris. Bars triés et ambiances conviviales.",
+  },
+];
 
 const WhyRandomSection = () => {
-  const { t } = useTranslation();
-
-  const benefits = [
-    {
-      image: benefit1,
-      title: t('why_random.benefit1_title'),
-      description: t('why_random.benefit1_desc'),
-    },
-    {
-      image: benefit2,
-      title: t('why_random.benefit2_title'),
-      description: t('why_random.benefit2_desc'),
-    },
-    {
-      image: benefit3,
-      title: t('why_random.benefit3_title'),
-      description: t('why_random.benefit3_desc'),
-    },
-    {
-      image: benefit4,
-      title: t('why_random.benefit4_title'),
-      description: t('why_random.benefit4_desc'),
-    },
-  ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          {t('why_random.title').split('Random').map((part, index, array) => (
-            index < array.length - 1 ? (
-              <span key={index}>{part}<span className="text-primary">Random</span></span>
-            ) : (
-              <span key={index}>{part}</span>
-            )
-          ))}
+          Pourquoi <span className="text-primary">Random</span> Change Tout ?
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
-          {t('why_random.subtitle')}
+          Parce qu'il est temps de retrouver des soirées authentiques et des vraies rencontres !
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           {benefits.map((benefit, index) => (

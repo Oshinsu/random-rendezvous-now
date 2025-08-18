@@ -8,7 +8,6 @@ import { toast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { useTranslation } from 'react-i18next';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -20,7 +19,6 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
   const { trackSignUp, trackLogin } = useAnalytics();
-  const { t } = useTranslation();
 
   // Handle URL parameters to set the active tab
   useEffect(() => {
@@ -51,19 +49,19 @@ const AuthPage = () => {
 
       if (error) {
         // Signup error
-        toast({ title: t('auth.signup_error'), description: error.message, variant: 'destructive' });
+        toast({ title: 'Erreur d\'inscription', description: error.message, variant: 'destructive' });
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
         // Signup successful
-        toast({ title: t('auth.signup_success'), description: t('auth.signup_confirm') });
+        toast({ title: 'Inscription réussie!', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       } else if (data.user) {
         trackSignUp();
         // Signup auto-confirmed
-        toast({ title: t('auth.signup_success'), description: t('auth.signup_auto_confirm') });
+        toast({ title: 'Inscription réussie!', description: 'Vous êtes maintenant connecté.' });
         navigate('/');
       } else {
         // Signup initiated
-        toast({ title: t('auth.signup_initiated'), description: t('auth.signup_confirm') });
+        toast({ title: 'Inscription initiée', description: 'Veuillez vérifier votre email pour confirmer votre compte.' });
       }
     } else {
       // Sign In
@@ -75,11 +73,11 @@ const AuthPage = () => {
 
       if (error) {
         // Signin error
-        toast({ title: t('auth.signin_error'), description: error.message, variant: 'destructive' });
+        toast({ title: 'Erreur de connexion', description: error.message, variant: 'destructive' });
       } else {
         trackLogin();
         // Signin successful
-        toast({ title: t('auth.signin_success'), description: t('auth.signin_welcome') });
+        toast({ title: 'Connexion réussie!', description: 'Bienvenue !' });
         navigate('/');
       }
     }
@@ -91,27 +89,27 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md animate-fade-in">
         <TabsList className="grid w-full grid-cols-2 rounded-2xl">
-          <TabsTrigger value="signin">{t('auth.signin')}</TabsTrigger>
-          <TabsTrigger value="signup">{t('auth.signup')}</TabsTrigger>
+          <TabsTrigger value="signin">Se Connecter</TabsTrigger>
+          <TabsTrigger value="signup">S'inscrire</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
           <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <CardTitle className="text-center gradient-text">{t('auth.signin_title')}</CardTitle>
-              <CardDescription className="text-center">{t('auth.signin_desc')}</CardDescription>
+              <CardTitle className="text-center gradient-text">Se Connecter</CardTitle>
+              <CardDescription className="text-center">Accédez à votre compte Random.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email-signin">{t('auth.email')}</Label>
-                  <Input id="email-signin" type="email" placeholder={t('auth.email_placeholder')} value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
+                  <Label htmlFor="email-signin">Email</Label>
+                  <Input id="email-signin" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password-signin">{t('auth.password')}</Label>
+                  <Label htmlFor="password-signin">Mot de passe</Label>
                   <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? t('auth.loading') : t('auth.signin')}
+                  {loading ? 'Chargement...' : 'Se Connecter'}
                 </Button>
               </form>
             </CardContent>
@@ -120,29 +118,29 @@ const AuthPage = () => {
         <TabsContent value="signup">
           <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <CardTitle className="text-center gradient-text">{t('auth.signup_title')}</CardTitle>
-              <CardDescription className="text-center">{t('auth.signup_desc')}</CardDescription>
+              <CardTitle className="text-center gradient-text">S'inscrire</CardTitle>
+              <CardDescription className="text-center">Créez un nouveau compte Random pour commencer l'aventure.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName-signup">{t('auth.first_name')}</Label>
-                  <Input id="firstName-signup" type="text" placeholder={t('auth.first_name_placeholder')} value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="rounded-2xl" />
+                  <Label htmlFor="firstName-signup">Prénom</Label>
+                  <Input id="firstName-signup" type="text" placeholder="Votre prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName-signup">{t('auth.last_name')}</Label>
-                  <Input id="lastName-signup" type="text" placeholder={t('auth.last_name_placeholder')} value={lastName} onChange={(e) => setLastName(e.target.value)} required className="rounded-2xl" />
+                  <Label htmlFor="lastName-signup">Nom</Label>
+                  <Input id="lastName-signup" type="text" placeholder="Votre nom" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email-signup">{t('auth.email')}</Label>
-                  <Input id="email-signup" type="email" placeholder={t('auth.email_placeholder')} value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
+                  <Label htmlFor="email-signup">Email</Label>
+                  <Input id="email-signup" type="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password-signup">{t('auth.password')}</Label>
-                  <Input id="password-signup" type="password" placeholder={t('auth.password_placeholder')} value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
+                  <Label htmlFor="password-signup">Mot de passe</Label>
+                  <Input id="password-signup" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? t('auth.loading') : t('auth.signup')}
+                  {loading ? 'Chargement...' : 'S\'inscrire'}
                 </Button>
               </form>
             </CardContent>
