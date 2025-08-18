@@ -155,35 +155,59 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
 
   const fetchLiveStats = async () => {
     try {
-      // Use existing get_admin_stats function
-      const { data: adminStats } = await supabase.rpc('get_admin_stats');
+      const { startDate } = getDateRange();
       
-      // Calculate active users (last_seen within 15 minutes)
+      // Calculate active users for the selected period (users with last_seen in period)
       const { count: activeUsersCount } = await supabase
         .from('group_participants')
         .select('user_id', { count: 'exact', head: true })
-        .gte('last_seen', new Date(Date.now() - 15 * 60 * 1000).toISOString())
+        .gte('last_seen', startDate)
         .eq('status', 'confirmed');
 
-      // Count messages from last 24h
+      // Count pending groups created in the period
+      const { count: pendingGroupsCount } = await supabase
+        .from('groups')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'waiting')
+        .gte('created_at', startDate);
+
+      // Count completed groups in the period
+      const { count: completedGroupsCount } = await supabase
+        .from('groups')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('completed_at', startDate);
+
+      // Count new signups (profiles created in the period)
+      const { count: signupsCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startDate);
+
+      // Count messages sent in the period
       const { count: messagesCount } = await supabase
         .from('group_messages')
         .select('*', { count: 'exact', head: true })
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .eq('is_system', false);
+        .eq('is_system', false)
+        .gte('created_at', startDate);
 
-      if (adminStats) {
-        const stats = adminStats as any;
-        setLiveStats({
-          activeUsers: activeUsersCount || 0,
-          pendingGroups: stats.waiting_groups || 0,
-          completedToday: stats.groups_today || 0,
-          signupsToday: stats.signups_today || 0,
-          messagesLast24h: messagesCount || 0
-        });
-      }
+      setLiveStats({
+        activeUsers: activeUsersCount || 0,
+        pendingGroups: pendingGroupsCount || 0,
+        completedToday: completedGroupsCount || 0,
+        signupsToday: signupsCount || 0,
+        messagesLast24h: messagesCount || 0
+      });
     } catch (error) {
       console.error('Error fetching live stats:', error);
+      // Set fallback values
+      setLiveStats({
+        activeUsers: 0,
+        pendingGroups: 0,
+        completedToday: 0,
+        signupsToday: 0,
+        messagesLast24h: 0
+      });
     }
   };
 
