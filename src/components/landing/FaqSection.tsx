@@ -5,39 +5,47 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-const faqs = [
-  {
-    question: "C'est vraiment 100% random ?",
-    answer: "Oui. Le hasard crée la magie des rencontres. Et à 5, on se sent toujours à l'aise.",
-  },
-  {
-    question: "Pourquoi le bar est révélé après ?",
-    answer: "Pour garder la surprise. Nous choisissons un bar ouvert, accessible et validé.",
-  },
-  {
-    question: "Et si le groupe ne me convient pas ?",
-    answer: "Le but : passer un bon moment et élargir ton cercle. Garde l'esprit ouvert.",
-  },
-  {
-    question: "C'est gratuit ?",
-    answer: "Oui, la beta est gratuite à Paris jusqu'au 1er septembre.",
-  },
-  {
-    question: "C'est sécurisé ?",
-    answer: "Oui. Lieux publics uniquement, groupe de 5, et suivi en temps réel dans l'app.",
-  }
-];
+import { useTranslation } from 'react-i18next';
 
 const FaqSection = () => {
+  const { t } = useTranslation();
+
+  const faqs = [
+    {
+      question: t('faq.q1'),
+      answer: t('faq.a1'),
+    },
+    {
+      question: t('faq.q2'),
+      answer: t('faq.a2'),
+    },
+    {
+      question: t('faq.q3'),
+      answer: t('faq.a3'),
+    },
+    {
+      question: t('faq.q4'),
+      answer: t('faq.a4'),
+    },
+    {
+      question: t('faq.q5'),
+      answer: t('faq.a5'),
+    }
+  ];
   return (
     <section className="py-12 sm:py-16 md:py-20 bg-secondary">
       <div className="container mx-auto px-4 sm:px-6">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
-          Questions <span className="text-primary">Brûlantes</span> ?
+          {t('faq.title').split('Random').map((part, index, array) => (
+            index < array.length - 1 ? (
+              <span key={index}>{part}<span className="text-primary">Random</span></span>
+            ) : (
+              <span key={index}>{part}</span>
+            )
+          ))}
         </h2>
         <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
-          On répond franchement, sans détour. Comme on aime chez Random !
+          {t('faq.subtitle')}
         </p>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
           {faqs.map((faq, index) => (

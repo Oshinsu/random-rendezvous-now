@@ -7,6 +7,7 @@ import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
 import { clearActiveToasts } from '@/utils/toastUtils'
 import { useAnalytics } from '@/hooks/useAnalytics'
+import { useTranslation } from 'react-i18next'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const navigate = useNavigate()
   const hasInitialized = useRef(false)
+  const { t } = useTranslation()
   // Remove page view and action tracking
 
   // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
@@ -140,18 +142,18 @@ const Dashboard = () => {
           <div className="space-y-2 px-2">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
               {redirectCountdown > 0 
-                ? 'Groupe trouvé !' 
+                ? t('dashboard.group_found_title')
                 : isSearching 
-                ? 'Recherche en cours...' 
-                : 'Prêt pour l\'aventure'
+                ? t('dashboard.searching_title')
+                : t('dashboard.ready_title')
               }
             </h1>
             <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
               {redirectCountdown > 0
-                ? `Redirection vers votre groupe dans ${redirectCountdown}s`
+                ? t('dashboard.redirect_desc', { count: redirectCountdown })
                 : isSearching 
-                ? 'Cliquez à nouveau pour annuler' 
-                : 'Cliquez sur le bouton pour démarrer'
+                ? t('dashboard.searching_desc')
+                : t('dashboard.ready_desc')
               }
             </p>
             
@@ -165,7 +167,7 @@ const Dashboard = () => {
                   ></div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 px-2">
-                  Ou cliquez pour accéder immédiatement à votre groupe
+                  {t('dashboard.progress_desc')}
                 </p>
               </div>
             )}
@@ -183,7 +185,7 @@ const Dashboard = () => {
             }}
               className="px-4 sm:px-6 py-2 sm:py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base w-full max-w-xs"
             >
-              Voir mon groupe maintenant
+              {t('dashboard.view_group_now')}
             </button>
           )}
 
