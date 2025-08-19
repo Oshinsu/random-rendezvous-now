@@ -130,11 +130,8 @@ export const useEnhancedGroups = () => {
       );
 
       if (success) {
-        // Invalider et refetch les données
+        // Invalider les données (refetch automatique)
         queryClient.invalidateQueries({ queryKey: ['enhancedUserGroups'] });
-        setTimeout(() => {
-          refetchGroups();
-        }, 1000);
       }
 
       return success;
@@ -167,13 +164,9 @@ export const useEnhancedGroups = () => {
       clearUserGroupsState
     );
 
-    // Invalider et refetch les données
+    // Invalider les données (refetch automatique)
     queryClient.invalidateQueries({ queryKey: ['enhancedUserGroups'] });
     queryClient.invalidateQueries({ queryKey: ['enhancedGroupMembers'] });
-    
-    setTimeout(() => {
-      refetchGroups();
-    }, 1000);
   };
 
   // Fonction pour refetch manuel
