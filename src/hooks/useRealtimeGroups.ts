@@ -93,6 +93,19 @@ export const useRealtimeGroups = () => {
 
     logger.info('Setting up Realtime subscriptions for instant group updates');
 
+    // Demander les permissions de notifications dès l'initialisation
+    const requestNotificationPermission = async () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        try {
+          const permission = await Notification.requestPermission();
+          logger.info('Notification permission:', permission);
+        } catch (e) {
+          logger.debug('Notification permission request failed', e);
+        }
+      }
+    };
+    requestNotificationPermission();
+
     // helper: play a short joyful pop
     const playPop = (freq = 700) => {
       try {
@@ -211,20 +224,67 @@ export const useRealtimeGroups = () => {
         },
         async (payload) => {
           logger.debug('New participant joined via Realtime', payload);
-          // Play arrival effect + broadcast to UI
-          playPop(820);
-          try { window.dispatchEvent(new CustomEvent('group:member-joined', { detail: { groupId: activeGroupId } })); } catch {}
-
-          // System message (light client-side guard)
-          const key = `join-${payload.new.group_id}`;
-          if (!sentMarkersRef.current.has(key)) {
-            sentMarkersRef.current.add(key);
-            setTimeout(() => sentMarkersRef.current.delete(key), 5000);
-            SystemMessagingService.createJoinMessage(payload.new.group_id);
-          }
           
           // Check if it's for user's active group
           if (activeGroupId === payload.new.group_id) {
+            // Play arrival effect + broadcast to UI
+            playPop(820);
+            try { window.dispatchEvent(new CustomEvent('group:member-joined', { detail: { groupId: activeGroupId } })); } catch {}
+
+            // Get current group info to know participant count
+            const { data: groupData } = await supabase
+              .from('groups')
+              .select('current_participants, max_participants')
+              .eq('id', payload.new.group_id)
+              .single();
+
+            if (groupData) {
+              const count = groupData.current_participants;
+              let message = '';
+              let title = '';
+
+              // Notifications selon le nombre de participants
+              if (count === 2) {
+                title = 'Nouveau membre !';
+                message = 'Quelqu\'un a rejoint votre groupe ! (2/5)';
+              } else if (count === 3) {
+                title = 'Groupe qui se remplit !';
+                message = 'Votre groupe se remplit ! (3/5)';
+              } else if (count === 4) {
+                title = 'Plus qu\'une place !';
+                message = 'Plus qu\'une place ! (4/5)';
+              } else if (count === 5) {
+                title = 'Groupe complet !';
+                message = 'Groupe complet ! Recherche de bar...';
+              }
+
+              if (message) {
+                // Toast notification
+                showUniqueToast(message, title);
+
+                // Browser push notification
+                try {
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { 
+                      body: message, 
+                      icon: '/favicon.ico',
+                      tag: `group-${payload.new.group_id}-${count}` // Évite les doublons
+                    });
+                  }
+                } catch (e) {
+                  logger.debug('Browser notification failed', e);
+                }
+              }
+            }
+
+            // System message (light client-side guard)
+            const key = `join-${payload.new.group_id}`;
+            if (!sentMarkersRef.current.has(key)) {
+              sentMarkersRef.current.add(key);
+              setTimeout(() => sentMarkersRef.current.delete(key), 5000);
+              SystemMessagingService.createJoinMessage(payload.new.group_id);
+            }
+
             // Immediately update members and group data
             queryClient.invalidateQueries({ queryKey: ['realtimeUserGroups'] });
             setTimeout(() => refetchGroups(), 100);
