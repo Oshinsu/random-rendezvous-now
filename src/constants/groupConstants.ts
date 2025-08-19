@@ -20,7 +20,7 @@ export const GROUP_CONSTANTS = {
   
   // === HARMONISATION DES SEUILS ===
   PARTICIPANT_ACTIVITY_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
-  MAX_GROUP_AGE_FOR_JOIN: 60 * 60 * 1000, // 1 heure maximum pour rejoindre
+  MAX_GROUP_AGE_FOR_JOIN: 8 * 60 * 60 * 1000, // 8 heures maximum pour rejoindre
   PARTICIPANT_INACTIVE_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
   PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Désactivé mais alias conservé
   

@@ -225,8 +225,16 @@ export const useRealtimeGroups = () => {
         async (payload) => {
           logger.debug('New participant joined via Realtime', payload);
           
-          // Check if it's for user's active group
-          if (activeGroupId === payload.new.group_id) {
+          // Vérifier si l'utilisateur est membre de CE groupe (pas seulement le groupe actif)
+          const { data: isParticipant } = await supabase
+            .from('group_participants')
+            .select('id')
+            .eq('group_id', payload.new.group_id)
+            .eq('user_id', user.id)
+            .eq('status', 'confirmed')
+            .single();
+
+          if (isParticipant) {
             // Play arrival effect + broadcast to UI
             playPop(820);
             try { window.dispatchEvent(new CustomEvent('group:member-joined', { detail: { groupId: activeGroupId } })); } catch {}

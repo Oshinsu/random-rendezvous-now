@@ -611,18 +611,9 @@ export class UnifiedGroupService {
 
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
-      console.log('🔐 Quitter le groupe avec validation de sécurité:', groupId);
+      console.log('🔐 Quitter le groupe:', groupId);
       
-      // Vérifier l'authentification
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        toast({
-          title: 'Erreur d\'authentification',
-          description: 'Vous devez être connecté pour quitter un groupe.',
-          variant: 'destructive'
-        });
-        return false;
-      }
+      // Utilisation d'auth.uid() dans la requête SQL pour éviter les problèmes d'auth côté client
 
       const { error: leaveError } = await supabase
         .from('group_participants')
