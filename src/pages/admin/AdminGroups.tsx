@@ -60,14 +60,23 @@ export const AdminGroups = () => {
         profilesMap.set(profile.id, profile);
       });
 
+      console.log('Debug - Profiles fetched:', profilesData?.length);
+      console.log('Debug - Profiles map:', profilesMap);
+
       // Step 5: Merge profiles with participants
       const enrichedGroups = groupsData?.map(group => ({
         ...group,
-        participants: group.participants?.map(participant => ({
-          ...participant,
-          profiles: profilesMap.get(participant.user_id) || null
-        }))
+        participants: group.participants?.map(participant => {
+          const profile = profilesMap.get(participant.user_id);
+          console.log(`Debug - Participant ${participant.user_id} profile:`, profile);
+          return {
+            ...participant,
+            profiles: profile || null
+          };
+        })
       }));
+
+      console.log('Debug - Enriched groups:', enrichedGroups);
 
       setGroups(enrichedGroups as GroupWithParticipants[] || []);
     } catch (error) {
