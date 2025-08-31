@@ -24,19 +24,52 @@ export const AdminGroups = () => {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const { data: groupsData, error } = await supabase
+      
+      // Step 1: Fetch groups with participants (without profiles)
+      const { data: groupsData, error: groupsError } = await supabase
         .from('groups')
         .select(`
           *,
-          participants:group_participants(
-            *,
-            profiles(first_name, last_name, email)
-          )
+          participants:group_participants(*)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setGroups(groupsData as GroupWithParticipants[] || []);
+      if (groupsError) throw groupsError;
+
+      // Step 2: Get all unique user IDs from participants
+      const allUserIds = new Set<string>();
+      groupsData?.forEach(group => {
+        group.participants?.forEach(participant => {
+          if (participant.user_id) {
+            allUserIds.add(participant.user_id);
+          }
+        });
+      });
+
+      // Step 3: Fetch all profiles for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', Array.from(allUserIds));
+
+      if (profilesError) throw profilesError;
+
+      // Step 4: Create a map for quick profile lookup
+      const profilesMap = new Map();
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+
+      // Step 5: Merge profiles with participants
+      const enrichedGroups = groupsData?.map(group => ({
+        ...group,
+        participants: group.participants?.map(participant => ({
+          ...participant,
+          profiles: profilesMap.get(participant.user_id) || null
+        }))
+      }));
+
+      setGroups(enrichedGroups as GroupWithParticipants[] || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
       toast({
