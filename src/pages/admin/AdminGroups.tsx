@@ -30,7 +30,7 @@ export const AdminGroups = () => {
           *,
           participants:group_participants(
             *,
-            profiles!group_participants_user_id_fkey(first_name, last_name, email)
+            profiles(first_name, last_name, email)
           )
         `)
         .order('created_at', { ascending: false });
