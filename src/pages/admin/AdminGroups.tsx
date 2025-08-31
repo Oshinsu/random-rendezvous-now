@@ -46,39 +46,26 @@ export const AdminGroups = () => {
         });
       });
 
-      // Step 3: Fetch all profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email')
-        .in('id', Array.from(allUserIds));
+      // Step 3: Fetch all profiles for these users in one query with participants
+      const { data: groupsWithProfiles, error: joinError } = await supabase
+        .from('groups')
+        .select(`
+          *,
+          participants:group_participants(
+            *,
+            profiles:user_id (
+              id,
+              first_name,
+              last_name,
+              email
+            )
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (joinError) throw joinError;
 
-      // Step 4: Create a map for quick profile lookup
-      const profilesMap = new Map();
-      profilesData?.forEach(profile => {
-        profilesMap.set(profile.id, profile);
-      });
-
-      console.log('Debug - Profiles fetched:', profilesData?.length);
-      console.log('Debug - Profiles map:', profilesMap);
-
-      // Step 5: Merge profiles with participants
-      const enrichedGroups = groupsData?.map(group => ({
-        ...group,
-        participants: group.participants?.map(participant => {
-          const profile = profilesMap.get(participant.user_id);
-          console.log(`Debug - Participant ${participant.user_id} profile:`, profile);
-          return {
-            ...participant,
-            profiles: profile || null
-          };
-        })
-      }));
-
-      console.log('Debug - Enriched groups:', enrichedGroups);
-
-      setGroups(enrichedGroups as GroupWithParticipants[] || []);
+      setGroups(groupsWithProfiles as GroupWithParticipants[] || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
       toast({

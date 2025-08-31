@@ -36,13 +36,19 @@ export const GroupComposition = ({ participants, createdByUserId, createdAt }: G
   const otherMembers = confirmedParticipants.filter(p => p.id !== initiator?.id);
 
   const formatName = (participant: GroupParticipant) => {
-    const profile = participant.profiles;
-    if (profile?.first_name && profile?.last_name) {
-      return `${profile.first_name} ${profile.last_name}`;
+    // Handle both possible profile structures
+    const profile = participant.profiles || participant.user_id;
+    
+    // Direct profile object
+    if (profile && typeof profile === 'object' && 'first_name' in profile) {
+      if (profile.first_name && profile.last_name) {
+        return `${profile.first_name} ${profile.last_name}`;
+      }
+      if (profile.email) {
+        return profile.email.split('@')[0];
+      }
     }
-    if (profile?.email) {
-      return profile.email.split('@')[0];
-    }
+    
     return `Utilisateur ${participant.user_id.slice(-4)}`;
   };
 
