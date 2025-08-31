@@ -4,6 +4,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminTable } from "@/components/admin/AdminTable";
+import { GroupComposition } from "@/components/admin/GroupComposition";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MapPin, Users, Clock, CheckCircle, Calendar } from "lucide-react";
@@ -11,6 +12,7 @@ import { Group, GroupParticipant } from '@/types/database';
 
 interface GroupWithParticipants extends Group {
   participants?: any[];
+  created_by_user_id?: string; // Add the missing field
 }
 
 export const AdminGroups = () => {
@@ -26,7 +28,10 @@ export const AdminGroups = () => {
         .from('groups')
         .select(`
           *,
-          participants:group_participants(*)
+          participants:group_participants(
+            *,
+            profiles(first_name, last_name, email)
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -135,6 +140,17 @@ export const AdminGroups = () => {
           <Users className="h-4 w-4" />
           {value}/{row.max_participants}
         </div>
+      )
+    },
+    {
+      header: "Composition",
+      accessor: "participants" as keyof GroupWithParticipants,
+      render: (participants: any[], row: GroupWithParticipants) => (
+        <GroupComposition
+          participants={participants || []}
+          createdByUserId={row.created_by_user_id}
+          createdAt={row.created_at}
+        />
       )
     },
     {
