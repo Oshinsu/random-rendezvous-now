@@ -18,8 +18,8 @@ export const AdminAudit = () => {
 
   const handleFilter = () => {
     fetchAuditLogs({
-      actionType: filterAction || undefined,
-      tableName: filterTable || undefined
+      actionType: filterAction && filterAction !== 'all' ? filterAction : undefined,
+      tableName: filterTable && filterTable !== 'all' ? filterTable : undefined
     });
   };
 
@@ -69,8 +69,8 @@ export const AdminAudit = () => {
     );
   }
 
-  const uniqueActions = [...new Set(auditLogs.map(log => log.action_type))];
-  const uniqueTables = [...new Set(auditLogs.map(log => log.table_name))];
+  const uniqueActions = [...new Set(auditLogs.map(log => log.action_type))].filter(action => action && action.trim() !== '');
+  const uniqueTables = [...new Set(auditLogs.map(log => log.table_name))].filter(table => table && table.trim() !== '');
 
   return (
     <div className="p-6 space-y-6">
@@ -95,7 +95,7 @@ export const AdminAudit = () => {
                   <SelectValue placeholder="Tous les types d'action" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les types d'action</SelectItem>
+                  <SelectItem value="all">Tous les types d'action</SelectItem>
                   {uniqueActions.map(action => (
                     <SelectItem key={action} value={action}>{action}</SelectItem>
                   ))}
@@ -110,7 +110,7 @@ export const AdminAudit = () => {
                   <SelectValue placeholder="Toutes les tables" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les tables</SelectItem>
+                  <SelectItem value="all">Toutes les tables</SelectItem>
                   {uniqueTables.map(table => (
                     <SelectItem key={table} value={table}>{table}</SelectItem>
                   ))}
