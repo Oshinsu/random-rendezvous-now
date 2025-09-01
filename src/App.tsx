@@ -22,6 +22,8 @@ import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminGroups } from "./pages/admin/AdminGroups";
+import { AdminMessages } from "./pages/admin/AdminMessages";
+import { AdminAudit } from "./pages/admin/AdminAudit";
 import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
@@ -104,6 +106,24 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminGroups />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/messages" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminMessages />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/audit" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminAudit />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

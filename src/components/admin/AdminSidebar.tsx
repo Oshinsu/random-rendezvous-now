@@ -7,7 +7,9 @@ import {
   Settings,
   Home,
   FileText,
-  Globe
+  Globe,
+  MessageSquare,
+  Shield
 } from "lucide-react";
 
 import {
@@ -25,6 +27,8 @@ const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3, exact: true },
   { title: "Utilisateurs", url: "/admin/users", icon: Users },
   { title: "Groupes", url: "/admin/groups", icon: MapPin },
+  { title: "Messages", url: "/admin/messages", icon: MessageSquare },
+  { title: "Audit", url: "/admin/audit", icon: Shield },
   { title: "Activité", url: "/admin/activity", icon: Activity },
   { title: "Logs", url: "/admin/logs", icon: FileText },
   { title: "Analytics API", url: "/admin/api", icon: Globe },

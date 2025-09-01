@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAdminStats } from "@/hooks/useAdminStats";
+import { useComprehensiveAdminStats } from "@/hooks/useComprehensiveAdminStats";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Users, MapPin, CheckCircle, Clock, TrendingUp, UserPlus, Activity, BarChart3 } from "lucide-react";
+import { Users, MapPin, CheckCircle, Clock, TrendingUp, UserPlus, Activity, BarChart3, MessageSquare, Calendar, XCircle, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 export const AdminDashboard = () => {
-  const { stats, loading, error, refetch } = useAdminStats();
+  const { stats, loading, error, refetch } = useComprehensiveAdminStats();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -72,7 +72,7 @@ export const AdminDashboard = () => {
     {
       title: "Utilisateurs totaux",
       value: stats.total_users,
-      description: "Utilisateurs enregistrés",
+      description: `${stats.total_profiles} profils créés`,
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
@@ -104,6 +104,24 @@ export const AdminDashboard = () => {
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200"
+    },
+    {
+      title: "Groupes annulés",
+      value: stats.cancelled_groups,
+      description: "Groupes supprimés",
+      icon: XCircle,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+      borderColor: "border-red-200"
+    },
+    {
+      title: "Groupes planifiés",
+      value: stats.scheduled_groups,
+      description: "En attente d'activation",
+      icon: Calendar,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      borderColor: "border-indigo-200"
     }
   ];
 
@@ -125,6 +143,24 @@ export const AdminDashboard = () => {
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200"
+    },
+    {
+      title: "Messages échangés",
+      value: stats.total_messages - stats.system_messages,
+      description: `+ ${stats.system_messages} système`,
+      icon: MessageSquare,
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+      borderColor: "border-cyan-200"
+    },
+    {
+      title: "Participants actifs",
+      value: stats.active_participants,
+      description: "Dernières 24h",
+      icon: Activity,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      borderColor: "border-orange-200"
     }
   ];
 
@@ -161,7 +197,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Stats globales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((stat) => (
           <Card key={stat.title} className={`${stat.borderColor} ${stat.bgColor}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -178,9 +214,60 @@ export const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* Métriques avancées */}
+      <div>
+        <h2 className="text-xl font-semibold text-red-800 mb-4">Métriques avancées</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-teal-200 bg-teal-50">
+            <CardHeader>
+              <CardTitle className="text-teal-800 flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Taille moyenne des groupes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-teal-600">{stats.avg_group_size || 0}</div>
+              <p className="text-xs text-teal-700 mt-1">Participants par groupe terminé</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="text-amber-800 flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Sorties totales
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600">{stats.total_outings}</div>
+              <p className="text-xs text-amber-700 mt-1">Historique complet</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Top bars */}
+      {stats.top_bars && stats.top_bars.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold text-red-800 mb-4">Bars les plus populaires</h2>
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                {stats.top_bars.slice(0, 5).map((bar, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="font-medium">{bar.bar_name}</span>
+                    <Badge variant="secondary">{bar.visits} visites</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Activité du jour */}
       <div>
-        <h2 className="text-xl font-semibold text-red-800 mb-4">Activité du jour</h2>
+        <h2 className="text-xl font-semibold text-red-800 mb-4">Activité récente</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {todayCards.map((stat) => (
             <Card key={stat.title} className={`${stat.borderColor} ${stat.bgColor}`}>

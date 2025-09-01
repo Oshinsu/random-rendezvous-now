@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { User, Eye } from 'lucide-react';
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
+import { useToast } from '@/hooks/use-toast';
 
 interface UserData {
   id: string;
@@ -25,8 +29,11 @@ export const AdminUsers = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const { toast } = useToast();
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchUsers();
   }, []);
 
@@ -163,12 +170,24 @@ export const AdminUsers = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={user.active_groups > 0 ? "default" : "outline"}
-                        className={user.active_groups > 0 ? "bg-green-100 text-green-800" : ""}
-                      >
-                        {user.active_groups > 0 ? "Actif" : "Inactif"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={user.active_groups > 0 ? "default" : "outline"}
+                          className={user.active_groups > 0 ? "bg-green-100 text-green-800" : ""}
+                        >
+                          {user.active_groups > 0 ? "Actif" : "Inactif"}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setModalOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -177,6 +196,17 @@ export const AdminUsers = () => {
           </div>
         </CardContent>
       </Card>
+
+      {selectedUserId && (
+        <UserDetailModal
+          userId={selectedUserId}
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setSelectedUserId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
