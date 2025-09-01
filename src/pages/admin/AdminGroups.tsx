@@ -112,25 +112,41 @@ export const AdminGroups = () => {
   };
 
   const handleCancelGroup = async (groupId: string) => {
+    console.log('🚀 [DEBUG] Attempting to cancel group:', groupId);
+    
     try {
+      // Debug: Check current user session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('🚀 [DEBUG] Current session:', { 
+        user_id: sessionData?.session?.user?.id, 
+        email: sessionData?.session?.user?.email,
+        sessionError 
+      });
+
+      // Debug: Check admin status
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+      console.log('🚀 [DEBUG] Admin check result:', { isAdmin, adminError });
+
       const { error } = await supabase
         .from('groups')
         .update({ status: 'cancelled' })
         .eq('id', groupId);
 
+      console.log('🚀 [DEBUG] Update result:', { error });
+
       if (error) throw error;
 
       toast({
         title: "Groupe annulé",
-        description: "Le groupe a été annulé",
+        description: "Le groupe a été annulé avec succès.",
       });
-
+      
       fetchGroups();
     } catch (error) {
-      console.error('Error cancelling group:', error);
+      console.error('🚨 [ERROR] Error cancelling group:', error);
       toast({
         title: "Erreur",
-        description: "Impossible d'annuler le groupe",
+        description: `Impossible d'annuler le groupe: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
         variant: "destructive",
       });
     }
