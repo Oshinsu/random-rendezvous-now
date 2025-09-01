@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       api_requests_log: {
         Row: {
           api_name: string
@@ -460,12 +496,20 @@ export type Database = {
           total_outings_count: number
         }[]
       }
+      get_comprehensive_admin_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_signup_stats: {
         Args: { period_end: string; period_start: string }
         Returns: Json
       }
       get_system_setting: {
         Args: { setting_name: string }
+        Returns: Json
+      }
+      get_user_details_admin: {
+        Args: { target_user_id: string }
         Returns: Json
       }
       get_user_group_ids: {
