@@ -27,12 +27,10 @@ export const useAdminAudit = () => {
     try {
       setLoading(true);
       
+      // Fetch audit logs first
       let query = supabase
         .from('admin_audit_log')
-        .select(`
-          *,
-          admin_profile:profiles!admin_audit_log_admin_user_id_fkey(first_name, last_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(200);
 
@@ -48,11 +46,30 @@ export const useAdminAudit = () => {
         query = query.eq('admin_user_id', filters.adminUserId);
       }
 
-      const { data, error } = await query;
+      const { data: auditData, error: auditError } = await query;
+      if (auditError) throw auditError;
 
-      if (error) throw error;
+      if (!auditData) {
+        setAuditLogs([]);
+        return;
+      }
 
-      setAuditLogs(data as AuditLogEntry[]);
+      // Get unique admin user IDs
+      const adminUserIds = [...new Set(auditData.map(log => log.admin_user_id))];
+
+      // Fetch admin profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', adminUserIds);
+
+      // Combine data
+      const enrichedLogs = auditData.map(log => ({
+        ...log,
+        admin_profile: profiles?.find(p => p.id === log.admin_user_id) || null
+      }));
+
+      setAuditLogs(enrichedLogs as AuditLogEntry[]);
       setError(null);
     } catch (err) {
       console.error('Error fetching audit logs:', err);

@@ -29,13 +29,10 @@ export const useAdminMessages = () => {
     try {
       setLoading(true);
       
+      // Fetch messages first
       let query = supabase
         .from('group_messages')
-        .select(`
-          *,
-          user_profile:profiles!group_messages_user_id_fkey(first_name, last_name, email),
-          group_info:groups!group_messages_group_id_fkey(status, location_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -51,11 +48,35 @@ export const useAdminMessages = () => {
         query = query.eq('group_id', filters.groupId);
       }
 
-      const { data, error } = await query;
+      const { data: messagesData, error: messagesError } = await query;
+      if (messagesError) throw messagesError;
 
-      if (error) throw error;
+      if (!messagesData) {
+        setMessages([]);
+        return;
+      }
 
-      setMessages(data as MessageData[]);
+      // Get unique user and group IDs
+      const userIds = [...new Set(messagesData.map(m => m.user_id))];
+      const groupIds = [...new Set(messagesData.map(m => m.group_id))];
+
+      // Fetch profiles and groups data
+      const [profilesResult, groupsResult] = await Promise.all([
+        supabase.from('profiles').select('id, first_name, last_name, email').in('id', userIds),
+        supabase.from('groups').select('id, status, location_name').in('id', groupIds)
+      ]);
+
+      const profiles = profilesResult.data || [];
+      const groups = groupsResult.data || [];
+
+      // Combine data
+      const enrichedMessages = messagesData.map(message => ({
+        ...message,
+        user_profile: profiles.find(p => p.id === message.user_id) || null,
+        group_info: groups.find(g => g.id === message.group_id) || null
+      }));
+
+      setMessages(enrichedMessages as MessageData[]);
       setError(null);
     } catch (err) {
       console.error('Error fetching messages:', err);
