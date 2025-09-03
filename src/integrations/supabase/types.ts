@@ -345,6 +345,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_email_preferences: {
+        Row: {
+          all_emails_disabled: boolean
+          created_at: string
+          group_notifications: boolean
+          id: string
+          marketing_emails: boolean
+          newsletter: boolean
+          scheduled_reminders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_emails_disabled?: boolean
+          created_at?: string
+          group_notifications?: boolean
+          id?: string
+          marketing_emails?: boolean
+          newsletter?: boolean
+          scheduled_reminders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_emails_disabled?: boolean
+          created_at?: string
+          group_notifications?: boolean
+          id?: string
+          marketing_emails?: boolean
+          newsletter?: boolean
+          scheduled_reminders?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_outings_history: {
         Row: {
           bar_address: string
@@ -456,6 +492,10 @@ export type Database = {
           search_radius: number
           status: string
         }[]
+      }
+      delete_user_account: {
+        Args: { target_user_id: string }
+        Returns: boolean
       }
       dissolve_old_groups: {
         Args: Record<PropertyKey, never>

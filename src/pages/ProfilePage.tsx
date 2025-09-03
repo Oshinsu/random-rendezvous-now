@@ -15,6 +15,8 @@ import { useProfileUpdate } from '@/hooks/useProfileUpdate';
 import { useProfile } from '@/hooks/useProfile';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
+import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection';
+import { DangerZoneSection } from '@/components/profile/DangerZoneSection';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
@@ -227,6 +229,12 @@ const ProfilePage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Email Preferences */}
+            <EmailPreferencesSection />
+
+            {/* Danger Zone */}
+            <DangerZoneSection />
 
             {/* Outings History */}
             <OutingsHistory />
