@@ -518,6 +518,35 @@ serve(async (req) => {
       'Rayon de recherche': `${searchRadius/1000}km`
     });
 
+    // Log successful API call
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase.functions.invoke('api-logger', {
+        body: {
+          api_name: 'simple-bar-search',
+          endpoint: '/functions/v1/simple-bar-search',
+          request_type: 'search',
+          status_code: 200,
+          response_time_ms: Date.now() - startTime,
+          cost_usd: 0.017, // Google Places Search cost
+          metadata: { 
+            latitude, 
+            longitude, 
+            selected_bar: result.name,
+            total_bars_found: selectedBars.length,
+            fallback_level: fallbackLevel,
+            search_radius: searchRadius
+          }
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log API success:', logError);
+    }
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -525,6 +554,30 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ [ERREUR GLOBALE]', error);
+    
+    // Log API error
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      await supabase.functions.invoke('api-logger', {
+        body: {
+          api_name: 'simple-bar-search',
+          endpoint: '/functions/v1/simple-bar-search',
+          request_type: 'search',
+          status_code: 500,
+          response_time_ms: Date.now() - startTime,
+          cost_usd: 0,
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          metadata: { error_details: error }
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log API error:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ error: 'Erreur de recherche', details: error.message }),
       { 

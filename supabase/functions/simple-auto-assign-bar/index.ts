@@ -309,6 +309,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now();
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -557,6 +559,31 @@ serve(async (req) => {
       'Bar final': result.bar.name
     });
 
+    // Log successful API call
+    try {
+      await supabase.functions.invoke('api-logger', {
+        body: {
+          api_name: 'simple-auto-assign-bar',
+          endpoint: '/functions/v1/simple-auto-assign-bar',
+          request_type: 'assignment',
+          status_code: 200,
+          response_time_ms: Date.now() - startTime,
+          cost_usd: 0.017, // Google Places Search cost
+          group_id,
+          metadata: { 
+            latitude: searchLatitude, 
+            longitude: searchLongitude, 
+            assigned_bar: result.bar.name,
+            total_bars_found: selectedBars.length,
+            fallback_level: fallbackLevel,
+            search_radius: searchRadius
+          }
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log API success:', logError);
+    }
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -564,6 +591,26 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ [ERREUR GLOBALE]', error);
+    
+    // Log API error
+    try {
+      await supabase.functions.invoke('api-logger', {
+        body: {
+          api_name: 'simple-auto-assign-bar',
+          endpoint: '/functions/v1/simple-auto-assign-bar',
+          request_type: 'assignment',
+          status_code: 500,
+          response_time_ms: Date.now() - startTime,
+          cost_usd: 0,
+          error_message: error instanceof Error ? error.message : 'Unknown error',
+          group_id: group_id || undefined,
+          metadata: { error_details: error }
+        }
+      });
+    } catch (logError) {
+      console.error('Failed to log API error:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ success: false, error: 'Erreur serveur', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
