@@ -40,6 +40,7 @@ const verifyBarBusinessStatus = async (placeId: string, apiKey: string): Promise
     console.log(`🔍 [VERIFICATION STATUT] Vérification du statut pour place_id: ${placeId}`);
     
     const detailsUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    const startTime = Date.now();
     const response = await fetch(detailsUrl, {
       method: 'GET',
       headers: {
@@ -47,6 +48,18 @@ const verifyBarBusinessStatus = async (placeId: string, apiKey: string): Promise
         'X-Goog-FieldMask': 'id,displayName,businessStatus,currentOpeningHours'
       }
     });
+
+    const responseTime = Date.now() - startTime;
+
+    // Log de l'appel API
+    await logApiRequest(
+      `/places/${placeId}`,
+      'place_details',
+      response.status,
+      responseTime,
+      !response.ok ? `HTTP ${response.status}` : undefined,
+      { place_id: placeId }
+    );
 
     if (!response.ok) {
       console.warn(`⚠️ [VERIFICATION STATUT] Erreur HTTP ${response.status} pour ${placeId}`);
@@ -258,6 +271,31 @@ const isRealBarOrPub = (place: any): boolean => {
   return false;
 };
 
+// Fonction de logging API
+const logApiRequest = async (endpoint: string, requestType: string, statusCode: number, responseTimeMs: number, errorMessage?: string, metadata?: any) => {
+  try {
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/api-logger`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+      },
+      body: JSON.stringify({
+        api_name: 'google_places',
+        endpoint,
+        request_type: requestType,
+        status_code: statusCode,
+        response_time_ms: responseTimeMs,
+        cost_usd: requestType === 'nearby_search' ? 0.017 : 0.003,
+        error_message: errorMessage,
+        metadata
+      })
+    });
+  } catch (error) {
+    console.error('❌ [LOG API] Erreur logging:', error);
+  }
+};
+
 // Fonction de recherche avec rayon variable
 const searchBarsWithRadius = async (latitude: number, longitude: number, radius: number, apiKey: string): Promise<any[]> => {
   const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
@@ -275,6 +313,7 @@ const searchBarsWithRadius = async (latitude: number, longitude: number, radius:
 
   console.log(`📡 [RECHERCHE RAYON ${radius}m] Requête vers Google Places:`, JSON.stringify(requestBody, null, 2));
 
+  const startTime = Date.now();
   const response = await fetch(searchUrl, {
     method: 'POST',
     headers: {
@@ -284,6 +323,18 @@ const searchBarsWithRadius = async (latitude: number, longitude: number, radius:
     },
     body: JSON.stringify(requestBody)
   });
+
+  const responseTime = Date.now() - startTime;
+
+  // Log de l'appel API
+  await logApiRequest(
+    '/places:searchNearby',
+    'nearby_search',
+    response.status,
+    responseTime,
+    !response.ok ? `HTTP ${response.status}` : undefined,
+    { radius, coordinates: { latitude, longitude } }
+  );
 
   if (!response.ok) {
     console.error(`❌ [RECHERCHE RAYON ${radius}m] Erreur HTTP:`, response.status);
