@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ExportButton } from "@/components/admin/ExportButton";
+import { ApiDiagnosticPanel } from "@/components/admin/ApiDiagnosticPanel";
 import { useApiAnalytics } from "@/hooks/useApiAnalytics";
 import type { ApiRequest } from "@/hooks/useApiAnalytics";
 import { 
@@ -132,6 +134,21 @@ export const AdminApi = () => {
           </Button>
         </div>
       </div>
+
+      {/* Phase 1 - Diagnostic Panel */}
+      <ApiDiagnosticPanel />
+
+      {/* Alert when no data */}
+      {analytics && analytics.requests.length === 0 && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            ⚠️ DONNÉES RÉELLES MANQUANTES - Aucune donnée API trouvée pour la période sélectionnée. 
+            Les données apparaîtront une fois que les Edge Functions seront appelées (création de groupes, recherches de bars, etc.).
+            Utilisez le diagnostic ci-dessus pour tester le système.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Period selector */}
       <div className="flex gap-2">

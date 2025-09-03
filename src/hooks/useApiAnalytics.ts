@@ -87,64 +87,23 @@ export const useApiAnalytics = (period: TimePeriod = 'day') => {
         throw fetchError;
       }
       
-      // If no real data, use fallback mock data for demo
-      let requests: ApiRequest[] = [];
-      
-      if (apiRequests && apiRequests.length > 0) {
-        // Convert database records to ApiRequest format
-        requests = apiRequests.map(req => ({
-          id: req.id,
-          api_name: req.api_name,
-          endpoint: req.endpoint,
-          request_type: req.request_type,
-          status_code: req.status_code || 0,
-          response_time_ms: req.response_time_ms || 0,
-          cost_usd: Number(req.cost_usd) || 0,
-          error_message: req.error_message || undefined,
-          metadata: req.metadata,
-          created_at: req.created_at,
-          user_id: req.user_id || undefined,
-          group_id: req.group_id || undefined,
-        }));
-      } else {
-        console.log('No real API data found, using fallback mock data');
-        const mockRequests: ApiRequest[] = [
-          {
-            id: '1',
-            api_name: 'simple-bar-search',
-            endpoint: '/functions/v1/simple-bar-search',
-            request_type: 'search',
-            status_code: 200,
-            response_time_ms: 850,
-            cost_usd: 0.017,
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: '2', 
-            api_name: 'simple-auto-assign-bar',
-            endpoint: '/functions/v1/simple-auto-assign-bar',
-            request_type: 'assignment',
-            status_code: 200,
-            response_time_ms: 1200,
-            cost_usd: 0.017,
-            created_at: new Date(Date.now() - 1800000).toISOString(),
-          },
-          {
-            id: '3',
-            api_name: 'simple-bar-search',
-            endpoint: '/functions/v1/simple-bar-search',
-            request_type: 'search',
-            status_code: 200,
-            response_time_ms: 720,
-            cost_usd: 0.017,
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-          }
-        ];
-        
-        // Filter based on period
-        const startTime = new Date(startDate).getTime();
-        requests = mockRequests.filter(r => new Date(r.created_at).getTime() >= startTime);
-      }
+      // Convert database records to ApiRequest format - NO MORE MOCK DATA
+      const requests: ApiRequest[] = apiRequests?.map(req => ({
+        id: req.id,
+        api_name: req.api_name,
+        endpoint: req.endpoint,
+        request_type: req.request_type,
+        status_code: req.status_code || 0,
+        response_time_ms: req.response_time_ms || 0,
+        cost_usd: Number(req.cost_usd) || 0,
+        error_message: req.error_message || undefined,
+        metadata: req.metadata,
+        created_at: req.created_at,
+        user_id: req.user_id || undefined,
+        group_id: req.group_id || undefined,
+      })) || [];
+
+      console.log(`📊 Analytics: Found ${requests.length} real API requests for period ${period}`);
       
       // Get today's data
       const todayStart = new Date();
