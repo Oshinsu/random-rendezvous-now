@@ -23,19 +23,27 @@ export const useEmailPreferences = () => {
 
   const fetchPreferences = async () => {
     if (!user) return;
-
+    
+    setLoading(true);
     try {
+      console.log('🔍 Fetching email preferences for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_email_preferences')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
 
       if (data) {
+        console.log('✅ Found existing preferences:', data);
         setPreferences(data);
       } else {
+        console.log('📝 Creating default preferences for new user');
         // Create default preferences if none exist
         const defaultPrefs = {
           user_id: user.id,
@@ -52,14 +60,30 @@ export const useEmailPreferences = () => {
           .select()
           .single();
 
-        if (createError) throw createError;
+        if (createError) {
+          console.error('❌ Error creating preferences:', createError);
+          throw createError;
+        }
+        
+        console.log('✅ Created new preferences:', created);
         setPreferences(created);
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des préférences:', error);
+      console.error('❌ Erreur lors de la récupération des préférences:', error);
+      
+      // More specific error messages based on error type
+      let errorMessage = 'Impossible de charger vos préférences email.';
+      if (error instanceof Error) {
+        if (error.message.includes('duplicate')) {
+          errorMessage = 'Erreur de données dupliquées détectée. Veuillez actualiser la page.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Problème de connexion. Vérifiez votre connexion internet.';
+        }
+      }
+      
       toast({
-        title: 'Erreur',
-        description: 'Impossible de charger vos préférences email.',
+        title: 'Erreur de chargement',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
