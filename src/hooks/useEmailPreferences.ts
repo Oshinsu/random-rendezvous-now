@@ -62,6 +62,23 @@ export const useEmailPreferences = () => {
 
         if (createError) {
           console.error('❌ Error creating preferences:', createError);
+          
+          // Si l'erreur est due à un doublon, essayer de récupérer les données existantes
+          if (createError.code === '23505' || createError.message.includes('duplicate')) {
+            console.log('🔄 Duplicate detected, trying to fetch existing data...');
+            const { data: existingData, error: fetchError } = await supabase
+              .from('user_email_preferences')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            if (fetchError) throw fetchError;
+            if (existingData) {
+              console.log('✅ Retrieved existing preferences after duplicate error:', existingData);
+              setPreferences(existingData);
+              return;
+            }
+          }
           throw createError;
         }
         
