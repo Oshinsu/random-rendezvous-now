@@ -170,7 +170,7 @@ export class GeolocationService {
       // Seine-Saint-Denis (93)
       'pantin', 'les-lilas', 'le-pré-saint-gervais', 'bagnolet', 'romainville',
       'noisy-le-sec', 'rosny-sous-bois', 'villemomble', 'montfermeil',
-      'gagny', 'le-raincy', 'clichy-sous-bois', 'livry-gargan',
+      'gagny', 'le-raincy', 'clichy-sous-bois', 'livry-gargan', 'le bourget',
       
       // Val-d\'Oise (95)
       'enghien-les-bains', 'montmorency', 'eaubonne', 'ermont', 'franconville',
