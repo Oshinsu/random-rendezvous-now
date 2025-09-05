@@ -497,8 +497,9 @@ export class UnifiedGroupService {
       'seine-saint-denis', 'val-de-marne', 'val-d\'oise'
     ];
     
-    // Villes principales IDF
+    // Villes principales IDF (liste exhaustive des communes importantes)
     const idfCities = [
+      // Paris et grandes villes
       'paris', 'boulogne-billancourt', 'saint-denis', 'argenteuil', 'montreuil',
       'créteil', 'nanterre', 'courbevoie', 'versailles', 'vitry-sur-seine',
       'colombes', 'asnières-sur-seine', 'aulnay-sous-bois', 'rueil-malmaison',
@@ -506,7 +507,39 @@ export class UnifiedGroupService {
       'drancy', 'issy-les-moulineaux', 'levallois-perret', 'antony',
       'noisy-le-grand', 'villeneuve-saint-georges', 'clichy', 'ivry-sur-seine',
       'villejuif', 'épinay-sur-seine', 'meaux', 'vincennes', 'bobigny',
-      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy'
+      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy',
+      
+      // Villes manquantes importantes (Hauts-de-Seine 92)
+      'chaville', 'sceaux', 'bagneux', 'malakoff', 'montrouge', 'vanves',
+      'châtillon', 'clamart', 'meudon', 'sèvres', 'ville-d\'avray', 'marnes-la-coquette',
+      'garches', 'vaucresson', 'la-celle-saint-cloud', 'bourg-la-reine', 'sceaux',
+      'fontenay-aux-roses', 'le-plessis-robinson', 'châtenay-malabry', 'antony',
+      'wissous', 'fresnes', 'rungis', 'thiais', 'chevilly-larue', 'l\'haÿ-les-roses',
+      'cachan', 'arcueil', 'gentilly', 'le-kremlin-bicêtre', 'villejuif',
+      
+      // Val-de-Marne (94)
+      'saint-mandé', 'charenton-le-pont', 'maisons-alfort', 'alfortville',
+      'saint-maurice', 'joinville-le-pont', 'nogent-sur-marne', 'le-perreux-sur-marne',
+      'bry-sur-marne', 'chennevières-sur-marne', 'la-varenne-saint-hilaire',
+      'villiers-sur-marne', 'champigny-sur-marne', 'saint-maur-des-fossés',
+      
+      // Seine-Saint-Denis (93)
+      'pantin', 'les-lilas', 'le-pré-saint-gervais', 'bagnolet', 'romainville',
+      'noisy-le-sec', 'rosny-sous-bois', 'villemomble', 'montfermeil',
+      'gagny', 'le-raincy', 'clichy-sous-bois', 'livry-gargan',
+      
+      // Val-d\'Oise (95)
+      'enghien-les-bains', 'montmorency', 'eaubonne', 'ermont', 'franconville',
+      'saint-gratien', 'sannois', 'argenteuil', 'bezons', 'colombes',
+      
+      // Yvelines (78)
+      'le-chesnay', 'viroflay', 'chaville', 'meudon', 'issy-les-moulineaux',
+      'boulogne-billancourt', 'saint-cloud', 'suresnes', 'puteaux', 'neuilly-sur-seine',
+      
+      // Essonne (91)
+      'massy', 'palaiseau', 'orsay', 'gif-sur-yvette', 'bures-sur-yvette',
+      'les-ulis', 'villebon-sur-yvette', 'verrières-le-buisson', 'chilly-mazarin',
+      'longjumeau', 'savigny-sur-orge', 'viry-châtillon', 'juvisy-sur-orge'
     ];
     
     // Vérification par code postal
