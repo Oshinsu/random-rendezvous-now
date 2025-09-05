@@ -80,11 +80,15 @@ export class GeolocationService {
       const data = await response.json();
       
       if (data.address) {
-        const { city, town, village, suburb, neighbourhood, postcode } = data.address;
-        const cityName = city || town || village || suburb || neighbourhood;
+        const { city, town, village, suburb, neighbourhood, municipality, postcode } = data.address;
+        const cityName = city || town || village || suburb || neighbourhood || municipality;
         
+        // Toujours utiliser le code postal s'il est disponible
         if (cityName && postcode) {
           return `${cityName} (${postcode})`;
+        } else if (postcode) {
+          // Utiliser le code postal même sans nom de ville
+          return `(${postcode})`;
         } else if (cityName) {
           return cityName;
         }
