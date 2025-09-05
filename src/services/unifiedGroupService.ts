@@ -414,11 +414,23 @@ export class UnifiedGroupService {
         return null;
       }
 
+      // Détection utilisateur IDF - créer le groupe à Paris centre
+      const isIdfUser = this.isUserInIleDeFrance(userLocation);
+      const groupLocation = isIdfUser ? {
+        latitude: 48.8566,   // Paris centre
+        longitude: 2.3522,   // Paris centre
+        locationName: 'Paris Centre'
+      } : userLocation;
+      
+      if (isIdfUser) {
+        console.log('🗺️ Utilisateur IDF - création de groupe parisien');
+      }
+
       // TRANSACTION ATOMIQUE: Utiliser la fonction PostgreSQL sécurisée
       const { data: result, error: transactionError } = await supabase.rpc('create_group_with_participant', {
-        p_latitude: userLocation.latitude,
-        p_longitude: userLocation.longitude,
-        p_location_name: userLocation.locationName,
+        p_latitude: groupLocation.latitude,
+        p_longitude: groupLocation.longitude,
+        p_location_name: groupLocation.locationName,
         p_user_id: userId
       });
 
@@ -470,6 +482,49 @@ export class UnifiedGroupService {
       ErrorHandler.showErrorToast(appError);
       return null;
     }
+  }
+
+  // Méthode pour détecter si un utilisateur est en Île-de-France
+  private static isUserInIleDeFrance(location: LocationData): boolean {
+    const locationName = location.locationName.toLowerCase();
+    
+    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
+    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
+    
+    // Départements IDF
+    const idfDepartments = [
+      'paris', 'seine-et-marne', 'yvelines', 'essonne', 'hauts-de-seine', 
+      'seine-saint-denis', 'val-de-marne', 'val-d\'oise'
+    ];
+    
+    // Villes principales IDF
+    const idfCities = [
+      'paris', 'boulogne-billancourt', 'saint-denis', 'argenteuil', 'montreuil',
+      'créteil', 'nanterre', 'courbevoie', 'versailles', 'vitry-sur-seine',
+      'colombes', 'asnières-sur-seine', 'aulnay-sous-bois', 'rueil-malmaison',
+      'aubervilliers', 'champigny-sur-marne', 'saint-maur-des-fossés',
+      'drancy', 'issy-les-moulineaux', 'levallois-perret', 'antony',
+      'noisy-le-grand', 'villeneuve-saint-georges', 'clichy', 'ivry-sur-seine',
+      'villejuif', 'épinay-sur-seine', 'meaux', 'vincennes', 'bobigny',
+      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy'
+    ];
+    
+    // Vérification par code postal
+    if (idfPostalCodes.test(locationName)) {
+      return true;
+    }
+    
+    // Vérification par département
+    if (idfDepartments.some(dept => locationName.includes(dept))) {
+      return true;
+    }
+    
+    // Vérification par ville
+    if (idfCities.some(city => locationName.includes(city))) {
+      return true;
+    }
+    
+    return false;
   }
 
   // CORRIGÉ: Rejoindre groupe avec VÉRIFICATION DE SÉCURITÉ

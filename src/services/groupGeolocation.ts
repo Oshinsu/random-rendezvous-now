@@ -24,6 +24,18 @@ export class GroupGeolocationService {
     try {
       console.log('🌍 Recherche de groupe compatible...');
       
+      // Détection utilisateur IDF - rediriger vers Paris centre
+      const isIdfUser = this.isUserInIleDeFrance(userLocation);
+      const searchLocation = isIdfUser ? {
+        latitude: 48.8566,   // Paris centre
+        longitude: 2.3522,   // Paris centre
+        locationName: 'Paris Centre'
+      } : userLocation;
+      
+      if (isIdfUser) {
+        console.log('🗺️ Utilisateur IDF détecté - recherche de groupes parisiens');
+      }
+      
       // NOUVEAU: Filtrer les groupes par âge (max 3 heures)
       const maxGroupAge = new Date(Date.now() - GROUP_CONSTANTS.MAX_GROUP_AGE_FOR_JOIN).toISOString();
       
@@ -68,8 +80,8 @@ export class GroupGeolocationService {
       for (const group of viableGroups) {
         if (group.latitude && group.longitude) {
           const distance = this.calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
+            searchLocation.latitude,
+            searchLocation.longitude,
             group.latitude,
             group.longitude
           );
@@ -84,9 +96,52 @@ export class GroupGeolocationService {
 
       console.log('📍 Aucun groupe viable dans la zone géographique de 25km - création recommandée');
       return null;
-    } catch (error) {
+     } catch (error) {
       console.error('❌ Erreur findCompatibleGroup:', error);
       return null;
     }
+  }
+
+  // Méthode pour détecter si un utilisateur est en Île-de-France
+  private static isUserInIleDeFrance(location: LocationData): boolean {
+    const locationName = location.locationName.toLowerCase();
+    
+    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
+    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
+    
+    // Départements IDF
+    const idfDepartments = [
+      'paris', 'seine-et-marne', 'yvelines', 'essonne', 'hauts-de-seine', 
+      'seine-saint-denis', 'val-de-marne', 'val-d\'oise'
+    ];
+    
+    // Villes principales IDF
+    const idfCities = [
+      'paris', 'boulogne-billancourt', 'saint-denis', 'argenteuil', 'montreuil',
+      'créteil', 'nanterre', 'courbevoie', 'versailles', 'vitry-sur-seine',
+      'colombes', 'asnières-sur-seine', 'aulnay-sous-bois', 'rueil-malmaison',
+      'aubervilliers', 'champigny-sur-marne', 'saint-maur-des-fossés',
+      'drancy', 'issy-les-moulineaux', 'levallois-perret', 'antony',
+      'noisy-le-grand', 'villeneuve-saint-georges', 'clichy', 'ivry-sur-seine',
+      'villejuif', 'épinay-sur-seine', 'meaux', 'vincennes', 'bobigny',
+      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy'
+    ];
+    
+    // Vérification par code postal
+    if (idfPostalCodes.test(locationName)) {
+      return true;
+    }
+    
+    // Vérification par département
+    if (idfDepartments.some(dept => locationName.includes(dept))) {
+      return true;
+    }
+    
+    // Vérification par ville
+    if (idfCities.some(city => locationName.includes(city))) {
+      return true;
+    }
+    
+    return false;
   }
 }
