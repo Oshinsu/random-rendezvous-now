@@ -4,10 +4,10 @@
     "subtitle": "In one click, we create your group of 5 and choose an open bar near you. Real encounters, no swiping.",
     "cta": "Try the Adventure",
     "cta_logged": "Find a group",
-    "beta_info": "✨ Free beta in Paris until September 1st",
-    "status_beta": "Beta in August",
+    "beta_info": "✨ Free beta in Paris ongoing",
+    "status_beta": "Beta in September",
     "status_random_bars": "Randomly selected bars", 
-    "status_free": "Free during holidays"
+    "status_free": "Free beta ongoing"
   },
   "navigation": {
     "groups": "Groups",
@@ -66,7 +66,7 @@
     "q3": "What if the group doesn't suit me?",
     "a3": "The goal: have a good time and expand your circle. Keep an open mind.",
     "q4": "Is it free?",
-    "a4": "Yes, the beta is free in Paris until September 1st.",
+    "a4": "Yes, the beta is free in Paris during the entire testing period.",
     "q5": "Is it safe?",
     "a5": "Yes. Public places only, group of 5, and real-time monitoring in the app."
   },
@@ -75,7 +75,7 @@
     "subtitle": "Join Random: 1 click, 1 group, 1 bar. Real encounters near you.",
     "button": "Launch Random",
     "button_logged": "Find a group",
-    "beta_info": "Free beta in Paris until September 1st. Lyon coming soon."
+    "beta_info": "Free beta in Paris ongoing. Lyon coming soon."
   },
   "footer": {
     "tagline": "All rights reserved. Dare the unexpected.",

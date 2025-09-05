@@ -4,10 +4,10 @@
     "subtitle": "En un clic, on crée ton groupe de 5 et on choisit un bar ouvert près de chez toi. Vraies rencontres, zéro swipe.",
     "cta": "Tenter l'Aventure",
     "cta_logged": "Trouver un groupe",
-    "beta_info": "✨ Bêta gratuite à Paris jusqu'au 1er septembre",
-    "status_beta": "Bêta en août",
+    "beta_info": "✨ Bêta gratuite à Paris en cours",
+    "status_beta": "Bêta en septembre",
     "status_random_bars": "Bars choisis au hasard", 
-    "status_free": "Gratuit pendant les vacances"
+    "status_free": "Bêta gratuite en cours"
   },
   "navigation": {
     "search_group": "Chercher un groupe",
@@ -70,7 +70,7 @@
     "q3": "Et si le groupe ne me convient pas ?",
     "a3": "Le but : passer un bon moment et élargir ton cercle. Garde l'esprit ouvert.",
     "q4": "C'est gratuit ?",
-    "a4": "Oui, la beta est gratuite à Paris jusqu'au 1er septembre.",
+    "a4": "Oui, la bêta est gratuite à Paris pendant toute la période de test.",
     "q5": "C'est sécurisé ?",
     "a5": "Oui. Lieux publics uniquement, groupe de 5, et suivi en temps réel dans l'app."
   },
@@ -79,7 +79,7 @@
     "subtitle": "Rejoins Random : 1 clic, 1 groupe, 1 bar. Vraies rencontres près de chez toi.",
     "button": "Lancer Random",
     "button_logged": "Trouver un groupe",
-    "beta_info": "Bêta gratuite à Paris jusqu'au 1er septembre. Lyon arrive bientôt."
+    "beta_info": "Bêta gratuite à Paris en cours. Lyon arrive bientôt."
   },
   "footer": {
     "tagline": "Tous droits réservés. Osez l'imprévu.",

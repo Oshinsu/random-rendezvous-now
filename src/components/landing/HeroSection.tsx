@@ -60,13 +60,13 @@ const HeroSection = () => {
           <p className="text-xs sm:text-sm text-white/80 mb-3 sm:mb-4">
             {user ? 
               "🎲 Ta prochaine aventure Random t'attend !" : 
-              (i18n.language === 'en' ? `✨ ${t('hero.beta_info')}` : "✨ Beta gratuite à Paris jusqu'au 1er septembre")
+              (i18n.language === 'en' ? `✨ ${t('hero.beta_info')}` : "✨ Beta gratuite à Paris en cours")
             }
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-xs text-white/70">
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap">{i18n.language === 'en' ? t('hero.status_beta') : 'Beta en août'}</span>
+              <span className="whitespace-nowrap">{i18n.language === 'en' ? t('hero.status_beta') : 'Beta en septembre'}</span>
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
@@ -74,7 +74,7 @@ const HeroSection = () => {
             </span>
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="whitespace-nowrap text-center">{i18n.language === 'en' ? t('hero.status_free') : 'Gratuit pendant les vacances'}</span>
+              <span className="whitespace-nowrap text-center">{i18n.language === 'en' ? t('hero.status_free') : 'Beta gratuite en cours'}</span>
             </span>
           </div>
         </div>
