@@ -217,7 +217,7 @@ export class EnhancedGroupService {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
           location_name: userLocation.locationName,
-          search_radius: 10000
+          search_radius: 25000
         };
 
         const { data: newGroup, error: createError } = await supabase

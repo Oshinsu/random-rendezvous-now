@@ -62,8 +62,8 @@ export class GroupGeolocationService {
         return null;
       }
 
-      // Chercher un groupe dans un rayon strict de 12km parmi les groupes viables
-      const maxDistance = 12000; // 12km en mètres
+      // Chercher un groupe dans un rayon strict de 25km parmi les groupes viables
+      const maxDistance = 25000; // 25km en mètres
       
       for (const group of viableGroups) {
         if (group.latitude && group.longitude) {
@@ -82,7 +82,7 @@ export class GroupGeolocationService {
         }
       }
 
-      console.log('📍 Aucun groupe viable dans la zone géographique de 12km - création recommandée');
+      console.log('📍 Aucun groupe viable dans la zone géographique de 25km - création recommandée');
       return null;
     } catch (error) {
       console.error('❌ Erreur findCompatibleGroup:', error);

@@ -13,7 +13,7 @@ interface SystemSettings {
 export const useSystemSettings = () => {
   const [settings, setSettings] = useState<SystemSettings>({
     maxGroupSize: 5,
-    defaultSearchRadius: 10000,
+    defaultSearchRadius: 25000,
     maintenanceMode: false,
     emailNotifications: true,
     autoCleanupEnabled: true,
@@ -42,7 +42,7 @@ export const useSystemSettings = () => {
 
         setSettings({
           maxGroupSize: parseInt(settingsMap.max_group_size) || 5,
-          defaultSearchRadius: parseInt(settingsMap.default_search_radius) || 10000,
+          defaultSearchRadius: parseInt(settingsMap.default_search_radius) || 25000,
           maintenanceMode: settingsMap.maintenance_mode === true,
           emailNotifications: settingsMap.email_notifications === true,
           autoCleanupEnabled: settingsMap.auto_cleanup_enabled === true,

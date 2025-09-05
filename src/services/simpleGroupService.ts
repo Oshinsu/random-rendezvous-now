@@ -181,7 +181,7 @@ export class SimpleGroupService {
         latitude: location.latitude,
         longitude: location.longitude,
         location_name: location.locationName,
-        search_radius: 10000
+        search_radius: 25000
       };
 
       console.log('📝 Données du nouveau groupe:', newGroupData);

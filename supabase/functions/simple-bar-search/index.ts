@@ -379,11 +379,11 @@ serve(async (req) => {
 
     // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT
     let selectedBars = [];
-    let searchRadius = 12000; // Rayon initial augmenté
+    let searchRadius = 25000; // Rayon initial augmenté
     let fallbackLevel = 0;
 
     // NIVEAU 1: Recherche normale avec rayon initial
-    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 12km');
+    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 25km');
     let allPlaces = await searchBarsWithRadius(latitude, longitude, searchRadius, apiKey);
     
     if (allPlaces.length === 0) {
@@ -435,8 +435,8 @@ serve(async (req) => {
 
     // NIVEAU 2: Expansion du rayon de recherche
     if (fallbackLevel >= 1 && selectedBars.length === 0) {
-      console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 15km');
-      searchRadius = 15000;
+      console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 35km');
+      searchRadius = 35000;
       allPlaces = await searchBarsWithRadius(latitude, longitude, searchRadius, apiKey);
       
       if (allPlaces.length > 0) {
@@ -466,8 +466,8 @@ serve(async (req) => {
 
     // NIVEAU 3: Rayon maximal
     if (fallbackLevel >= 3 && selectedBars.length === 0) {
-      console.log('🎯 [FALLBACK NIVEAU 3] Expansion du rayon à 25km (dernier recours)');
-      searchRadius = 25000;
+      console.log('🎯 [FALLBACK NIVEAU 3] Expansion du rayon à 50km (dernier recours)');
+      searchRadius = 50000;
       allPlaces = await searchBarsWithRadius(latitude, longitude, searchRadius, apiKey);
       
       if (allPlaces.length > 0) {
