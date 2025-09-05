@@ -121,4 +121,51 @@ export class GeolocationService {
       return `${(meters / 1000).toFixed(1)} km`;
     }
   }
+
+  static detectIleDeFrance(locationName: string, address?: string): boolean {
+    const location = locationName.toLowerCase();
+    const fullAddress = address?.toLowerCase() || '';
+    
+    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
+    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
+    
+    // Départements IDF
+    const idfDepartments = [
+      'paris', 'seine-et-marne', 'yvelines', 'essonne', 'hauts-de-seine', 
+      'seine-saint-denis', 'val-de-marne', 'val-d\'oise'
+    ];
+    
+    // Villes principales IDF
+    const idfCities = [
+      'paris', 'boulogne-billancourt', 'saint-denis', 'argenteuil', 'montreuil',
+      'créteil', 'nanterre', 'courbevoie', 'versailles', 'vitry-sur-seine',
+      'colombes', 'asnières-sur-seine', 'aulnay-sous-bois', 'rueil-malmaison',
+      'aubervilliers', 'champigny-sur-marne', 'saint-maur-des-fossés',
+      'drancy', 'issy-les-moulineaux', 'levallois-perret', 'antony',
+      'noisy-le-grand', 'villeneuve-saint-georges', 'clichy', 'ivry-sur-seine',
+      'villejuif', 'épinay-sur-seine', 'meaux', 'vincennes', 'bobigny',
+      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy'
+    ];
+    
+    // Vérification par code postal
+    if (idfPostalCodes.test(fullAddress) || idfPostalCodes.test(location)) {
+      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par code postal');
+      return true;
+    }
+    
+    // Vérification par département
+    if (idfDepartments.some(dept => location.includes(dept) || fullAddress.includes(dept))) {
+      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par département');
+      return true;
+    }
+    
+    // Vérification par ville
+    if (idfCities.some(city => location.includes(city) || fullAddress.includes(city))) {
+      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par ville');
+      return true;
+    }
+    
+    console.log('🗺️ [DÉTECTION IDF] Utilisateur hors IDF');
+    return false;
+  }
 }

@@ -416,14 +416,57 @@ serve(async (req) => {
 
     console.log('🔍 [RECHERCHE INTELLIGENTE AMÉLIORÉE] Début avec filtrage renforcé:', { searchLatitude, searchLongitude });
 
-    // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT
+    // NOUVEAU: Détection utilisateur IDF et redirection vers Paris
+    let finalLatitude = searchLatitude;
+    let finalLongitude = searchLongitude;
+    let isIdfUser = false;
+    
+    try {
+      // Faire un reverse geocoding pour détecter la localisation
+      const reverseGeoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${searchLatitude}&lon=${searchLongitude}&zoom=14&addressdetails=1`;
+      const geoResponse = await fetch(reverseGeoUrl, {
+        headers: { 'User-Agent': 'Random-App/1.0' }
+      });
+      
+      if (geoResponse.ok) {
+        const geoData = await geoResponse.json();
+        const locationName = geoData.display_name || '';
+        const address = geoData.address || {};
+        
+        // Détecter si utilisateur est en Île-de-France
+        const fullAddress = `${address.city || ''} ${address.postcode || ''} ${address.state || ''}`.toLowerCase();
+        
+        // Codes postaux IDF et villes principales
+        const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
+        const idfKeywords = ['paris', 'île-de-france', 'hauts-de-seine', 'seine-saint-denis', 'val-de-marne'];
+        
+        isIdfUser = idfPostalCodes.test(fullAddress) || 
+                   idfKeywords.some(keyword => locationName.toLowerCase().includes(keyword) || fullAddress.includes(keyword));
+        
+        if (isIdfUser) {
+          // Rediriger la recherche vers le centre de Paris
+          finalLatitude = 48.8566;  // Centre de Paris
+          finalLongitude = 2.3522;
+          console.log('🗼 [REDIRECTION PARIS] Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
+          console.log(`📍 [REDIRECTION PARIS] Coordonnées originales: ${searchLatitude}, ${searchLongitude}`);
+          console.log(`🎯 [REDIRECTION PARIS] Nouvelles coordonnées: ${finalLatitude}, ${finalLongitude}`);
+        } else {
+          console.log('🌍 [GÉOLOCALISATION] Utilisateur hors IDF - recherche normale');
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ [GÉOLOCALISATION] Erreur reverse geocoding, utilisation coordonnées originales:', error);
+    }
+
+    // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT avec adaptation IDF
     let selectedBars = [];
-    let searchRadius = 25000; // Rayon initial augmenté
+    let searchRadius = isIdfUser ? 12000 : 25000; // Rayon réduit pour Paris intra-muros
     let fallbackLevel = 0;
 
-    // NIVEAU 1: Recherche normale avec rayon initial
-    console.log('🎯 [FALLBACK NIVEAU 1] Recherche normale avec rayon 25km');
-    let allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+    // NIVEAU 1: Recherche prioritaire (Paris pour IDF, normale pour autres)
+    const searchType = isIdfUser ? 'Paris intra-muros (12km)' : 'normale (25km)';
+    console.log(`🎯 [FALLBACK NIVEAU 1] Recherche ${searchType}`);
+    let allPlaces = await searchBarsWithRadius(finalLatitude, finalLongitude, searchRadius, apiKey, group_id);
     
     if (allPlaces.length === 0) {
       console.log('⚠️ [FALLBACK NIVEAU 1] Aucun lieu trouvé - passage au niveau 2');
@@ -472,11 +515,18 @@ serve(async (req) => {
       }
     }
 
-    // NIVEAU 2: Expansion du rayon de recherche
+    // NIVEAU 2: Fallback intelligent
     if (fallbackLevel >= 1 && selectedBars.length === 0) {
-      console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 35km');
-      searchRadius = 35000;
-      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+      if (isIdfUser) {
+        console.log('🔄 [FALLBACK NIVEAU 2 IDF] Retour aux coordonnées utilisateur (25km)');
+        finalLatitude = searchLatitude;  // Retour aux coordonnées originales
+        finalLongitude = searchLongitude;
+        searchRadius = 25000;
+      } else {
+        console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 35km');
+        searchRadius = 35000;
+      }
+      allPlaces = await searchBarsWithRadius(finalLatitude, finalLongitude, searchRadius, apiKey, group_id);
       
       if (allPlaces.length > 0) {
         const openPlaces = allPlaces.filter(place => {
@@ -507,7 +557,8 @@ serve(async (req) => {
     if (fallbackLevel >= 3 && selectedBars.length === 0) {
       console.log('🎯 [FALLBACK NIVEAU 3] Expansion du rayon à 50km (dernier recours)');
       searchRadius = 50000;
-      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+      // Utiliser les coordonnées originales pour le fallback final
+      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey, group_id);
       
       if (allPlaces.length > 0) {
         const openPlaces = allPlaces.filter(place => {
