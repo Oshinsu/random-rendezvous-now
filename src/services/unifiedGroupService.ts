@@ -353,11 +353,23 @@ export class UnifiedGroupService {
     try {
       console.log('🆕 Création de groupe simple');
       
+      // Détection utilisateur IDF - créer le groupe à Paris centre
+      const isIdfUser = this.isUserInIleDeFrance(location);
+      const groupLocation = isIdfUser ? {
+        latitude: 48.8566,   // Paris centre
+        longitude: 2.3522,   // Paris centre
+        locationName: 'Paris Centre'
+      } : location;
+      
+      if (isIdfUser) {
+        console.log('🗺️ Utilisateur IDF - création de groupe parisien');
+      }
+      
       // Utiliser la fonction atomique côté base pour éviter les timeouts et garantir la cohérence
       const { data: result, error: rpcError } = await supabase.rpc('create_group_with_participant', {
-        p_latitude: location.latitude,
-        p_longitude: location.longitude,
-        p_location_name: location.locationName,
+        p_latitude: groupLocation.latitude,
+        p_longitude: groupLocation.longitude,
+        p_location_name: groupLocation.locationName,
         p_user_id: userId
       });
 
