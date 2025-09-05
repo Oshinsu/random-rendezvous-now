@@ -136,75 +136,12 @@ export class GeolocationService {
     const location = locationName.toLowerCase();
     const fullAddress = address?.toLowerCase() || '';
     
-    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
+    // Codes postaux IDF uniquement (75, 77, 78, 91, 92, 93, 94, 95)
     const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
     
-    // Départements IDF
-    const idfDepartments = [
-      'paris', 'seine-et-marne', 'yvelines', 'essonne', 'hauts-de-seine', 
-      'seine-saint-denis', 'val-de-marne', 'val-d\'oise'
-    ];
-    
-    // Villes principales IDF (liste exhaustive des communes importantes)
-    const idfCities = [
-      // Paris et grandes villes
-      'paris', 'boulogne-billancourt', 'saint-denis', 'argenteuil', 'montreuil',
-      'créteil', 'nanterre', 'courbevoie', 'versailles', 'vitry-sur-seine',
-      'colombes', 'asnières-sur-seine', 'aulnay-sous-bois', 'rueil-malmaison',
-      'aubervilliers', 'champigny-sur-marne', 'saint-maur-des-fossés',
-      'drancy', 'issy-les-moulineaux', 'levallois-perret', 'antony',
-      'noisy-le-grand', 'villeneuve-saint-georges', 'clichy', 'ivry-sur-seine',
-      'villejuif', 'épinay-sur-seine', 'meaux', 'vincennes', 'bobigny',
-      'le blanc-mesnil', 'rosny-sous-bois', 'fontenay-sous-bois', 'bondy',
-      
-      // Villes manquantes importantes (Hauts-de-Seine 92)
-      'chaville', 'sceaux', 'bagneux', 'malakoff', 'montrouge', 'vanves',
-      'châtillon', 'clamart', 'meudon', 'sèvres', 'ville-d\'avray', 'marnes-la-coquette',
-      'garches', 'vaucresson', 'la-celle-saint-cloud', 'bourg-la-reine', 'sceaux',
-      'fontenay-aux-roses', 'le-plessis-robinson', 'châtenay-malabry', 'antony',
-      'wissous', 'fresnes', 'rungis', 'thiais', 'chevilly-larue', 'l\'haÿ-les-roses',
-      'cachan', 'arcueil', 'gentilly', 'le-kremlin-bicêtre', 'villejuif',
-      
-      // Val-de-Marne (94)
-      'saint-mandé', 'charenton-le-pont', 'maisons-alfort', 'alfortville',
-      'saint-maurice', 'joinville-le-pont', 'nogent-sur-marne', 'le-perreux-sur-marne',
-      'bry-sur-marne', 'chennevières-sur-marne', 'la-varenne-saint-hilaire',
-      'villiers-sur-marne', 'champigny-sur-marne', 'saint-maur-des-fossés',
-      
-      // Seine-Saint-Denis (93)
-      'pantin', 'les-lilas', 'le-pré-saint-gervais', 'bagnolet', 'romainville',
-      'noisy-le-sec', 'rosny-sous-bois', 'villemomble', 'montfermeil',
-      'gagny', 'le-raincy', 'clichy-sous-bois', 'livry-gargan', 'le bourget',
-      
-      // Val-d\'Oise (95)
-      'enghien-les-bains', 'montmorency', 'eaubonne', 'ermont', 'franconville',
-      'saint-gratien', 'sannois', 'argenteuil', 'bezons', 'colombes',
-      
-      // Yvelines (78)
-      'le-chesnay', 'viroflay', 'chaville', 'meudon', 'issy-les-moulineaux',
-      'boulogne-billancourt', 'saint-cloud', 'suresnes', 'puteaux', 'neuilly-sur-seine',
-      
-      // Essonne (91)
-      'massy', 'palaiseau', 'orsay', 'gif-sur-yvette', 'bures-sur-yvette',
-      'les-ulis', 'villebon-sur-yvette', 'verrières-le-buisson', 'chilly-mazarin',
-      'longjumeau', 'savigny-sur-orge', 'viry-châtillon', 'juvisy-sur-orge'
-    ];
-    
-    // Vérification par code postal
+    // Vérification par code postal uniquement
     if (idfPostalCodes.test(fullAddress) || idfPostalCodes.test(location)) {
       console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par code postal');
-      return true;
-    }
-    
-    // Vérification par département
-    if (idfDepartments.some(dept => location.includes(dept) || fullAddress.includes(dept))) {
-      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par département');
-      return true;
-    }
-    
-    // Vérification par ville
-    if (idfCities.some(city => location.includes(city) || fullAddress.includes(city))) {
-      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par ville');
       return true;
     }
     
