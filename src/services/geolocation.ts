@@ -64,6 +64,8 @@ export class GeolocationService {
 
   static async reverseGeocode(lat: number, lng: number): Promise<string> {
     try {
+      console.log('🔍 Reverse geocoding pour:', lat, lng);
+      
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
         {
@@ -78,24 +80,55 @@ export class GeolocationService {
       }
       
       const data = await response.json();
+      console.log('📍 Données géocodage reçues:', data.address);
       
       if (data.address) {
-        const { city, town, village, suburb, neighbourhood, municipality, postcode } = data.address;
+        const { 
+          city, 
+          town, 
+          village, 
+          suburb, 
+          neighbourhood, 
+          municipality, 
+          postcode,
+          county, // Département
+          state    // Région
+        } = data.address;
+        
         const cityName = city || town || village || suburb || neighbourhood || municipality;
         
-        // Toujours utiliser le code postal s'il est disponible
-        if (cityName && postcode) {
-          return `${cityName} (${postcode})`;
-        } else if (postcode) {
-          // Utiliser le code postal même sans nom de ville
-          return `(${postcode})`;
-        } else if (cityName) {
+        // PRIORITÉ 1: Code postal + ville
+        if (postcode && cityName) {
+          const result = `${cityName} ${postcode}`;
+          console.log('✅ Location avec code postal:', result);
+          return result;
+        }
+        
+        // PRIORITÉ 2: Code postal uniquement (si disponible)
+        if (postcode) {
+          const result = `Localisation ${postcode}`;
+          console.log('✅ Location par code postal:', result);
+          return result;
+        }
+        
+        // PRIORITÉ 3: Ville uniquement
+        if (cityName) {
+          console.log('⚠️ Location sans code postal:', cityName);
           return cityName;
+        }
+        
+        // FALLBACK: Département ou région
+        if (county || state) {
+          const fallback = county || state;
+          console.log('⚠️ Location fallback:', fallback);
+          return fallback;
         }
       }
       
+      console.log('❌ Aucune localisation trouvée');
       return 'Localisation inconnue';
     } catch (error) {
+      console.error('❌ Erreur reverse geocoding:', error);
       throw error;
     }
   }

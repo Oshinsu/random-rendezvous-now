@@ -105,11 +105,15 @@ export class GroupGeolocationService {
   // Méthode pour détecter si un utilisateur est en Île-de-France
   private static isUserInIleDeFrance(location: LocationData): boolean {
     const locationName = location.locationName.toLowerCase();
+    console.log('🔍 Vérification IDF pour location:', locationName);
     
-    // Codes postaux IDF uniquement (75, 77, 78, 91, 92, 93, 94, 95)
+    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
+    // Support multiple formats: "Paris 75001", "Paris (75001)", "75001", "Localisation 75001"
     const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
     
-    // Vérification par code postal uniquement
-    return idfPostalCodes.test(locationName);
+    const isIdf = idfPostalCodes.test(locationName);
+    console.log(isIdf ? '✅ Utilisateur IDF détecté' : '❌ Utilisateur hors IDF');
+    
+    return isIdf;
   }
 }
