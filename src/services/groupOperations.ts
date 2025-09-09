@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
+import { getSearchRadius } from '@/utils/searchRadiusUtils';
 import { GroupService } from './groupService';
 import { toast } from '@/hooks/use-toast';
 
@@ -90,7 +91,7 @@ export class GroupOperationsService {
     if (!userLocation) {
       toast({ 
         title: 'Géolocalisation requise', 
-        description: 'Votre position est nécessaire pour rejoindre un groupe dans votre zone (25km).', 
+        description: 'Votre position est nécessaire pour rejoindre un groupe dans votre zone.', 
         variant: 'destructive' 
       });
       return false;
@@ -130,7 +131,7 @@ export class GroupOperationsService {
 
       console.log('✅ [JOIN] Utilisateur libre, recherche d\'un groupe...');
 
-      console.log('🌍 Recherche dans un rayon de 25km...');
+      console.log('🌍 Recherche d\'un groupe compatible...');
       const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
 
       if (!targetGroup) {
@@ -142,7 +143,7 @@ export class GroupOperationsService {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
           location_name: userLocation.locationName,
-          search_radius: 25000
+          search_radius: await getSearchRadius()
         };
 
         const { data: newGroup, error: createError } = await supabase
@@ -156,7 +157,7 @@ export class GroupOperationsService {
           throw createError;
         }
 
-        console.log('✅ Nouveau groupe géolocalisé créé (rayon 25km):', newGroup.id);
+        console.log('✅ Nouveau groupe géolocalisé créé:', newGroup.id);
         
         // Track group creation
         if (typeof window !== 'undefined' && window.dataLayer) {
@@ -250,7 +251,7 @@ export class GroupOperationsService {
       console.error('❌ Erreur dans joinRandomGroup:', error);
       toast({ 
         title: 'Erreur de recherche', 
-        description: 'Impossible de trouver ou créer un groupe dans votre zone (25km). Vérifiez votre connexion.', 
+        description: 'Impossible de trouver ou créer un groupe dans votre zone. Vérifiez votre connexion.', 
         variant: 'destructive' 
       });
       return false;

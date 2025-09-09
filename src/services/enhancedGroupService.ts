@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getSearchRadius } from '@/utils/searchRadiusUtils';
 import { GeolocationService, LocationData } from './geolocation';
 import { GroupGeolocationService } from './groupGeolocation';
 import { IntelligentCleanupService } from './intelligentCleanupService';
@@ -217,7 +218,7 @@ export class EnhancedGroupService {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
           location_name: userLocation.locationName,
-          search_radius: 25000
+          search_radius: await getSearchRadius()
         };
 
         const { data: newGroup, error: createError } = await supabase

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { Group } from '@/types/database';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
+import { getSearchRadius } from '@/utils/searchRadiusUtils';
 
 export class GroupGeolocationService {
   static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -74,8 +75,8 @@ export class GroupGeolocationService {
         return null;
       }
 
-      // Chercher un groupe dans un rayon strict de 25km parmi les groupes viables
-      const maxDistance = 25000; // 25km en mètres
+      // Chercher un groupe dans un rayon strict parmi les groupes viables
+      const maxDistance = await getSearchRadius();
       
       for (const group of viableGroups) {
         if (group.latitude && group.longitude) {
@@ -94,7 +95,7 @@ export class GroupGeolocationService {
         }
       }
 
-      console.log('📍 Aucun groupe viable dans la zone géographique de 25km - création recommandée');
+      console.log(`📍 Aucun groupe viable dans la zone géographique (${Math.round(maxDistance/1000)}km) - création recommandée`);
       return null;
      } catch (error) {
       console.error('❌ Erreur findCompatibleGroup:', error);

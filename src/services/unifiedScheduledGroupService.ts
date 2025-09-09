@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Group } from '@/types/database';
 import { LocationData } from './geolocation';
+import { getSearchRadius } from '@/utils/searchRadiusUtils';
 
 export interface UnifiedScheduledGroup extends Group {
   is_scheduled: boolean;
@@ -123,7 +124,7 @@ export class UnifiedScheduledGroupService {
         groupData.latitude = data.userLocation!.latitude;
         groupData.longitude = data.userLocation!.longitude;
         groupData.location_name = data.userLocation!.locationName;
-        groupData.search_radius = 10000;
+        groupData.search_radius = await getSearchRadius();
       }
 
       // Create the scheduled group

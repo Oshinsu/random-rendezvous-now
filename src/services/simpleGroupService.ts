@@ -3,6 +3,7 @@ import { toast } from '@/hooks/use-toast';
 import { GroupService } from './groupService';
 import type { Group } from '@/types/database';
 import type { LocationData } from '@/services/geolocation';
+import { getSearchRadius } from '@/utils/searchRadiusUtils';
 import type { GroupMember } from '@/types/groups';
 
 export class SimpleGroupService {
@@ -181,7 +182,7 @@ export class SimpleGroupService {
         latitude: location.latitude,
         longitude: location.longitude,
         location_name: location.locationName,
-        search_radius: 25000
+        search_radius: await getSearchRadius()
       };
 
       console.log('📝 Données du nouveau groupe:', newGroupData);

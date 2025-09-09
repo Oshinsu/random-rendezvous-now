@@ -30,7 +30,7 @@ export const GROUP_CONSTANTS = {
   
   // Paramètres de groupe INCHANGÉS
   MAX_PARTICIPANTS: 5,
-  SEARCH_RADIUS: 25000, // 25km en mètres
+  SEARCH_RADIUS: 25000, // 25km en mètres - Utiliser getSearchRadius() pour la valeur dynamique
   
   // Intervalles de rafraîchissement OPTIMISÉS pour réduire la charge serveur
   GROUP_REFETCH_INTERVAL: 2 * 60 * 1000, // 2 minutes (moins de stress)
