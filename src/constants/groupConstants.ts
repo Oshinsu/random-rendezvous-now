@@ -12,11 +12,11 @@ export const GROUP_CONSTANTS = {
   GROUP_FORMATION_TIMEOUT: 60 * 60 * 1000, // 1 HEURE - délai d'attente réaliste
   
   // === NETTOYAGE INTELLIGENT UNIFIÉ ===
-  // Participants considérés comme "abandonnés" - RÉDUIT pour harmoniser
-  PARTICIPANT_ABANDONED_THRESHOLD: 2 * 60 * 60 * 1000, // 2 heures pour abandon (réduit)
+  // Participants considérés comme "abandonnés" - CORRIGÉ pour éviter suppression massive
+  PARTICIPANT_ABANDONED_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures pour abandon (sécurisé)
   
-  // Groupes très anciens - nettoyage final - RÉDUIT pour harmoniser
-  VERY_OLD_GROUP_THRESHOLD: 12 * 60 * 60 * 1000, // 12 heures pour nettoyage final (réduit)
+  // Groupes très anciens - nettoyage final - CORRIGÉ pour éviter suppression massive  
+  VERY_OLD_GROUP_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures pour nettoyage final (sécurisé)
   
   // === HARMONISATION DES SEUILS ===
   PARTICIPANT_ACTIVITY_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)

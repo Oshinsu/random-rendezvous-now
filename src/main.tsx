@@ -7,8 +7,8 @@ import './i18n';
 import { IntelligentCleanupService } from './services/intelligentCleanupService';
 
 // 🚀 DÉMARRAGE DES SERVICES INTELLIGENTS
-// Initialize intelligent cleanup service
-IntelligentCleanupService.startPeriodicIntelligentCleanup();
+// TEMPORARILY DISABLED - Service de nettoyage désactivé pour éviter la suppression massive
+// IntelligentCleanupService.startPeriodicIntelligentCleanup();
 
 
 createRoot(document.getElementById('root')!).render(

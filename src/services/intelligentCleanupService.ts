@@ -162,7 +162,7 @@ export class IntelligentCleanupService {
       // Éviter de nettoyer les participants des groupes protégés (récents)
       const protectionThreshold = new Date(Date.now() - GROUP_CONSTANTS.ACTIVE_GROUP_PROTECTION).toISOString();
       
-      // CORRECTION CRITIQUE: Éviter les erreurs SQL UUID avec requête corrigée
+      // CORRECTION CRITIQUE: Requête sécurisée avec gestion des cas vides
       const { data: protectedGroupIds } = await supabase
         .from('groups')
         .select('id')
@@ -170,12 +170,18 @@ export class IntelligentCleanupService {
         .in('status', ['waiting', 'confirmed']);
 
       const protectedIds = protectedGroupIds?.map(g => g.id) || [];
+      
+      // SÉCURITÉ: Ne pas nettoyer si aucun groupe protégé trouvé (évite suppression massive)
+      if (protectedIds.length === 0) {
+        console.log('🛡️ [SÉCURITÉ] Aucun groupe protégé trouvé - nettoyage des participants annulé pour éviter suppression massive');
+        return;
+      }
 
       const { error } = await supabase
         .from('group_participants')
         .delete()
         .lt('last_seen', abandonedThreshold)
-        .not('group_id', 'in', `(${protectedIds.map(id => `'${id}'`).join(',')})`);
+        .not('group_id', 'in', protectedIds);
 
       if (error) {
         ErrorHandler.logError('CLEANUP_ABANDONED_PARTICIPANTS', error);
@@ -406,17 +412,20 @@ export class IntelligentCleanupService {
 
   /**
    * Démarrage du nettoyage périodique intelligent - SERVICE UNIQUE
+   * SÉCURISÉ avec intervalle plus long pour éviter les suppressions massives
    */
   static startPeriodicIntelligentCleanup(): void {
-    console.log('⏰ [INTELLIGENT CLEANUP] SEUL SERVICE DE NETTOYAGE ACTIF - Démarrage (30 min)');
+    console.log('⏰ [INTELLIGENT CLEANUP] SERVICE DE NETTOYAGE SÉCURISÉ - Démarrage (60 min)');
     
-    // Nettoyage immédiat
-    this.runIntelligentCleanup();
+    // Nettoyage immédiat différé pour laisser l'app se charger
+    setTimeout(() => {
+      this.runIntelligentCleanup();
+    }, 30000); // 30 secondes de délai initial
     
-    // Puis nettoyage toutes les 30 minutes selon GROUP_CONSTANTS.CLEANUP_FREQUENCY
+    // Puis nettoyage toutes les 60 minutes (plus conservateur)
     setInterval(() => {
       this.runIntelligentCleanup();
-    }, GROUP_CONSTANTS.CLEANUP_FREQUENCY);
+    }, 60 * 60 * 1000); // 1 heure au lieu de 30 minutes
   }
 
   /**
