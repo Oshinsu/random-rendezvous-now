@@ -9,10 +9,13 @@ import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
 /**
- * SERVICE UNIFIÉ AVEC FONCTIONNALITÉS DE TEMPGROUPSERVICE
+ * SERVICE UNIFIÉ DE GESTION DES GROUPES
  * 
- * Ce service unifie toutes les fonctionnalités de groupe, incluant
- * les méthodes simplifiées de TempGroupService pour éviter la récursion RLS
+ * Service principal consolidé pour toutes les opérations de groupe
+ * - Gestion des participations utilisateurs
+ * - Récupération des membres avec statut de connexion
+ * - Création et adhésion aux groupes
+ * - Synchronisation des comptages
  */
 
 export class UnifiedGroupService {
@@ -41,81 +44,6 @@ export class UnifiedGroupService {
     }
   }
 
-  // CORRIGÉ: Nettoyage SÉCURISÉ avec délais augmentés
-  static async forceCleanupOldGroups(): Promise<void> {
-    try {
-      console.log('🧹 NETTOYAGE SÉCURISÉ avec délais augmentés...');
-      
-      // 1. Supprimer SEULEMENT les participants vraiment inactifs (12 heures au lieu de 6)
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-      
-      const { error: cleanupParticipantsError } = await supabase
-        .from('group_participants')
-        .delete()
-        .lt('last_seen', twelveHoursAgo);
-
-      if (cleanupParticipantsError) {
-        console.error('❌ Erreur nettoyage participants:', cleanupParticipantsError);
-      } else {
-        console.log('✅ Participants inactifs depuis 12h supprimés');
-      }
-
-      // 2. Supprimer SEULEMENT les groupes en attente AVEC DÉLAI AUGMENTÉ (10 minutes + vides)
-      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      
-      const { error: cleanupWaitingError } = await supabase
-        .from('groups')
-        .delete()
-        .eq('status', 'waiting')
-        .eq('current_participants', 0) // SEULEMENT les groupes vides
-        .lt('created_at', tenMinutesAgo); // Délai augmenté à 10 minutes
-
-      if (cleanupWaitingError) {
-        console.error('❌ Erreur nettoyage groupes en attente:', cleanupWaitingError);
-      } else {
-        console.log('✅ Groupes en attente vides et anciens (10min+) supprimés');
-      }
-
-      // 3. Supprimer les groupes confirmés sans bar (situation impossible mais nettoyage de sécurité)
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      
-      const { error: cleanupConfirmedError } = await supabase
-        .from('groups')
-        .delete()
-        .eq('status', 'confirmed')
-        .is('bar_name', null)
-        .lt('created_at', oneHourAgo); // Seulement si anciens
-
-      if (cleanupConfirmedError) {
-        console.error('❌ Erreur nettoyage groupes confirmés sans bar:', cleanupConfirmedError);
-      } else {
-        console.log('✅ Groupes confirmés sans bar anciens supprimés');
-      }
-
-      // 4. Supprimer les groupes terminés (meeting_time + 3h)
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-      
-      const { error: cleanupCompletedError } = await supabase
-        .from('groups')
-        .delete()
-        .eq('status', 'confirmed')
-        .not('meeting_time', 'is', null)
-        .lt('meeting_time', threeHoursAgo);
-
-      if (cleanupCompletedError) {
-        console.error('❌ Erreur nettoyage groupes terminés:', cleanupCompletedError);
-      } else {
-        console.log('✅ Groupes terminés supprimés');
-      }
-
-      console.log('✅ NETTOYAGE SÉCURISÉ terminé avec délais augmentés');
-    } catch (error) {
-      ErrorHandler.logError('FORCE_CLEANUP_OLD_GROUPS', error);
-      console.error('❌ Erreur dans le nettoyage sécurisé:', error);
-    }
-  }
-
-  // CORRIGÉ: Recherche de participations SANS nettoyage automatique
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
       console.log('📋 Recherche des participations actives pour:', userId);
@@ -149,7 +77,7 @@ export class UnifiedGroupService {
         .eq('user_id', userId)
         .eq('status', 'confirmed')
         .in('groups.status', ['waiting', 'confirmed'])
-        .gt('last_seen', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Actif dans les dernières 24h
+        .gt('last_seen', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
       if (error) {
         ErrorHandler.logError('FETCH_USER_PARTICIPATIONS', error);
@@ -158,14 +86,14 @@ export class UnifiedGroupService {
         return [];
       }
 
-      // Validation supplémentaire côté client MOINS STRICTE
+      // Validation côté client pour éviter les groupes très anciens
       const validParticipations = (data || []).filter(participation => {
         const group = participation.groups;
         if (!group) return false;
         
-        // Vérifier que le groupe n'est pas TRÈS ancien (7 jours au lieu de 24h)
+        // Filtrer les groupes de plus de 7 jours
         const groupAge = Date.now() - new Date(group.created_at).getTime();
-        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 jours max
+        const maxAge = 7 * 24 * 60 * 60 * 1000;
         
         if (groupAge > maxAge) {
           console.log('🗑️ Groupe très ancien filtré:', group.id);
@@ -210,15 +138,14 @@ export class UnifiedGroupService {
       const realParticipantCount = participantsData?.length || 0;
       console.log('🔍 Nombre RÉEL de participants confirmés:', realParticipantCount);
 
+      // Synchronisation du comptage avec la base de données
       const { data: currentGroup, error: groupError } = await supabase
         .from('groups')
         .select('current_participants, status, bar_name')
         .eq('id', groupId)
         .single();
 
-      if (groupError) {
-        ErrorHandler.logError('FETCH_GROUP_INFO', groupError);
-      } else {
+      if (!groupError && currentGroup) {
         console.log('📊 Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
         
         if (currentGroup.current_participants !== realParticipantCount) {
@@ -243,7 +170,6 @@ export class UnifiedGroupService {
             };
             console.log('⏳ Remise en waiting et suppression du bar');
           } else if (realParticipantCount === 5 && currentGroup.status === 'waiting') {
-            // 🔥 ATTRIBUTION AUTOMATIQUE DE BAR !
             newStatus = 'confirmed';
             updateData = {
               ...updateData,
@@ -257,17 +183,15 @@ export class UnifiedGroupService {
             .update(updateData)
             .eq('id', groupId);
 
-          if (correctionError) {
-            ErrorHandler.logError('GROUP_COUNT_CORRECTION', correctionError);
-          } else {
+          if (!correctionError) {
             console.log('✅ Comptage corrigé avec succès:', realParticipantCount);
             
-            // 🚀 DÉCLENCHEMENT AUTOMATIQUE DE L'ATTRIBUTION DE BAR
+            // Attribution automatique de bar pour les groupes complets
             if (realParticipantCount === 5 && newStatus === 'confirmed' && !currentGroup.bar_name) {
               console.log('🤖 Déclenchement attribution automatique de bar...');
               setTimeout(async () => {
                 await AutomaticBarAssignmentService.assignBarToGroup(groupId);
-              }, 1000); // Délai pour s'assurer que la mise à jour du statut est propagée
+              }, 1000);
             }
           }
         }
@@ -316,102 +240,10 @@ export class UnifiedGroupService {
     }
   }
 
-  // ============= FONCTIONNALITÉS TEMPGROUPSERVICE INTÉGRÉES =============
-
-  /**
-   * Version simplifiée qui évite les requêtes complexes causant la récursion RLS
-   * (anciennement TempGroupService.getUserGroups)
-   */
-  static async getUserGroupsSimple(userId: string): Promise<Group[]> {
-    try {
-      console.log('🔍 Récupération des groupes utilisateur (version simplifiée)');
-      
-      // Requête directe et simple pour éviter la récursion RLS
-      const { data: groups, error } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('status', 'waiting')
-        .limit(1);
-
-      if (error) {
-        console.error('❌ Erreur récupération groupes:', error);
-        return [];
-      }
-
-      console.log('✅ Groupes récupérés:', groups?.length || 0);
-      // Type assertion to ensure compatibility with Group interface
-      return (groups || []) as Group[];
-    } catch (error) {
-      console.error('❌ Erreur getUserGroups:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Création de groupe simple (anciennement TempGroupService.createSimpleGroup)
-   */
-  static async createSimpleGroup(location: LocationData, userId: string): Promise<boolean> {
-    try {
-      console.log('🆕 Création de groupe simple');
-      
-      // NOUVEAU: Utilisation centralisée de la redirection IDF
-      const groupLocation = getGroupLocation(location);
-      
-      if (groupLocation.locationName === 'Paris Centre') {
-        console.log('🗺️ Utilisateur IDF - création de groupe parisien');
-      }
-      
-      // Utiliser la fonction atomique côté base pour éviter les timeouts et garantir la cohérence
-      const { data: result, error: rpcError } = await supabase.rpc('create_group_with_participant', {
-        p_latitude: groupLocation.latitude,
-        p_longitude: groupLocation.longitude,
-        p_location_name: groupLocation.locationName,
-        p_user_id: userId
-      });
-
-      if (rpcError) {
-        console.error('❌ Erreur RPC create_group_with_participant:', rpcError);
-        throw rpcError;
-      }
-
-      if (!result || (Array.isArray(result) && result.length === 0)) {
-        console.error('❌ Aucun groupe retourné par la fonction atomique');
-        throw new Error('Atomic group creation returned no result');
-      }
-
-      const created = Array.isArray(result) ? result[0] : result;
-      console.log('✅ Groupe créé (atomique):', created.id);
-
-      toast({ 
-        title: '🎉 Groupe créé', 
-        description: `Nouveau groupe créé dans votre zone.`
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('❌ Erreur createSimpleGroup:', error);
-      toast({ 
-        title: 'Erreur', 
-        description: 'Impossible de créer un groupe pour le moment.', 
-        variant: 'destructive' 
-      });
-      return false;
-    }
-  }
-
-  /**
-   * Alias pour verifyUserAuthentication (anciennement TempGroupService.verifyAuth)
-   */
-  static async verifyAuth(): Promise<boolean> {
-    return this.verifyUserAuthentication();
-  }
-
-  // CORRIGÉ: Création de groupe avec FONCTION ATOMIQUE
   static async createGroup(userLocation: LocationData, userId: string): Promise<Group | null> {
     try {
       console.log('🔐 Création ATOMIQUE d\'un nouveau groupe avec fonction PostgreSQL sécurisée');
       
-      // Vérifier d'abord si l'utilisateur peut créer un groupe (sécurité)
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         toast({
@@ -422,14 +254,14 @@ export class UnifiedGroupService {
         return null;
       }
 
-      // Détection utilisateur IDF - créer le groupe à Paris centre
+      // Application de la redirection IDF
       const groupLocation = getGroupLocation(userLocation);
       
       if (groupLocation.locationName === 'Paris Centre') {
         console.log('🗺️ Utilisateur IDF - création de groupe parisien');
       }
 
-      // TRANSACTION ATOMIQUE: Utiliser la fonction PostgreSQL sécurisée
+      // Transaction atomique avec fonction PostgreSQL
       const { data: result, error: transactionError } = await supabase.rpc('create_group_with_participant', {
         p_latitude: groupLocation.latitude,
         p_longitude: groupLocation.longitude,
@@ -440,7 +272,6 @@ export class UnifiedGroupService {
       if (transactionError) {
         console.error('❌ Erreur transaction atomique:', transactionError);
         
-        // Gestion spécifique des erreurs
         if (transactionError.message.includes('User is already in an active group')) {
           toast({
             title: 'Participation limitée',
@@ -487,12 +318,10 @@ export class UnifiedGroupService {
     }
   }
 
-  // CORRIGÉ: Rejoindre groupe avec VÉRIFICATION DE SÉCURITÉ
   static async joinGroup(groupId: string, userId: string, userLocation: LocationData): Promise<boolean> {
     try {
       console.log('🔐 Adhésion au groupe avec vérification de sécurité:', groupId);
       
-      // Vérifier l'authentification
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         toast({
@@ -503,7 +332,7 @@ export class UnifiedGroupService {
         return false;
       }
 
-      // VÉRIFICATION DE SÉCURITÉ: S'assurer que le groupe existe avant d'essayer de le rejoindre
+      // Vérification de l'existence du groupe
       const { data: groupExists, error: checkGroupError } = await supabase
         .from('groups')
         .select('id, status, current_participants, max_participants')
@@ -553,7 +382,7 @@ export class UnifiedGroupService {
         return false;
       }
 
-      // Données participant conformes aux contraintes de validation
+      // Insertion du participant
       const participantData = {
         group_id: groupId,
         user_id: userId,
@@ -576,12 +405,6 @@ export class UnifiedGroupService {
             description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.',
             variant: 'destructive'
           });
-        } else if (joinError.message.includes('Invalid coordinates')) {
-          toast({
-            title: 'Coordonnées invalides',
-            description: 'Les coordonnées de géolocalisation sont invalides.',
-            variant: 'destructive'
-          });
         } else {
           const appError = ErrorHandler.handleSupabaseError(joinError);
           ErrorHandler.showErrorToast(appError);
@@ -589,31 +412,27 @@ export class UnifiedGroupService {
         return false;
       }
 
-      console.log('✅ Adhésion réussie avec vérification sécurisée');
-      
-      // Vérification post-ajout pour attribution automatique et notification
+      console.log('✅ Participation ajoutée avec succès');
+
+      // Vérification post-adhésion pour attribution automatique de bar
       setTimeout(async () => {
-        console.log('🔍 Vérification attribution automatique après ajout...');
         const { data: updatedGroup } = await supabase
           .from('groups')
-          .select('current_participants, status, bar_name, max_participants')
+          .select('current_participants, status, bar_name')
           .eq('id', groupId)
           .single();
-          
-        if (updatedGroup && updatedGroup.current_participants === updatedGroup.max_participants) {
-          // Show celebratory notification when group becomes full
-          toast({
-            title: '🎉 Groupe complet !',
-            description: `Félicitations ! Votre groupe de ${updatedGroup.max_participants} personnes est maintenant complet. Un bar va être assigné automatiquement !`,
-            duration: 5000,
-          });
-          
-          if (updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
-            console.log('🤖 Déclenchement attribution automatique après ajout participant...');
-            await AutomaticBarAssignmentService.assignBarToGroup(groupId);
-          }
+
+        if (updatedGroup && updatedGroup.current_participants === 5 && 
+            updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
+          console.log('🤖 Groupe complet détecté, attribution de bar...');
+          await AutomaticBarAssignmentService.assignBarToGroup(groupId);
         }
       }, 2000);
+
+      toast({
+        title: '✅ Groupe rejoint',
+        description: 'Vous avez rejoint le groupe avec succès !',
+      });
       
       return true;
     } catch (error) {
@@ -626,24 +445,38 @@ export class UnifiedGroupService {
 
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
-      console.log('🔐 Quitter le groupe:', groupId);
+      console.log('🚪 Quitter le groupe:', groupId);
       
-      // Utilisation d'auth.uid() dans la requête SQL pour éviter les problèmes d'auth côté client
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        toast({
+          title: 'Erreur d\'authentification',
+          description: 'Vous devez être connecté.',
+          variant: 'destructive'
+        });
+        return false;
+      }
 
-      const { error: leaveError } = await supabase
+      const { error: deleteError } = await supabase
         .from('group_participants')
         .delete()
         .eq('group_id', groupId)
-        .eq('user_id', userId)
-        .eq('status', 'confirmed');
+        .eq('user_id', userId);
 
-      if (leaveError) {
-        const appError = ErrorHandler.handleSupabaseError(leaveError);
+      if (deleteError) {
+        console.error('❌ Erreur quitter groupe:', deleteError);
+        const appError = ErrorHandler.handleSupabaseError(deleteError);
         ErrorHandler.showErrorToast(appError);
         return false;
       }
 
-      console.log('✅ Groupe quitté avec succès (validation sécurisée)');
+      console.log('✅ Groupe quitté avec succès');
+      
+      toast({
+        title: '👋 Groupe quitté',
+        description: 'Vous avez quitté le groupe.',
+      });
+      
       return true;
     } catch (error) {
       ErrorHandler.logError('LEAVE_GROUP', error);

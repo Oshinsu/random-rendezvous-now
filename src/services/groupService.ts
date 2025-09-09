@@ -102,12 +102,4 @@ export class GroupService {
     }
   }
 
-  static async verifyAuth(): Promise<boolean> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      return !!user;
-    } catch {
-      return false;
-    }
-  }
 }
