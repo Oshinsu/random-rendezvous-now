@@ -4,6 +4,7 @@ import { GroupService } from './groupService';
 import type { Group } from '@/types/database';
 import type { LocationData } from '@/services/geolocation';
 import { getSearchRadius } from '@/utils/searchRadiusUtils';
+import { getGroupLocation } from '@/utils/parisRedirection';
 import type { GroupMember } from '@/types/groups';
 
 export class SimpleGroupService {
@@ -175,13 +176,16 @@ export class SimpleGroupService {
         return false;
       }
 
+      // NOUVEAU: Appliquer la redirection IDF
+      const groupLocation = getGroupLocation(location);
+
       const newGroupData = {
         status: 'waiting' as const,
         max_participants: 5,
         current_participants: 1,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        location_name: location.locationName,
+        latitude: groupLocation.latitude,
+        longitude: groupLocation.longitude,
+        location_name: groupLocation.locationName,
         search_radius: await getSearchRadius()
       };
 
@@ -212,9 +216,9 @@ export class SimpleGroupService {
           user_id: userId,
           status: 'confirmed' as const,
           last_seen: new Date().toISOString(),
-          latitude: location.latitude,
-          longitude: location.longitude,
-          location_name: location.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         });
 
       if (joinError) {
@@ -256,6 +260,9 @@ export class SimpleGroupService {
         return false;
       }
 
+      // NOUVEAU: Appliquer la redirection IDF
+      const groupLocation = getGroupLocation(location);
+
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .select('current_participants, max_participants, status')
@@ -283,9 +290,9 @@ export class SimpleGroupService {
           user_id: userId,
           status: 'confirmed' as const,
           last_seen: new Date().toISOString(),
-          latitude: location.latitude,
-          longitude: location.longitude,
-          location_name: location.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         });
 
       if (joinError) {

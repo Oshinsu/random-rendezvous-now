@@ -164,21 +164,4 @@ export class GeolocationService {
       return `${(meters / 1000).toFixed(1)} km`;
     }
   }
-
-  static detectIleDeFrance(locationName: string, address?: string): boolean {
-    const location = locationName.toLowerCase();
-    const fullAddress = address?.toLowerCase() || '';
-    
-    // Codes postaux IDF uniquement (75, 77, 78, 91, 92, 93, 94, 95)
-    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
-    
-    // Vérification par code postal uniquement
-    if (idfPostalCodes.test(fullAddress) || idfPostalCodes.test(location)) {
-      console.log('🗺️ [DÉTECTION IDF] Utilisateur IDF détecté par code postal');
-      return true;
-    }
-    
-    console.log('🗺️ [DÉTECTION IDF] Utilisateur hors IDF');
-    return false;
-  }
 }

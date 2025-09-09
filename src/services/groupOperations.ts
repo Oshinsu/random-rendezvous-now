@@ -6,6 +6,7 @@ import { GroupGeolocationService } from './groupGeolocation';
 import { getSearchRadius } from '@/utils/searchRadiusUtils';
 import { GroupService } from './groupService';
 import { toast } from '@/hooks/use-toast';
+import { getGroupLocation } from '@/utils/parisRedirection';
 
 export class GroupOperationsService {
   // CORRIGÉ: Nettoyage périodique RÉALISTE pour usage normal
@@ -131,8 +132,11 @@ export class GroupOperationsService {
 
       console.log('✅ [JOIN] Utilisateur libre, recherche d\'un groupe...');
 
+      // NOUVEAU: Appliquer la redirection IDF
+      const groupLocation = getGroupLocation(userLocation);
+
       console.log('🌍 Recherche d\'un groupe compatible...');
-      const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
+      const targetGroup = await GroupGeolocationService.findCompatibleGroup(groupLocation);
 
       if (!targetGroup) {
         console.log('🆕 Création d\'un nouveau groupe géolocalisé...');
@@ -140,9 +144,9 @@ export class GroupOperationsService {
           status: 'waiting',
           max_participants: 5,
           current_participants: 0,
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName,
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName,
           search_radius: await getSearchRadius()
         };
 
@@ -164,9 +168,9 @@ export class GroupOperationsService {
           window.dataLayer.push({
             event: 'group_create',
             group_id: newGroup.id,
-            location_name: userLocation.locationName,
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
+            location_name: groupLocation.locationName,
+            latitude: groupLocation.latitude,
+            longitude: groupLocation.longitude,
             max_participants: 5
           });
         }
@@ -176,9 +180,9 @@ export class GroupOperationsService {
           user_id: user.id,
           status: 'confirmed',
           last_seen: new Date().toISOString(),
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         };
 
         const { error: joinError } = await supabase
@@ -195,14 +199,14 @@ export class GroupOperationsService {
           window.dataLayer.push({
             event: 'group_join',
             group_id: newGroup.id,
-            location_name: userLocation.locationName,
+            location_name: groupLocation.locationName,
             is_creator: true
           });
         }
 
         toast({ 
           title: '🎉 Nouveau groupe créé', 
-          description: `Groupe créé dans votre zone (${userLocation.locationName}). Vous pouvez fermer l'app !`, 
+          description: `Groupe créé dans votre zone (${groupLocation.locationName}). Vous pouvez fermer l'app !`, 
         });
         
         console.log('✅ [GEOLOC_OBLIGATOIRE] Utilisateur ajouté au nouveau groupe géolocalisé');
@@ -215,9 +219,9 @@ export class GroupOperationsService {
           user_id: user.id,
           status: 'confirmed',
           last_seen: new Date().toISOString(),
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         };
 
         const { error: joinError } = await supabase
@@ -234,14 +238,14 @@ export class GroupOperationsService {
           window.dataLayer.push({
             event: 'group_join',
             group_id: targetGroup.id,
-            location_name: userLocation.locationName,
+            location_name: groupLocation.locationName,
             is_creator: false
           });
         }
 
         toast({ 
           title: '✅ Groupe rejoint', 
-          description: `Vous avez rejoint un groupe dans votre zone (${userLocation.locationName}). Vous pouvez fermer l'app !`, 
+          description: `Vous avez rejoint un groupe dans votre zone (${groupLocation.locationName}). Vous pouvez fermer l'app !`, 
         });
 
         console.log('✅ [GEOLOC_OBLIGATOIRE] Utilisateur ajouté au groupe géolocalisé existant');

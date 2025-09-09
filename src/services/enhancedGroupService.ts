@@ -6,6 +6,7 @@ import { IntelligentCleanupService } from './intelligentCleanupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { toast } from '@/hooks/use-toast';
+import { getGroupLocation } from '@/utils/parisRedirection';
 import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -205,8 +206,11 @@ export class EnhancedGroupService {
 
       console.log('✅ [ENHANCED] Utilisateur libre, recherche avec nouvelle logique...');
 
+      // NOUVEAU: Appliquer la redirection IDF
+      const groupLocation = getGroupLocation(userLocation);
+
       // Recherche avec filtres anti-zombies
-      const targetGroup = await GroupGeolocationService.findCompatibleGroup(userLocation);
+      const targetGroup = await GroupGeolocationService.findCompatibleGroup(groupLocation);
 
       if (!targetGroup) {
         console.log('🆕 [ENHANCED] Création d\'un nouveau groupe (priorité ou aucun groupe viable)...');
@@ -215,9 +219,9 @@ export class EnhancedGroupService {
           status: 'waiting',
           max_participants: 5,
           current_participants: 0,
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName,
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName,
           search_radius: await getSearchRadius()
         };
 
@@ -239,9 +243,9 @@ export class EnhancedGroupService {
           user_id: user.id,
           status: 'confirmed',
           last_seen: new Date().toISOString(),
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         };
 
         const { error: joinError } = await supabase
@@ -255,7 +259,7 @@ export class EnhancedGroupService {
 
         toast({ 
           title: '🎉 Nouveau groupe créé', 
-          description: `Groupe créé dans votre zone (${userLocation.locationName}). Attendez d'autres participants !`, 
+          description: `Groupe créé dans votre zone (${groupLocation.locationName}). Attendez d'autres participants !`, 
         });
         
         return true;
@@ -267,9 +271,9 @@ export class EnhancedGroupService {
           user_id: user.id,
           status: 'confirmed',
           last_seen: new Date().toISOString(),
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          location_name: userLocation.locationName
+          latitude: groupLocation.latitude,
+          longitude: groupLocation.longitude,
+          location_name: groupLocation.locationName
         };
 
         const { error: joinError } = await supabase

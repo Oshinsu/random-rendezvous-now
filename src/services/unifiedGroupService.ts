@@ -4,6 +4,7 @@ import { ErrorHandler } from '@/utils/errorHandling';
 import { SystemMessagingService } from './systemMessaging';
 import { AutomaticBarAssignmentService } from './automaticBarAssignment';
 import { toast } from '@/hooks/use-toast';
+import { getGroupLocation } from '@/utils/parisRedirection';
 import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -353,15 +354,10 @@ export class UnifiedGroupService {
     try {
       console.log('🆕 Création de groupe simple');
       
-      // Détection utilisateur IDF - créer le groupe à Paris centre
-      const isIdfUser = this.isUserInIleDeFrance(location);
-      const groupLocation = isIdfUser ? {
-        latitude: 48.8566,   // Paris centre
-        longitude: 2.3522,   // Paris centre
-        locationName: 'Paris Centre'
-      } : location;
+      // NOUVEAU: Utilisation centralisée de la redirection IDF
+      const groupLocation = getGroupLocation(location);
       
-      if (isIdfUser) {
+      if (groupLocation.locationName === 'Paris Centre') {
         console.log('🗺️ Utilisateur IDF - création de groupe parisien');
       }
       
@@ -427,14 +423,9 @@ export class UnifiedGroupService {
       }
 
       // Détection utilisateur IDF - créer le groupe à Paris centre
-      const isIdfUser = this.isUserInIleDeFrance(userLocation);
-      const groupLocation = isIdfUser ? {
-        latitude: 48.8566,   // Paris centre
-        longitude: 2.3522,   // Paris centre
-        locationName: 'Paris Centre'
-      } : userLocation;
+      const groupLocation = getGroupLocation(userLocation);
       
-      if (isIdfUser) {
+      if (groupLocation.locationName === 'Paris Centre') {
         console.log('🗺️ Utilisateur IDF - création de groupe parisien');
       }
 
@@ -494,17 +485,6 @@ export class UnifiedGroupService {
       ErrorHandler.showErrorToast(appError);
       return null;
     }
-  }
-
-  // Méthode pour détecter si un utilisateur est en Île-de-France
-  private static isUserInIleDeFrance(location: LocationData): boolean {
-    const locationName = location.locationName.toLowerCase();
-    
-    // Codes postaux IDF uniquement (75, 77, 78, 91, 92, 93, 94, 95)
-    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
-    
-    // Vérification par code postal uniquement
-    return idfPostalCodes.test(locationName);
   }
 
   // CORRIGÉ: Rejoindre groupe avec VÉRIFICATION DE SÉCURITÉ

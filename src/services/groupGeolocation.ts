@@ -4,6 +4,8 @@ import { GeolocationService, LocationData } from '@/services/geolocation';
 import { Group } from '@/types/database';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { getSearchRadius } from '@/utils/searchRadiusUtils';
+import { getGroupLocation } from '@/utils/parisRedirection';
+import { ErrorHandler } from '@/utils/errorHandling';
 
 export class GroupGeolocationService {
   static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -25,15 +27,10 @@ export class GroupGeolocationService {
     try {
       console.log('🌍 Recherche de groupe compatible...');
       
-      // Détection utilisateur IDF - rediriger vers Paris centre
-      const isIdfUser = this.isUserInIleDeFrance(userLocation);
-      const searchLocation = isIdfUser ? {
-        latitude: 48.8566,   // Paris centre
-        longitude: 2.3522,   // Paris centre
-        locationName: 'Paris Centre'
-      } : userLocation;
+      // NOUVEAU: Utilisation centralisée de la redirection IDF
+      const searchLocation = getGroupLocation(userLocation);
       
-      if (isIdfUser) {
+      if (searchLocation.locationName === 'Paris Centre') {
         console.log('🗺️ Utilisateur IDF détecté - recherche de groupes parisiens');
       }
       
@@ -98,23 +95,8 @@ export class GroupGeolocationService {
       console.log(`📍 Aucun groupe viable dans la zone géographique (${Math.round(maxDistance/1000)}km) - création recommandée`);
       return null;
      } catch (error) {
-      console.error('❌ Erreur findCompatibleGroup:', error);
+      ErrorHandler.logError('FIND_COMPATIBLE_GROUP', error);
       return null;
     }
-  }
-
-  // Méthode pour détecter si un utilisateur est en Île-de-France
-  private static isUserInIleDeFrance(location: LocationData): boolean {
-    const locationName = location.locationName.toLowerCase();
-    console.log('🔍 Vérification IDF pour location:', locationName);
-    
-    // Codes postaux IDF (75, 77, 78, 91, 92, 93, 94, 95)
-    // Support multiple formats: "Paris 75001", "Paris (75001)", "75001", "Localisation 75001"
-    const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
-    
-    const isIdf = idfPostalCodes.test(locationName);
-    console.log(isIdf ? '✅ Utilisateur IDF détecté' : '❌ Utilisateur hors IDF');
-    
-    return isIdf;
   }
 }
