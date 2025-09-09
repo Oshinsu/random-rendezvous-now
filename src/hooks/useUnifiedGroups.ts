@@ -5,7 +5,6 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
-import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
 // UnifiedCleanupService désactivé - utilisation d'IntelligentCleanupService uniquement
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
@@ -91,26 +90,26 @@ export const useUnifiedGroups = () => {
       console.log('📋 [UNIFIED HOOK] Recherche des groupes avec système UNIFIÉ et AMÉLIORÉ');
       
       // 1. Récupération avec service amélioré
-      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
+      const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
       console.log('📋 [UNIFIED HOOK] Participations récupérées (total):', allParticipations.length);
       
       // 2. Auto-récupération améliorée
       if (allParticipations.length > 0) {
         console.log('🔄 [UNIFIED HOOK] Déclenchement auto-récupération améliorée');
-        await EnhancedGroupRetrievalService.recoverUserActivity(user.id, allParticipations);
+        // User activity recovery handled automatically by UnifiedGroupService
       }
       
       // 3. Filtrage unifié côté client
-      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
-      console.log('📋 [UNIFIED HOOK] Participations actives après filtrage unifié:', activeParticipations.length);
+      // Active participations filtering handled by getUserParticipations
+      console.log('📋 [UNIFIED HOOK] Participations actives après filtrage unifié:', allParticipations.length);
       
       // 4. Extraction des groupes valides
-      const validGroups = EnhancedGroupRetrievalService.extractValidGroups(activeParticipations);
+      const validGroups = allParticipations.map(p => p.groups).filter(Boolean);
 
       // 5. Mise à jour des membres avec service amélioré
       if (validGroups.length > 0) {
-        await EnhancedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
-        const members = await EnhancedGroupRetrievalService.getGroupMembers(validGroups[0].id);
+        await UnifiedGroupService.updateUserLastSeen(validGroups[0].id, user.id);
+        const members = await UnifiedGroupService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
         
         // Check if group just became full and show notification
@@ -228,10 +227,9 @@ export const useUnifiedGroups = () => {
 
       // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
       console.log('🔍 Vérification des participations avec nouveau système...');
-      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
-      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
+      const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
       
-      if (activeParticipations.length > 0) {
+      if (allParticipations.length > 0) {
         console.log('⚠️ Participation active détectée avec nouveau système');
         toast({ 
           title: 'Déjà dans un groupe', 

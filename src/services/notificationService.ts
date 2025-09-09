@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedGroupService } from './enhancedGroupService';
+import { UnifiedGroupService } from './unifiedGroupService';
 import { ErrorHandler } from '@/utils/errorHandling';
 
 /**
@@ -203,7 +203,9 @@ export class NotificationService {
   static async notifyGroupParticipants(groupId: string, title: string, body: string, data?: any): Promise<void> {
     try {
       // Obtenir les participants à notifier (pas abandonnés)
-      const participantsToNotify = await EnhancedGroupService.getParticipantsForNotification(groupId);
+      // Get all group members for notification
+      const members = await UnifiedGroupService.getGroupMembers(groupId);
+      const participantsToNotify = members.map(m => m.id);
       
       console.log(`📱 [NOTIFICATIONS] Notification à ${participantsToNotify.length} participants du groupe ${groupId}`);
       

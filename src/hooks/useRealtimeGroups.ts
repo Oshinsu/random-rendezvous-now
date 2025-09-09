@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedGroupRetrievalService } from '@/services/enhancedGroupRetrieval';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
@@ -45,14 +44,13 @@ export const useRealtimeGroups = () => {
     if (!user) return [];
 
     try {
-      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
-      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
-      const validGroups = EnhancedGroupRetrievalService.extractValidGroups(activeParticipations);
+      const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
+      const validGroups = allParticipations.map(p => p.groups).filter(Boolean);
 
       // Update members for first active group
       if (validGroups.length > 0) {
-        await EnhancedGroupRetrievalService.updateUserActivity(validGroups[0].id, user.id);
-        const members = await EnhancedGroupRetrievalService.getGroupMembers(validGroups[0].id);
+        await UnifiedGroupService.updateUserLastSeen(validGroups[0].id, user.id);
+        const members = await UnifiedGroupService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
       } else {
         setGroupMembers([]);
@@ -400,10 +398,9 @@ export const useRealtimeGroups = () => {
       }
 
       // Check existing participations
-      const allParticipations = await EnhancedGroupRetrievalService.getUserParticipations(user.id);
-      const activeParticipations = EnhancedGroupRetrievalService.filterActiveParticipations(allParticipations);
+      const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
       
-      if (activeParticipations.length > 0) {
+      if (allParticipations.length > 0) {
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif.', 

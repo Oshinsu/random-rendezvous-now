@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { EnhancedGroupService } from '@/services/enhancedGroupService';
+import { UnifiedGroupService } from '@/services/unifiedGroupService';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { useActivityHeartbeat } from './useActivityHeartbeat';
@@ -27,7 +27,7 @@ export const useEnhancedGroups = () => {
 
   // Initialiser le service au premier chargement
   useEffect(() => {
-    EnhancedGroupService.initialize();
+    // Service initialization not needed for UnifiedGroupService
   }, []);
 
   // Récupération des groupes avec filtrage strict
@@ -39,7 +39,8 @@ export const useEnhancedGroups = () => {
     queryKey: ['enhancedUserGroups', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      return await EnhancedGroupService.getUserActiveGroups(user.id);
+      const participations = await UnifiedGroupService.getUserParticipations(user.id);
+      return participations.map(p => p.groups).filter(Boolean);
     },
     enabled: !!user?.id,
     refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
@@ -55,7 +56,7 @@ export const useEnhancedGroups = () => {
     queryKey: ['enhancedGroupMembers', activeGroup?.id],
     queryFn: async () => {
       if (!activeGroup?.id) return [];
-      return await EnhancedGroupService.getGroupActiveMembers(activeGroup.id);
+      return await UnifiedGroupService.getGroupMembers(activeGroup.id);
     },
     enabled: !!activeGroup?.id,
     refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
@@ -122,12 +123,9 @@ export const useEnhancedGroups = () => {
         description: `Création du groupe à ${locationToUse.locationName}`,
       });
 
-      const success = await EnhancedGroupService.joinRandomGroup(
-        user,
-        locationToUse,
-        loading,
-        setLoading
-      );
+      // Create a new group instead of joining random
+      const newGroup = await UnifiedGroupService.createGroup(locationToUse, user.id);
+      const success = !!newGroup;
 
       if (success) {
         // Invalider les données (refetch automatique)
@@ -156,13 +154,7 @@ export const useEnhancedGroups = () => {
       queryClient.setQueryData(['enhancedGroupMembers', groupId], []);
     };
 
-    await EnhancedGroupService.leaveGroup(
-      groupId,
-      user,
-      loading,
-      setLoading,
-      clearUserGroupsState
-    );
+    await UnifiedGroupService.leaveGroup(groupId, user.id);
 
     // Invalider les données (refetch automatique)
     queryClient.invalidateQueries({ queryKey: ['enhancedUserGroups'] });
