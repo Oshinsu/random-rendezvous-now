@@ -34,6 +34,6 @@
 
 ## Utilisation
 
-L'IntelligentCleanupService est automatiquement initialisé par EnhancedGroupService.initialize() et fonctionne de manière autonome.
+L'IntelligentCleanupService est automatiquement initialisé dans main.tsx au démarrage de l'application et fonctionne de manière autonome.
 
 Aucun autre service de nettoyage ne doit être activé ou utilisé.
