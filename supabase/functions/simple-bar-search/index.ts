@@ -419,135 +419,75 @@ serve(async (req) => {
       console.log('⚠️ [GÉOLOCALISATION] Erreur reverse geocoding, utilisation coordonnées originales:', error);
     }
 
-    // NOUVEAU SYSTÈME DE FALLBACK INTELLIGENT avec adaptation IDF
-    let selectedBars = [];
-    let searchRadius = isIdfUser ? 12000 : 25000; // Rayon réduit pour Paris intra-muros
-    let fallbackLevel = 0;
-
-    // NIVEAU 1: Recherche prioritaire (Paris pour IDF, normale pour autres)
-    const searchType = isIdfUser ? 'Paris intra-muros (12km)' : 'normale (25km)';
-    console.log(`🎯 [FALLBACK NIVEAU 1] Recherche ${searchType}`);
-    let allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
+    // Recherche simplifiée avec rayon fixe de 25km pour tous
+    console.log('🎯 [RECHERCHE SIMPLIFIÉE] Rayon fixe de 25km pour tous les utilisateurs');
+    let allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, 25000, apiKey);
     
     if (allPlaces.length === 0) {
-      console.log('⚠️ [FALLBACK NIVEAU 1] Aucun lieu trouvé - passage au niveau 2');
-      fallbackLevel = 1;
-    } else {
-      console.log(`📋 [FALLBACK NIVEAU 1] ${allPlaces.length} lieux trouvés initialement`);
-
-      // Filtrage des lieux ouverts
-      const openPlaces = allPlaces.filter(place => {
-        const currentHours = place.currentOpeningHours;
-        if (currentHours && currentHours.openNow !== undefined) {
-          return currentHours.openNow === true;
-        }
-        return true; // Si pas d'info, on assume ouvert
-      });
-
-      console.log(`🕐 [FALLBACK NIVEAU 1] ${openPlaces.length} lieux potentiellement ouverts`);
-
-      // Application du filtrage strict
-      const realBars = openPlaces.filter(isRealBarOrPub);
-      console.log(`🍺 [FALLBACK NIVEAU 1] ${realBars.length} vrais bars après filtrage strict`);
-
-      if (realBars.length > 0) {
-        // Vérification du statut avec Places Details API
-        console.log('🔍 [FALLBACK NIVEAU 1] Vérification statut opérationnel...');
-        for (const bar of realBars) {
-          const isOperational = await verifyBarBusinessStatus(bar.id, apiKey);
-          if (isOperational) {
-            selectedBars.push(bar);
-            console.log(`✅ [FALLBACK NIVEAU 1] Bar validé: ${bar.displayName?.text}`);
-          } else {
-            console.log(`❌ [FALLBACK NIVEAU 1] Bar rejeté (fermé): ${bar.displayName?.text}`);
-          }
-        }
-
-        if (selectedBars.length > 0) {
-          console.log(`🏆 [FALLBACK NIVEAU 1] ${selectedBars.length} bars opérationnels trouvés`);
-        } else {
-          console.log('⚠️ [FALLBACK NIVEAU 1] Aucun bar opérationnel - passage au niveau 2');
-          fallbackLevel = 2;
-          selectedBars = realBars; // Utiliser les bars filtrés mais non vérifiés
-        }
-      } else {
-        console.log('⚠️ [FALLBACK NIVEAU 1] Aucun vrai bar trouvé - passage au niveau 2');
-        fallbackLevel = 2;
-      }
-    }
-
-    // NIVEAU 2: Fallback intelligent
-    if (fallbackLevel >= 1 && selectedBars.length === 0) {
-      if (isIdfUser) {
-        console.log('🔄 [FALLBACK NIVEAU 2 IDF] Retour aux coordonnées utilisateur (25km)');
-        searchLatitude = latitude;  // Retour aux coordonnées originales
-        searchLongitude = longitude;
-        searchRadius = 25000;
-      } else {
-        console.log('🎯 [FALLBACK NIVEAU 2] Expansion du rayon à 35km');
-        searchRadius = 35000;
-      }
-      allPlaces = await searchBarsWithRadius(searchLatitude, searchLongitude, searchRadius, apiKey);
-      
-      if (allPlaces.length > 0) {
-        const openPlaces = allPlaces.filter(place => {
-          const currentHours = place.currentOpeningHours;
-          if (currentHours && currentHours.openNow !== undefined) {
-            return currentHours.openNow === true;
-          }
-          return true;
-        });
-
-        const realBars = openPlaces.filter(isRealBarOrPub);
-        console.log(`🍺 [FALLBACK NIVEAU 2] ${realBars.length} vrais bars trouvés avec rayon étendu`);
-
-        if (realBars.length > 0) {
-          selectedBars = realBars;
-          console.log(`✅ [FALLBACK NIVEAU 2] Utilisation des bars filtrés (non vérifiés)`);
-        } else {
-          console.log('⚠️ [FALLBACK NIVEAU 2] Aucun vrai bar trouvé - passage au niveau 3');
-          fallbackLevel = 3;
-        }
-      } else {
-        console.log('⚠️ [FALLBACK NIVEAU 2] Aucun lieu trouvé - passage au niveau 3');
-        fallbackLevel = 3;
-      }
-    }
-
-    // NIVEAU 3: Rayon maximal
-    if (fallbackLevel >= 3 && selectedBars.length === 0) {
-      console.log('🎯 [FALLBACK NIVEAU 3] Expansion du rayon à 50km (dernier recours)');
-      searchRadius = 50000;
-      // Utiliser les coordonnées originales pour le fallback final
-      allPlaces = await searchBarsWithRadius(latitude, longitude, searchRadius, apiKey);
-      
-      if (allPlaces.length > 0) {
-        const openPlaces = allPlaces.filter(place => {
-          const currentHours = place.currentOpeningHours;
-          if (currentHours && currentHours.openNow !== undefined) {
-            return currentHours.openNow === true;
-          }
-          return true;
-        });
-
-        const realBars = openPlaces.filter(isRealBarOrPub);
-        console.log(`🍺 [FALLBACK NIVEAU 3] ${realBars.length} vrais bars trouvés avec rayon maximal`);
-
-        if (realBars.length > 0) {
-          selectedBars = realBars;
-          console.log(`✅ [FALLBACK NIVEAU 3] Utilisation des bars filtrés (rayon maximal)`);
-        }
-      }
-    }
-
-    // ÉCHEC FINAL: Aucun bar trouvé malgré tous les fallbacks
-    if (selectedBars.length === 0) {
-      console.log('❌ [ÉCHEC TOTAL] Aucun bar trouvé malgré tous les niveaux de fallback');
+      console.log('💥 [RECHERCHE SIMPLIFIÉE] Aucun lieu trouvé');
       return new Response(
         JSON.stringify({ 
-          error: 'Aucun bar trouvé dans votre région', 
-          details: `Recherche effectuée jusqu'à ${searchRadius/1000}km sans succès`,
-          fallbackLevel: fallbackLevel,
+          error: 'Aucun bar trouvé dans la zone',
+          coordinates: { latitude: searchLatitude, longitude: searchLongitude },
+          searchRadius: 25000 
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`📋 [RECHERCHE SIMPLIFIÉE] ${allPlaces.length} lieux trouvés`);
+
+    // Filtrage des lieux ouverts
+    const openPlaces = allPlaces.filter(place => {
+      const currentHours = place.currentOpeningHours;
+      if (currentHours && currentHours.openNow !== undefined) {
+        return currentHours.openNow === true;
+      }
+      return true; // Si pas d'info, on assume ouvert
+    });
+
+    console.log(`🕐 [RECHERCHE SIMPLIFIÉE] ${openPlaces.length} lieux potentiellement ouverts`);
+
+    // Application du filtrage strict
+    const realBars = openPlaces.filter(isRealBarOrPub);
+    console.log(`🍺 [RECHERCHE SIMPLIFIÉE] ${realBars.length} vrais bars après filtrage strict`);
+
+    if (realBars.length === 0) {
+      console.log('💥 [RECHERCHE SIMPLIFIÉE] Aucun vrai bar trouvé');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Aucun bar valide trouvé',
+          coordinates: { latitude: searchLatitude, longitude: searchLongitude },
+          totalPlacesFound: allPlaces.length 
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Vérification du statut avec Places Details API
+    let selectedBars = [];
+    console.log('🔍 [RECHERCHE SIMPLIFIÉE] Vérification statut opérationnel...');
+    for (const bar of realBars) {
+      const isOperational = await verifyBarBusinessStatus(bar.id, apiKey);
+      if (isOperational) {
+        selectedBars.push(bar);
+        console.log(`✅ [RECHERCHE SIMPLIFIÉE] Bar validé: ${bar.displayName?.text}`);
+      } else {
+        console.log(`❌ [RECHERCHE SIMPLIFIÉE] Bar rejeté (fermé): ${bar.displayName?.text}`);
+      }
+    }
+
+    // Si aucun bar opérationnel, utiliser les bars filtrés
+    if (selectedBars.length === 0) {
+      console.log('⚠️ [RECHERCHE SIMPLIFIÉE] Aucun bar opérationnel vérifié, utilisation des bars filtrés');
+      selectedBars = realBars;
+    }
           searchRadius: searchRadius
         }),
         { 
