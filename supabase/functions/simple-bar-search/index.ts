@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -350,6 +351,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now();
+
   try {
     const { latitude, longitude } = await req.json()
 
@@ -377,10 +380,11 @@ serve(async (req) => {
 
     console.log('🔍 [RECHERCHE INTELLIGENTE AMÉLIORÉE] Début avec filtrage renforcé:', { latitude, longitude });
 
-    // NOUVEAU: Détection utilisateur IDF et redirection vers Paris
+    // NOUVEAU: Détection utilisateur IDF et redirection vers Paris (avec diagnostic renforcé)
     let searchLatitude = latitude;
     let searchLongitude = longitude;
     let isIdfUser = false;
+    let detectionMethod = 'none';
     
     try {
       // Faire un reverse geocoding pour détecter la localisation
@@ -394,26 +398,49 @@ serve(async (req) => {
         const locationName = geoData.display_name || '';
         const address = geoData.address || {};
         
+        console.log('🔍 [DIAGNOSTIC IDF] Données géocodage:', {
+          display_name: locationName,
+          city: address.city,
+          postcode: address.postcode,
+          state: address.state,
+          country: address.country
+        });
+        
         // Détecter si utilisateur est en Île-de-France
         const fullAddress = `${address.city || ''} ${address.postcode || ''} ${address.state || ''}`.toLowerCase();
         
         // Codes postaux IDF et villes principales
         const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
-        const idfKeywords = ['paris', 'île-de-france', 'hauts-de-seine', 'seine-saint-denis', 'val-de-marne'];
+        const idfKeywords = ['paris', 'île-de-france', 'hauts-de-seine', 'seine-saint-denis', 'val-de-marne', 'essonne', 'yvelines', 'val-d\'oise', 'seine-et-marne'];
         
-        isIdfUser = idfPostalCodes.test(fullAddress) || 
-                   idfKeywords.some(keyword => locationName.toLowerCase().includes(keyword) || fullAddress.includes(keyword));
+        // Tests de détection avec logging
+        const postalTest = idfPostalCodes.test(fullAddress);
+        const keywordTest = idfKeywords.some(keyword => locationName.toLowerCase().includes(keyword) || fullAddress.includes(keyword));
+        
+        console.log('🧪 [DIAGNOSTIC IDF] Tests de détection:', {
+          fullAddress,
+          locationName: locationName.toLowerCase(),
+          postalTest,
+          keywordTest
+        });
+        
+        isIdfUser = postalTest || keywordTest;
+        detectionMethod = postalTest ? 'postal_code' : keywordTest ? 'keyword' : 'none';
         
         if (isIdfUser) {
           // Rediriger la recherche vers le centre de Paris
-          searchLatitude = 48.8566;  // Centre de Paris
+          searchLatitude = 48.8566;  // Centre de Paris (Place du Châtelet)
           searchLongitude = 2.3522;
-          console.log('🗼 [REDIRECTION PARIS] Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
+          console.log('🗼 [REDIRECTION PARIS] ✅ Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
           console.log(`📍 [REDIRECTION PARIS] Coordonnées originales: ${latitude}, ${longitude}`);
           console.log(`🎯 [REDIRECTION PARIS] Nouvelles coordonnées: ${searchLatitude}, ${searchLongitude}`);
+          console.log(`🔍 [REDIRECTION PARIS] Méthode de détection: ${detectionMethod}`);
         } else {
-          console.log('🌍 [GÉOLOCALISATION] Utilisateur hors IDF - recherche normale');
+          console.log('🌍 [GÉOLOCALISATION] ❌ Utilisateur hors IDF - recherche normale');
+          console.log(`🔍 [GÉOLOCALISATION] Location: ${locationName}`);
         }
+      } else {
+        console.log('⚠️ [GÉOLOCALISATION] Erreur API géocodage, code:', geoResponse.status);
       }
     } catch (error) {
       console.log('⚠️ [GÉOLOCALISATION] Erreur reverse geocoding, utilisation coordonnées originales:', error);
@@ -522,7 +549,12 @@ serve(async (req) => {
           lat: randomBar.location.latitude,
           lng: randomBar.location.longitude
         }
-      }
+      },
+      searchRadius: 25000,
+      idfRedirection: isIdfUser,
+      detectionMethod: detectionMethod,
+      originalCoords: { lat: latitude, lng: longitude },
+      searchCoords: { lat: searchLatitude, lng: searchLongitude }
     };
 
     console.log('🎯 [SÉLECTION FINALE] Bar sélectionné:', {
@@ -531,10 +563,11 @@ serve(async (req) => {
       primaryType: randomBar.primaryType,
       priority: randomSelection.priority,
       priorityLabel: randomSelection.priority === 3 ? 'BAR PUR' : 
-                    randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
-                    randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE',
-      fallbackLevel: fallbackLevel,
-      searchRadius: searchRadius
+                     randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
+                     randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE',
+      searchRadius: 25000,
+      idfRedirection: isIdfUser,
+      detectionMethod: detectionMethod
     });
 
     // RAPPORT FRANÇAIS DÉTAILLÉ
@@ -548,8 +581,8 @@ serve(async (req) => {
       'Fast-foods exclus': '✅ Détection stricte',
       'Priorité maximale': maxPriority,
       'Priorité sélectionnée': randomSelection.priority,
-      'Niveau de fallback': fallbackLevel,
-      'Rayon de recherche': `${searchRadius/1000}km`
+      'Rayon de recherche': '25km',
+      'Redirection IDF': isIdfUser
     });
 
     // Log successful API call
@@ -572,8 +605,8 @@ serve(async (req) => {
             longitude, 
             selected_bar: result.name,
             total_bars_found: selectedBars.length,
-            fallback_level: fallbackLevel,
-            search_radius: searchRadius
+            search_radius: 25000,
+            idf_redirection: isIdfUser
           }
         }
       });

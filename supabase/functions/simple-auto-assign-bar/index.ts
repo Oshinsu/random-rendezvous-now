@@ -416,10 +416,11 @@ serve(async (req) => {
 
     console.log('🔍 [RECHERCHE INTELLIGENTE AMÉLIORÉE] Début avec filtrage renforcé:', { searchLatitude, searchLongitude });
 
-    // NOUVEAU: Détection utilisateur IDF et redirection vers Paris
+    // NOUVEAU: Détection utilisateur IDF et redirection vers Paris (avec diagnostic renforcé)
     let finalLatitude = searchLatitude;
     let finalLongitude = searchLongitude;
     let isIdfUser = false;
+    let detectionMethod = 'none';
     
     try {
       // Faire un reverse geocoding pour détecter la localisation
@@ -433,26 +434,49 @@ serve(async (req) => {
         const locationName = geoData.display_name || '';
         const address = geoData.address || {};
         
+        console.log('🔍 [DIAGNOSTIC IDF] Données géocodage:', {
+          display_name: locationName,
+          city: address.city,
+          postcode: address.postcode,
+          state: address.state,
+          country: address.country
+        });
+        
         // Détecter si utilisateur est en Île-de-France
         const fullAddress = `${address.city || ''} ${address.postcode || ''} ${address.state || ''}`.toLowerCase();
         
         // Codes postaux IDF et villes principales
         const idfPostalCodes = /\b(75\d{3}|77\d{3}|78\d{3}|91\d{3}|92\d{3}|93\d{3}|94\d{3}|95\d{3})\b/;
-        const idfKeywords = ['paris', 'île-de-france', 'hauts-de-seine', 'seine-saint-denis', 'val-de-marne'];
+        const idfKeywords = ['paris', 'île-de-france', 'hauts-de-seine', 'seine-saint-denis', 'val-de-marne', 'essonne', 'yvelines', 'val-d\'oise', 'seine-et-marne'];
         
-        isIdfUser = idfPostalCodes.test(fullAddress) || 
-                   idfKeywords.some(keyword => locationName.toLowerCase().includes(keyword) || fullAddress.includes(keyword));
+        // Tests de détection avec logging
+        const postalTest = idfPostalCodes.test(fullAddress);
+        const keywordTest = idfKeywords.some(keyword => locationName.toLowerCase().includes(keyword) || fullAddress.includes(keyword));
+        
+        console.log('🧪 [DIAGNOSTIC IDF] Tests de détection:', {
+          fullAddress,
+          locationName: locationName.toLowerCase(),
+          postalTest,
+          keywordTest
+        });
+        
+        isIdfUser = postalTest || keywordTest;
+        detectionMethod = postalTest ? 'postal_code' : keywordTest ? 'keyword' : 'none';
         
         if (isIdfUser) {
           // Rediriger la recherche vers le centre de Paris
-          finalLatitude = 48.8566;  // Centre de Paris
+          finalLatitude = 48.8566;  // Centre de Paris (Place du Châtelet)
           finalLongitude = 2.3522;
-          console.log('🗼 [REDIRECTION PARIS] Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
+          console.log('🗼 [REDIRECTION PARIS] ✅ Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
           console.log(`📍 [REDIRECTION PARIS] Coordonnées originales: ${searchLatitude}, ${searchLongitude}`);
           console.log(`🎯 [REDIRECTION PARIS] Nouvelles coordonnées: ${finalLatitude}, ${finalLongitude}`);
+          console.log(`🔍 [REDIRECTION PARIS] Méthode de détection: ${detectionMethod}`);
         } else {
-          console.log('🌍 [GÉOLOCALISATION] Utilisateur hors IDF - recherche normale');
+          console.log('🌍 [GÉOLOCALISATION] ❌ Utilisateur hors IDF - recherche normale');
+          console.log(`🔍 [GÉOLOCALISATION] Location: ${locationName}`);
         }
+      } else {
+        console.log('⚠️ [GÉOLOCALISATION] Erreur API géocodage, code:', geoResponse.status);
       }
     } catch (error) {
       console.log('⚠️ [GÉOLOCALISATION] Erreur reverse geocoding, utilisation coordonnées originales:', error);
@@ -567,10 +591,10 @@ serve(async (req) => {
       primaryType: randomBar.primaryType,
       priority: randomSelection.priority,
       priorityLabel: randomSelection.priority === 3 ? 'BAR PUR' : 
-                    randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
-                    randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE',
-      fallbackLevel: fallbackLevel,
-      searchRadius: searchRadius
+                     randomSelection.priority === 2 ? 'BAR-RESTAURANT' : 
+                     randomSelection.priority === 1 ? 'BAR D\'HÔTEL' : 'AUTRE',
+      searchRadius: 25000,
+      idfRedirection: isIdfUser
     });
 
     // RAPPORT FRANÇAIS DÉTAILLÉ
@@ -584,8 +608,8 @@ serve(async (req) => {
       'Fast-foods exclus': '✅ Détection stricte',
       'Priorité maximale': maxPriority,
       'Priorité sélectionnée': randomSelection.priority,
-      'Niveau de fallback': fallbackLevel,
-      'Rayon de recherche': `${searchRadius/1000}km`,
+      'Rayon de recherche': '25km',
+      'Redirection IDF': isIdfUser,
       'Bar final': result.bar.name
     });
 
@@ -601,12 +625,12 @@ serve(async (req) => {
           cost_usd: 0.017, // Google Places Search cost
           group_id,
           metadata: { 
-            latitude: searchLatitude, 
-            longitude: searchLongitude, 
+            latitude: finalLatitude, 
+            longitude: finalLongitude, 
             assigned_bar: result.bar.name,
             total_bars_found: selectedBars.length,
-            fallback_level: fallbackLevel,
-            search_radius: searchRadius
+            search_radius: 25000,
+            idf_redirection: isIdfUser
           }
         }
       });
