@@ -521,14 +521,6 @@ serve(async (req) => {
       console.log('⚠️ [RECHERCHE SIMPLIFIÉE] Aucun bar opérationnel vérifié, utilisation des bars filtrés');
       selectedBars = realBars;
     }
-          searchRadius: searchRadius
-        }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
 
     // SÉLECTION FINALE AVEC SYSTÈME DE PRIORITÉ ET RAPPORT FRANÇAIS
     const barsWithPriority = selectedBars.map(bar => ({
