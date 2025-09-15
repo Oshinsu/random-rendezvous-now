@@ -8,6 +8,7 @@ export interface LocationData {
 export class GeolocationService {
   private static locationCache: { location: LocationData; timestamp: number } | null = null;
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  private static lastLocationMetadata: any = null;
 
   static async getCurrentLocation(): Promise<LocationData> {
     // Vérifier le cache d'abord
@@ -95,6 +96,14 @@ export class GeolocationService {
           state    // Région
         } = data.address;
         
+        // Stocker les métadonnées administratives pour la détection IDF
+        this.lastLocationMetadata = {
+          department: postcode?.substring(0, 2),
+          region: state,
+          postalCode: postcode
+        };
+        console.log('🌍 [GEOLOCATION] Métadonnées extraites:', this.lastLocationMetadata);
+        
         const cityName = city || town || village || suburb || neighbourhood || municipality;
         
         // PRIORITÉ 1: Code postal + ville
@@ -131,6 +140,13 @@ export class GeolocationService {
       console.error('❌ Erreur reverse geocoding:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get the last extracted location metadata
+   */
+  static getLastLocationMetadata() {
+    return this.lastLocationMetadata;
   }
 
   static calculateDistance(

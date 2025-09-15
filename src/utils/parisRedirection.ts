@@ -1,11 +1,12 @@
 import { LocationData } from '@/services/geolocation';
+import { GeolocationService } from '@/services/geolocation';
 import { detectIleDeFrance } from './idfDetection';
 
 /**
  * Utilitaire pour rediriger les utilisateurs IDF vers Paris Centre
  * 
- * Garantit que TOUS les utilisateurs d'Île-de-France créent/rejoignent
- * des groupes à Paris Centre, assurant la compatibilité maximale.
+ * Utilise la détection IDF améliorée avec coordonnées et métadonnées
+ * pour garantir une redirection précise de TOUS les utilisateurs IDF.
  */
 
 // Coordonnées de Paris Centre (Place du Châtelet)
@@ -21,12 +22,25 @@ export const PARIS_CENTRE_COORDINATES = {
  * - Si utilisateur hors IDF : location originale
  */
 export function getGroupLocation(userLocation: LocationData): LocationData {
-  console.log('🎯 [PARIS REDIRECTION] Analyse de la location utilisateur...');
+  console.log('🎯 [PARIS REDIRECTION] Analyse complète de la location utilisateur...');
+  console.log('🎯 [PARIS REDIRECTION] Location:', userLocation.locationName);
+  console.log('🎯 [PARIS REDIRECTION] Coordonnées:', userLocation.latitude, userLocation.longitude);
   
-  const isIdfUser = detectIleDeFrance(userLocation.locationName);
+  // Récupérer les métadonnées du dernier reverse geocoding
+  const metadata = GeolocationService.getLastLocationMetadata();
+  
+  // Utiliser la détection IDF complète avec toutes les méthodes
+  const isIdfUser = detectIleDeFrance(
+    userLocation.locationName,
+    undefined, // pas d'adresse séparée
+    userLocation.latitude,
+    userLocation.longitude,
+    metadata
+  );
   
   if (isIdfUser) {
-    console.log('🗺️ [PARIS REDIRECTION] Utilisateur IDF → Redirection vers Paris Centre');
+    console.log('🗺️ [PARIS REDIRECTION] Utilisateur IDF détecté → Redirection vers Paris Centre');
+    console.log('🗺️ [PARIS REDIRECTION] Redirection:', userLocation.locationName, '→ Paris Centre');
     return PARIS_CENTRE_COORDINATES;
   }
   
