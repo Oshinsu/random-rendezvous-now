@@ -1,7 +1,7 @@
 
 import { useEffect, lazy, Suspense } from 'react';
 import { useRealtimeGroups } from '@/hooks/useRealtimeGroups';
-// UnifiedCleanupService désactivé - nettoyage géré par IntelligentCleanupService
+// Nettoyage géré automatiquement par cleanup-groups edge function
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
 // GroupMap is heavy (Google Maps). Lazy-load it for performance.
@@ -33,7 +33,7 @@ const GroupsPage = () => {
   useEffect(() => {
     // Fetching groups data
     
-    // Le nettoyage est géré automatiquement par IntelligentCleanupService
+    // Le nettoyage est géré automatiquement par cleanup-groups edge function
     
     // Force un refetch immédiat pour la récupération
     refetchGroups();

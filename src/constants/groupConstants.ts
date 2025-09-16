@@ -1,5 +1,5 @@
 
-// CONSTANTES HARMONISÉES - IntelligentCleanupService UNIQUEMENT
+// CONSTANTES HARMONISÉES - Cleanup géré par dissolve_old_groups() edge function
 export const GROUP_CONSTANTS = {
   // === PROTECTION DES GROUPES VIVANTS ===
   // Temps considéré comme "connecté en temps réel" - AUGMENTÉ pour réduire le stress
@@ -24,8 +24,8 @@ export const GROUP_CONSTANTS = {
   PARTICIPANT_INACTIVE_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
   PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Désactivé mais alias conservé
   
-  // Nettoyage INTELLIGENT UNIQUEMENT - Fréquence réduite pour réduire le stress
-  CLEANUP_FREQUENCY: 30 * 60 * 1000, // 30 minutes - IntelligentCleanupService uniquement
+  // Nettoyage géré par cleanup-groups edge function (quotidien)
+  CLEANUP_FREQUENCY: 24 * 60 * 60 * 1000, // 24 heures - edge function quotidienne
   HEARTBEAT_INTERVAL: 10 * 60 * 1000, // 10 minutes - battement de cœur moins fréquent
   
   // Paramètres de groupe INCHANGÉS
@@ -36,7 +36,7 @@ export const GROUP_CONSTANTS = {
   GROUP_REFETCH_INTERVAL: 2 * 60 * 1000, // 2 minutes (moins de stress)
   GROUP_STALE_TIME: 90 * 1000, // 90 secondes (plus patient)
   
-  // Seuils de nettoyage HARMONISÉS pour IntelligentCleanupService UNIQUEMENT
+  // Seuils de nettoyage pour dissolve_old_groups() function
   CLEANUP_THRESHOLDS: {
     // Participants inactifs alignés avec PARTICIPANT_ABANDONED_THRESHOLD
     INACTIVE_PARTICIPANTS: 2 * 60 * 60 * 1000,

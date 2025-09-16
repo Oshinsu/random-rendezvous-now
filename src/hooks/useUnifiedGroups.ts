@@ -5,7 +5,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
-// UnifiedCleanupService désactivé - utilisation d'IntelligentCleanupService uniquement
+// Nettoyage géré automatiquement par cleanup-groups edge function
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';

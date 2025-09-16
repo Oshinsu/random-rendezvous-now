@@ -1,11 +1,6 @@
 # Architecture Services - Version Finale Optimisée
 
-## Services Principaux (4 Services Spécialisés)
-
-### 🤖 IntelligentCleanupService
-- **Rôle** : SEUL service de nettoyage automatique
-- **Intervalle** : 30 minutes
-- **Fonctionnalités** : Protection des groupes vivants, nettoyage intelligent
+## Services Principaux (3 Services Spécialisés)
 
 ### 🔧 UnifiedGroupService 
 - **Rôle** : Service principal consolidé pour toutes les opérations de groupe
@@ -19,6 +14,18 @@
 - **Rôle** : Gestion des groupes programmés
 - **Fonctionnalités** : Planification, activation différée
 
+## Nettoyage Automatique
+
+### 🧹 cleanup-groups Edge Function
+- **Rôle** : SEUL système de nettoyage automatique
+- **Déclencheur** : Cron job quotidien à 4h du matin
+- **Fonctionnalités** : 
+  - Appelle `dissolve_old_groups()` PostgreSQL function
+  - Transition des groupes confirmés vers complétés
+  - Activation des groupes planifiés
+  - Réparation de l'historique des sorties
+  - Nettoyage sécurisé avec rétention de 7 jours
+
 ### Services de Base Maintenus
 
 #### GroupService
@@ -26,7 +33,8 @@
 - **Note** : Service allégé, doublons supprimés
 
 #### Services Supprimés Définitivement
-- ~~SimpleGroupService~~ : Supprimé (doublon à 95% avec UnifiedGroupService - 431 lignes)
+- ~~IntelligentCleanupService~~ : N'existait que dans les commentaires
+- ~~SimpleGroupService~~ : Supprimé (doublon à 95% avec UnifiedGroupService)
 - ~~OptimizedCleanupService~~ : Supprimé (race conditions)
 - ~~PeriodicCleanupService~~ : Supprimé (redondant)
 - ~~UnifiedCleanupService~~ : Supprimé (conflits)
@@ -37,24 +45,18 @@
 - `HEARTBEAT_INTERVAL` : 10 minutes (réduit le stress serveur)
 - `GROUP_REFETCH_INTERVAL` : 2 minutes (moins de stress)
 - `GROUP_STALE_TIME` : 90 secondes (plus patient)
-- `PARTICIPANT_ABANDONED_THRESHOLD` : 2 heures (aligné)
+- `PARTICIPANT_ABANDONED_THRESHOLD` : 6 heures (aligné avec cleanup)
 
-### Changements DB
-- Triggers automatiques de nettoyage supprimés
-- `dissolve_old_groups()` marquée comme DEPRECATED
-- Fonction `handle_group_participant_changes` ne fait plus de nettoyage automatique
-- `transition_groups_to_completed` plus patient (45min au lieu de 30min)
-
-### Résultat Attendu
-- Fin des race conditions entre services multiples
-- Réduction significative de la charge serveur
-- Harmonisation des seuils temporels
-- Un seul point de contrôle pour le nettoyage
+### Architecture Finale
+- **Nettoyage serveur uniquement** : Edge function + PostgreSQL function
+- **Pas de nettoyage côté client** : Évite les race conditions
+- **Rétention conservative** : 7 jours pendant la phase d'adoption
+- **Protection des groupes planifiés** : Supprimés 1 jour après scheduled_for
 
 ## Résultat de l'Éradication des Doublons
 
 ### ✅ Architecture Finale Streamlinée
-- **4 services principaux spécialisés** (au lieu de 6+)
+- **3 services principaux spécialisés** (au lieu de 6+)
 - **~1100 lignes de code dupliqué supprimées**
 - **Fonctionnalités consolidées** dans UnifiedGroupService
 - **Logique IDF centralisée** avec `getGroupLocation()`
@@ -63,7 +65,7 @@
 - **Pas de redondance** : Chaque service a un rôle unique
 - **Maintenance simplifiée** : Code consolidé et organisé
 - **Performance améliorée** : Moins de services concurrents
-- **Démarrage automatique** : IntelligentCleanupService s'initialise dans main.tsx
+- **Nettoyage serveur seulement** : Fiable et sans race conditions
 
 ### 🚀 Utilisation
-L'architecture est maintenant entièrement autonome. Aucun service de nettoyage supplémentaire ne doit être ajouté.
+L'architecture est maintenant entièrement autonome. Le nettoyage est géré automatiquement par la edge function `cleanup-groups`.
