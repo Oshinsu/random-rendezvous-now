@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useEnhancedGroups } from '@/hooks/useEnhancedGroups'
+import { useUnifiedGroups } from '@/hooks/useUnifiedGroups'
 import { useNavigate } from 'react-router-dom'
 import RandomLogo from '@/components/RandomLogo'
 import AppLayout from '@/components/AppLayout'
@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast'
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth()
-  const { joinRandomGroup, loading, userGroups } = useEnhancedGroups()
+  const { joinRandomGroup, loading, userGroups } = useUnifiedGroups()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const [showDiagnostics, setShowDiagnostics] = useState(false)
