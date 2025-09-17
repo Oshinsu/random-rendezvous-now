@@ -99,39 +99,39 @@ export class RateLimiter {
 // Predefined rate limit configurations
 export const RATE_LIMITS = {
   GROUP_CREATION: {
-    maxAttempts: 3,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 300000 // 5 minutes
+    maxAttempts: 2, // PLAN D'URGENCE: réduit
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    blockDurationMs: 30 * 60 * 1000 // 30 minutes
   },
   GROUP_JOIN: {
-    maxAttempts: 5,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 180000 // 3 minutes
+    maxAttempts: 3, // PLAN D'URGENCE: réduit
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    blockDurationMs: 15 * 60 * 1000 // 15 minutes
   },
   MESSAGE_SENDING: {
-    maxAttempts: 20,
-    windowMs: 60000, // 1 minute
-    blockDurationMs: 60000 // 1 minute
+    maxAttempts: 10, // PLAN D'URGENCE: réduit
+    windowMs: 60 * 1000, // 1 minute
+    blockDurationMs: 5 * 60 * 1000 // 5 minutes
   },
   GEOLOCATION: {
-    maxAttempts: 10,
-    windowMs: 600000, // 10 minutes
-    blockDurationMs: 60000 // 1 minute
+    maxAttempts: 5, // PLAN D'URGENCE: réduit
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    blockDurationMs: 5 * 60 * 1000 // 5 minutes
   },
   HEARTBEAT_ACTIVITY: {
-    maxAttempts: 3,
-    windowMs: 300000, // 5 minutes
-    blockDurationMs: 600000 // 10 minutes
+    maxAttempts: 1, // PLAN D'URGENCE: drastique
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    blockDurationMs: 20 * 60 * 1000 // 20 minutes
   },
   SESSION_REFRESH: {
-    maxAttempts: 5,
-    windowMs: 300000, // 5 minutes
-    blockDurationMs: 600000 // 10 minutes
+    maxAttempts: 1, // PLAN D'URGENCE: drastique
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    blockDurationMs: 30 * 60 * 1000 // 30 minutes
   },
   SUPABASE_AUTH: {
-    maxAttempts: 10,
-    windowMs: 300000, // 5 minutes
-    blockDurationMs: 300000 // 5 minutes
+    maxAttempts: 2, // PLAN D'URGENCE: réduit
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    blockDurationMs: 20 * 60 * 1000 // 20 minutes
   }
 };
 

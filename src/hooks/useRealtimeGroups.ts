@@ -32,11 +32,11 @@ export const useRealtimeGroups = () => {
 
   const { track } = useAnalytics();
 
-  // Optimized intervals for reduced latency
+  // PLAN D'URGENCE: Désactiver heartbeat pour éviter surcharge
   const OPTIMIZED_INTERVALS = {
-    REFETCH_INTERVAL: 30 * 1000, // 30 seconds (reduced from 2 minutes)
-    STALE_TIME: 15 * 1000, // 15 seconds (reduced from 90 seconds)
-    HEARTBEAT_INTERVAL: 2 * 60 * 1000, // 2 minutes (reduced from 10 minutes)
+    REFETCH_INTERVAL: 5 * 60 * 1000, // 5 minutes (PLAN D'URGENCE: réduit)
+    STALE_TIME: 2 * 60 * 1000, // 2 minutes (PLAN D'URGENCE: réduit)
+    HEARTBEAT_INTERVAL: 0, // DÉSACTIVÉ pour plan d'urgence
   };
 
   // Fetch user groups with optimized caching
@@ -77,11 +77,11 @@ export const useRealtimeGroups = () => {
     refetchOnWindowFocus: true,
   });
 
-  // Activity heartbeat with optimized interval
+  // PLAN D'URGENCE: Heartbeat complètement désactivé
   const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
-    enabled: !!activeGroupId,
+    enabled: false, // DÉSACTIVÉ pour plan d'urgence
     intervalMs: OPTIMIZED_INTERVALS.HEARTBEAT_INTERVAL
   });
 
