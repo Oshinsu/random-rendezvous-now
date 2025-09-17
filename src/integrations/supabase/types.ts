@@ -583,6 +583,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      sanitize_coordinates_pg: {
+        Args: { lat: number; lng: number }
+        Returns: {
+          sanitized_lat: number
+          sanitized_lng: number
+        }[]
+      }
       transition_groups_to_completed: {
         Args: Record<PropertyKey, never>
         Returns: undefined
