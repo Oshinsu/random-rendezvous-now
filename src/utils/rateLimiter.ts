@@ -114,9 +114,24 @@ export const RATE_LIMITS = {
     blockDurationMs: 60000 // 1 minute
   },
   GEOLOCATION: {
-    maxAttempts: 999999, // Désactivé temporairement
+    maxAttempts: 10,
     windowMs: 600000, // 10 minutes
-    blockDurationMs: 1000 // 1 seconde seulement
+    blockDurationMs: 60000 // 1 minute
+  },
+  HEARTBEAT_ACTIVITY: {
+    maxAttempts: 3,
+    windowMs: 300000, // 5 minutes
+    blockDurationMs: 600000 // 10 minutes
+  },
+  SESSION_REFRESH: {
+    maxAttempts: 5,
+    windowMs: 300000, // 5 minutes
+    blockDurationMs: 600000 // 10 minutes
+  },
+  SUPABASE_AUTH: {
+    maxAttempts: 10,
+    windowMs: 300000, // 5 minutes
+    blockDurationMs: 300000 // 5 minutes
   }
 };
 

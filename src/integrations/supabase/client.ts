@@ -26,10 +26,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
-// Session management without problematic cache
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_IN') {
-    // Reset rate limiter on successful sign in
-    RateLimiter.reset('supabase_session_check');
-  }
-});
+// Session management handled exclusively by AuthContext
+// No duplicate listeners to avoid state conflicts

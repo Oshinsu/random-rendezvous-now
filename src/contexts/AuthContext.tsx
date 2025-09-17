@@ -36,9 +36,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Handle navigation based on auth events
-        if (event === 'SIGNED_OUT') {
-          navigate('/');
+        // Handle navigation based on auth events (smart navigation)
+        if (event === 'SIGNED_OUT' && !session) {
+          // Only navigate if truly signed out, not on temporary errors
+          setTimeout(() => navigate('/'), 100);
         }
         
         // Only set loading to false after we've processed the auth state
@@ -122,10 +123,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const refreshSession = async () => {
+  const refreshSession = async (retryCount = 0, maxRetries = 3) => {
     try {
       setLoading(true);
-      console.log('🔄 Forcing session refresh...');
+      console.log(`🔄 Forcing session refresh... (attempt ${retryCount + 1}/${maxRetries + 1})`);
       
       // First try to refresh the token
       const { data: { session }, error } = await supabase.auth.refreshSession();
@@ -133,12 +134,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) {
         console.error('❌ Session refresh error:', error);
         
-        // If refresh fails, try to get current session
+        // Handle 429 rate limiting with backoff
+        if (error.message.includes('429') && retryCount < maxRetries) {
+          const backoffMs = Math.pow(2, retryCount) * 1000; // Exponential backoff
+          console.log(`⏳ Rate limited, retrying in ${backoffMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          return refreshSession(retryCount + 1, maxRetries);
+        }
+        
+        // If refresh fails, try to get current session as fallback
         const { data: { session: currentSession }, error: getError } = await supabase.auth.getSession();
         
         if (getError) {
           console.error('❌ Get session error:', getError);
-          // Force sign out if both fail
+          // Only force sign out after max retries
+          if (retryCount >= maxRetries) {
+            console.log('❌ Max retries reached, maintaining current state');
+            return false;
+          }
           setSession(null);
           setUser(null);
           return false;
@@ -151,8 +164,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return true;
         } else {
           console.log('❌ No valid session found');
-          setSession(null);
-          setUser(null);
+          // Don't force logout on temporary errors
+          if (retryCount >= maxRetries) {
+            setSession(null);
+            setUser(null);
+          }
           return false;
         }
       }
@@ -163,8 +179,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return !!session;
     } catch (error) {
       console.error('❌ Unexpected error during session refresh:', error);
-      setSession(null);
-      setUser(null);
+      
+      // Retry on unexpected errors
+      if (retryCount < maxRetries) {
+        const backoffMs = Math.pow(2, retryCount) * 1000;
+        console.log(`⏳ Retrying in ${backoffMs}ms due to unexpected error...`);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        return refreshSession(retryCount + 1, maxRetries);
+      }
+      
+      // Only clear session after max retries
+      console.log('❌ Max retries reached for session refresh');
       return false;
     } finally {
       setLoading(false);
