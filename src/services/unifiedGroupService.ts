@@ -382,14 +382,30 @@ export class UnifiedGroupService {
         return false;
       }
 
-      // Insertion du participant
+      // CRITIQUE: Validation et sanitisation des coordonnées avant insertion
+      const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+      const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
+      
+      if (!validation.isValid || !validation.sanitized) {
+        console.error('❌ Coordonnées invalides pour insertion participant');
+        toast({
+          title: 'Coordonnées invalides',
+          description: 'Les coordonnées de géolocalisation sont invalides.',
+          variant: 'destructive'
+        });
+        return false;
+      }
+
+      console.log('🔧 Coordonnées sanitisées pour insertion BDD:', validation.sanitized);
+
+      // Insertion du participant avec coordonnées sanitisées
       const participantData = {
         group_id: groupId,
         user_id: userId,
         status: 'confirmed' as const,
         last_seen: new Date().toISOString(),
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: validation.sanitized.latitude,
+        longitude: validation.sanitized.longitude,
         location_name: userLocation.locationName
       };
 

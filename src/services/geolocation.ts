@@ -30,21 +30,42 @@ export class GeolocationService {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          console.log('✅ Position obtenue:', { latitude, longitude });
+          console.log('✅ Position obtenue (brute):', { latitude, longitude });
+          
+          // CRITIQUE: Sanitiser les coordonnées dès leur obtention pour compatibilité PostgreSQL
+          const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+          const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
+          
+          if (!validation.isValid || !validation.sanitized) {
+            console.error('❌ Coordonnées invalides reçues du navigateur');
+            reject(new Error('Coordonnées invalides'));
+            return;
+          }
+          
+          const sanitizedLatitude = validation.sanitized.latitude;
+          const sanitizedLongitude = validation.sanitized.longitude;
+          console.log('🔧 Coordonnées sanitisées (6 décimales max):', { 
+            original: { latitude, longitude },
+            sanitized: { latitude: sanitizedLatitude, longitude: sanitizedLongitude }
+          });
           
           try {
-            const locationName = await this.reverseGeocode(latitude, longitude);
-            const location: LocationData = { latitude, longitude, locationName };
+            const locationName = await this.reverseGeocode(sanitizedLatitude, sanitizedLongitude);
+            const location: LocationData = { 
+              latitude: sanitizedLatitude, 
+              longitude: sanitizedLongitude, 
+              locationName 
+            };
             
             // Mettre en cache
             this.locationCache = { location, timestamp: Date.now() };
             resolve(location);
           } catch (error) {
-            console.warn('⚠️ Géocodage échoué, utilisation des coordonnées brutes');
+            console.warn('⚠️ Géocodage échoué, utilisation des coordonnées sanitisées');
             const location: LocationData = { 
-              latitude, 
-              longitude, 
-              locationName: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
+              latitude: sanitizedLatitude, 
+              longitude: sanitizedLongitude, 
+              locationName: `${sanitizedLatitude.toFixed(4)}, ${sanitizedLongitude.toFixed(4)}` 
             };
             this.locationCache = { location, timestamp: Date.now() };
             resolve(location);

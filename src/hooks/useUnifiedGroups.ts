@@ -55,14 +55,28 @@ export const useUnifiedGroups = () => {
 
     locationPromise.current = GeolocationService.getCurrentLocation()
       .then((location) => {
-        setUserLocation(location);
+        // Double validation des coordonnées reçues
+        const validation = CoordinateValidator.validateCoordinates(location.latitude, location.longitude);
+        if (!validation.isValid || !validation.sanitized) {
+          console.error('❌ Coordonnées invalides reçues du service géolocalisation');
+          throw new Error('Invalid coordinates from geolocation service');
+        }
+        
+        // Utiliser les coordonnées sanitisées
+        const sanitizedLocation = {
+          ...location,
+          latitude: validation.sanitized.latitude,
+          longitude: validation.sanitized.longitude
+        };
+        
+        setUserLocation(sanitizedLocation);
         lastLocationTime.current = now;
         showUniqueToast(
-          `Position détectée: ${location.locationName}`,
+          `Position détectée: ${sanitizedLocation.locationName}`,
           "📍 Position actualisée"
         );
-        console.log('✅ Nouvelle position obtenue:', location);
-        return location;
+        console.log('✅ Position sanitisée obtenue:', sanitizedLocation);
+        return sanitizedLocation;
       })
       .catch((error) => {
         ErrorHandler.logError('GEOLOCATION', error);
