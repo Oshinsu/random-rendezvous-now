@@ -1,6 +1,7 @@
 import { LocationData } from '@/services/geolocation';
 import { GeolocationService } from '@/services/geolocation';
 import { detectIleDeFrance } from './idfDetection';
+import { CoordinateValidator } from './coordinateValidation';
 
 /**
  * Utilitaire pour rediriger les utilisateurs IDF vers Paris Centre
@@ -44,6 +45,26 @@ export function getGroupLocation(userLocation: LocationData): LocationData {
     return PARIS_CENTRE_COORDINATES;
   }
   
-  console.log('📍 [PARIS REDIRECTION] Utilisateur hors IDF → Location originale conservée');
-  return userLocation;
+  console.log('📍 [PARIS REDIRECTION] Utilisateur hors IDF → Location originale conservée (avec sanitisation)');
+  
+  // Sanitiser les coordonnées pour garantir max 6 décimales
+  const validationResult = CoordinateValidator.validateCoordinates(
+    userLocation.latitude, 
+    userLocation.longitude
+  );
+  
+  if (!validationResult.isValid || !validationResult.sanitized) {
+    console.error('🚨 [PARIS REDIRECTION] Coordonnées invalides:', validationResult.error);
+    // Fallback vers Paris Centre si coordonnées invalides
+    return PARIS_CENTRE_COORDINATES;
+  }
+  
+  const sanitizedLocation: LocationData = {
+    latitude: validationResult.sanitized.latitude,
+    longitude: validationResult.sanitized.longitude,
+    locationName: userLocation.locationName
+  };
+  
+  console.log('✅ [PARIS REDIRECTION] Coordonnées sanitisées:', sanitizedLocation.latitude, sanitizedLocation.longitude);
+  return sanitizedLocation;
 }
