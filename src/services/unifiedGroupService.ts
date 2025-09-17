@@ -254,8 +254,31 @@ export class UnifiedGroupService {
         return null;
       }
 
+      // CRITIQUE: Double-sanitisation des coordonnées avant traitement
+      const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+      const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
+      
+      if (!validation.isValid || !validation.sanitized) {
+        console.error('❌ Coordonnées invalides pour création de groupe');
+        toast({
+          title: 'Coordonnées invalides',
+          description: 'Les coordonnées de géolocalisation sont invalides.',
+          variant: 'destructive'
+        });
+        return null;
+      }
+
+      // Utiliser les coordonnées sanitisées
+      const sanitizedLocation: LocationData = {
+        latitude: validation.sanitized.latitude,
+        longitude: validation.sanitized.longitude,
+        locationName: userLocation.locationName
+      };
+
+      console.log('🔧 Coordonnées double-sanitisées pour création groupe:', validation.sanitized);
+
       // Application de la redirection IDF
-      const groupLocation = getGroupLocation(userLocation);
+      const groupLocation = getGroupLocation(sanitizedLocation);
       
       if (groupLocation.locationName === 'Paris Centre') {
         console.log('🗺️ Utilisateur IDF - création de groupe parisien');

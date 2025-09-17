@@ -10,14 +10,45 @@ export class GeolocationService {
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private static lastLocationMetadata: any = null;
 
+  /**
+   * Force cache invalidation - useful for debugging coordinate issues
+   */
+  static clearCache(): void {
+    console.log('🗑️ Cache géolocalisation vidé forcément');
+    this.locationCache = null;
+    this.lastLocationMetadata = null;
+  }
+
   static async getCurrentLocation(): Promise<LocationData> {
     // Vérifier le cache d'abord
     if (this.locationCache) {
       const now = Date.now();
       const age = now - this.locationCache.timestamp;
       if (age < this.CACHE_DURATION) {
-        console.log('📍 Position récupérée du cache:', this.locationCache.location.locationName);
-        return this.locationCache.location;
+        // CRITIQUE: Valider et sanitiser les coordonnées du cache
+        const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+        const validation = CoordinateValidator.validateCoordinates(
+          this.locationCache.location.latitude, 
+          this.locationCache.location.longitude
+        );
+        
+        if (validation.isValid && validation.sanitized) {
+          // Mettre à jour le cache avec les coordonnées sanitisées si nécessaire
+          if (validation.sanitized.latitude !== this.locationCache.location.latitude || 
+              validation.sanitized.longitude !== this.locationCache.location.longitude) {
+            console.log('🔧 Mise à jour cache avec coordonnées sanitisées');
+            this.locationCache.location = {
+              ...this.locationCache.location,
+              latitude: validation.sanitized.latitude,
+              longitude: validation.sanitized.longitude
+            };
+          }
+          console.log('📍 Position récupérée du cache (sanitisée):', this.locationCache.location.locationName);
+          return this.locationCache.location;
+        } else {
+          console.warn('🚨 Cache invalide, suppression et nouvelle géolocalisation');
+          this.locationCache = null;
+        }
       }
     }
 

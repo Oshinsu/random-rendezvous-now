@@ -36,11 +36,28 @@ export const useUnifiedGroups = () => {
     if (!forceRefresh && userLocation && (now - lastLocationTime.current) < locationCacheTime) {
       console.log('📍 Utilisation de la position en cache:', userLocation.locationName);
       
-      // Validate cached coordinates
+      // CRITIQUE: Valider ET sanitiser les coordonnées du cache
       const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
       if (!validation.isValid) {
         console.warn('🚨 Cached coordinates are invalid, forcing refresh');
         return await getUserLocation(true);
+      }
+      
+      // Sanitiser les coordonnées du cache si nécessaire
+      if (validation.sanitized && 
+          (validation.sanitized.latitude !== userLocation.latitude || 
+           validation.sanitized.longitude !== userLocation.longitude)) {
+        console.log('🔧 Sanitisation des coordonnées du cache hook');
+        setUserLocation({
+          ...userLocation,
+          latitude: validation.sanitized.latitude,
+          longitude: validation.sanitized.longitude
+        });
+        return {
+          ...userLocation,
+          latitude: validation.sanitized.latitude,
+          longitude: validation.sanitized.longitude
+        };
       }
       
       return userLocation;

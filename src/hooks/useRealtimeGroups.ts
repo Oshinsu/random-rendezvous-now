@@ -339,6 +339,29 @@ export const useRealtimeGroups = () => {
   // Get user location with caching
   const getUserLocation = async (forceRefresh = false): Promise<LocationData | null> => {
     if (!forceRefresh && userLocation) {
+      // CRITIQUE: Valider et sanitiser les coordonnées du cache
+      const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+      const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
+      
+      if (!validation.isValid) {
+        console.warn('🚨 Realtime cached coordinates are invalid, forcing refresh');
+        return await getUserLocation(true);
+      }
+      
+      // Sanitiser si nécessaire
+      if (validation.sanitized && 
+          (validation.sanitized.latitude !== userLocation.latitude || 
+           validation.sanitized.longitude !== userLocation.longitude)) {
+        console.log('🔧 Sanitisation des coordonnées du cache realtime');
+        const sanitizedLocation = {
+          ...userLocation,
+          latitude: validation.sanitized.latitude,
+          longitude: validation.sanitized.longitude
+        };
+        setUserLocation(sanitizedLocation);
+        return sanitizedLocation;
+      }
+      
       return userLocation;
     }
 
