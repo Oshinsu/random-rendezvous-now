@@ -42,7 +42,7 @@
 
 ### Constantes Harmonisées
 - `CONNECTION_THRESHOLD` : 10 minutes (plus patient)
-- `HEARTBEAT_INTERVAL` : 10 minutes (réduit le stress serveur)
+- `HEARTBEAT_INTERVAL` : 1 heure (optimisé pour la stabilité)
 - `GROUP_REFETCH_INTERVAL` : 2 minutes (moins de stress)
 - `GROUP_STALE_TIME` : 90 secondes (plus patient)
 - `PARTICIPANT_ABANDONED_THRESHOLD` : 6 heures (aligné avec cleanup)
