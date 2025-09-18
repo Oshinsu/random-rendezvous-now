@@ -301,7 +301,7 @@ const logApiRequest = async (endpoint: string, requestType: string, statusCode: 
 const searchBarsWithRadius = async (latitude: number, longitude: number, radius: number, apiKey: string): Promise<any[]> => {
   const searchUrl = `https://places.googleapis.com/v1/places:searchNearby`;
   const requestBody = {
-    includedTypes: ["bar", "pub", "restaurant", "night_club", "establishment"],
+    includedTypes: ["bar", "pub"],
     locationRestriction: {
       circle: {
         center: { latitude, longitude },
