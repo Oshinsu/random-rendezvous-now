@@ -1,6 +1,6 @@
 
 import { useEffect, lazy, Suspense } from 'react';
-import { useRealtimeGroups } from '@/hooks/useRealtimeGroups';
+import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 // Nettoyage géré automatiquement par cleanup-groups edge function
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
@@ -26,7 +26,7 @@ const GroupsPage = () => {
     refetchGroups, 
     leaveGroup, 
     userLocation
-  } = useRealtimeGroups();
+  } = useUnifiedGroups();
   // No tracking for page views - only core business events
 
   // Déclenchement du système unifié au montage

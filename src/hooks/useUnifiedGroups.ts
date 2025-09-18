@@ -28,38 +28,12 @@ export const useUnifiedGroups = () => {
   const locationPromise = useRef<Promise<LocationData> | null>(null);
   const lastLocationTime = useRef<number>(0);
 
-  // Cache de localisation avec expiration UNIFIÉE
+  // Cache de localisation simplifié
   const getUserLocation = async (forceRefresh = false): Promise<LocationData | null> => {
     const now = Date.now();
-    const locationCacheTime = 10 * 60 * 1000; // 10 minutes
+    const locationCacheTime = 15 * 60 * 1000; // 15 minutes
     
     if (!forceRefresh && userLocation && (now - lastLocationTime.current) < locationCacheTime) {
-      console.log('📍 Utilisation de la position en cache:', userLocation.locationName);
-      
-      // CRITIQUE: Valider ET sanitiser les coordonnées du cache
-      const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
-      if (!validation.isValid) {
-        console.warn('🚨 Cached coordinates are invalid, forcing refresh');
-        return await getUserLocation(true);
-      }
-      
-      // Sanitiser les coordonnées du cache si nécessaire
-      if (validation.sanitized && 
-          (validation.sanitized.latitude !== userLocation.latitude || 
-           validation.sanitized.longitude !== userLocation.longitude)) {
-        console.log('🔧 Sanitisation des coordonnées du cache hook');
-        setUserLocation({
-          ...userLocation,
-          latitude: validation.sanitized.latitude,
-          longitude: validation.sanitized.longitude
-        });
-        return {
-          ...userLocation,
-          latitude: validation.sanitized.latitude,
-          longitude: validation.sanitized.longitude
-        };
-      }
-      
       return userLocation;
     }
 
@@ -68,32 +42,15 @@ export const useUnifiedGroups = () => {
     }
 
     isGettingLocation.current = true;
-    console.log('📍 Demande de géolocalisation avec paramètres unifiés');
-
     locationPromise.current = GeolocationService.getCurrentLocation()
       .then((location) => {
-        // Double validation des coordonnées reçues
-        const validation = CoordinateValidator.validateCoordinates(location.latitude, location.longitude);
-        if (!validation.isValid || !validation.sanitized) {
-          console.error('❌ Coordonnées invalides reçues du service géolocalisation');
-          throw new Error('Invalid coordinates from geolocation service');
-        }
-        
-        // Utiliser les coordonnées sanitisées
-        const sanitizedLocation = {
-          ...location,
-          latitude: validation.sanitized.latitude,
-          longitude: validation.sanitized.longitude
-        };
-        
-        setUserLocation(sanitizedLocation);
+        setUserLocation(location);
         lastLocationTime.current = now;
         showUniqueToast(
-          `Position détectée: ${sanitizedLocation.locationName}`,
+          `Position détectée: ${location.locationName}`,
           "📍 Position actualisée"
         );
-        console.log('✅ Position sanitisée obtenue:', sanitizedLocation);
-        return sanitizedLocation;
+        return location;
       })
       .catch((error) => {
         ErrorHandler.logError('GEOLOCATION', error);
@@ -111,63 +68,25 @@ export const useUnifiedGroups = () => {
     return locationPromise.current;
   };
 
-  // Récupération UNIFIÉE des groupes avec système amélioré
+  // Récupération simplifiée des groupes
   const fetchUserGroups = async (): Promise<Group[]> => {
-    if (!user) {
-      return [];
-    }
+    if (!user) return [];
 
     try {
-      console.log('📋 [UNIFIED HOOK] Recherche des groupes avec système UNIFIÉ et AMÉLIORÉ');
-      
-      // 1. Récupération avec service amélioré
       const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
-      console.log('📋 [UNIFIED HOOK] Participations récupérées (total):', allParticipations.length);
-      
-      // 2. Auto-récupération améliorée
-      if (allParticipations.length > 0) {
-        console.log('🔄 [UNIFIED HOOK] Déclenchement auto-récupération améliorée');
-        // User activity recovery handled automatically by UnifiedGroupService
-      }
-      
-      // 3. Filtrage unifié côté client
-      // Active participations filtering handled by getUserParticipations
-      console.log('📋 [UNIFIED HOOK] Participations actives après filtrage unifié:', allParticipations.length);
-      
-      // 4. Extraction des groupes valides
       const validGroups = allParticipations.map(p => p.groups).filter(Boolean);
 
-      // 5. Mise à jour des membres avec service amélioré
       if (validGroups.length > 0) {
         await UnifiedGroupService.updateUserLastSeen(validGroups[0].id, user.id);
         const members = await UnifiedGroupService.getGroupMembers(validGroups[0].id);
         setGroupMembers(members);
-        
-        // Check if group just became full and show notification
-        const currentGroup = validGroups[0];
-        if (currentGroup.current_participants === currentGroup.max_participants && 
-            currentGroup.status === 'confirmed') {
-          // Only show notification if this is a recently updated group
-          const groupAge = Date.now() - new Date(currentGroup.created_at).getTime();
-          const recentThreshold = 30 * 1000; // 30 seconds
-          
-          if (groupAge > recentThreshold) {
-            showUniqueToast(
-              `Votre groupe de ${currentGroup.max_participants} personnes est complet ! Un bar va être assigné.`,
-              "🎉 Groupe complet"
-            );
-          }
-        }
       } else {
         setGroupMembers([]);
       }
 
-      console.log('✅ [UNIFIED HOOK] Groupes valides avec système UNIFIÉ:', validGroups.length);
       return validGroups;
     } catch (error) {
       ErrorHandler.logError('UNIFIED_FETCH_USER_GROUPS', error);
-      const appError = ErrorHandler.handleGenericError(error as Error);
-      ErrorHandler.showErrorToast(appError);
       return [];
     }
   };
@@ -180,25 +99,18 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: GROUP_CONSTANTS.GROUP_REFETCH_INTERVAL, // Optimized: 2 minutes
-    staleTime: GROUP_CONSTANTS.GROUP_STALE_TIME, // Optimized: 90 seconds
+    refetchInterval: 5 * 60 * 1000, // 5 minutes simplifié
+    staleTime: 2 * 60 * 1000, // 2 minutes simplifié
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
 
-  // Battement de cœur d'activité UNIFIÉ
+  // Battement de cœur simplifié - 15 minutes
   const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
     enabled: !!activeGroupId,
-    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
-  });
-
-  console.log('💓 [UNIFIED HOOK] Heartbeat status:', { 
-    activeGroupId, 
-    isHeartbeatActive, 
-    hasGroups: userGroups.length > 0,
-    heartbeatInterval: GROUP_CONSTANTS.HEARTBEAT_INTERVAL
+    intervalMs: 15 * 60 * 1000 // 15 minutes simplifié
   });
 
   // Fonction de création de groupe avec rate limiting
