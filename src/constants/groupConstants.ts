@@ -15,8 +15,8 @@ export const GROUP_CONSTANTS = {
   // Participants considérés comme "abandonnés" - CORRIGÉ pour éviter suppression massive
   PARTICIPANT_ABANDONED_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures pour abandon (sécurisé)
   
-  // Groupes très anciens - nettoyage final - CORRIGÉ pour éviter suppression massive  
-  VERY_OLD_GROUP_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures pour nettoyage final (sécurisé)
+  // Groupes très anciens - nettoyage final - RESPECTER LES 72H DÉFINIS
+  VERY_OLD_GROUP_THRESHOLD: 72 * 60 * 60 * 1000, // 72 heures - délai ORIGINAL respecté
   
   // === HARMONISATION DES SEUILS ===
   PARTICIPANT_ACTIVITY_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
@@ -44,11 +44,11 @@ export const GROUP_CONSTANTS = {
     // Groupes en attente avec plus de patience
     OLD_WAITING_GROUPS: 45 * 60 * 1000, // 45 minutes (plus patient)
     
-    // Groupes terminés - standard
-    COMPLETED_GROUPS: 6 * 60 * 60 * 1000, // Retour à 6h (plus patient)
+    // Groupes terminés - RESPECTER délai original
+    COMPLETED_GROUPS: 72 * 60 * 60 * 1000, // 72h - délai ORIGINAL respecté
     
-    // Groupes très anciens alignés avec VERY_OLD_GROUP_THRESHOLD
-    VERY_OLD_GROUPS: 12 * 60 * 60 * 1000,
+    // Groupes très anciens alignés avec VERY_OLD_GROUP_THRESHOLD - 72H
+    VERY_OLD_GROUPS: 72 * 60 * 60 * 1000, // 72h - aligné avec le seuil principal
     
     // Groupes vides avec plus de patience
     EMPTY_GROUPS: 10 * 60 * 1000, // 10 minutes (plus patient)
