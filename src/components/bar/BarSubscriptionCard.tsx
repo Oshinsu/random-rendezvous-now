@@ -1,129 +1,114 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CreditCard, AlertTriangle } from 'lucide-react';
-import type { BarSubscription } from '@/hooks/useBarOwner';
+import { Calendar, CreditCard, AlertTriangle, Clock } from 'lucide-react';
+import { useBarSubscription } from '@/hooks/useBarSubscription';
 
 interface BarSubscriptionCardProps {
-  subscription: BarSubscription | null;
+  subscription?: any | null; // Legacy prop for compatibility
   onUpgrade?: () => void;
 }
 
-export function BarSubscriptionCard({ subscription, onUpgrade }: BarSubscriptionCardProps) {
-  if (!subscription) {
+export function BarSubscriptionCard({ subscription: legacySubscription, onUpgrade }: BarSubscriptionCardProps) {
+  const { subscriptionStatus, isLoadingSubscription, createCheckout, manageSubscription, isSubscribed } = useBarSubscription();
+  
+  // Loading state
+  if (isLoadingSubscription) {
     return (
-      <Card className="border-yellow-200 bg-yellow-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            Aucun abonnement
-          </CardTitle>
-          <CardDescription>
-            Vous devez avoir un abonnement actif pour accéder aux analytics.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button onClick={onUpgrade}>
-            Démarrer l'essai gratuit
-          </Button>
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-2">
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'trial':
-        return 'bg-blue-100 text-blue-800';
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'past_due':
-        return 'bg-red-100 text-red-800';
-      case 'canceled':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // If no subscription, show upgrade prompt
+  if (!isSubscribed) {
+    return (
+      <Card className="border-orange-200 bg-orange-50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <CardTitle className="text-orange-800">Aucun abonnement actif</CardTitle>
+          </div>
+          <CardDescription>
+            Démarrez votre essai gratuit pour accéder aux analytics détaillées
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={() => createCheckout.mutate()} 
+            className="w-full"
+            variant="default"
+            disabled={createCheckout.isPending}
+          >
+            {createCheckout.isPending ? 'Chargement...' : 'Commencer l\'essai gratuit (30 jours)'}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Puis 150€/mois - Aucun engagement
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'trial':
-        return 'Essai gratuit';
-      case 'active':
-        return 'Actif';
-      case 'past_due':
-        return 'Paiement en retard';
-      case 'canceled':
-        return 'Annulé';
-      default:
-        return status;
-    }
-  };
-
-  const isTrialActive = subscription.status === 'trial' && 
-    subscription.trial_end_date && 
-    new Date() < new Date(subscription.trial_end_date);
-
-  const daysLeft = subscription.trial_end_date 
-    ? Math.ceil((new Date(subscription.trial_end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+  // Calculate trial or subscription end date
+  const endDate = subscriptionStatus?.subscription_end ? new Date(subscriptionStatus.subscription_end) : null;
+  const daysRemaining = endDate 
+    ? Math.max(0, Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   return (
-    <Card className={`${subscription.status === 'trial' ? 'border-blue-200 bg-blue-50/50' : ''}`}>
+    <Card className="border-green-200 bg-green-50">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Abonnement
-          </span>
-          <Badge className={getStatusColor(subscription.status)}>
-            {getStatusLabel(subscription.status)}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-green-600" />
+            <CardTitle className="text-green-800">Abonnement Random</CardTitle>
+          </div>
+          <Badge variant="default">
+            Actif
           </Badge>
-        </CardTitle>
-        <CardDescription>
-          Plan {subscription.plan_type} - {subscription.monthly_price_eur / 100}€/mois
-        </CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isTrialActive && (
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-blue-600" />
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground">Plan</p>
+            <p className="font-medium">Premium - 150€/mois</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Renouvellement</p>
+            <p className="font-medium">
+              {endDate ? endDate.toLocaleDateString('fr-FR') : 'Non défini'}
+            </p>
+          </div>
+        </div>
+        
+        {daysRemaining > 0 && daysRemaining <= 7 && (
+          <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-100 p-3 rounded-lg">
+            <Clock className="h-4 w-4" />
             <span>
-              <strong>{daysLeft} jours</strong> restants dans votre essai gratuit
+              <strong>{daysRemaining} jours restants</strong> avant renouvellement
             </span>
           </div>
         )}
 
-        {subscription.current_period_end && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>
-              Renouvellement le{' '}
-              {new Date(subscription.current_period_end).toLocaleDateString('fr-FR')}
-            </span>
-          </div>
-        )}
-
-        {subscription.status === 'trial' && (
-          <Button onClick={onUpgrade} className="w-full">
-            Passer au plan Premium
+        <div className="pt-2 border-t">
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => manageSubscription.mutate()}
+            disabled={manageSubscription.isPending}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            {manageSubscription.isPending ? 'Chargement...' : 'Gérer l\'abonnement'}
           </Button>
-        )}
-
-        {subscription.status === 'past_due' && (
-          <div className="p-3 bg-red-50 rounded-lg">
-            <p className="text-sm text-red-800 font-medium">
-              Paiement en retard
-            </p>
-            <p className="text-sm text-red-600 mt-1">
-              Votre accès sera suspendu si le paiement n'est pas effectué.
-            </p>
-            <Button variant="destructive" className="mt-2 w-full">
-              Mettre à jour le paiement
-            </Button>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -93,3 +93,12 @@ verify_jwt = false
 # Add the new edge function to config.toml
 [functions.generate-bar-analytics]
 verify_jwt = false
+
+[functions.check-bar-subscription]
+verify_jwt = true
+
+[functions.create-bar-checkout]
+verify_jwt = true
+
+[functions.bar-customer-portal]
+verify_jwt = true

@@ -195,10 +195,7 @@ export default function BarDashboard() {
       <Separator />
 
       {/* Subscription Status */}
-      <BarSubscriptionCard 
-        subscription={subscription} 
-        onUpgrade={() => console.log('Upgrade subscription')} 
-      />
+      <BarSubscriptionCard />
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

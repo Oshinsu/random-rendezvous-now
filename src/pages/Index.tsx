@@ -87,6 +87,12 @@ const Index = () => {
           ) : (
             <div className="flex items-center gap-1 sm:gap-2">
               <LanguageToggle />
+              <Button asChild variant="ghost" className="text-amber-700 hover:bg-amber-50 text-xs sm:text-sm px-2 sm:px-3" size="sm">
+                <Link to="/bar-auth">
+                  <span className="hidden sm:inline">Gérants</span>
+                  <span className="sm:hidden">🏪</span>
+                </Link>
+              </Button>
               <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
                 <Link to="/auth?tab=signin">
                   <span className="hidden sm:inline">Connexion</span>
