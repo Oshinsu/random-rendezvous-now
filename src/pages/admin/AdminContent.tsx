@@ -532,7 +532,7 @@ export default function AdminContent() {
 
       {/* Sheet pour l'éditeur avancé - tiroir latéral */}
       <Sheet open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
-        <SheetContent side="right" className="w-full sm:w-3/4 lg:w-2/3 xl:w-1/2 max-w-none overflow-hidden flex flex-col">
+        <SheetContent side="right" className="w-full sm:w-[85vw] lg:w-[80vw] xl:w-[75vw] max-w-none overflow-hidden flex flex-col">
           <SheetHeader className="pb-4 shrink-0">
             <SheetTitle className="text-lg sm:text-xl">
               Éditeur avancé
