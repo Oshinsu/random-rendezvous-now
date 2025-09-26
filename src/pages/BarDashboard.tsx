@@ -74,16 +74,12 @@ export default function BarDashboard() {
   };
 
   const getSubscriptionStatusBadge = () => {
-    if (isLoadingSubscription && !isAdmin) return <Badge variant="outline">Chargement...</Badge>;
+    if (isLoadingSubscription) return <Badge variant="outline">Chargement...</Badge>;
     if (!displaySubscriptionStatus?.subscribed) return <Badge variant="destructive">Non actif</Badge>;
     return <Badge variant="default">Actif</Badge>;
   };
 
   const handleSubscriptionAction = () => {
-    if (isAdmin && !barOwner) {
-      // Admin demo mode - no real subscription actions
-      return;
-    }
     if (displaySubscriptionStatus?.subscribed) {
       manageSubscription.mutate();
     } else {
@@ -149,92 +145,10 @@ export default function BarDashboard() {
     return null; // Will redirect to application page
   }
 
-  // For admins without bar owner profile, use demo data
-  const adminDemoBarOwner = isAdmin && !barOwner ? {
-    bar_name: "Le Comptoir Parisien",
-    bar_address: "123 Rue de Rivoli, 75001 Paris",
-    status: "approved"
-  } : null;
-
-  const adminDemoAnalytics = isAdmin && !barOwner ? [
-    { 
-      id: 'demo-1',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-11-01',
-      total_customers: 87,
-      total_groups: 18,
-      estimated_revenue_eur: 217500,
-      peak_hours: { "19": 12, "20": 15, "21": 8 },
-      weekly_breakdown: { "friday": 25, "saturday": 30, "thursday": 15 },
-      generated_at: '2024-11-01T00:00:00Z'
-    },
-    { 
-      id: 'demo-2',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-10-01',
-      total_customers: 92,
-      total_groups: 19,
-      estimated_revenue_eur: 230000,
-      peak_hours: { "19": 10, "20": 18, "21": 12 },
-      weekly_breakdown: { "friday": 28, "saturday": 32, "thursday": 18 },
-      generated_at: '2024-10-01T00:00:00Z'
-    },
-    { 
-      id: 'demo-3',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-09-01',
-      total_customers: 78,
-      total_groups: 16,
-      estimated_revenue_eur: 195000,
-      peak_hours: { "19": 8, "20": 14, "21": 10 },
-      weekly_breakdown: { "friday": 22, "saturday": 26, "thursday": 14 },
-      generated_at: '2024-09-01T00:00:00Z'
-    },
-    { 
-      id: 'demo-4',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-08-01',
-      total_customers: 105,
-      total_groups: 21,
-      estimated_revenue_eur: 262500,
-      peak_hours: { "19": 15, "20": 20, "21": 14 },
-      weekly_breakdown: { "friday": 30, "saturday": 35, "thursday": 20 },
-      generated_at: '2024-08-01T00:00:00Z'
-    },
-    { 
-      id: 'demo-5',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-07-01',
-      total_customers: 115,
-      total_groups: 23,
-      estimated_revenue_eur: 287500,
-      peak_hours: { "19": 18, "20": 22, "21": 16 },
-      weekly_breakdown: { "friday": 32, "saturday": 38, "thursday": 22 },
-      generated_at: '2024-07-01T00:00:00Z'
-    },
-    { 
-      id: 'demo-6',
-      bar_owner_id: 'demo-owner',
-      report_month: '2024-06-01',
-      total_customers: 98,
-      total_groups: 20,
-      estimated_revenue_eur: 245000,
-      peak_hours: { "19": 12, "20": 18, "21": 13 },
-      weekly_breakdown: { "friday": 26, "saturday": 30, "thursday": 18 },
-      generated_at: '2024-06-01T00:00:00Z'
-    },
-  ] : null;
-
-  const adminDemoSubscription = isAdmin && !barOwner ? {
-    subscribed: true,
-    product_id: "prod_demo",
-    subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-  } : null;
-
-  // Use admin demo data if admin without bar owner profile
-  const displayBarOwner = barOwner || adminDemoBarOwner;
-  const displayAnalytics = analytics || adminDemoAnalytics;
-  const displaySubscriptionStatus = subscriptionStatus || adminDemoSubscription;
+  // Use real data only - no demo data
+  const displayBarOwner = barOwner;
+  const displayAnalytics = analytics;
+  const displaySubscriptionStatus = subscriptionStatus;
 
   // Calculate metrics using display data
   const currentMonth = displayAnalytics?.[0];
@@ -276,15 +190,14 @@ export default function BarDashboard() {
           </div>
           <div className="flex items-center gap-3">
             {getSubscriptionStatusBadge()}
-            <Button 
-              variant={displaySubscriptionStatus?.subscribed ? "outline" : "default"}
-              onClick={handleSubscriptionAction}
-              disabled={createCheckout.isPending || manageSubscription.isPending || (isAdmin && !barOwner)}
-            >
-              <CreditCard className="h-4 w-4 mr-2" />
-              {displaySubscriptionStatus?.subscribed ? "Gérer l'abonnement" : "S'abonner"}
-              {isAdmin && !barOwner && <span className="ml-2 text-xs">(Demo)</span>}
-            </Button>
+              <Button 
+                variant={displaySubscriptionStatus?.subscribed ? "outline" : "default"}
+                onClick={handleSubscriptionAction}
+                disabled={createCheckout.isPending || manageSubscription.isPending}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                {displaySubscriptionStatus?.subscribed ? "Gérer l'abonnement" : "S'abonner"}
+              </Button>
           </div>
         </div>
 
@@ -299,7 +212,6 @@ export default function BarDashboard() {
                 <div className="space-y-2">
                   <h3 className="font-semibold">
                     Activez votre abonnement pour débloquer toutes les fonctionnalités
-                    {isAdmin && !barOwner && <span className="ml-2 text-xs opacity-75">(Mode Démo)</span>}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Accédez aux analytics avancés, aux rapports détaillés et maximisez vos revenus avec Random.
@@ -307,7 +219,6 @@ export default function BarDashboard() {
                   <Button 
                     size="sm" 
                     onClick={handleSubscriptionAction}
-                    disabled={isAdmin && !barOwner}
                   >
                     Commencer maintenant - 150€/mois
                     <ArrowUpRight className="h-4 w-4 ml-2" />
@@ -394,13 +305,12 @@ export default function BarDashboard() {
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
                     Évolution mensuelle
-                    {isAdmin && !barOwner && <span className="ml-2 text-xs opacity-75">(Données de démonstration)</span>}
                   </CardTitle>
                   <CardDescription>
                     Clients Random amenés dans votre établissement
                   </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" disabled={isAdmin && !barOwner}>
+                <Button variant="outline" size="sm">
                   <Settings className="h-4 w-4 mr-2" />
                   Exporter
                 </Button>
