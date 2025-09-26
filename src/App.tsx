@@ -29,7 +29,9 @@ import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
-import BarDashboard from "./pages/BarDashboard";
+// Lazy import to prevent circular dependency issues
+import React from 'react';
+const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -82,7 +84,13 @@ const AppRoutes = () => (
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
-    <Route path="/bar-dashboard" element={<ProtectedRoute><BarDashboard /></ProtectedRoute>} />
+    <Route path="/bar-dashboard" element={
+      <ProtectedRoute>
+        <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+          <BarDashboard />
+        </React.Suspense>
+      </ProtectedRoute>
+    } />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
     
