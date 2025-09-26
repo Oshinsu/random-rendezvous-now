@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   Search, 
   FileText, 
@@ -532,11 +532,14 @@ export default function AdminContent() {
 
       {/* Dialog pour l'éditeur avancé - optimisé mobile */}
       <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-2 shrink-0">
             <DialogTitle className="text-lg sm:text-xl">
               Éditeur avancé
             </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Modifiez le contenu de votre site web avec l'éditeur avancé
+            </DialogDescription>
           </DialogHeader>
           {selectedContent && (
             <div className="flex-1 overflow-auto">
