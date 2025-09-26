@@ -28,6 +28,8 @@ import { AdminAudit } from "./pages/admin/AdminAudit";
 import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
+import AdminBarOwners from "./pages/admin/AdminBarOwners";
+import BarDashboard from "./pages/BarDashboard";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -80,6 +82,7 @@ const AppRoutes = () => (
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
+    <Route path="/bar-dashboard" element={<ProtectedRoute><BarDashboard /></ProtectedRoute>} />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
     
@@ -125,6 +128,15 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminContent />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/bar-owners" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminBarOwners />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

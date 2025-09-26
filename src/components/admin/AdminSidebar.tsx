@@ -10,7 +10,8 @@ import {
   Globe,
   MessageSquare,
   Shield,
-  Edit3
+  Edit3,
+  Building
 } from "lucide-react";
 
 import {
@@ -28,6 +29,7 @@ const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3, exact: true },
   { title: "Utilisateurs", url: "/admin/users", icon: Users },
   { title: "Groupes", url: "/admin/groups", icon: MapPin },
+  { title: "Gérants de Bar", url: "/admin/bar-owners", icon: Building },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
   { title: "Contenu Site", url: "/admin/content", icon: Edit3 },
   { title: "Audit", url: "/admin/audit", icon: Shield },

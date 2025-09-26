@@ -95,6 +95,151 @@ export type Database = {
         }
         Relationships: []
       }
+      bar_analytics_reports: {
+        Row: {
+          bar_owner_id: string
+          estimated_revenue_eur: number
+          generated_at: string
+          id: string
+          peak_hours: Json | null
+          report_month: string
+          total_customers: number
+          total_groups: number
+          weekly_breakdown: Json | null
+        }
+        Insert: {
+          bar_owner_id: string
+          estimated_revenue_eur?: number
+          generated_at?: string
+          id?: string
+          peak_hours?: Json | null
+          report_month: string
+          total_customers?: number
+          total_groups?: number
+          weekly_breakdown?: Json | null
+        }
+        Update: {
+          bar_owner_id?: string
+          estimated_revenue_eur?: number
+          generated_at?: string
+          id?: string
+          peak_hours?: Json | null
+          report_month?: string
+          total_customers?: number
+          total_groups?: number
+          weekly_breakdown?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_analytics_reports_bar_owner_id_fkey"
+            columns: ["bar_owner_id"]
+            isOneToOne: false
+            referencedRelation: "bar_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bar_claims: {
+        Row: {
+          bar_address: string
+          bar_name: string
+          bar_owner_id: string
+          bar_place_id: string
+          claim_evidence: Json | null
+          created_at: string
+          id: string
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          bar_address: string
+          bar_name: string
+          bar_owner_id: string
+          bar_place_id: string
+          claim_evidence?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          bar_address?: string
+          bar_name?: string
+          bar_owner_id?: string
+          bar_place_id?: string
+          claim_evidence?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_claims_bar_owner_id_fkey"
+            columns: ["bar_owner_id"]
+            isOneToOne: false
+            referencedRelation: "bar_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bar_owners: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          bar_address: string
+          bar_name: string
+          bar_place_id: string | null
+          business_name: string
+          contact_email: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          verification_documents: Json | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bar_address: string
+          bar_name: string
+          bar_place_id?: string | null
+          business_name: string
+          contact_email: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          verification_documents?: Json | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bar_address?: string
+          bar_name?: string
+          bar_place_id?: string | null
+          business_name?: string
+          contact_email?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verification_documents?: Json | null
+        }
+        Relationships: []
+      }
       bar_ratings: {
         Row: {
           average_rating: number
@@ -130,6 +275,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      bar_subscriptions: {
+        Row: {
+          bar_owner_id: string
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          monthly_price_eur: number
+          plan_type: string
+          status: string
+          stripe_subscription_id: string | null
+          trial_end_date: string | null
+          trial_start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          bar_owner_id: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_price_eur?: number
+          plan_type?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bar_owner_id?: string
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_price_eur?: number
+          plan_type?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bar_subscriptions_bar_owner_id_fkey"
+            columns: ["bar_owner_id"]
+            isOneToOne: false
+            referencedRelation: "bar_owners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       group_messages: {
         Row: {
@@ -551,6 +749,10 @@ export type Database = {
           status: string
         }[]
       }
+      generate_bar_analytics: {
+        Args: { target_bar_place_id: string; target_month: string }
+        Returns: Json
+      }
       get_admin_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -597,6 +799,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_bar_owner: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
