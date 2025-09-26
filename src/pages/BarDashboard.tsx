@@ -10,6 +10,8 @@ import { BarChart3, Users, Euro, TrendingUp, Clock, Calendar, Building } from 'l
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarOwnerApplication } from '@/components/bar/BarOwnerApplication';
 import { BarAnalyticsChart } from '@/components/bar/BarAnalyticsChart';
+import { BarSubscriptionCard } from '@/components/bar/BarSubscriptionCard';
+import { StatsCard } from '@/components/ui/stats-card';
 
 export default function BarDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -193,101 +195,48 @@ export default function BarDashboard() {
       <Separator />
 
       {/* Subscription Status */}
-      {isTrialActive && (
-        <Card className="border-blue-200 bg-blue-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Essai gratuit actif
-            </CardTitle>
-            <CardDescription>
-              Votre essai gratuit se termine le{' '}
-              {subscription?.trial_end_date && 
-                new Date(subscription.trial_end_date).toLocaleDateString('fr-FR')
-              }. Profitez-en pour découvrir tous nos services !
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button>
-              Passer à l'abonnement Premium - 150€/mois
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <BarSubscriptionCard 
+        subscription={subscription} 
+        onUpgrade={() => console.log('Upgrade subscription')} 
+      />
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Users className="h-8 w-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {isLoadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    currentMonth?.total_customers || 0
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">Clients ce mois</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Clients ce mois"
+          value={isLoadingAnalytics ? "..." : (currentMonth?.total_customers || 0)}
+          icon={<Users className="h-8 w-8" />}
+          description="Nouveaux clients Random"
+          trend={previousMonth ? {
+            value: Math.abs(monthlyGrowth),
+            isPositive: monthlyGrowth > 0
+          } : undefined}
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-8 w-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {isLoadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    currentMonth?.total_groups || 0
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">Groupes Random</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Groupes Random"
+          value={isLoadingAnalytics ? "..." : (currentMonth?.total_groups || 0)}
+          icon={<BarChart3 className="h-8 w-8" />}
+          description="Groupes reçus"
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Euro className="h-8 w-8 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {isLoadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    formatCurrency(currentMonth?.estimated_revenue_eur || 0)
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">CA estimé</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="CA estimé"
+          value={isLoadingAnalytics ? "..." : formatCurrency(currentMonth?.estimated_revenue_eur || 0)}
+          icon={<Euro className="h-8 w-8" />}
+          description="Chiffre d'affaires généré"
+        />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {isLoadingAnalytics ? (
-                    <Skeleton className="h-8 w-16" />
-                  ) : (
-                    `${monthlyGrowth > 0 ? '+' : ''}${monthlyGrowth.toFixed(1)}%`
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">Croissance</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatsCard
+          title="Croissance"
+          value={isLoadingAnalytics ? "..." : `${monthlyGrowth > 0 ? '+' : ''}${monthlyGrowth.toFixed(1)}%`}
+          icon={<TrendingUp className="h-8 w-8" />}
+          description="vs mois précédent"
+          trend={previousMonth ? {
+            value: Math.abs(monthlyGrowth),
+            isPositive: monthlyGrowth > 0
+          } : undefined}
+        />
       </div>
 
       {/* Analytics Chart */}

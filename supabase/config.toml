@@ -90,5 +90,6 @@ verify_jwt = false
 [functions.cleanup-groups]
 verify_jwt = false
 
-[functions.system-messaging]
+# Add the new edge function to config.toml
+[functions.generate-bar-analytics]
 verify_jwt = false
