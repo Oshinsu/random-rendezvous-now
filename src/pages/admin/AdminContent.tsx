@@ -1,44 +1,128 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSiteContent } from '@/hooks/useSiteContent';
-import { ContentEditor } from '@/components/admin/ContentEditor';
+import { AdvancedContentEditor } from '@/components/admin/cms/AdvancedContentEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, FileText, Palette, Layout, Globe } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Search, 
+  FileText, 
+  Palette, 
+  Layout, 
+  Globe, 
+  Filter, 
+  SortAsc, 
+  SortDesc, 
+  Grid, 
+  List,
+  Plus,
+  Settings,
+  RefreshCw,
+  Download,
+  Upload,
+  Eye,
+  Edit3,
+  Image as ImageIcon,
+  Type,
+  Code,
+  Zap,
+  Target,
+  BarChart3,
+  Clock,
+  CheckCircle2,
+  AlertTriangle
+} from 'lucide-react';
+import { SiteContent } from '@/hooks/useSiteContent';
+
+type ViewMode = 'grid' | 'list';
+type SortBy = 'name' | 'section' | 'type' | 'updated';
+type SortOrder = 'asc' | 'desc';
+type FilterType = 'all' | 'text' | 'image' | 'html' | 'json';
 
 export default function AdminContent() {
-  const { contents, loading, updateContent } = useSiteContent();
+  const { contents, loading, updateContent, refresh } = useSiteContent();
+  const [selectedContent, setSelectedContent] = useState<SiteContent | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSection, setSelectedSection] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<FilterType>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [sortBy, setSortBy] = useState<SortBy>('section');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const sections = Array.from(new Set(contents.map(c => c.page_section)));
-  
-  const filteredContents = contents.filter(content => {
-    const matchesSearch = content.content_key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         content.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSection = selectedSection === 'all' || content.page_section === selectedSection;
-    
-    return matchesSearch && matchesSection;
-  });
+  const contentTypes = ['text', 'image', 'html', 'json'] as const;
 
-  const groupedContents = filteredContents.reduce((acc, content) => {
-    if (!acc[content.page_section]) {
-      acc[content.page_section] = [];
-    }
-    acc[content.page_section].push(content);
-    return acc;
-  }, {} as Record<string, typeof contents>);
+  // Statistiques
+  const stats = useMemo(() => {
+    return {
+      total: contents.length,
+      sections: sections.length,
+      byType: contentTypes.map(type => ({
+        type,
+        count: contents.filter(c => c.content_type === type).length
+      })),
+      recentlyUpdated: contents.filter(c => {
+        const updated = new Date(c.updated_at);
+        const today = new Date();
+        const diffTime = Math.abs(today.getTime() - updated.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7;
+      }).length
+    };
+  }, [contents, sections]);
+
+  // Contenus filtrés et triés
+  const filteredAndSortedContents = useMemo(() => {
+    let filtered = contents.filter(content => {
+      const matchesSearch = content.content_key.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          content.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          content.page_section.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSection = selectedSection === 'all' || content.page_section === selectedSection;
+      const matchesType = selectedType === 'all' || content.content_type === selectedType;
+      
+      return matchesSearch && matchesSection && matchesType;
+    });
+
+    // Tri
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.content_key.localeCompare(b.content_key);
+          break;
+        case 'section':
+          comparison = a.page_section.localeCompare(b.page_section);
+          break;
+        case 'type':
+          comparison = a.content_type.localeCompare(b.content_type);
+          break;
+        case 'updated':
+          comparison = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+          break;
+      }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [contents, searchTerm, selectedSection, selectedType, sortBy, sortOrder]);
 
   const getSectionIcon = (section: string) => {
     switch (section) {
       case 'hero':
         return <Layout className="h-4 w-4" />;
       case 'benefits':
-        return <Palette className="h-4 w-4" />;
+        return <Target className="h-4 w-4" />;
       case 'how_it_works':
-        return <FileText className="h-4 w-4" />;
+        return <Zap className="h-4 w-4" />;
       case 'footer':
         return <Globe className="h-4 w-4" />;
       case 'meta':
@@ -61,8 +145,53 @@ export default function AdminContent() {
       case 'meta':
         return 'Méta-données';
       default:
-        return section;
+        return section.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
+  };
+
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'text':
+        return <Type className="h-4 w-4" />;
+      case 'image':
+        return <ImageIcon className="h-4 w-4" />;
+      case 'html':
+        return <Code className="h-4 w-4" />;
+      case 'json':
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getSectionBadgeColor = (section: string) => {
+    switch (section) {
+      case 'hero':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'benefits':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'how_it_works':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'footer':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'meta':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const handleContentClick = (content: SiteContent) => {
+    setSelectedContent(content);
+  };
+
+  const handleUpdateContent = async (id: string, value: any) => {
+    const success = await updateContent(id, value);
+    if (success) {
+      // Refresh the content to get updated data
+      await refresh();
+    }
+    return success;
   };
 
   if (loading) {
@@ -75,116 +204,366 @@ export default function AdminContent() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
+      {/* En-tête */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-red-800">Gestion de Contenu</h1>
-          <p className="text-red-600">
-            Modifiez les textes, images et contenus de votre site en temps réel
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-red-800 flex items-center gap-3">
+              <Edit3 className="h-8 w-8" />
+              Gestion de Contenu Avancée
+            </h1>
+            <p className="text-red-600 mt-1">
+              Éditeur CMS professionnel avec prévisualisation temps réel
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => refresh()}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Actualiser
+            </Button>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nouveau contenu
+            </Button>
+          </div>
         </div>
-
-        {/* Filtres */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Filtres</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Rechercher un contenu..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={selectedSection} onValueChange={setSelectedSection}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Toutes les sections" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les sections</SelectItem>
-                  {sections.map(section => (
-                    <SelectItem key={section} value={section}>
-                      {getSectionTitle(section)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{contents.length}</Badge>
-                <span className="text-sm font-medium">Contenus totaux</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                </div>
+                <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{sections.length}</Badge>
-                <span className="text-sm font-medium">Sections</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Sections</p>
+                  <p className="text-2xl font-bold">{stats.sections}</p>
+                </div>
+                <Layout className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">{filteredContents.length}</Badge>
-                <span className="text-sm font-medium">Résultats affichés</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Modifiés (7j)</p>
+                  <p className="text-2xl font-bold">{stats.recentlyUpdated}</p>
+                </div>
+                <Clock className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Types</p>
+                  <div className="flex gap-1">
+                    {stats.byType.map(({ type, count }) => (
+                      <Badge key={type} variant="outline" className="text-xs">
+                        {count}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <BarChart3 className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Contenus groupés par section */}
-      <div className="space-y-8">
-        {Object.entries(groupedContents).map(([section, sectionContents]) => (
-          <div key={section} className="space-y-4">
+      <Separator />
+
+      {/* Filtres et recherche */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtres et Recherche
+            </CardTitle>
             <div className="flex items-center gap-2">
-              {getSectionIcon(section)}
-              <h2 className="text-xl font-semibold text-red-700">
-                {getSectionTitle(section)}
-              </h2>
-              <Badge variant="secondary">
-                {sectionContents.length} élément{sectionContents.length > 1 ? 's' : ''}
-              </Badge>
-            </div>
-            
-            <div className="grid gap-4">
-              {sectionContents.map(content => (
-                <ContentEditor
-                  key={content.id}
-                  content={content}
-                  onUpdate={updateContent}
-                />
-              ))}
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        ))}
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <Select value={selectedSection} onValueChange={setSelectedSection}>
+              <SelectTrigger>
+                <SelectValue placeholder="Toutes les sections" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les sections</SelectItem>
+                {sections.map(section => (
+                  <SelectItem key={section} value={section}>
+                    <div className="flex items-center gap-2">
+                      {getSectionIcon(section)}
+                      {getSectionTitle(section)}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-      {filteredContents.length === 0 && (
+            <Select value={selectedType} onValueChange={(v) => setSelectedType(v as FilterType)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Tous les types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les types</SelectItem>
+                {contentTypes.map(type => (
+                  <SelectItem key={type} value={type}>
+                    <div className="flex items-center gap-2">
+                      {getContentTypeIcon(type)}
+                      {type.toUpperCase()}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(v) => {
+              const [newSortBy, newSortOrder] = v.split('-') as [SortBy, SortOrder];
+              setSortBy(newSortBy);
+              setSortOrder(newSortOrder);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">
+                  <div className="flex items-center gap-2">
+                    <SortAsc className="h-4 w-4" />
+                    Nom A-Z
+                  </div>
+                </SelectItem>
+                <SelectItem value="name-desc">
+                  <div className="flex items-center gap-2">
+                    <SortDesc className="h-4 w-4" />
+                    Nom Z-A
+                  </div>
+                </SelectItem>
+                <SelectItem value="section-asc">Section A-Z</SelectItem>
+                <SelectItem value="updated-desc">Plus récent</SelectItem>
+                <SelectItem value="updated-asc">Plus ancien</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex justify-between items-center mt-4 pt-4 border-t">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{filteredAndSortedContents.length} résultat{filteredAndSortedContents.length > 1 ? 's' : ''}</span>
+              {(searchTerm || selectedSection !== 'all' || selectedType !== 'all') && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedSection('all');
+                    setSelectedType('all');
+                  }}
+                >
+                  Effacer les filtres
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {filteredAndSortedContents.length} / {contents.length}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contenus */}
+      {viewMode === 'grid' ? (
+        <div className="grid gap-4 md:gap-6">
+          {Object.entries(
+            filteredAndSortedContents.reduce((acc, content) => {
+              if (!acc[content.page_section]) {
+                acc[content.page_section] = [];
+              }
+              acc[content.page_section].push(content);
+              return acc;
+            }, {} as Record<string, SiteContent[]>)
+          ).map(([section, sectionContents]) => (
+            <div key={section} className="space-y-4">
+              <div className="flex items-center gap-3">
+                {getSectionIcon(section)}
+                <h2 className="text-xl font-semibold text-red-700">
+                  {getSectionTitle(section)}
+                </h2>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${getSectionBadgeColor(section)}`}
+                >
+                  {sectionContents.length} élément{sectionContents.length > 1 ? 's' : ''}
+                </Badge>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {sectionContents.map(content => (
+                  <Card 
+                    key={content.id} 
+                    className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50"
+                    onClick={() => handleContentClick(content)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {getContentTypeIcon(content.content_type)}
+                          <CardTitle className="text-sm truncate">
+                            {content.content_key.replace(/_/g, ' ')}
+                          </CardTitle>
+                        </div>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          {content.content_type}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {content.description && (
+                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                          {content.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Modifié {new Date(content.updated_at).toLocaleDateString('fr-FR')}</span>
+                        <Eye className="h-3 w-3" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
         <Card>
-          <CardContent className="p-8 text-center">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">
-              Aucun contenu trouvé
-            </h3>
-            <p className="text-gray-500">
-              Essayez de modifier vos critères de recherche
-            </p>
+          <CardHeader>
+            <CardTitle className="text-lg">Liste des contenus</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {filteredAndSortedContents.map(content => (
+                <div
+                  key={content.id}
+                  className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
+                  onClick={() => handleContentClick(content)}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {getContentTypeIcon(content.content_type)}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm truncate">
+                        {content.content_key.replace(/_/g, ' ')}
+                      </div>
+                      {content.description && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          {content.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant="outline" className={`text-xs ${getSectionBadgeColor(content.page_section)}`}>
+                      {content.page_section}
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {content.content_type}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(content.updated_at).toLocaleDateString('fr-FR')}
+                    </span>
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
+
+      {filteredAndSortedContents.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+              Aucun contenu trouvé
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Essayez de modifier vos critères de recherche ou de filtrage
+            </p>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedSection('all');
+                setSelectedType('all');
+              }}
+            >
+              Effacer tous les filtres
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dialog pour l'éditeur avancé */}
+      <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              Éditeur avancé
+            </DialogTitle>
+          </DialogHeader>
+          {selectedContent && (
+            <AdvancedContentEditor
+              content={selectedContent}
+              onUpdate={handleUpdateContent}
+              onClose={() => setSelectedContent(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
