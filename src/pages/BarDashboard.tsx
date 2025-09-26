@@ -2,6 +2,7 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useBarOwner } from '@/hooks/useBarOwner';
 import { useBarSubscription } from '@/hooks/useBarSubscription';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ import {
 
 export default function BarDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminAuth();
   const navigate = useNavigate();
   const {
     barOwner,
@@ -57,12 +59,12 @@ export default function BarDashboard() {
     }
   }, [user, authLoading, navigate]);
 
-  // Redirect non-bar owners to application page
+  // Redirect non-bar owners to application page (except admins)
   useEffect(() => {
-    if (!isLoadingProfile && !barOwner) {
+    if (!isLoadingProfile && !adminLoading && !barOwner && !isAdmin) {
       navigate('/bar-application');
     }
-  }, [barOwner, isLoadingProfile, navigate]);
+  }, [barOwner, isLoadingProfile, adminLoading, isAdmin, navigate]);
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -85,7 +87,7 @@ export default function BarDashboard() {
     }
   };
 
-  if (authLoading || isLoadingProfile) {
+  if (authLoading || isLoadingProfile || adminLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto p-6 space-y-8">
@@ -138,8 +140,47 @@ export default function BarDashboard() {
     );
   }
 
-  if (!barOwner || !isApproved) {
+  // Allow access for approved bar owners OR admins
+  if (!barOwner && !isAdmin) {
     return null; // Will redirect to application page
+  }
+
+  // For admins without bar owner profile, show admin dashboard view
+  if (isAdmin && !barOwner) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 space-y-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold tracking-tight">Dashboard Admin</h1>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Badge variant="secondary">Accès Administrateur</Badge>
+              </div>
+            </div>
+          </div>
+          <Separator />
+          
+          <Card>
+            <CardContent className="p-8 text-center space-y-4">
+              <Settings className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="text-xl font-semibold">Dashboard Administrateur</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                En tant qu'administrateur, vous avez accès à tous les dashboards. 
+                Les analytics spécifiques nécessitent un profil bar validé.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => navigate('/bar-application')} variant="outline">
+                  Créer un profil bar
+                </Button>
+                <Button onClick={() => navigate('/admin/dashboard')}>
+                  Dashboard Admin
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // Calculate metrics
