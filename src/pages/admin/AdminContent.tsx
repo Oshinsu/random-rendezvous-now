@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { 
   Search, 
   FileText, 
@@ -530,17 +530,17 @@ export default function AdminContent() {
         </Card>
       )}
 
-      {/* Dialog pour l'éditeur avancé - optimisé mobile */}
-      <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
-        <DialogContent className="max-w-[90vw] sm:max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader className="pb-2 shrink-0">
-            <DialogTitle className="text-lg sm:text-xl">
+      {/* Sheet pour l'éditeur avancé - tiroir latéral */}
+      <Sheet open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <SheetContent side="right" className="w-full sm:w-3/4 lg:w-2/3 xl:w-1/2 max-w-none overflow-hidden flex flex-col">
+          <SheetHeader className="pb-4 shrink-0">
+            <SheetTitle className="text-lg sm:text-xl">
               Éditeur avancé
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            </SheetTitle>
+            <SheetDescription className="text-sm text-muted-foreground">
               Modifiez le contenu de votre site web avec l'éditeur avancé
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           {selectedContent && (
             <div className="flex-1 overflow-auto">
               <AdvancedContentEditor
@@ -550,8 +550,8 @@ export default function AdminContent() {
               />
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
