@@ -316,78 +316,79 @@ export default function AdminContent() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div className="relative md:col-span-2 xl:col-span-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un contenu..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-10"
+                />
+              </div>
+              
+              <Select value={selectedSection} onValueChange={setSelectedSection}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  <SelectItem value="all">Toutes les sections</SelectItem>
+                  {sections.map(section => (
+                    <SelectItem key={section} value={section}>
+                      <div className="flex items-center gap-2">
+                        {getSectionIcon(section)}
+                        <span className="truncate">{getSectionTitle(section)}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedType} onValueChange={(v) => setSelectedType(v as FilterType)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  {contentTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex items-center gap-2">
+                        {getContentTypeIcon(type)}
+                        <span>{type.toUpperCase()}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(v) => {
+                const [newSortBy, newSortOrder] = v.split('-') as [SortBy, SortOrder];
+                setSortBy(newSortBy);
+                setSortOrder(newSortOrder);
+              }}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Tri" />
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  <SelectItem value="name-asc">
+                    <div className="flex items-center gap-2">
+                      <SortAsc className="h-4 w-4" />
+                      <span>Nom A-Z</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="name-desc">
+                    <div className="flex items-center gap-2">
+                      <SortDesc className="h-4 w-4" />
+                      <span>Nom Z-A</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="section-asc">Section A-Z</SelectItem>
+                  <SelectItem value="updated-desc">Plus récent</SelectItem>
+                  <SelectItem value="updated-asc">Plus ancien</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={selectedSection} onValueChange={setSelectedSection}>
-              <SelectTrigger>
-                <SelectValue placeholder="Toutes les sections" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les sections</SelectItem>
-                {sections.map(section => (
-                  <SelectItem key={section} value={section}>
-                    <div className="flex items-center gap-2">
-                      {getSectionIcon(section)}
-                      {getSectionTitle(section)}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedType} onValueChange={(v) => setSelectedType(v as FilterType)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tous les types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                {contentTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    <div className="flex items-center gap-2">
-                      {getContentTypeIcon(type)}
-                      {type.toUpperCase()}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(v) => {
-              const [newSortBy, newSortOrder] = v.split('-') as [SortBy, SortOrder];
-              setSortBy(newSortBy);
-              setSortOrder(newSortOrder);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Trier par" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">
-                  <div className="flex items-center gap-2">
-                    <SortAsc className="h-4 w-4" />
-                    Nom A-Z
-                  </div>
-                </SelectItem>
-                <SelectItem value="name-desc">
-                  <div className="flex items-center gap-2">
-                    <SortDesc className="h-4 w-4" />
-                    Nom Z-A
-                  </div>
-                </SelectItem>
-                <SelectItem value="section-asc">Section A-Z</SelectItem>
-                <SelectItem value="updated-desc">Plus récent</SelectItem>
-                <SelectItem value="updated-asc">Plus ancien</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           
           <div className="flex justify-between items-center mt-4 pt-4 border-t">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -416,112 +417,137 @@ export default function AdminContent() {
       </Card>
 
       {/* Contenus */}
-      {viewMode === 'grid' ? (
-        <div className="grid gap-4 md:gap-6">
-          {Object.entries(
-            filteredAndSortedContents.reduce((acc, content) => {
-              if (!acc[content.page_section]) {
-                acc[content.page_section] = [];
-              }
-              acc[content.page_section].push(content);
-              return acc;
-            }, {} as Record<string, SiteContent[]>)
-          ).map(([section, sectionContents]) => (
-            <div key={section} className="space-y-4">
-              <div className="flex items-center gap-3">
-                {getSectionIcon(section)}
-                <h2 className="text-xl font-semibold text-red-700">
-                  {getSectionTitle(section)}
-                </h2>
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs ${getSectionBadgeColor(section)}`}
-                >
-                  {sectionContents.length} élément{sectionContents.length > 1 ? 's' : ''}
-                </Badge>
-              </div>
-              
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {sectionContents.map(content => (
-                  <Card 
-                    key={content.id} 
-                    className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50"
-                    onClick={() => handleContentClick(content)}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {getContentTypeIcon(content.content_type)}
-                          <CardTitle className="text-sm truncate">
-                            {content.content_key.replace(/_/g, ' ')}
-                          </CardTitle>
-                        </div>
-                        <Badge variant="outline" className="text-xs shrink-0">
-                          {content.content_type}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {content.description && (
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                          {content.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Modifié {new Date(content.updated_at).toLocaleDateString('fr-FR')}</span>
-                        <Eye className="h-3 w-3" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Liste des contenus</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {filteredAndSortedContents.map(content => (
-                <div
-                  key={content.id}
-                  className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-md cursor-pointer transition-colors"
-                  onClick={() => handleContentClick(content)}
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {getContentTypeIcon(content.content_type)}
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm truncate">
-                        {content.content_key.replace(/_/g, ' ')}
-                      </div>
-                      {content.description && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {content.description}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Badge variant="outline" className={`text-xs ${getSectionBadgeColor(content.page_section)}`}>
-                      {content.page_section}
+      <div className="space-y-8">
+        {viewMode === 'grid' ? (
+          <div className="space-y-8">
+            {Object.entries(
+              filteredAndSortedContents.reduce((acc, content) => {
+                if (!acc[content.page_section]) {
+                  acc[content.page_section] = [];
+                }
+                acc[content.page_section].push(content);
+                return acc;
+              }, {} as Record<string, SiteContent[]>)
+            ).map(([section, sectionContents]) => (
+              <div key={section} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {getSectionIcon(section)}
+                    <h2 className="text-xl font-semibold text-red-700">
+                      {getSectionTitle(section)}
+                    </h2>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${getSectionBadgeColor(section)}`}
+                    >
+                      {sectionContents.length} élément{sectionContents.length > 1 ? 's' : ''}
                     </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      {content.content_type}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(content.updated_at).toLocaleDateString('fr-FR')}
-                    </span>
-                    <Eye className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {sectionContents.map(content => (
+                    <Card 
+                      key={content.id} 
+                      className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-red-300/50 border-2 hover:scale-[1.02]"
+                      onClick={() => handleContentClick(content)}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="p-1.5 rounded-md bg-muted/50 group-hover:bg-red-50 transition-colors">
+                              {getContentTypeIcon(content.content_type)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <CardTitle className="text-sm font-medium truncate group-hover:text-red-700 transition-colors">
+                                {content.content_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </CardTitle>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] shrink-0 px-1.5 py-0.5">
+                            {content.content_type.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-3">
+                        {content.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {content.description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(content.updated_at).toLocaleDateString('fr-FR', { 
+                              day: '2-digit', 
+                              month: '2-digit'
+                            })}
+                          </span>
+                          <Eye className="h-3 w-3 text-muted-foreground group-hover:text-red-500 transition-colors" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Liste des contenus
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {filteredAndSortedContents.map(content => (
+                  <div
+                    key={content.id}
+                    className="flex items-center justify-between p-4 hover:bg-muted/30 cursor-pointer transition-all duration-200 group"
+                    onClick={() => handleContentClick(content)}
+                  >
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="p-2 rounded-lg bg-muted/50 group-hover:bg-red-50 transition-colors shrink-0">
+                        {getContentTypeIcon(content.content_type)}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="font-medium text-sm group-hover:text-red-700 transition-colors truncate">
+                          {content.content_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </div>
+                        {content.description && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            {content.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs hidden sm:inline-flex ${getSectionBadgeColor(content.page_section)}`}
+                      >
+                        {content.page_section}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs hidden md:inline-flex">
+                        {content.content_type.toUpperCase()}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground hidden lg:inline">
+                        {new Date(content.updated_at).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: '2-digit'
+                        })}
+                      </span>
+                      <Eye className="h-4 w-4 text-muted-foreground group-hover:text-red-500 transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {filteredAndSortedContents.length === 0 && (
         <Card>
@@ -549,19 +575,29 @@ export default function AdminContent() {
 
       {/* Dialog pour l'éditeur avancé */}
       <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl">
-              Éditeur avancé
-            </DialogTitle>
-          </DialogHeader>
-          {selectedContent && (
-            <AdvancedContentEditor
-              content={selectedContent}
-              onUpdate={handleUpdateContent}
-              onClose={() => setSelectedContent(null)}
-            />
-          )}
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-hidden flex flex-col p-0">
+          <div className="sticky top-0 bg-background border-b px-6 py-4 z-10">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-red-600" />
+                Éditeur Avancé
+                {selectedContent && (
+                  <Badge variant="outline" className="text-xs">
+                    {selectedContent.content_key.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            {selectedContent && (
+              <AdvancedContentEditor
+                content={selectedContent}
+                onUpdate={handleUpdateContent}
+                onClose={() => setSelectedContent(null)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
