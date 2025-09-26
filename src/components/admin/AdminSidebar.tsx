@@ -9,7 +9,8 @@ import {
   FileText,
   Globe,
   MessageSquare,
-  Shield
+  Shield,
+  Edit3
 } from "lucide-react";
 
 import {
@@ -28,6 +29,7 @@ const adminItems = [
   { title: "Utilisateurs", url: "/admin/users", icon: Users },
   { title: "Groupes", url: "/admin/groups", icon: MapPin },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
+  { title: "Contenu Site", url: "/admin/content", icon: Edit3 },
   { title: "Audit", url: "/admin/audit", icon: Shield },
   { title: "Activité", url: "/admin/activity", icon: Activity },
   { title: "Logs", url: "/admin/logs", icon: FileText },

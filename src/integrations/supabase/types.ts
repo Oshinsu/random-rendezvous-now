@@ -318,6 +318,39 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          content_key: string
+          content_type: string
+          content_value: Json
+          created_at: string
+          description: string | null
+          id: string
+          page_section: string
+          updated_at: string
+        }
+        Insert: {
+          content_key: string
+          content_type: string
+          content_value: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          page_section: string
+          updated_at?: string
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          content_value?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          page_section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string | null
