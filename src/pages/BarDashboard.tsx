@@ -1,38 +1,68 @@
+import React from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBarOwner } from '@/hooks/useBarOwner';
+import { useBarSubscription } from '@/hooks/useBarSubscription';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { BarChart3, Users, Euro, TrendingUp, Clock, Calendar, Building } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarOwnerApplication } from '@/components/bar/BarOwnerApplication';
-import { BarAnalyticsChart } from '@/components/bar/BarAnalyticsChart';
-import { BarSubscriptionCard } from '@/components/bar/BarSubscriptionCard';
 import { StatsCard } from '@/components/ui/stats-card';
+import { BarAnalyticsChart } from '@/components/bar/BarAnalyticsChart';
+import { 
+  Users, 
+  TrendingUp, 
+  Euro, 
+  Calendar,
+  Star,
+  MapPin,
+  Clock,
+  BarChart3,
+  Settings,
+  CreditCard,
+  Award,
+  Target,
+  Activity,
+  DollarSign,
+  Sparkles,
+  ChevronRight,
+  Building,
+  ArrowUpRight,
+  TrendingDown
+} from 'lucide-react';
 
 export default function BarDashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const {
     barOwner,
-    subscription,
     analytics,
     isLoadingProfile,
-    isLoadingSubscription,
     isLoadingAnalytics,
     isApproved,
-    isTrialActive,
-    isSubscriptionActive,
   } = useBarOwner();
+
+  const { 
+    subscriptionStatus, 
+    isLoadingSubscription, 
+    createCheckout, 
+    manageSubscription 
+  } = useBarSubscription();
 
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
+
+  // Redirect non-bar owners to application page
+  useEffect(() => {
+    if (!isLoadingProfile && !barOwner) {
+      navigate('/bar-application');
+    }
+  }, [barOwner, isLoadingProfile, navigate]);
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -41,246 +71,317 @@ export default function BarDashboard() {
     }).format(cents / 100);
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: 'default',
-      approved: 'default',
-      rejected: 'destructive',
-      suspended: 'secondary',
-    } as const;
-
-    const labels = {
-      pending: 'En attente',
-      approved: 'Approuvé',
-      rejected: 'Rejeté',
-      suspended: 'Suspendu',
-    };
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    );
+  const getSubscriptionStatusBadge = () => {
+    if (isLoadingSubscription) return <Badge variant="outline">Chargement...</Badge>;
+    if (!subscriptionStatus?.subscribed) return <Badge variant="destructive">Non actif</Badge>;
+    return <Badge variant="default">Actif</Badge>;
   };
 
-  const getSubscriptionBadge = (status: string) => {
-    const variants = {
-      trial: 'secondary',
-      active: 'default',
-      past_due: 'destructive',
-      canceled: 'outline',
-      unpaid: 'destructive',
-    } as const;
-
-    const labels = {
-      trial: 'Essai gratuit',
-      active: 'Actif',
-      past_due: 'Impayé',
-      canceled: 'Annulé',
-      unpaid: 'Impayé',
-    };
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    );
+  const handleSubscriptionAction = () => {
+    if (subscriptionStatus?.subscribed) {
+      manageSubscription.mutate();
+    } else {
+      createCheckout.mutate();
+    }
   };
 
   if (authLoading || isLoadingProfile) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-        </div>
-      </div>
-    );
-  }
-
-  // Show application form if not a bar owner yet
-  if (!barOwner) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <Building className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <h1 className="text-3xl font-bold">Espace Gérant de Bar</h1>
-            <p className="text-muted-foreground mt-2">
-              Rejoignez Random et découvrez combien de clients nous vous envoyons chaque mois
-            </p>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6 space-y-8">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-9 w-32" />
           </div>
-          <BarOwnerApplication />
+          <Separator />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+          <Skeleton className="h-96" />
         </div>
       </div>
     );
   }
 
-  // Show pending status
-  if (barOwner.status === 'pending') {
+  // Show pending/rejected states
+  if (barOwner && barOwner.status !== 'approved') {
     return (
-      <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <Clock className="h-16 w-16 mx-auto mb-4 text-yellow-500" />
-          <h1 className="text-3xl font-bold mb-4">Demande en cours de traitement</h1>
-          <p className="text-muted-foreground mb-6">
-            Votre demande pour <strong>{barOwner.bar_name}</strong> est en cours de vérification.
-            Nous vous contacterons dans les 48h.
-          </p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="container mx-auto p-6">
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            {barOwner.status === 'pending' && (
+              <>
+                <Clock className="h-16 w-16 mx-auto text-warning" />
+                <h1 className="text-3xl font-bold">Demande en cours</h1>
+                <p className="text-muted-foreground">
+                  Votre demande pour <strong>{barOwner.bar_name}</strong> est en cours de vérification.
+                  Nous vous contacterons dans les 48h.
+                </p>
+              </>
+            )}
+            {barOwner.status === 'rejected' && (
+              <>
+                <h1 className="text-3xl font-bold text-destructive">Demande rejetée</h1>
+                <p className="text-muted-foreground">
+                  Votre demande n'a pas pu être approuvée. Contactez-nous pour plus d'informations.
+                </p>
+                <Button onClick={() => navigate('/')}>
+                  Retour à l'accueil
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!barOwner || !isApproved) {
+    return null; // Will redirect to application page
+  }
+
+  // Calculate metrics
+  const currentMonth = analytics?.[0];
+  const previousMonth = analytics?.[1];
+  const lastSixMonths = analytics?.slice(0, 6) || [];
+  
+  const totalCustomers = lastSixMonths.reduce((sum, month) => sum + month.total_customers, 0);
+  const totalRevenue = lastSixMonths.reduce((sum, month) => sum + month.estimated_revenue_eur, 0);
+  const avgCustomersPerMonth = totalCustomers / Math.max(lastSixMonths.length, 1);
+  const avgGroupSize = currentMonth?.total_customers && currentMonth?.total_groups 
+    ? Math.round(currentMonth.total_customers / currentMonth.total_groups) 
+    : 5;
+
+  const customerGrowth = currentMonth && previousMonth 
+    ? ((currentMonth.total_customers - previousMonth.total_customers) / Math.max(previousMonth.total_customers, 1)) * 100
+    : 0;
+
+  const revenueGrowth = currentMonth && previousMonth 
+    ? ((currentMonth.estimated_revenue_eur - previousMonth.estimated_revenue_eur) / Math.max(previousMonth.estimated_revenue_eur, 1)) * 100
+    : 0;
+
+  const roi = currentMonth ? (currentMonth.estimated_revenue_eur / 100) / 150 : 0;
+  const costPerCustomer = currentMonth?.total_customers ? (150 / currentMonth.total_customers) : 0;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Building className="h-4 w-4" />
+              <span>{barOwner.bar_name}</span>
+              <Separator orientation="vertical" className="h-4" />
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">{barOwner.bar_address}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {getSubscriptionStatusBadge()}
+            <Button 
+              variant={subscriptionStatus?.subscribed ? "outline" : "default"}
+              onClick={handleSubscriptionAction}
+              disabled={createCheckout.isPending || manageSubscription.isPending}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              {subscriptionStatus?.subscribed ? "Gérer l'abonnement" : "S'abonner"}
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Subscription Alert */}
+        {!subscriptionStatus?.subscribed && (
+          <Card className="border-warning bg-warning/5">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Sparkles className="h-6 w-6 text-warning flex-shrink-0 mt-1" />
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Activez votre abonnement pour débloquer toutes les fonctionnalités</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Accédez aux analytics avancés, aux rapports détaillés et maximisez vos revenus avec Random.
+                  </p>
+                  <Button size="sm" onClick={handleSubscriptionAction}>
+                    Commencer maintenant - 150€/mois
+                    <ArrowUpRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCard
+            title="Clients ce mois"
+            value={isLoadingAnalytics ? "..." : (currentMonth?.total_customers || 0)}
+            icon={<Users className="h-6 w-6" />}
+            description="Nouveaux clients Random"
+            trend={previousMonth && currentMonth ? {
+              value: Math.abs(customerGrowth),
+              isPositive: customerGrowth > 0
+            } : undefined}
+          />
+
+          <StatsCard
+            title="Groupes reçus"
+            value={isLoadingAnalytics ? "..." : (currentMonth?.total_groups || 0)}
+            icon={<BarChart3 className="h-6 w-6" />}
+            description="Ce mois-ci"
+          />
+
+          <StatsCard
+            title="CA généré"
+            value={isLoadingAnalytics ? "..." : formatCurrency(currentMonth?.estimated_revenue_eur || 0)}
+            icon={<Euro className="h-6 w-6" />}
+            description="Chiffre d'affaires estimé"
+            trend={previousMonth && currentMonth ? {
+              value: Math.abs(revenueGrowth),
+              isPositive: revenueGrowth > 0
+            } : undefined}
+          />
+
+          <StatsCard
+            title="ROI mensuel"
+            value={isLoadingAnalytics ? "..." : `${roi.toFixed(1)}x`}
+            icon={<TrendingUp className="h-6 w-6" />}
+            description="Retour sur investissement"
+          />
+
+          <StatsCard
+            title="Coût par client"
+            value={isLoadingAnalytics ? "..." : `${costPerCustomer.toFixed(2)}€`}
+            icon={<Target className="h-6 w-6" />}
+            description="Coût d'acquisition"
+          />
+
+          <StatsCard
+            title="Taille moyenne"
+            value={isLoadingAnalytics ? "..." : `${avgGroupSize} pers.`}
+            icon={<Activity className="h-6 w-6" />}
+            description="Par groupe"
+          />
+
+          <StatsCard
+            title="Total 6 mois"
+            value={isLoadingAnalytics ? "..." : totalCustomers}
+            icon={<Award className="h-6 w-6" />}
+            description="Clients amenés"
+          />
+
+          <StatsCard
+            title="Moyenne mensuelle"
+            value={isLoadingAnalytics ? "..." : Math.round(avgCustomersPerMonth)}
+            icon={<Calendar className="h-6 w-6" />}
+            description="Clients par mois"
+          />
+        </div>
+
+        {/* Analytics Chart */}
+        {analytics && analytics.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Informations soumises</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Évolution mensuelle
+                  </CardTitle>
+                  <CardDescription>
+                    Clients Random amenés dans votre établissement
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <BarAnalyticsChart data={analytics} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ROI & Business Impact */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Impact business
+              </CardTitle>
+              <CardDescription>
+                L'effet Random sur votre établissement
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <strong>Établissement :</strong> {barOwner.bar_name}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Nouveaux clients ce mois</span>
+                  <span className="font-semibold">{currentMonth?.total_customers || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Revenus générés</span>
+                  <span className="font-semibold">{formatCurrency(currentMonth?.estimated_revenue_eur || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Coût d'acquisition moyen</span>
+                  <span className="font-semibold">{costPerCustomer.toFixed(2)}€</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center text-primary">
+                  <span className="font-medium">ROI mensuel</span>
+                  <span className="font-bold text-lg">{roi.toFixed(1)}x</span>
+                </div>
               </div>
-              <div>
-                <strong>Adresse :</strong> {barOwner.bar_address}
-              </div>
-              <div>
-                <strong>Contact :</strong> {barOwner.contact_email}
-              </div>
-              <div>
-                <strong>Statut :</strong> {getStatusBadge(barOwner.status)}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Recommandations
+              </CardTitle>
+              <CardDescription>
+                Maximisez vos revenus Random
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
+                  <div className="text-sm">
+                    <p className="font-medium">Optimisez vos horaires</p>
+                    <p className="text-muted-foreground">Les groupes arrivent surtout entre 19h-21h</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
+                  <div className="text-sm">
+                    <p className="font-medium">Préparez l'accueil</p>
+                    <p className="text-muted-foreground">Groupes de {avgGroupSize} personnes en moyenne</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
+                  <div className="text-sm">
+                    <p className="font-medium">Fidélisez vos clients</p>
+                    <p className="text-muted-foreground">Offrez une expérience mémorable</p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-    );
-  }
-
-  // Show rejected status
-  if (barOwner.status === 'rejected') {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold mb-4 text-destructive">Demande rejetée</h1>
-          <p className="text-muted-foreground mb-6">
-            Votre demande pour {barOwner.bar_name} n'a pas pu être approuvée.
-            Contactez-nous pour plus d'informations.
-          </p>
-          <Button onClick={() => navigate('/')}>
-            Retour à l'accueil
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Main dashboard for approved bar owners
-  const currentMonth = analytics?.[0];
-  const previousMonth = analytics?.[1];
-
-  const monthlyGrowth = currentMonth && previousMonth 
-    ? ((currentMonth.total_customers - previousMonth.total_customers) / previousMonth.total_customers) * 100
-    : 0;
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Tableau de bord</h1>
-          <p className="text-muted-foreground">{barOwner.bar_name}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          {subscription && getSubscriptionBadge(subscription.status)}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Subscription Status */}
-      <BarSubscriptionCard />
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatsCard
-          title="Clients ce mois"
-          value={isLoadingAnalytics ? "..." : (currentMonth?.total_customers || 0)}
-          icon={<Users className="h-8 w-8" />}
-          description="Nouveaux clients Random"
-          trend={previousMonth ? {
-            value: Math.abs(monthlyGrowth),
-            isPositive: monthlyGrowth > 0
-          } : undefined}
-        />
-
-        <StatsCard
-          title="Groupes Random"
-          value={isLoadingAnalytics ? "..." : (currentMonth?.total_groups || 0)}
-          icon={<BarChart3 className="h-8 w-8" />}
-          description="Groupes reçus"
-        />
-
-        <StatsCard
-          title="CA estimé"
-          value={isLoadingAnalytics ? "..." : formatCurrency(currentMonth?.estimated_revenue_eur || 0)}
-          icon={<Euro className="h-8 w-8" />}
-          description="Chiffre d'affaires généré"
-        />
-
-        <StatsCard
-          title="Croissance"
-          value={isLoadingAnalytics ? "..." : `${monthlyGrowth > 0 ? '+' : ''}${monthlyGrowth.toFixed(1)}%`}
-          icon={<TrendingUp className="h-8 w-8" />}
-          description="vs mois précédent"
-          trend={previousMonth ? {
-            value: Math.abs(monthlyGrowth),
-            isPositive: monthlyGrowth > 0
-          } : undefined}
-        />
-      </div>
-
-      {/* Analytics Chart */}
-      {analytics && analytics.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Évolution mensuelle</CardTitle>
-            <CardDescription>
-              Nombre de clients Random amenés dans votre établissement
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BarAnalyticsChart data={analytics} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ROI Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Retour sur investissement</CardTitle>
-          <CardDescription>
-            Pourquoi Random vaut largement votre abonnement de 150€/mois
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">Ce mois-ci avec Random :</h4>
-              <ul className="space-y-1 text-sm">
-                <li>• {currentMonth?.total_customers || 0} nouveaux clients</li>
-                <li>• {formatCurrency(currentMonth?.estimated_revenue_eur || 0)} de CA généré</li>
-                <li>• Moyenne de {currentMonth?.total_groups || 0} groupes par mois</li>
-                <li>• 0€ de frais marketing ou acquisition</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Votre investissement :</h4>
-              <ul className="space-y-1 text-sm">
-                <li>• 150€/mois d'abonnement Random</li>
-                <li>• Soit {((150 / (currentMonth?.total_customers || 1))).toFixed(2)}€ par client acquis</li>
-                <li>• ROI : {(((currentMonth?.estimated_revenue_eur || 0) / 100 / 150)).toFixed(1)}x votre investissement</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
