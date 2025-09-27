@@ -180,13 +180,15 @@ export default function BarDashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Building className="h-4 w-4" />
-              <span>{displayBarOwner.bar_name}</span>
-              <Separator orientation="vertical" className="h-4" />
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm">{displayBarOwner.bar_address}</span>
-            </div>
+            {displayBarOwner && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Building className="h-4 w-4" />
+                <span>{displayBarOwner.bar_name}</span>
+                <Separator orientation="vertical" className="h-4" />
+                <MapPin className="h-4 w-4" />
+                <span className="text-sm">{displayBarOwner.bar_address}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {getSubscriptionStatusBadge()}
