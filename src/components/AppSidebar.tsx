@@ -51,7 +51,7 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="p-6 border-b border-neutral-200/50">
-        <div className="flex items-center space-x-4">
+        <NavLink to="/" className="flex items-center space-x-4 hover:opacity-90 transition-opacity">
           <RandomLogo size={48} withAura className="shadow-lg" />
           {!isCollapsed && (
             <div>
@@ -59,7 +59,7 @@ export function AppSidebar() {
               <p className="text-sm font-heading text-neutral-600 font-medium">Aventures</p>
             </div>
           )}
-        </div>
+        </NavLink>
       </SidebarHeader>
 
       <SidebarContent className="py-6">

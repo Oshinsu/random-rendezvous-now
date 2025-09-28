@@ -3,33 +3,32 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useBarSubscription } from "@/hooks/useBarSubscription";
-import { useBarOwner } from "@/hooks/useBarOwner";
 import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { 
-  Building, 
   Crown, 
   Check, 
   Star, 
-  TrendingUp, 
+  Zap, 
   Users, 
-  Settings,
-  CreditCard,
-  Shield
+  Calendar,
+  Shield,
+  Infinity,
+  Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SubscriptionPage = () => {
   const navigate = useNavigate();
-  const { subscriptionStatus, isLoadingSubscription, createCheckout, manageSubscription } = useBarSubscription();
-  const { barOwner, isLoadingProfile } = useBarOwner();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
 
+  // TODO: Implement user subscription hook when available
+  const isSubscribed = false; // Replace with actual subscription status
+  
   const handleSubscribe = async () => {
     setIsCreatingCheckout(true);
     try {
-      await createCheckout.mutateAsync();
+      // TODO: Call user subscription checkout
       toast.success("Redirection vers le paiement...", {
         description: "Vous allez être redirigé vers Stripe pour finaliser votre abonnement."
       });
@@ -42,7 +41,7 @@ const SubscriptionPage = () => {
 
   const handleManageSubscription = async () => {
     try {
-      await manageSubscription.mutateAsync();
+      // TODO: Call user subscription management
       toast.success("Ouverture du portail client...", {
         description: "Gérez votre abonnement dans l'onglet qui vient de s'ouvrir."
       });
@@ -51,22 +50,15 @@ const SubscriptionPage = () => {
     }
   };
 
-  const handleUpgradeToBarOwner = () => {
-    navigate('/bar-application');
-  };
-
-  const isSubscribed = subscriptionStatus?.subscribed || false;
-  const isBarOwner = barOwner?.status === 'approved';
-
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">Mon Abonnement</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Random Premium</h1>
             <p className="text-xl text-muted-foreground">
-              Gérez votre abonnement et découvrez nos plans
+              Débloquez tout le potentiel de Random avec un accès illimité
             </p>
           </div>
 
@@ -76,120 +68,99 @@ const SubscriptionPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle>Statut actuel</CardTitle>
+                  <CardTitle>Votre abonnement</CardTitle>
                 </div>
                 {isSubscribed && (
                   <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
                     <Crown className="h-3 w-3 mr-1" />
-                    Actif
+                    Premium Actif
                   </Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {isLoadingSubscription || isLoadingProfile ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  <span>Chargement du statut...</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Statut:</span>
+                  <Badge variant={isSubscribed ? "default" : "outline"}>
+                    {isSubscribed ? "Premium" : "Gratuit"}
+                  </Badge>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <p className="font-medium">Type de compte:</p>
-                      <Badge variant={isBarOwner ? "default" : "secondary"}>
-                        {isBarOwner ? "Propriétaire de Bar" : "Utilisateur Standard"}
-                      </Badge>
+                
+                {isSubscribed && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Prochaine facturation:</span>
+                      <span className="text-muted-foreground">15 novembre 2024</span>
                     </div>
-                    <div className="space-y-2">
-                      <p className="font-medium">Abonnement:</p>
-                      <Badge variant={isSubscribed ? "default" : "outline"}>
-                        {isSubscribed ? "Bar Manager Premium" : "Aucun abonnement"}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {isSubscribed && subscriptionStatus?.subscription_end && (
-                    <div className="space-y-2">
-                      <p className="font-medium">Fin de période:</p>
-                      <p className="text-muted-foreground">
-                        {new Date(subscriptionStatus.subscription_end).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  )}
-
-                  {isSubscribed && (
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleManageSubscription} 
-                        variant="outline"
-                        disabled={manageSubscription.isPending}
-                      >
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Gérer l'abonnement
-                      </Button>
-                      {isBarOwner && (
-                        <Button onClick={() => navigate('/bar-dashboard')}>
-                          <Building className="h-4 w-4 mr-2" />
-                          Dashboard Bar
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                    <Button 
+                      onClick={handleManageSubscription} 
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Gérer mon abonnement
+                    </Button>
+                  </>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Plans Available */}
+          {/* Plans Comparison */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Utilisateur Standard */}
-            <Card className="relative">
+            {/* Plan Gratuit */}
+            <Card className={`relative ${!isSubscribed ? 'border-primary/20' : ''}`}>
               <CardHeader>
                 <div className="flex items-center space-x-2">
                   <Users className="h-5 w-5 text-blue-500" />
-                  <CardTitle>Utilisateur Standard</CardTitle>
+                  <CardTitle>Plan Gratuit</CardTitle>
                 </div>
                 <CardDescription>
-                  Parfait pour découvrir de nouveaux bars avec des amis
+                  Parfait pour découvrir Random
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="text-3xl font-bold">Gratuit</div>
-                  <ul className="space-y-2">
+                  <div className="text-3xl font-bold">0€<span className="text-lg font-normal text-muted-foreground">/mois</span></div>
+                  <ul className="space-y-3">
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Rejoindre des groupes
+                      <Check className="h-4 w-4 text-green-500 mr-3" />
+                      <span className="text-sm">1 groupe actif à la fois</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Découvrir de nouveaux bars
+                      <Check className="h-4 w-4 text-green-500 mr-3" />
+                      <span className="text-sm">2 groupes planifiés max</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Chat en groupe
+                      <Check className="h-4 w-4 text-green-500 mr-3" />
+                      <span className="text-sm">Chat en groupe</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Historique des sorties
+                      <Check className="h-4 w-4 text-green-500 mr-3" />
+                      <span className="text-sm">Historique des sorties</span>
+                    </li>
+                    <li className="flex items-center text-muted-foreground">
+                      <Clock className="h-4 w-4 mr-3" />
+                      <span className="text-sm">Attente standard</span>
                     </li>
                   </ul>
                 </div>
               </CardContent>
               <CardFooter>
-                <Badge variant="outline" className="w-full justify-center">
-                  Plan actuel
-                </Badge>
+                {!isSubscribed ? (
+                  <Badge variant="default" className="w-full justify-center">
+                    Plan actuel
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="w-full justify-center">
+                    Ancien plan
+                  </Badge>
+                )}
               </CardFooter>
             </Card>
 
-            {/* Bar Manager Premium */}
-            <Card className={`relative ${isSubscribed ? 'border-primary shadow-lg' : ''}`}>
+            {/* Plan Premium */}
+            <Card className={`relative ${isSubscribed ? 'border-primary shadow-lg' : 'border-primary/50'}`}>
               {!isSubscribed && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
@@ -201,38 +172,42 @@ const SubscriptionPage = () => {
               
               <CardHeader>
                 <div className="flex items-center space-x-2">
-                  <Building className="h-5 w-5 text-primary" />
-                  <CardTitle>Bar Manager Premium</CardTitle>
+                  <Crown className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-primary">Random Premium</CardTitle>
                 </div>
                 <CardDescription>
-                  Pour les propriétaires de bars qui veulent attirer plus de clients
+                  Accès illimité à toutes les fonctionnalités
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="text-3xl font-bold">
-                    29€<span className="text-lg font-normal text-muted-foreground">/mois</span>
+                  <div className="text-3xl font-bold text-primary">
+                    3,99€<span className="text-lg font-normal text-muted-foreground">/mois</span>
                   </div>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Dashboard analytics avancé
+                      <Infinity className="h-4 w-4 text-primary mr-3" />
+                      <span className="text-sm font-medium">Groupes illimités</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Priorité dans l'algorithme
+                      <Calendar className="h-4 w-4 text-primary mr-3" />
+                      <span className="text-sm font-medium">Planification illimitée</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Statistiques détaillées
+                      <Zap className="h-4 w-4 text-primary mr-3" />
+                      <span className="text-sm font-medium">Priorité dans les groupes</span>
                     </li>
                     <li className="flex items-center">
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                      Support prioritaire
+                      <Star className="h-4 w-4 text-primary mr-3" />
+                      <span className="text-sm font-medium">Accès anticipé aux nouveautés</span>
                     </li>
                     <li className="flex items-center">
-                      <TrendingUp className="h-4 w-4 text-primary mr-2" />
-                      Jusqu'à +40% de visiteurs
+                      <Shield className="h-4 w-4 text-primary mr-3" />
+                      <span className="text-sm font-medium">Support prioritaire</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-4 w-4 text-green-500 mr-3" />
+                      <span className="text-sm">Toutes les fonctionnalités gratuites</span>
                     </li>
                   </ul>
                 </div>
@@ -246,7 +221,7 @@ const SubscriptionPage = () => {
                 ) : (
                   <Button 
                     onClick={handleSubscribe} 
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-primary to-primary/80"
                     disabled={isCreatingCheckout}
                   >
                     {isCreatingCheckout ? (
@@ -255,7 +230,10 @@ const SubscriptionPage = () => {
                         Redirection...
                       </div>
                     ) : (
-                      "S'abonner maintenant"
+                      <>
+                        <Crown className="h-4 w-4 mr-2" />
+                        Passer au Premium
+                      </>
                     )}
                   </Button>
                 )}
@@ -263,56 +241,55 @@ const SubscriptionPage = () => {
             </Card>
           </div>
 
-          {/* Upgrade to Bar Owner */}
-          {!isBarOwner && (
-            <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Crown className="h-5 w-5 text-orange-500" />
-                  <CardTitle>Vous êtes propriétaire d'un bar ?</CardTitle>
-                </div>
-                <CardDescription>
-                  Rejoignez notre réseau de bars partenaires et attirez plus de clients !
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="text-center space-y-2">
-                    <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto">
-                      <Users className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <p className="font-medium">Plus de clients</p>
-                    <p className="text-sm text-muted-foreground">Groupes dirigés vers votre établissement</p>
-                  </div>
-                  <div className="text-center space-y-2">
-                    <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto">
-                      <TrendingUp className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <p className="font-medium">Analytics détaillées</p>
-                    <p className="text-sm text-muted-foreground">Suivez vos performances</p>
-                  </div>
-                  <div className="text-center space-y-2">
-                    <div className="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto">
-                      <Settings className="h-6 w-6 text-orange-600" />
-                    </div>
-                    <p className="font-medium">Gestion simplifiée</p>
-                    <p className="text-sm text-muted-foreground">Dashboard intuitif</p>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={handleUpgradeToBarOwner} 
-                  variant="default" 
-                  className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
-                >
-                  Devenir Bar Partenaire
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
           <Separator />
+
+          {/* Benefits Section */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-center">Pourquoi choisir Premium ?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center">
+                    <Infinity className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">Sans limites</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Créez et rejoignez autant de groupes que vous voulez, planifiez vos sorties à l'avance.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">Priorité</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Accès prioritaire aux groupes populaires et aux meilleurs créneaux.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center">
+                    <Star className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">Exclusivité</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Découvrez les nouvelles fonctionnalités en avant-première et profitez d'un support dédié.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* FAQ Section */}
           <div className="space-y-6">
@@ -320,24 +297,48 @@ const SubscriptionPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Comment fonctionne l'abonnement ?</CardTitle>
+                  <CardTitle className="text-lg">Puis-je annuler à tout moment ?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    L'abonnement Bar Manager Premium est mensuel et sans engagement. 
-                    Vous pouvez annuler à tout moment depuis votre espace client.
+                    Oui ! Votre abonnement Premium est sans engagement. Vous pouvez l'annuler à tout moment 
+                    et continuer à profiter des avantages jusqu'à la fin de votre période payée.
                   </p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Puis-je changer d'avis ?</CardTitle>
+                  <CardTitle className="text-lg">Que se passe-t-il si j'annule ?</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Oui ! Vous pouvez annuler votre abonnement à tout moment. 
-                    Vous garderez l'accès jusqu'à la fin de votre période de facturation.
+                    Vous revenez automatiquement au plan gratuit à la fin de votre période de facturation. 
+                    Vos données et historique sont conservés.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Y a-t-il une période d'essai ?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Nous offrons une garantie de remboursement de 7 jours. 
+                    Si vous n'êtes pas satisfait, contactez-nous pour un remboursement complet.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Comment gérer mon abonnement ?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Une fois abonné, vous pouvez gérer votre abonnement directement depuis cette page 
+                    ou via le portail client sécurisé de Stripe.
                   </p>
                 </CardContent>
               </Card>
