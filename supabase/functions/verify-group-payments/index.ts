@@ -37,7 +37,7 @@ serve(async (req) => {
       .from('member_payments')
       .select(`
         *,
-        group_payments!inner (
+        group_payments(
           group_id,
           status
         )
