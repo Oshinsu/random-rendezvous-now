@@ -364,13 +364,16 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
+  let group_id: string | undefined;
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   try {
-    const { group_id, latitude, longitude } = await req.json()
+    const requestData = await req.json();
+    group_id = requestData.group_id;
+    const { latitude, longitude } = requestData;
 
     if (!group_id) {
       return new Response(
@@ -666,7 +669,7 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur', details: error.message }),
+      JSON.stringify({ success: false, error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

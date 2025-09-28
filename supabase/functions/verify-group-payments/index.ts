@@ -39,7 +39,7 @@ serve(async (req) => {
         *,
         group_payments!inner (
           group_id,
-          status as group_status
+          status
         )
       `)
       .eq('group_payments.group_id', groupId)
@@ -99,7 +99,8 @@ serve(async (req) => {
             }
           }
         } catch (stripeError) {
-          console.warn('[VERIFY-GROUP-PAYMENTS] Stripe verification failed for payment:', payment.id, stripeError.message);
+          const stripeErrorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+          console.warn('[VERIFY-GROUP-PAYMENTS] Stripe verification failed for payment:', payment.id, stripeErrorMessage);
         }
       }
     }
@@ -174,8 +175,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[VERIFY-GROUP-PAYMENTS] Error:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[VERIFY-GROUP-PAYMENTS] Error:', errorMessage);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
