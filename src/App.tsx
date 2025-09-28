@@ -34,9 +34,11 @@ import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage'));
 const BarAuthPage = React.lazy(() => import('./pages/BarAuthPage'));
+const SubscriptionPage = React.lazy(() => import('./pages/SubscriptionPage'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
+import { SubscriptionNotifications } from "@/components/SubscriptionNotifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,6 +85,7 @@ const AppRoutes = () => (
     <Route path="/scheduled-groups" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/explore-by-city" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+    <Route path="/subscription" element={<ProtectedRoute><React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><SubscriptionPage /></React.Suspense></ProtectedRoute>} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
@@ -223,6 +226,7 @@ const App = () => (
               <div className="min-h-screen bg-background font-sans antialiased">
                 <Toaster />
                 <Sonner />
+                <SubscriptionNotifications />
                 <AppRoutes />
               </div>
             </TooltipProvider>

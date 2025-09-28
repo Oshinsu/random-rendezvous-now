@@ -1,5 +1,5 @@
 
-import { Home, Users, User, ExternalLink, Calendar, Shield, Building } from 'lucide-react';
+import { Home, Users, User, ExternalLink, Calendar, Shield, Building, Crown } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
@@ -25,6 +25,7 @@ const navigationItems = [
   { title: 'Groupes planifiés', url: '/scheduled-groups', icon: Calendar },
   { title: 'Espace Gérant', url: '/bar-dashboard', icon: Building },
   { title: 'Profil', url: '/profile', icon: User },
+  { title: 'Mon Abonnement', url: '/subscription', icon: Crown },
   { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
 ];
 
