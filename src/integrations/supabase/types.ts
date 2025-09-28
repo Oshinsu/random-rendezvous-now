@@ -411,6 +411,53 @@ export type Database = {
           },
         ]
       }
+      group_payments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          currency: string
+          group_id: string
+          id: string
+          metadata: Json | null
+          payment_deadline: string
+          status: string
+          stripe_session_id: string | null
+          total_amount_cents: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          group_id: string
+          id?: string
+          metadata?: Json | null
+          payment_deadline?: string
+          status?: string
+          stripe_session_id?: string | null
+          total_amount_cents?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          group_id?: string
+          id?: string
+          metadata?: Json | null
+          payment_deadline?: string
+          status?: string
+          stripe_session_id?: string | null
+          total_amount_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_group_payments_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           bar_address: string | null
@@ -488,6 +535,50 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      member_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          group_payment_id: string
+          id: string
+          metadata: Json | null
+          paid_at: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          group_payment_id: string
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          group_payment_id?: string
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_member_payments_group_payment"
+            columns: ["group_payment_id"]
+            isOneToOne: false
+            referencedRelation: "group_payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -758,6 +849,10 @@ export type Database = {
         Args: { group_uuid: string }
         Returns: boolean
       }
+      check_group_payment_completion: {
+        Args: { target_group_id: string }
+        Returns: boolean
+      }
       check_user_participation_limit: {
         Args: { user_uuid: string }
         Returns: boolean
@@ -836,6 +931,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_ppu_price_cents: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_security_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -863,6 +962,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initiate_group_payment: {
+        Args: { target_group_id: string }
+        Returns: string
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -873,6 +976,10 @@ export type Database = {
       }
       is_group_member: {
         Args: { group_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_ppu_mode_enabled: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_user_in_group: {
