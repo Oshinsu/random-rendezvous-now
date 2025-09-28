@@ -47,17 +47,15 @@ const GroupDetails = ({ group, onLeaveGroup, loading }: GroupDetailsProps) => {
               </span>
             </div>
           </div>
-           {(
-             <Button
-               onClick={onLeaveGroup}
-               disabled={loading}
-               variant="outline"
-               size="sm"
-               className="w-full mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-xs"
-             >
-               Quitter l'aventure
-             </Button>
-           )}
+          <Button
+            onClick={onLeaveGroup}
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="w-full mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-xs"
+          >
+            Quitter l'aventure
+          </Button>
         </div>
       </div>
     );

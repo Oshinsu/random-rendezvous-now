@@ -364,7 +364,7 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  let group_id: string | undefined;
+  let groupId: string | undefined;
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -372,23 +372,23 @@ serve(async (req) => {
 
   try {
     const requestData = await req.json();
-    group_id = requestData.group_id;
+    groupId = requestData.group_id;
     const { latitude, longitude } = requestData;
 
-    if (!group_id) {
+    if (!groupId) {
       return new Response(
         JSON.stringify({ success: false, error: 'group_id requis' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('🤖 [AUTO-ASSIGN INTELLIGENTE AMÉLIORÉE] Attribution avec filtrage renforcé pour groupe:', group_id);
+    console.log('🤖 [AUTO-ASSIGN INTELLIGENTE AMÉLIORÉE] Attribution avec filtrage renforcé pour groupe:', groupId);
 
     // Vérifier l'éligibilité du groupe
     const { data: group, error: groupError } = await supabase
       .from('groups')
       .select('current_participants, status, bar_name')
-      .eq('id', group_id)
+      .eq('id', groupId)
       .single();
 
     if (groupError || !group) {
@@ -487,7 +487,7 @@ serve(async (req) => {
 
     // Recherche simplifiée avec rayon fixe de 25km pour tous
     console.log('🎯 [RECHERCHE SIMPLIFIÉE] Rayon fixe de 25km pour tous les utilisateurs');
-    let allPlaces = await searchBarsWithRadius(finalLatitude, finalLongitude, 25000, apiKey, group_id);
+    let allPlaces = await searchBarsWithRadius(finalLatitude, finalLongitude, 25000, apiKey, groupId);
     
     if (allPlaces.length === 0) {
       console.log('💥 [RECHERCHE SIMPLIFIÉE] Aucun lieu trouvé');
@@ -534,7 +534,7 @@ serve(async (req) => {
     let selectedBars = [];
     console.log('🔍 [RECHERCHE SIMPLIFIÉE] Vérification statut opérationnel...');
     for (const bar of realBars) {
-      const isOperational = await verifyBarBusinessStatus(bar.id, apiKey, group_id);
+      const isOperational = await verifyBarBusinessStatus(bar.id, apiKey, groupId);
       if (isOperational) {
         selectedBars.push(bar);
         console.log(`✅ [RECHERCHE SIMPLIFIÉE] Bar validé: ${bar.displayName?.text}`);
@@ -626,7 +626,7 @@ serve(async (req) => {
           status_code: 200,
           response_time_ms: Date.now() - startTime,
           cost_usd: 0.017, // Google Places Search cost
-          group_id,
+          group_id: groupId,
           metadata: { 
             latitude: finalLatitude, 
             longitude: finalLongitude, 
@@ -660,7 +660,7 @@ serve(async (req) => {
           response_time_ms: Date.now() - startTime,
           cost_usd: 0,
           error_message: error instanceof Error ? error.message : 'Unknown error',
-          group_id: group_id || undefined,
+          group_id: groupId || undefined,
           metadata: { error_details: error }
         }
       });
