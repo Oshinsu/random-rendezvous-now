@@ -72,7 +72,6 @@ export default function BarApplicationPage() {
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-primary mb-2">150€/mois</div>
               <div className="text-lg text-muted-foreground">Accès complet à Random Business</div>
-              <div className="text-sm text-green-600 font-medium">✓ Essai gratuit 30 jours</div>
             </div>
 
             <div className="grid gap-6 mb-8">
@@ -136,7 +135,7 @@ export default function BarApplicationPage() {
                 disabled={createCheckout.isPending}
               >
                 <Euro className="h-5 w-5 mr-2" />
-                {createCheckout.isPending ? 'Chargement...' : 'Commencer mon essai gratuit'}
+                {createCheckout.isPending ? 'Chargement...' : 'Commencer l\'abonnement'}
               </Button>
               
               <Button 
@@ -148,7 +147,7 @@ export default function BarApplicationPage() {
               </Button>
               
               <div className="text-xs text-center text-muted-foreground">
-                Essai gratuit de 30 jours, puis 150€/mois. Annulation possible à tout moment.
+                150€/mois. Annulation possible à tout moment.
               </div>
             </div>
           </div>

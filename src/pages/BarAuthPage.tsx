@@ -98,7 +98,6 @@ const BarAuthPage = () => {
             <div className="text-center mb-6">
               <div className="text-3xl font-bold text-primary mb-2">150€/mois</div>
               <div className="text-lg text-muted-foreground">Accès complet à Random Business</div>
-              <div className="text-sm text-green-600 font-medium">✓ Essai gratuit 30 jours</div>
             </div>
 
             <Card className="border-primary/20 bg-primary/5">
@@ -262,7 +261,7 @@ const BarAuthPage = () => {
                     </form>
                     <div className="text-xs text-center text-muted-foreground mt-4">
                       En créant un compte, vous acceptez nos conditions d'utilisation.
-                      Essai gratuit de 30 jours, puis 150€/mois.
+                      150€/mois.
                     </div>
                   </CardContent>
                 </Card>
