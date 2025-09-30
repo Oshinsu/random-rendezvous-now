@@ -31,8 +31,8 @@ export const PpuModeToggle: React.FC = () => {
   const [optimisticPrice, setOptimisticPrice] = React.useState<number | null>(null);
   
   // Use optimistic values if available, otherwise use server values
-  const displayEnabled = optimisticEnabled !== null ? optimisticEnabled : ppuConfig.enabled;
-  const displayPrice = optimisticPrice !== null ? optimisticPrice : ppuConfig.priceEur;
+  const displayEnabled = optimisticEnabled !== null ? optimisticEnabled : (ppuConfig?.enabled ?? false);
+  const displayPrice = optimisticPrice !== null ? optimisticPrice : (ppuConfig?.priceEur ?? 0.99);
 
   React.useEffect(() => {
     setPriceInput(displayPrice.toFixed(2));
@@ -151,7 +151,7 @@ export const PpuModeToggle: React.FC = () => {
     }
   };
 
-  if (isLoadingConfig) {
+  if (isLoadingConfig || !ppuConfig) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center p-8">
