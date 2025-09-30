@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Euro, Settings, CreditCard, Users, DollarSign } from 'lucide-react';
+import { Euro, Settings, CreditCard, Users, DollarSign, RefreshCw } from 'lucide-react';
 import { usePpuPayments } from '@/hooks/usePpuPayments';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,10 +13,12 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
 export const PpuModeToggle: React.FC = () => {
-  const { ppuConfig, isLoadingConfig } = usePpuPayments();
+  const { ppuConfig, isLoadingConfig, refetchConfig } = usePpuPayments();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [priceInput, setPriceInput] = React.useState('0.99');
+  const [lastSync, setLastSync] = React.useState<Date>(new Date());
   
   // Local optimistic state
   const [optimisticEnabled, setOptimisticEnabled] = React.useState<boolean | null>(null);
@@ -28,9 +30,28 @@ export const PpuModeToggle: React.FC = () => {
 
   React.useEffect(() => {
     setPriceInput(displayPrice.toFixed(2));
-  }, [displayPrice]);
+    if (ppuConfig) {
+      setLastSync(new Date());
+    }
+  }, [displayPrice, ppuConfig]);
+
+  const handleManualRefresh = async () => {
+    console.log('🔄 Manual refresh triggered');
+    setIsRefreshing(true);
+    try {
+      await refetchConfig();
+      setLastSync(new Date());
+      toast.success('Configuration actualisée');
+    } catch (error) {
+      console.error('Error refreshing config:', error);
+      toast.error("Erreur lors de l'actualisation");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleTogglePpu = async (enabled: boolean) => {
+    console.log('🎚️ Toggle PPU:', enabled);
     // Optimistic update - change UI immediately
     setOptimisticEnabled(enabled);
     
@@ -50,6 +71,10 @@ export const PpuModeToggle: React.FC = () => {
       
       if (error) throw error;
       
+      // Force immediate refetch after successful update
+      await refetchConfig();
+      setLastSync(new Date());
+      
       toast.success(
         enabled 
           ? 'Mode PPU activé - Les groupes complets devront payer avant validation'
@@ -59,7 +84,7 @@ export const PpuModeToggle: React.FC = () => {
       // Clear optimistic state on success
       setOptimisticEnabled(null);
     } catch (error) {
-      console.error('Error toggling PPU:', error);
+      console.error('❌ Error toggling PPU:', error);
       toast.error('Erreur lors du changement de mode PPU');
       
       // Rollback optimistic update on error
@@ -79,6 +104,7 @@ export const PpuModeToggle: React.FC = () => {
     }
     
     const priceCents = Math.round(priceEur * 100);
+    console.log('💰 Updating price to:', priceEur, 'EUR (', priceCents, 'cents)');
     
     // Optimistic update - change UI immediately
     setOptimisticPrice(priceEur);
@@ -99,12 +125,16 @@ export const PpuModeToggle: React.FC = () => {
       
       if (error) throw error;
       
+      // Force immediate refetch after successful update
+      await refetchConfig();
+      setLastSync(new Date());
+      
       toast.success(`Prix PPU mis à jour: ${priceEur.toFixed(2)}€`);
       
       // Clear optimistic state on success
       setOptimisticPrice(null);
     } catch (error) {
-      console.error('Error updating PPU price:', error);
+      console.error('❌ Error updating PPU price:', error);
       toast.error('Erreur lors de la mise à jour du prix');
       
       // Rollback optimistic update on error
@@ -130,21 +160,36 @@ export const PpuModeToggle: React.FC = () => {
       {/* Main Toggle Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <CreditCard className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <CreditCard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  Mode Pay-Per-Use (PPU)
+                  <Badge variant={displayEnabled ? "default" : "secondary"}>
+                    {displayEnabled ? 'Activé' : 'Désactivé'}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Activer ou désactiver le système de paiement pour la validation des groupes
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                Mode Pay-Per-Use (PPU)
-                <Badge variant={displayEnabled ? "default" : "secondary"}>
-                  {displayEnabled ? 'Activé' : 'Désactivé'}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Activer ou désactiver le système de paiement pour la validation des groupes
-              </CardDescription>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Dernière synchro: {lastSync.toLocaleTimeString()}
           </div>
         </CardHeader>
 

@@ -32,34 +32,36 @@ export const usePpuPayments = () => {
   const queryClient = useQueryClient();
 
   // Check PPU configuration
-  const { data: ppuConfig, isLoading: isLoadingConfig } = useQuery({
+  const { data: ppuConfig, isLoading: isLoadingConfig, refetch: refetchConfig } = useQuery({
     queryKey: ['ppuConfig'],
     queryFn: async () => {
       try {
+        console.log('🔄 Fetching PPU config from database...');
         // Single RPC call for better performance
         const { data, error } = await supabase.rpc('get_ppu_config');
 
         if (error) {
-          console.error('Error fetching PPU config:', error);
+          console.error('❌ Error fetching PPU config:', error);
           throw error;
         }
 
         const config = data as any;
+        console.log('✅ PPU config fetched:', { enabled: config?.enabled, price_cents: config?.price_cents });
         return {
           enabled: config?.enabled || false,
           priceEur: (config?.price_cents || 99) / 100
         } as PpuConfig;
       } catch (error) {
-        console.error('Error in ppuConfig query:', error);
+        console.error('❌ Error in ppuConfig query:', error);
         return {
           enabled: false,
           priceEur: 0.99
         } as PpuConfig;
       }
     },
-    refetchInterval: 60000, // Check every 60 seconds (reduced frequency)
+    refetchInterval: 10000, // Check every 10 seconds for better sync
     retry: 1, // Only retry once
-    staleTime: 30000, // Consider data fresh for 30 seconds
+    staleTime: 5000, // Consider data fresh for 5 seconds
   });
 
   // Get group payment for a specific group
@@ -188,6 +190,7 @@ export const usePpuPayments = () => {
   return {
     ppuConfig,
     isLoadingConfig,
+    refetchConfig,
     getGroupPayment,
     getMemberPayments,
     getUserPaymentStatus,
