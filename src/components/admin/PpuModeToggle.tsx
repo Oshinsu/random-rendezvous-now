@@ -10,9 +10,11 @@ import { usePpuPayments } from '@/hooks/usePpuPayments';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const PpuModeToggle: React.FC = () => {
   const { ppuConfig, isLoadingConfig } = usePpuPayments();
+  const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [priceInput, setPriceInput] = React.useState('0.99');
 
@@ -31,6 +33,9 @@ export const PpuModeToggle: React.FC = () => {
       });
       
       if (error) throw error;
+      
+      // Force immediate cache refresh
+      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
       
       toast.success(
         enabled 
@@ -60,6 +65,9 @@ export const PpuModeToggle: React.FC = () => {
       });
       
       if (error) throw error;
+      
+      // Force immediate cache refresh
+      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
       
       toast.success(`Prix PPU mis à jour: ${priceEur.toFixed(2)}€`);
     } catch (error) {
