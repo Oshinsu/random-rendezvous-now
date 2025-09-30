@@ -36,21 +36,18 @@ export const usePpuPayments = () => {
     queryKey: ['ppuConfig'],
     queryFn: async () => {
       try {
-        const [{ data: enabled, error: enabledError }, { data: price, error: priceError }] = await Promise.all([
-          supabase.rpc('is_ppu_mode_enabled'),
-          supabase.rpc('get_ppu_price_cents')
-        ]);
+        // Single RPC call for better performance
+        const { data, error } = await supabase.rpc('get_ppu_config');
 
-        if (enabledError) {
-          console.error('Error fetching PPU enabled status:', enabledError);
-        }
-        if (priceError) {
-          console.error('Error fetching PPU price:', priceError);
+        if (error) {
+          console.error('Error fetching PPU config:', error);
+          throw error;
         }
 
+        const config = data as any;
         return {
-          enabled: enabled || false,
-          priceEur: (price || 99) / 100
+          enabled: config?.enabled || false,
+          priceEur: (config?.price_cents || 99) / 100
         } as PpuConfig;
       } catch (error) {
         console.error('Error in ppuConfig query:', error);
@@ -60,8 +57,9 @@ export const usePpuPayments = () => {
         } as PpuConfig;
       }
     },
-    refetchInterval: 30000, // Check every 30 seconds
-    retry: 3,
+    refetchInterval: 60000, // Check every 60 seconds (reduced frequency)
+    retry: 1, // Only retry once
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Get group payment for a specific group

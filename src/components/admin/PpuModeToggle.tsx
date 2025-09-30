@@ -17,33 +17,54 @@ export const PpuModeToggle: React.FC = () => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [priceInput, setPriceInput] = React.useState('0.99');
+  
+  // Local optimistic state
+  const [optimisticEnabled, setOptimisticEnabled] = React.useState<boolean | null>(null);
+  const [optimisticPrice, setOptimisticPrice] = React.useState<number | null>(null);
+  
+  // Use optimistic values if available, otherwise use server values
+  const displayEnabled = optimisticEnabled !== null ? optimisticEnabled : ppuConfig.enabled;
+  const displayPrice = optimisticPrice !== null ? optimisticPrice : ppuConfig.priceEur;
 
   React.useEffect(() => {
-    if (ppuConfig) {
-      setPriceInput(ppuConfig.priceEur.toFixed(2));
-    }
-  }, [ppuConfig]);
+    setPriceInput(displayPrice.toFixed(2));
+  }, [displayPrice]);
 
   const handleTogglePpu = async (enabled: boolean) => {
-    setIsUpdating(true);
+    // Optimistic update - change UI immediately
+    setOptimisticEnabled(enabled);
+    
     try {
+      setIsUpdating(true);
+      
+      // Update cache optimistically
+      queryClient.setQueryData(['ppuConfig'], (old: any) => ({
+        ...old,
+        enabled
+      }));
+      
       const { error } = await supabase.rpc('update_system_setting', {
         setting_name: 'ppu_mode_enabled',
-        new_value: JSON.stringify(enabled)
+        new_value: JSON.stringify([enabled])
       });
       
       if (error) throw error;
       
-      // Force immediate cache refresh
-      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
-      
       toast.success(
         enabled 
-          ? 'Mode PPU activé - Les nouveaux groupes nécessiteront un paiement'
-          : 'Mode PPU désactivé - Les groupes redeviennent gratuits'
+          ? 'Mode PPU activé - Les groupes complets devront payer avant validation'
+          : 'Mode PPU désactivé - Les groupes sont validés gratuitement'
       );
+      
+      // Clear optimistic state on success
+      setOptimisticEnabled(null);
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour du mode PPU');
+      console.error('Error toggling PPU:', error);
+      toast.error('Erreur lors du changement de mode PPU');
+      
+      // Rollback optimistic update on error
+      setOptimisticEnabled(null);
+      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
     } finally {
       setIsUpdating(false);
     }
@@ -51,27 +72,44 @@ export const PpuModeToggle: React.FC = () => {
 
   const handleUpdatePrice = async () => {
     const priceEur = parseFloat(priceInput);
-    if (isNaN(priceEur) || priceEur < 0.01 || priceEur > 50) {
-      toast.error('Le prix doit être entre 0.01€ et 50€');
+    
+    if (isNaN(priceEur) || priceEur <= 0) {
+      toast.error('Prix invalide');
       return;
     }
-
-    setIsUpdating(true);
+    
+    const priceCents = Math.round(priceEur * 100);
+    
+    // Optimistic update - change UI immediately
+    setOptimisticPrice(priceEur);
+    
     try {
-      const priceCents = Math.round(priceEur * 100);
+      setIsUpdating(true);
+      
+      // Update cache optimistically
+      queryClient.setQueryData(['ppuConfig'], (old: any) => ({
+        ...old,
+        priceEur
+      }));
+      
       const { error } = await supabase.rpc('update_system_setting', {
         setting_name: 'ppu_price_cents',
-        new_value: JSON.stringify(priceCents)
+        new_value: JSON.stringify([priceCents])
       });
       
       if (error) throw error;
       
-      // Force immediate cache refresh
-      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
-      
       toast.success(`Prix PPU mis à jour: ${priceEur.toFixed(2)}€`);
+      
+      // Clear optimistic state on success
+      setOptimisticPrice(null);
     } catch (error) {
+      console.error('Error updating PPU price:', error);
       toast.error('Erreur lors de la mise à jour du prix');
+      
+      // Rollback optimistic update on error
+      setOptimisticPrice(null);
+      await queryClient.invalidateQueries({ queryKey: ['ppuConfig'] });
     } finally {
       setIsUpdating(false);
     }
@@ -99,8 +137,8 @@ export const PpuModeToggle: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 Mode Pay-Per-Use (PPU)
-                <Badge variant={ppuConfig?.enabled ? "default" : "secondary"}>
-                  {ppuConfig?.enabled ? 'Activé' : 'Désactivé'}
+                <Badge variant={displayEnabled ? "default" : "secondary"}>
+                  {displayEnabled ? 'Activé' : 'Désactivé'}
                 </Badge>
               </CardTitle>
               <CardDescription>
@@ -118,7 +156,7 @@ export const PpuModeToggle: React.FC = () => {
                 Mode PPU
               </Label>
               <p className="text-sm text-muted-foreground mt-1">
-                {ppuConfig?.enabled 
+                {displayEnabled 
                   ? 'Les groupes complets nécessitent un paiement pour être validés'
                   : 'Les groupes sont validés gratuitement comme actuellement'
                 }
@@ -126,7 +164,7 @@ export const PpuModeToggle: React.FC = () => {
             </div>
             <Switch
               id="ppu-toggle"
-              checked={ppuConfig?.enabled || false}
+              checked={displayEnabled}
               onCheckedChange={handleTogglePpu}
               disabled={isUpdating}
             />
@@ -159,14 +197,14 @@ export const PpuModeToggle: React.FC = () => {
               </div>
               <Button 
                 onClick={handleUpdatePrice}
-                disabled={isUpdating || priceInput === ppuConfig?.priceEur.toFixed(2)}
+                disabled={isUpdating || priceInput === displayPrice.toFixed(2)}
               >
                 {isUpdating ? <LoadingSpinner className="h-4 w-4" /> : 'Mettre à jour'}
               </Button>
             </div>
             
             <p className="text-xs text-muted-foreground">
-              Prix actuel: <strong>{ppuConfig?.priceEur.toFixed(2)}€</strong> par membre
+              Prix actuel: <strong>{displayPrice.toFixed(2)}€</strong> par membre
             </p>
           </div>
         </CardContent>
@@ -188,7 +226,7 @@ export const PpuModeToggle: React.FC = () => {
               <div>
                 <h4 className="font-medium text-sm">Expérience utilisateur</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {ppuConfig?.enabled 
+                  {displayEnabled 
                     ? 'Les groupes complets passent en "attente de paiement" pendant 15min'
                     : 'Les groupes complets sont directement confirmés et un bar est assigné'
                   }
@@ -201,8 +239,8 @@ export const PpuModeToggle: React.FC = () => {
               <div>
                 <h4 className="font-medium text-sm">Revenus</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {ppuConfig?.enabled 
-                    ? `${(ppuConfig.priceEur * 5).toFixed(2)}€ par groupe validé (5 × ${ppuConfig.priceEur.toFixed(2)}€)`
+                  {displayEnabled 
+                    ? `${(displayPrice * 5).toFixed(2)}€ par groupe validé (5 × ${displayPrice.toFixed(2)}€)`
                     : 'Aucun revenu généré par groupe'
                   }
                 </p>
@@ -210,14 +248,14 @@ export const PpuModeToggle: React.FC = () => {
             </div>
           </div>
 
-          {ppuConfig?.enabled && (
+          {displayEnabled && (
             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
               <h4 className="font-medium text-sm text-primary mb-2">
                 ⚠️ Mode PPU activé
               </h4>
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>• Les nouveaux groupes qui atteignent 5 membres déclencheront le processus de paiement</li>
-                <li>• Chaque membre aura 15 minutes pour payer {ppuConfig.priceEur.toFixed(2)}€</li>
+                <li>• Chaque membre aura 15 minutes pour payer {displayPrice.toFixed(2)}€</li>
                 <li>• Si tous les membres payent, le bar est automatiquement assigné</li>
                 <li>• Si le délai expire, le groupe est annulé</li>
               </ul>

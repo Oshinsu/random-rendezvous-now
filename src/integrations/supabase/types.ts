@@ -931,6 +931,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_ppu_config: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_ppu_price_cents: {
         Args: Record<PropertyKey, never>
         Returns: number
