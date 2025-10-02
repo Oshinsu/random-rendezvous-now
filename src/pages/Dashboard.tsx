@@ -11,16 +11,13 @@ import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { motion, useAnimation } from 'framer-motion'
-import { Sparkles, MapPin, Users } from 'lucide-react'
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth()
   const { joinRandomGroup, loading, userGroups } = useUnifiedGroups()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
-  const [showDiagnostics, setShowDiagnostics] = useState(false)
-  const [authDiagnostics, setAuthDiagnostics] = useState<any>(null)
-  const [processStep, setProcessStep] = useState<'idle' | 'cleaning' | 'locating' | 'creating'>('idle')
+  const [processStep, setProcessStep] = useState<'idle' | 'creating'>('idle')
   const [showConfetti, setShowConfetti] = useState(false)
   const navigate = useNavigate()
   const hasInitialized = useRef(false)
@@ -28,121 +25,7 @@ const Dashboard = () => {
   const buttonControls = useAnimation()
   const ringControls = useAnimation()
   
-  // DIAGNOSTIC: Vérifier la session d'authentification
-  useEffect(() => {
-    const runAuthDiagnostics = async () => {
-      console.log('🔍 === DIAGNOSTIC D\'AUTHENTIFICATION ===')
-      
-      try {
-        // 1. État du contexte AuthContext
-        console.log('📱 AuthContext State:')
-        console.log('  - user:', user ? `${user.id} (${user.email})` : 'null')
-        console.log('  - session:', session ? 'présente' : 'null')
-        
-        // 2. Vérification directe Supabase
-        const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser()
-        const { data: { session: supabaseSession }, error: sessionError } = await supabase.auth.getSession()
-        
-        console.log('🔗 Supabase Direct:')
-        console.log('  - supabase.auth.getUser():', supabaseUser ? `${supabaseUser.id}` : 'null', userError ? `ERROR: ${userError.message}` : '')
-        console.log('  - supabase.auth.getSession():', supabaseSession ? 'présente' : 'null', sessionError ? `ERROR: ${sessionError.message}` : '')
-        
-        // 3. Test RLS avec auth.uid()
-        const { data: rlsTest, error: rlsError } = await supabase.from('profiles').select('id').limit(1)
-        console.log('🛡️ Test RLS (profiles):', rlsTest ? `${rlsTest.length} résultats` : 'null', rlsError ? `ERROR: ${rlsError.message}` : 'OK')
-        
-        // 4. localStorage inspection
-        const authKeys = Object.keys(localStorage).filter(key => key.includes('auth'))
-        console.log('💾 LocalStorage auth keys:', authKeys.length, authKeys)
-        
-        // Stocker les diagnostics pour l'affichage
-        setAuthDiagnostics({
-          contextUser: user,
-          contextSession: !!session,
-          supabaseUser,
-          supabaseSession: !!supabaseSession,
-          userError: userError?.message,
-          sessionError: sessionError?.message,
-          rlsTest: rlsTest ? rlsTest.length : null,
-          rlsError: rlsError?.message,
-          authKeysCount: authKeys.length,
-          timestamp: new Date().toLocaleTimeString()
-        })
-        
-        // 5. Alerte si désynchronisation détectée
-        const hasContextAuth = !!(user && session)
-        const hasSupabaseAuth = !!(supabaseUser && supabaseSession)
-        
-        if (hasContextAuth !== hasSupabaseAuth) {
-          console.log('⚠️ DÉSYNCHRONISATION DÉTECTÉE!')
-          console.log(`  - Context: ${hasContextAuth ? 'Authentifié' : 'Non authentifié'}`)
-          console.log(`  - Supabase: ${hasSupabaseAuth ? 'Authentifié' : 'Non authentifié'}`)
-          
-          toast({
-            title: '⚠️ Session corrompue détectée',
-            description: 'Désynchronisation entre frontend et backend',
-            variant: 'destructive',
-          })
-        }
-        
-      } catch (error) {
-        console.error('❌ Erreur lors du diagnostic:', error)
-        setAuthDiagnostics({
-          error: String(error),
-          timestamp: new Date().toLocaleTimeString()
-        })
-      }
-    }
-    
-    if (!hasInitialized.current) {
-      runAuthDiagnostics()
-    }
-  }, [user, session])
-  
-  // Force reconnect function
-  const handleForceReconnect = async () => {
-    try {
-      console.log('🔄 Force reconnect initiated...')
-      
-      // 1. Clear localStorage auth data
-      const authKeys = Object.keys(localStorage).filter(key => key.includes('auth'))
-      authKeys.forEach(key => localStorage.removeItem(key))
-      console.log('🧹 Cleared localStorage auth keys:', authKeys.length)
-      
-      // 2. Force sign out
-      await supabase.auth.signOut()
-      console.log('🚪 Signed out from Supabase')
-      
-      // 3. Clear cookies (if any)
-      document.cookie.split(";").forEach(cookie => {
-        const eqPos = cookie.indexOf("=")
-        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-        if (name.includes('auth') || name.includes('supabase')) {
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-        }
-      })
-      
-      toast({
-        title: '🔄 Reconnexion forcée',
-        description: 'Redirection vers la page de connexion...',
-      })
-      
-      // 4. Navigate to auth page
-      setTimeout(() => {
-        navigate('/')
-      }, 1500)
-      
-    } catch (error) {
-      console.error('❌ Erreur lors de la reconnexion forcée:', error)
-      toast({
-        title: '❌ Erreur',
-        description: 'Impossible de forcer la reconnexion',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
+  // Nettoyer les toasts au montage - UNE SEULE FOIS
   useEffect(() => {
     if (!hasInitialized.current) {
       clearActiveToasts()
@@ -156,55 +39,54 @@ const Dashboard = () => {
       setRedirectCountdown(0)
       setProcessStep('idle')
       clearActiveToasts()
-      console.log('🛑 Recherche annulée')
       return
     }
 
     setIsSearching(true)
-    console.log('🎲 Recherche démarrée - animation devrait commencer')
+    setProcessStep('creating')
     
-    // Animation sequence
-    await buttonControls.start({
-      scale: 0.9,
-      transition: { duration: 0.2 }
+    // Animation d'entrée rapide
+    buttonControls.start({
+      scale: [1, 0.95, 1.05, 1],
+      transition: { duration: 0.4, ease: 'easeInOut' }
     })
-    await buttonControls.start({
-      scale: 1.1,
-      transition: { duration: 0.3, type: 'spring' }
-    })
-    await buttonControls.start({
-      scale: 1,
-      transition: { duration: 0.2 }
-    })
+    
+    // Timeout de sécurité (30 secondes max)
+    const timeoutId = setTimeout(() => {
+      if (isSearching) {
+        setIsSearching(false)
+        setProcessStep('idle')
+        toast({
+          title: t('dashboard.error_timeout') || 'Temps écoulé',
+          description: t('dashboard.error_timeout_desc') || 'La recherche a pris trop de temps. Réessayez.',
+          variant: 'destructive',
+        })
+      }
+    }, 30000)
     
     try {
-      // Step 1: Cleaning
-      setProcessStep('cleaning')
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      // Step 2: Locating
-      setProcessStep('locating')
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
-      // Step 3: Creating
-      setProcessStep('creating')
       const success = await joinRandomGroup()
+      clearTimeout(timeoutId)
       
       if (success) {
-        console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
         setShowConfetti(true)
         setTimeout(() => setShowConfetti(false), 3000)
-        setRedirectCountdown(15)
+        setRedirectCountdown(5)
         setProcessStep('idle')
       } else {
-        console.log('❌ Échec de la recherche/création de groupe')
         setIsSearching(false)
         setProcessStep('idle')
       }
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche:', error)
+      clearTimeout(timeoutId)
+      console.error('Erreur lors de la recherche:', error)
       setIsSearching(false)
       setProcessStep('idle')
+      toast({
+        title: t('dashboard.error') || 'Erreur',
+        description: t('dashboard.error_desc') || 'Une erreur est survenue. Réessayez.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -234,11 +116,8 @@ const Dashboard = () => {
 
   // Effect pour surveiller les groupes et déclencher le countdown
   useEffect(() => {
-    // Groups status check
-    
     if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
-      console.log('🎯 Groupe détecté, démarrage du countdown')
-      setRedirectCountdown(15)
+      setRedirectCountdown(5)
     }
   }, [userGroups, isSearching, redirectCountdown])
 
@@ -259,7 +138,7 @@ const Dashboard = () => {
     }
   }
 
-  const progressValue = processStep === 'cleaning' ? 33 : processStep === 'locating' ? 66 : processStep === 'creating' ? 100 : 0
+  
 
   const Confetti = () => (
     <>
@@ -346,8 +225,8 @@ const Dashboard = () => {
                 </>
               )}
 
-              {/* Progress Ring */}
-              {isSearching && processStep !== 'idle' && (
+              {/* Rotating ring when searching */}
+              {isSearching && (
                 <svg
                   className="absolute inset-0 -rotate-90 pointer-events-none"
                   style={{ width: '100%', height: '100%' }}
@@ -357,23 +236,16 @@ const Dashboard = () => {
                     cy="50%"
                     r="47%"
                     fill="none"
-                    stroke="url(#progressGradient)"
+                    stroke="rgba(241, 194, 50, 0.3)"
                     strokeWidth="4"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: progressValue / 100 }}
-                    transition={{ duration: 0.8, ease: 'easeInOut' }}
-                    style={{
-                      filter: 'drop-shadow(0 0 8px rgba(241, 194, 50, 0.6))'
+                    strokeDasharray="10 5"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 2,
+                      ease: 'linear',
+                      repeat: Infinity
                     }}
                   />
-                  <defs>
-                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#f1c232" />
-                      <stop offset="50%" stopColor="#e94e77" />
-                      <stop offset="100%" stopColor="#6366f1" />
-                    </linearGradient>
-                  </defs>
                 </svg>
               )}
 
@@ -425,43 +297,6 @@ const Dashboard = () => {
               {showConfetti && <Confetti />}
             </motion.button>
 
-            {/* Step indicators below button */}
-            {isSearching && (
-              <div className="flex justify-center gap-6 mt-8">
-                <motion.div
-                  className="flex flex-col items-center gap-2"
-                  animate={{
-                    scale: processStep === 'cleaning' ? 1.2 : 1,
-                    opacity: processStep === 'cleaning' ? 1 : 0.4
-                  }}
-                >
-                  <Sparkles className={`w-6 h-6 ${processStep === 'cleaning' ? 'text-brand-500' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium">{t('dashboard.step_cleaning') || 'Nettoyage'}</span>
-                </motion.div>
-                
-                <motion.div
-                  className="flex flex-col items-center gap-2"
-                  animate={{
-                    scale: processStep === 'locating' ? 1.2 : 1,
-                    opacity: processStep === 'locating' ? 1 : 0.4
-                  }}
-                >
-                  <MapPin className={`w-6 h-6 ${processStep === 'locating' ? 'text-brand-500' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium">{t('dashboard.step_locating') || 'Localisation'}</span>
-                </motion.div>
-                
-                <motion.div
-                  className="flex flex-col items-center gap-2"
-                  animate={{
-                    scale: processStep === 'creating' ? 1.2 : 1,
-                    opacity: processStep === 'creating' ? 1 : 0.4
-                  }}
-                >
-                  <Users className={`w-6 h-6 ${processStep === 'creating' ? 'text-brand-500' : 'text-gray-400'}`} />
-                  <span className="text-xs font-medium">{t('dashboard.step_creating') || 'Création'}</span>
-                </motion.div>
-              </div>
-            )}
           </div>
 
           {/* Texte d'état avec countdown */}
@@ -514,59 +349,6 @@ const Dashboard = () => {
               {t('dashboard.view_group_now')}
             </button>
           )}
-
-          {/* Diagnostic Panel - Temporary */}
-          <div className="mt-8 border-t border-gray-200 pt-6">
-            <button
-              onClick={() => setShowDiagnostics(!showDiagnostics)}
-              className="text-xs text-gray-400 hover:text-gray-600 mb-3"
-            >
-              🔍 Diagnostic Session {showDiagnostics ? '▲' : '▼'}
-            </button>
-            
-            {showDiagnostics && (
-              <div className="bg-gray-50 rounded-lg p-4 text-xs space-y-3">
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={handleForceReconnect}
-                    className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                  >
-                    🚪 Force Reconnect
-                  </button>
-                </div>
-                
-                {authDiagnostics && (
-                  <div className="space-y-2">
-                    <p><strong>Timestamp:</strong> {authDiagnostics.timestamp}</p>
-                    <p><strong>Context User:</strong> {authDiagnostics.contextUser?.id || 'null'}</p>
-                    <p><strong>Context Session:</strong> {authDiagnostics.contextSession ? '✅' : '❌'}</p>
-                    <p><strong>Supabase User:</strong> {authDiagnostics.supabaseUser?.id || 'null'}</p>
-                    <p><strong>Supabase Session:</strong> {authDiagnostics.supabaseSession ? '✅' : '❌'}</p>
-                    
-                    {authDiagnostics.userError && (
-                      <p className="text-red-600"><strong>User Error:</strong> {authDiagnostics.userError}</p>
-                    )}
-                    {authDiagnostics.sessionError && (
-                      <p className="text-red-600"><strong>Session Error:</strong> {authDiagnostics.sessionError}</p>
-                    )}
-                    
-                    <p><strong>RLS Test:</strong> {
-                      authDiagnostics.rlsTest !== null ? `${authDiagnostics.rlsTest} résultats` : 'Failed'
-                    }</p>
-                    {authDiagnostics.rlsError && (
-                      <p className="text-red-600"><strong>RLS Error:</strong> {authDiagnostics.rlsError}</p>
-                    )}
-                    
-                    <p><strong>Auth Keys in localStorage:</strong> {authDiagnostics.authKeysCount}</p>
-                    
-                    {authDiagnostics.error && (
-                      <p className="text-red-600"><strong>Diagnostic Error:</strong> {authDiagnostics.error}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
         </div>
       </div>
