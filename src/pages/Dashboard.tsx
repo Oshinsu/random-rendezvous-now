@@ -10,6 +10,8 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
+import { motion, useAnimation } from 'framer-motion'
+import { Sparkles, MapPin, Users } from 'lucide-react'
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth()
@@ -18,9 +20,13 @@ const Dashboard = () => {
   const [redirectCountdown, setRedirectCountdown] = useState(0)
   const [showDiagnostics, setShowDiagnostics] = useState(false)
   const [authDiagnostics, setAuthDiagnostics] = useState<any>(null)
+  const [processStep, setProcessStep] = useState<'idle' | 'cleaning' | 'locating' | 'creating'>('idle')
+  const [showConfetti, setShowConfetti] = useState(false)
   const navigate = useNavigate()
   const hasInitialized = useRef(false)
   const { t } = useTranslation()
+  const buttonControls = useAnimation()
+  const ringControls = useAnimation()
   
   // DIAGNOSTIC: Vérifier la session d'authentification
   useEffect(() => {
@@ -146,30 +152,59 @@ const Dashboard = () => {
 
   const handleButtonClick = async () => {
     if (isSearching) {
-      // Annuler la recherche
       setIsSearching(false)
       setRedirectCountdown(0)
+      setProcessStep('idle')
       clearActiveToasts()
       console.log('🛑 Recherche annulée')
       return
     }
 
-    // Démarrer la recherche
     setIsSearching(true)
     console.log('🎲 Recherche démarrée - animation devrait commencer')
     
+    // Animation sequence
+    await buttonControls.start({
+      scale: 0.9,
+      transition: { duration: 0.2 }
+    })
+    await buttonControls.start({
+      scale: 1.1,
+      transition: { duration: 0.3, type: 'spring' }
+    })
+    await buttonControls.start({
+      scale: 1,
+      transition: { duration: 0.2 }
+    })
+    
     try {
+      // Step 1: Cleaning
+      setProcessStep('cleaning')
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Step 2: Locating
+      setProcessStep('locating')
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Step 3: Creating
+      setProcessStep('creating')
       const success = await joinRandomGroup()
+      
       if (success) {
         console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 3000)
         setRedirectCountdown(15)
+        setProcessStep('idle')
       } else {
         console.log('❌ Échec de la recherche/création de groupe')
         setIsSearching(false)
+        setProcessStep('idle')
       }
     } catch (error) {
       console.error('❌ Erreur lors de la recherche:', error)
       setIsSearching(false)
+      setProcessStep('idle')
     }
   }
 
@@ -207,53 +242,227 @@ const Dashboard = () => {
     }
   }, [userGroups, isSearching, redirectCountdown])
 
+  // Animation variants
+  const buttonVariants = {
+    idle: {
+      scale: 1,
+      rotate: 0,
+      boxShadow: '0 10px 40px -10px rgba(241, 194, 50, 0.3), 0 0 20px rgba(241, 194, 50, 0.1)'
+    },
+    hover: {
+      scale: 1.08,
+      rotate: [0, -3, 3, -3, 0],
+      boxShadow: '0 20px 60px -10px rgba(241, 194, 50, 0.5), 0 0 40px rgba(241, 194, 50, 0.2), 0 0 80px rgba(241, 194, 50, 0.1)'
+    },
+    tap: {
+      scale: 0.95
+    }
+  }
+
+  const progressValue = processStep === 'cleaning' ? 33 : processStep === 'locating' ? 66 : processStep === 'creating' ? 100 : 0
+
+  const Confetti = () => (
+    <>
+      {[...Array(30)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            x: 0, 
+            y: 0, 
+            opacity: 1,
+            scale: Math.random() * 0.5 + 0.5
+          }}
+          animate={{
+            x: (Math.random() - 0.5) * 400,
+            y: Math.random() * -300 - 100,
+            opacity: 0,
+            rotate: Math.random() * 360
+          }}
+          transition={{
+            duration: Math.random() * 1 + 1.5,
+            ease: 'easeOut'
+          }}
+          className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full pointer-events-none"
+          style={{
+            background: ['#f1c232', '#e94e77', '#6366f1', '#10b981', '#f59e0b'][i % 5]
+          }}
+        />
+      ))}
+    </>
+  )
+
   return (
     <AppLayout>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
         <div className="text-center space-y-6 sm:space-y-8 w-full max-w-md mx-auto">
-          {/* Bouton circulaire avec logo Random */}
-          <button
-            onClick={handleButtonClick}
-            disabled={loading}
-            className="
-              relative w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto
-              bg-gradient-to-br from-brand-400 to-brand-600 
-              shadow-glow hover:shadow-glow-strong
-              transition-all duration-300 transform-gpu
-              hover:scale-105 active:scale-95
-              focus:outline-none focus:ring-4 focus:ring-brand-300
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          >
-            <div 
-              className={`
-                absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm
-                ${isSearching ? 'animate-spin' : ''}
-              `}
-              style={{
-                animationDuration: '4s',
-                animationTimingFunction: 'linear',
-                animationIterationCount: 'infinite'
-              }}
+          {/* Exceptional Animated Button */}
+          <div className="relative">
+            <motion.button
+              onClick={handleButtonClick}
+              disabled={loading}
+              animate={buttonControls}
+              variants={buttonVariants}
+              initial="idle"
+              whileHover={!isSearching ? "hover" : undefined}
+              whileTap={!isSearching ? "tap" : undefined}
+              className="
+                relative w-40 h-40 sm:w-48 sm:h-48 rounded-full mx-auto
+                bg-gradient-to-br from-brand-400 via-brand-500 to-brand-600 
+                focus:outline-none focus:ring-4 focus:ring-brand-300
+                disabled:opacity-50 disabled:cursor-not-allowed
+                overflow-visible
+              "
             >
-              <div className="flex items-center justify-center w-full h-full">
-                <RandomLogo 
-                  size={window.innerWidth < 640 ? 60 : 80} 
-                  withAura={false}
-                  className="drop-shadow-lg"
-                />
-              </div>
-            </div>
-            
-            {/* Indicateur de statut */}
-            <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
-              {isSearching ? (
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500 animate-pulse"></div>
-              ) : (
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
+              {/* Orbiting particles when hovering */}
+              {!isSearching && (
+                <>
+                  {[0, 120, 240].map((angle) => (
+                    <motion.div
+                      key={angle}
+                      className="absolute w-2 h-2 rounded-full bg-brand-300"
+                      style={{
+                        top: '50%',
+                        left: '50%',
+                        x: '-50%',
+                        y: '-50%'
+                      }}
+                      animate={{
+                        x: [
+                          Math.cos((angle * Math.PI) / 180) * 100 - 4,
+                          Math.cos(((angle + 360) * Math.PI) / 180) * 100 - 4
+                        ],
+                        y: [
+                          Math.sin((angle * Math.PI) / 180) * 100 - 4,
+                          Math.sin(((angle + 360) * Math.PI) / 180) * 100 - 4
+                        ]
+                      }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: 'linear'
+                      }}
+                    />
+                  ))}
+                </>
               )}
-            </div>
-          </button>
+
+              {/* Progress Ring */}
+              {isSearching && processStep !== 'idle' && (
+                <svg
+                  className="absolute inset-0 -rotate-90 pointer-events-none"
+                  style={{ width: '100%', height: '100%' }}
+                >
+                  <motion.circle
+                    cx="50%"
+                    cy="50%"
+                    r="47%"
+                    fill="none"
+                    stroke="url(#progressGradient)"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: progressValue / 100 }}
+                    transition={{ duration: 0.8, ease: 'easeInOut' }}
+                    style={{
+                      filter: 'drop-shadow(0 0 8px rgba(241, 194, 50, 0.6))'
+                    }}
+                  />
+                  <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f1c232" />
+                      <stop offset="50%" stopColor="#e94e77" />
+                      <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              )}
+
+              {/* Inner rotating ring when searching */}
+              <motion.div 
+                className="absolute inset-3 rounded-full bg-white/10 backdrop-blur-sm"
+                animate={isSearching ? { rotate: 360 } : {}}
+                transition={isSearching ? {
+                  duration: 4,
+                  ease: 'linear',
+                  repeat: Infinity
+                } : {}}
+              >
+                <div className="flex items-center justify-center w-full h-full">
+                  <motion.div
+                    animate={isSearching ? { 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    } : {}}
+                    transition={isSearching ? {
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut'
+                    } : {}}
+                  >
+                    <RandomLogo 
+                      size={window.innerWidth < 640 ? 70 : 90} 
+                      withAura={isSearching}
+                      className="drop-shadow-lg"
+                    />
+                  </motion.div>
+                </div>
+              </motion.div>
+              
+              {/* Status indicator */}
+              <motion.div 
+                className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white shadow-medium flex items-center justify-center"
+                animate={isSearching ? { scale: [1, 1.2, 1] } : {}}
+                transition={isSearching ? { duration: 1, repeat: Infinity } : {}}
+              >
+                {isSearching ? (
+                  <div className="w-5 h-5 rounded-full bg-red-500 animate-pulse"></div>
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-green-500"></div>
+                )}
+              </motion.div>
+
+              {/* Confetti explosion on success */}
+              {showConfetti && <Confetti />}
+            </motion.button>
+
+            {/* Step indicators below button */}
+            {isSearching && (
+              <div className="flex justify-center gap-6 mt-8">
+                <motion.div
+                  className="flex flex-col items-center gap-2"
+                  animate={{
+                    scale: processStep === 'cleaning' ? 1.2 : 1,
+                    opacity: processStep === 'cleaning' ? 1 : 0.4
+                  }}
+                >
+                  <Sparkles className={`w-6 h-6 ${processStep === 'cleaning' ? 'text-brand-500' : 'text-gray-400'}`} />
+                  <span className="text-xs font-medium">{t('dashboard.step_cleaning') || 'Nettoyage'}</span>
+                </motion.div>
+                
+                <motion.div
+                  className="flex flex-col items-center gap-2"
+                  animate={{
+                    scale: processStep === 'locating' ? 1.2 : 1,
+                    opacity: processStep === 'locating' ? 1 : 0.4
+                  }}
+                >
+                  <MapPin className={`w-6 h-6 ${processStep === 'locating' ? 'text-brand-500' : 'text-gray-400'}`} />
+                  <span className="text-xs font-medium">{t('dashboard.step_locating') || 'Localisation'}</span>
+                </motion.div>
+                
+                <motion.div
+                  className="flex flex-col items-center gap-2"
+                  animate={{
+                    scale: processStep === 'creating' ? 1.2 : 1,
+                    opacity: processStep === 'creating' ? 1 : 0.4
+                  }}
+                >
+                  <Users className={`w-6 h-6 ${processStep === 'creating' ? 'text-brand-500' : 'text-gray-400'}`} />
+                  <span className="text-xs font-medium">{t('dashboard.step_creating') || 'Création'}</span>
+                </motion.div>
+              </div>
+            )}
+          </div>
 
           {/* Texte d'état avec countdown */}
           <div className="space-y-2 px-2">
