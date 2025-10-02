@@ -8,28 +8,135 @@ import AppLayout from '@/components/AppLayout'
 import { clearActiveToasts } from '@/utils/toastUtils'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTranslation } from 'react-i18next'
+import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
-import { motion, useAnimation, AnimatePresence, useInView } from 'framer-motion'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 const Dashboard = () => {
-  const { user } = useAuth()
+  const { user, session, refreshSession } = useAuth()
   const { joinRandomGroup, loading, userGroups } = useUnifiedGroups()
   const [isSearching, setIsSearching] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState(0)
-  const [processStep, setProcessStep] = useState<'idle' | 'creating'>('idle')
-  const [showConfetti, setShowConfetti] = useState(false)
+  const [showDiagnostics, setShowDiagnostics] = useState(false)
+  const [authDiagnostics, setAuthDiagnostics] = useState<any>(null)
   const navigate = useNavigate()
   const hasInitialized = useRef(false)
   const { t } = useTranslation()
-  const buttonControls = useAnimation()
-  const cardRef = useRef(null)
-  const isInView = useInView(cardRef, { once: true, amount: 0.3 })
   
-  // Nettoyer les toasts au montage - UNE SEULE FOIS
+  // DIAGNOSTIC: Vérifier la session d'authentification
+  useEffect(() => {
+    const runAuthDiagnostics = async () => {
+      console.log('🔍 === DIAGNOSTIC D\'AUTHENTIFICATION ===')
+      
+      try {
+        // 1. État du contexte AuthContext
+        console.log('📱 AuthContext State:')
+        console.log('  - user:', user ? `${user.id} (${user.email})` : 'null')
+        console.log('  - session:', session ? 'présente' : 'null')
+        
+        // 2. Vérification directe Supabase
+        const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser()
+        const { data: { session: supabaseSession }, error: sessionError } = await supabase.auth.getSession()
+        
+        console.log('🔗 Supabase Direct:')
+        console.log('  - supabase.auth.getUser():', supabaseUser ? `${supabaseUser.id}` : 'null', userError ? `ERROR: ${userError.message}` : '')
+        console.log('  - supabase.auth.getSession():', supabaseSession ? 'présente' : 'null', sessionError ? `ERROR: ${sessionError.message}` : '')
+        
+        // 3. Test RLS avec auth.uid()
+        const { data: rlsTest, error: rlsError } = await supabase.from('profiles').select('id').limit(1)
+        console.log('🛡️ Test RLS (profiles):', rlsTest ? `${rlsTest.length} résultats` : 'null', rlsError ? `ERROR: ${rlsError.message}` : 'OK')
+        
+        // 4. localStorage inspection
+        const authKeys = Object.keys(localStorage).filter(key => key.includes('auth'))
+        console.log('💾 LocalStorage auth keys:', authKeys.length, authKeys)
+        
+        // Stocker les diagnostics pour l'affichage
+        setAuthDiagnostics({
+          contextUser: user,
+          contextSession: !!session,
+          supabaseUser,
+          supabaseSession: !!supabaseSession,
+          userError: userError?.message,
+          sessionError: sessionError?.message,
+          rlsTest: rlsTest ? rlsTest.length : null,
+          rlsError: rlsError?.message,
+          authKeysCount: authKeys.length,
+          timestamp: new Date().toLocaleTimeString()
+        })
+        
+        // 5. Alerte si désynchronisation détectée
+        const hasContextAuth = !!(user && session)
+        const hasSupabaseAuth = !!(supabaseUser && supabaseSession)
+        
+        if (hasContextAuth !== hasSupabaseAuth) {
+          console.log('⚠️ DÉSYNCHRONISATION DÉTECTÉE!')
+          console.log(`  - Context: ${hasContextAuth ? 'Authentifié' : 'Non authentifié'}`)
+          console.log(`  - Supabase: ${hasSupabaseAuth ? 'Authentifié' : 'Non authentifié'}`)
+          
+          toast({
+            title: '⚠️ Session corrompue détectée',
+            description: 'Désynchronisation entre frontend et backend',
+            variant: 'destructive',
+          })
+        }
+        
+      } catch (error) {
+        console.error('❌ Erreur lors du diagnostic:', error)
+        setAuthDiagnostics({
+          error: String(error),
+          timestamp: new Date().toLocaleTimeString()
+        })
+      }
+    }
+    
+    if (!hasInitialized.current) {
+      runAuthDiagnostics()
+    }
+  }, [user, session])
+  
+  // Force reconnect function
+  const handleForceReconnect = async () => {
+    try {
+      console.log('🔄 Force reconnect initiated...')
+      
+      // 1. Clear localStorage auth data
+      const authKeys = Object.keys(localStorage).filter(key => key.includes('auth'))
+      authKeys.forEach(key => localStorage.removeItem(key))
+      console.log('🧹 Cleared localStorage auth keys:', authKeys.length)
+      
+      // 2. Force sign out
+      await supabase.auth.signOut()
+      console.log('🚪 Signed out from Supabase')
+      
+      // 3. Clear cookies (if any)
+      document.cookie.split(";").forEach(cookie => {
+        const eqPos = cookie.indexOf("=")
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+        if (name.includes('auth') || name.includes('supabase')) {
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+        }
+      })
+      
+      toast({
+        title: '🔄 Reconnexion forcée',
+        description: 'Redirection vers la page de connexion...',
+      })
+      
+      // 4. Navigate to auth page
+      setTimeout(() => {
+        navigate('/')
+      }, 1500)
+      
+    } catch (error) {
+      console.error('❌ Erreur lors de la reconnexion forcée:', error)
+      toast({
+        title: '❌ Erreur',
+        description: 'Impossible de forcer la reconnexion',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
   useEffect(() => {
     if (!hasInitialized.current) {
       clearActiveToasts()
@@ -39,58 +146,30 @@ const Dashboard = () => {
 
   const handleButtonClick = async () => {
     if (isSearching) {
+      // Annuler la recherche
       setIsSearching(false)
       setRedirectCountdown(0)
-      setProcessStep('idle')
       clearActiveToasts()
+      console.log('🛑 Recherche annulée')
       return
     }
 
+    // Démarrer la recherche
     setIsSearching(true)
-    setProcessStep('creating')
-    
-    // Animation d'entrée rapide
-    buttonControls.start({
-      scale: [1, 0.95, 1.05, 1],
-      transition: { duration: 0.4, ease: 'easeInOut' }
-    })
-    
-    // Timeout de sécurité (30 secondes max)
-    const timeoutId = setTimeout(() => {
-      if (isSearching) {
-        setIsSearching(false)
-        setProcessStep('idle')
-        toast({
-          title: t('dashboard.error_timeout') || 'Temps écoulé',
-          description: t('dashboard.error_timeout_desc') || 'La recherche a pris trop de temps. Réessayez.',
-          variant: 'destructive',
-        })
-      }
-    }, 30000)
+    console.log('🎲 Recherche démarrée - animation devrait commencer')
     
     try {
       const success = await joinRandomGroup()
-      clearTimeout(timeoutId)
-      
       if (success) {
-        setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 3000)
-        setRedirectCountdown(5)
-        setProcessStep('idle')
+        console.log('✅ Groupe rejoint - démarrage du countdown de redirection')
+        setRedirectCountdown(15)
       } else {
+        console.log('❌ Échec de la recherche/création de groupe')
         setIsSearching(false)
-        setProcessStep('idle')
       }
     } catch (error) {
-      clearTimeout(timeoutId)
-      console.error('Erreur lors de la recherche:', error)
+      console.error('❌ Erreur lors de la recherche:', error)
       setIsSearching(false)
-      setProcessStep('idle')
-      toast({
-        title: t('dashboard.error') || 'Erreur',
-        description: t('dashboard.error_desc') || 'Une erreur est survenue. Réessayez.',
-        variant: 'destructive',
-      })
     }
   }
 
@@ -102,6 +181,7 @@ const Dashboard = () => {
       interval = setInterval(() => {
         setRedirectCountdown(prev => {
           if (prev <= 1) {
+            console.log('🔄 Redirection automatique vers /groups')
             clearActiveToasts()
             navigate('/groups')
             setIsSearching(false)
@@ -119,321 +199,168 @@ const Dashboard = () => {
 
   // Effect pour surveiller les groupes et déclencher le countdown
   useEffect(() => {
+    // Groups status check
+    
     if (userGroups.length > 0 && isSearching && redirectCountdown === 0) {
-      setRedirectCountdown(5)
+      console.log('🎯 Groupe détecté, démarrage du countdown')
+      setRedirectCountdown(15)
     }
   }, [userGroups, isSearching, redirectCountdown])
 
-  // Animation variants
-  const buttonVariants = {
-    idle: {
-      scale: 1,
-      rotate: 0,
-      boxShadow: '0 10px 40px -10px rgba(241, 194, 50, 0.3), 0 0 20px rgba(241, 194, 50, 0.1)'
-    },
-    hover: {
-      scale: 1.08,
-      rotate: [0, -3, 3, -3, 0],
-      boxShadow: '0 20px 60px -10px rgba(241, 194, 50, 0.5), 0 0 40px rgba(241, 194, 50, 0.2), 0 0 80px rgba(241, 194, 50, 0.1)'
-    },
-    tap: {
-      scale: 0.95
-    }
-  }
-
-  const Confetti = () => (
-    <>
-      {[...Array(30)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ 
-            x: 0, 
-            y: 0, 
-            opacity: 1,
-            scale: Math.random() * 0.5 + 0.5
-          }}
-          animate={{
-            x: (Math.random() - 0.5) * 400,
-            y: Math.random() * -300 - 100,
-            opacity: 0,
-            rotate: Math.random() * 360
-          }}
-          transition={{
-            duration: Math.random() * 1 + 1.5,
-            ease: 'easeOut'
-          }}
-          className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full pointer-events-none"
-          style={{
-            background: ['#f1c232', '#e94e77', '#6366f1', '#10b981', '#f59e0b'][i % 5]
-          }}
-        />
-      ))}
-    </>
-  )
-
-  // Get user initials for avatar
-  const userInitials = user 
-    ? `${user.email?.charAt(0).toUpperCase() || 'U'}` 
-    : 'U'
-
-  // Get status badge
-  const getStatusBadge = () => {
-    if (redirectCountdown > 0) return { label: t('groups.status.confirmed'), variant: 'default' as const }
-    if (isSearching) return { label: t('dashboard.searching'), variant: 'secondary' as const }
-    return { label: t('dashboard.ready_title'), variant: 'outline' as const }
-  }
-
-  const statusBadge = getStatusBadge()
-
   return (
     <AppLayout>
-      <TooltipProvider>
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-neutral-50 via-brand-50/30 to-neutral-50 p-4">
-          {/* Header with Avatar */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full max-w-6xl mx-auto pt-4 pb-2 flex items-center justify-between"
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
+        <div className="text-center space-y-6 sm:space-y-8 w-full max-w-md mx-auto">
+          {/* Bouton circulaire avec logo Random */}
+          <button
+            onClick={handleButtonClick}
+            disabled={loading}
+            className="
+              relative w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto
+              bg-gradient-to-br from-brand-400 to-brand-600 
+              shadow-glow hover:shadow-glow-strong
+              transition-all duration-300 transform-gpu
+              hover:scale-105 active:scale-95
+              focus:outline-none focus:ring-4 focus:ring-brand-300
+              disabled:opacity-50 disabled:cursor-not-allowed
+            "
           >
-            <div className="flex items-center gap-3">
-              <Badge 
-                variant={statusBadge.variant}
-                className="font-grotesk text-sm px-4 py-1.5"
-              >
-                {statusBadge.label}
-              </Badge>
+            <div 
+              className={`
+                absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm
+                ${isSearching ? 'animate-spin' : ''}
+              `}
+              style={{
+                animationDuration: '4s',
+                animationTimingFunction: 'linear',
+                animationIterationCount: 'infinite'
+              }}
+            >
+              <div className="flex items-center justify-center w-full h-full">
+                <RandomLogo 
+                  size={window.innerWidth < 640 ? 60 : 80} 
+                  withAura={false}
+                  className="drop-shadow-lg"
+                />
+              </div>
             </div>
             
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-brand-200 hover:ring-brand-400 transition-all">
-                  <AvatarFallback className="bg-gradient-to-br from-brand-400 to-brand-600 text-white font-grotesk font-bold text-lg">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="font-grotesk">{user?.email}</p>
-              </TooltipContent>
-            </Tooltip>
-          </motion.div>
+            {/* Indicateur de statut */}
+            <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
+              {isSearching ? (
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500 animate-pulse"></div>
+              ) : (
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
+              )}
+            </div>
+          </button>
 
-          {/* Main Content */}
-          <div className="flex-1 flex items-center justify-center">
-            <motion.div 
-              ref={cardRef}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="w-full max-w-2xl"
+          {/* Texte d'état avec countdown */}
+          <div className="space-y-2 px-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+              {redirectCountdown > 0 
+                ? t('dashboard.group_found_title')
+                : isSearching 
+                ? t('dashboard.searching_title')
+                : t('dashboard.ready_title')
+              }
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              {redirectCountdown > 0
+                ? t('dashboard.redirect_desc', { count: redirectCountdown })
+                : isSearching 
+                ? t('dashboard.searching_desc')
+                : t('dashboard.ready_desc')
+              }
+            </p>
+            
+            {/* Barre de progression pour le countdown */}
+            {redirectCountdown > 0 && (
+              <div className="w-full max-w-xs mx-auto mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-brand-500 h-2 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${((15 - redirectCountdown) / 15) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 px-2">
+                  {t('dashboard.progress_desc')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Bouton d'accès rapide pendant le countdown */}
+          {redirectCountdown > 0 && (
+            <button
+            onClick={() => {
+              console.log('🔄 Redirection manuelle vers /groups')
+              clearActiveToasts()
+              navigate('/groups')
+              setIsSearching(false)
+              setRedirectCountdown(0)
+            }}
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base w-full max-w-xs"
             >
-              <Card className="border-2 border-brand-200 shadow-glow bg-white/80 backdrop-blur-sm">
-                <CardContent className="pt-8 pb-8 space-y-6 sm:space-y-8">
-                  {/* Main Action Button */}
-                  <div className="relative">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <motion.button
-                          onClick={handleButtonClick}
-                          disabled={loading}
-                          animate={buttonControls}
-                          variants={buttonVariants}
-                          initial="idle"
-                          whileHover={!isSearching ? "hover" : undefined}
-                          whileTap={!isSearching ? "tap" : undefined}
-                          className="
-                            relative w-48 h-48 sm:w-56 sm:h-56 rounded-full mx-auto
-                            bg-gradient-to-br from-brand-400 via-brand-500 to-brand-600 
-                            focus:outline-none focus:ring-4 focus:ring-brand-300
-                            disabled:opacity-50 disabled:cursor-not-allowed
-                            overflow-visible font-grotesk
-                          "
-                        >
-                          {/* Orbiting particles when hovering */}
-                          {!isSearching && (
-                            <>
-                              {[0, 120, 240].map((angle) => (
-                                <motion.div
-                                  key={angle}
-                                  className="absolute w-2 h-2 rounded-full bg-brand-300"
-                                  style={{
-                                    top: '50%',
-                                    left: '50%',
-                                    x: '-50%',
-                                    y: '-50%'
-                                  }}
-                                  animate={{
-                                    x: [
-                                      Math.cos((angle * Math.PI) / 180) * 100 - 4,
-                                      Math.cos(((angle + 360) * Math.PI) / 180) * 100 - 4
-                                    ],
-                                    y: [
-                                      Math.sin((angle * Math.PI) / 180) * 100 - 4,
-                                      Math.sin(((angle + 360) * Math.PI) / 180) * 100 - 4
-                                    ]
-                                  }}
-                                  transition={{
-                                    duration: 4,
-                                    repeat: Infinity,
-                                    ease: 'linear'
-                                  }}
-                                />
-                              ))}
-                            </>
-                          )}
+              {t('dashboard.view_group_now')}
+            </button>
+          )}
 
-                          {/* Rotating ring when searching */}
-                          {isSearching && (
-                            <svg
-                              className="absolute inset-0 -rotate-90 pointer-events-none"
-                              style={{ width: '100%', height: '100%' }}
-                            >
-                              <motion.circle
-                                cx="50%"
-                                cy="50%"
-                                r="47%"
-                                fill="none"
-                                stroke="rgba(241, 194, 50, 0.3)"
-                                strokeWidth="4"
-                                strokeDasharray="10 5"
-                                animate={{ rotate: 360 }}
-                                transition={{
-                                  duration: 2,
-                                  ease: 'linear',
-                                  repeat: Infinity
-                                }}
-                              />
-                            </svg>
-                          )}
-
-                          {/* Inner rotating ring when searching */}
-                          <motion.div 
-                            className="absolute inset-3 rounded-full bg-white/10 backdrop-blur-sm"
-                            animate={isSearching ? { rotate: 360 } : {}}
-                            transition={isSearching ? {
-                              duration: 4,
-                              ease: 'linear',
-                              repeat: Infinity
-                            } : {}}
-                          >
-                            <div className="flex items-center justify-center w-full h-full">
-                              <motion.div
-                                animate={isSearching ? { 
-                                  scale: [1, 1.1, 1],
-                                  rotate: [0, 5, -5, 0]
-                                } : {}}
-                                transition={isSearching ? {
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: 'easeInOut'
-                                } : {}}
-                              >
-                                <RandomLogo 
-                                  size={window.innerWidth < 640 ? 70 : 90} 
-                                  withAura={isSearching}
-                                  className="drop-shadow-lg"
-                                />
-                              </motion.div>
-                            </div>
-                          </motion.div>
-                          
-                          {/* Status indicator */}
-                          <motion.div 
-                            className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white shadow-medium flex items-center justify-center"
-                            animate={isSearching ? { scale: [1, 1.2, 1] } : {}}
-                            transition={isSearching ? { duration: 1, repeat: Infinity } : {}}
-                          >
-                            {isSearching ? (
-                              <div className="w-5 h-5 rounded-full bg-red-500 animate-pulse"></div>
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-green-500"></div>
-                            )}
-                          </motion.div>
-
-                          {/* Confetti explosion on success */}
-                          {showConfetti && <Confetti />}
-                        </motion.button>
-                      </TooltipTrigger>
-                      <TooltipContent className="font-grotesk">
-                        <p>{isSearching ? t('dashboard.cancel') : t('dashboard.ready_desc')}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  {/* Status Messages */}
-                  <AnimatePresence mode="wait">
-                    {isSearching && (
-                      <motion.div 
-                        key="searching"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="text-center space-y-3"
-                      >
-                        <p className="text-neutral-700 font-grotesk font-medium text-lg">
-                          {t('dashboard.searching') || 'Recherche en cours...'}
-                        </p>
-                        <button
-                          onClick={() => {
-                            setIsSearching(false)
-                            setRedirectCountdown(0)
-                            setProcessStep('idle')
-                            clearActiveToasts()
-                          }}
-                          className="text-sm text-neutral-500 hover:text-neutral-700 underline transition-colors font-grotesk"
-                        >
-                          {t('dashboard.cancel') || 'Annuler'}
-                        </button>
-                      </motion.div>
+          {/* Diagnostic Panel - Temporary */}
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <button
+              onClick={() => setShowDiagnostics(!showDiagnostics)}
+              className="text-xs text-gray-400 hover:text-gray-600 mb-3"
+            >
+              🔍 Diagnostic Session {showDiagnostics ? '▲' : '▼'}
+            </button>
+            
+            {showDiagnostics && (
+              <div className="bg-gray-50 rounded-lg p-4 text-xs space-y-3">
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={handleForceReconnect}
+                    className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                  >
+                    🚪 Force Reconnect
+                  </button>
+                </div>
+                
+                {authDiagnostics && (
+                  <div className="space-y-2">
+                    <p><strong>Timestamp:</strong> {authDiagnostics.timestamp}</p>
+                    <p><strong>Context User:</strong> {authDiagnostics.contextUser?.id || 'null'}</p>
+                    <p><strong>Context Session:</strong> {authDiagnostics.contextSession ? '✅' : '❌'}</p>
+                    <p><strong>Supabase User:</strong> {authDiagnostics.supabaseUser?.id || 'null'}</p>
+                    <p><strong>Supabase Session:</strong> {authDiagnostics.supabaseSession ? '✅' : '❌'}</p>
+                    
+                    {authDiagnostics.userError && (
+                      <p className="text-red-600"><strong>User Error:</strong> {authDiagnostics.userError}</p>
+                    )}
+                    {authDiagnostics.sessionError && (
+                      <p className="text-red-600"><strong>Session Error:</strong> {authDiagnostics.sessionError}</p>
                     )}
                     
-                    {redirectCountdown > 0 && (
-                      <motion.div
-                        key="redirecting"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-brand-100 to-brand-50 border-2 border-brand-300 rounded-xl shadow-medium"
-                      >
-                        <div className="flex-1 text-brand-800 font-grotesk font-semibold">
-                          {t('dashboard.redirecting', { seconds: redirectCountdown }) || `Redirection dans ${redirectCountdown}s...`}
-                        </div>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => navigate('/groups')}
-                          className="px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white font-grotesk font-medium rounded-lg transition-colors shadow-sm"
-                        >
-                          {t('dashboard.go_now') || 'Y aller'}
-                        </motion.button>
-                      </motion.div>
+                    <p><strong>RLS Test:</strong> {
+                      authDiagnostics.rlsTest !== null ? `${authDiagnostics.rlsTest} résultats` : 'Failed'
+                    }</p>
+                    {authDiagnostics.rlsError && (
+                      <p className="text-red-600"><strong>RLS Error:</strong> {authDiagnostics.rlsError}</p>
                     )}
-
-                    {userGroups.length > 0 && !isSearching && redirectCountdown === 0 && (
-                      <motion.button
-                        key="view-group"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          clearActiveToasts()
-                          navigate('/groups')
-                        }}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white rounded-xl font-grotesk font-semibold transition-all shadow-medium"
-                      >
-                        {t('dashboard.view_group_now')}
-                      </motion.button>
+                    
+                    <p><strong>Auth Keys in localStorage:</strong> {authDiagnostics.authKeysCount}</p>
+                    
+                    {authDiagnostics.error && (
+                      <p className="text-red-600"><strong>Diagnostic Error:</strong> {authDiagnostics.error}</p>
                     )}
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
         </div>
-      </TooltipProvider>
+      </div>
     </AppLayout>
   )
 }

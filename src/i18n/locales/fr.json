@@ -90,21 +90,13 @@
   },
   "dashboard": {
     "ready_title": "Prêt pour l'aventure",
-    "searching": "Recherche en cours...",
     "searching_title": "Recherche en cours...",
     "group_found_title": "Groupe trouvé !",
     "ready_desc": "Cliquez sur le bouton pour démarrer",
     "searching_desc": "Cliquez à nouveau pour annuler",
     "redirect_desc": "Redirection vers votre groupe dans {{count}}s",
     "progress_desc": "Ou cliquez pour accéder immédiatement à votre groupe",
-    "view_group_now": "Voir mon groupe maintenant",
-    "cancel": "Annuler",
-    "redirecting": "Redirection dans {{seconds}}s...",
-    "go_now": "Y aller maintenant",
-    "error_timeout": "Temps écoulé",
-    "error_timeout_desc": "La recherche a pris trop de temps. Réessayez.",
-    "error": "Erreur",
-    "error_desc": "Une erreur est survenue. Réessayez."
+    "view_group_now": "Voir mon groupe maintenant"
   },
   "profile": {
     "title": "Mon Profil",

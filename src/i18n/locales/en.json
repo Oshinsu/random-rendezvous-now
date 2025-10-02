@@ -86,21 +86,13 @@
   },
   "dashboard": {
     "ready_title": "Ready for adventure",
-    "searching": "Searching...",
     "searching_title": "Searching...",
     "group_found_title": "Group found!",
     "ready_desc": "Click the button to start",
     "searching_desc": "Click again to cancel",
     "redirect_desc": "Redirecting to your group in {{count}}s",
     "progress_desc": "Or click to access your group immediately",
-    "view_group_now": "View my group now",
-    "cancel": "Cancel",
-    "redirecting": "Redirecting in {{seconds}}s...",
-    "go_now": "Go now",
-    "error_timeout": "Timeout",
-    "error_timeout_desc": "The search took too long. Please try again.",
-    "error": "Error",
-    "error_desc": "An error occurred. Please try again."
+    "view_group_now": "View my group now"
   },
   "profile": {
     "title": "My Profile",
