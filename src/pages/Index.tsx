@@ -5,6 +5,9 @@ import WhyRandomSection from "@/components/landing/WhyRandomSection";
 import NoMoreSection from "@/components/landing/NoMoreSection";
 import FaqSection from "@/components/landing/FaqSection";
 import CtaSection from "@/components/landing/CtaSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import StatsSection from "@/components/landing/StatsSection";
+import PricingSection from "@/components/landing/PricingSection";
 import Footer from "@/components/landing/Footer";
 import LandingNavigation from "@/components/landing/LandingNavigation";
 import { Helmet } from "react-helmet-async";
@@ -33,12 +36,15 @@ const Index = () => {
       
       <main className="flex-grow">
         <HeroSection />
+        <StatsSection />
         <div id="how-it-works">
           <HowItWorksSection />
         </div>
         <div id="why-random">
           <WhyRandomSection />
         </div>
+        <TestimonialsSection />
+        <PricingSection />
         <NoMoreSection />
         <div id="faq">
           <FaqSection />
