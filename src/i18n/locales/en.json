@@ -92,7 +92,12 @@
     "searching_desc": "Click again to cancel",
     "redirect_desc": "Redirecting to your group in {{count}}s",
     "progress_desc": "Or click to access your group immediately",
-    "view_group_now": "View my group now"
+    "view_group_now": "View my group now",
+    "status_searching": "Searching",
+    "status_ready": "Ready",
+    "status_confirmed": "Confirmed",
+    "cancel": "Cancel search",
+    "find_group": "Find a group"
   },
   "profile": {
     "title": "My Profile",

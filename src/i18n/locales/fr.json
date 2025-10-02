@@ -96,7 +96,12 @@
     "searching_desc": "Cliquez à nouveau pour annuler",
     "redirect_desc": "Redirection vers votre groupe dans {{count}}s",
     "progress_desc": "Ou cliquez pour accéder immédiatement à votre groupe",
-    "view_group_now": "Voir mon groupe maintenant"
+    "view_group_now": "Voir mon groupe maintenant",
+    "status_searching": "En recherche",
+    "status_ready": "Prêt",
+    "status_confirmed": "Confirmé",
+    "cancel": "Annuler la recherche",
+    "find_group": "Trouver un groupe"
   },
   "profile": {
     "title": "Mon Profil",

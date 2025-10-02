@@ -10,6 +10,12 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Progress } from '@/components/ui/progress'
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth()
@@ -207,107 +213,182 @@ const Dashboard = () => {
     }
   }, [userGroups, isSearching, redirectCountdown])
 
+  // Get user initials for avatar
+  const userInitials = user?.email?.substring(0, 2).toUpperCase() || 'U'
+  
+  // Badge status
+  const getStatusBadge = () => {
+    if (redirectCountdown > 0) return { text: t('dashboard.status_confirmed'), variant: 'default' as const }
+    if (isSearching) return { text: t('dashboard.status_searching'), variant: 'secondary' as const }
+    return { text: t('dashboard.status_ready'), variant: 'outline' as const }
+  }
+
+  const statusBadge = getStatusBadge()
+
   return (
     <AppLayout>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
-        <div className="text-center space-y-6 sm:space-y-8 w-full max-w-md mx-auto">
-          {/* Bouton circulaire avec logo Random */}
-          <button
-            onClick={handleButtonClick}
-            disabled={loading}
-            className="
-              relative w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto
-              bg-gradient-to-br from-brand-400 to-brand-600 
-              shadow-glow hover:shadow-glow-strong
-              transition-all duration-300 transform-gpu
-              hover:scale-105 active:scale-95
-              focus:outline-none focus:ring-4 focus:ring-brand-300
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          >
-            <div 
-              className={`
-                absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm
-                ${isSearching ? 'animate-spin' : ''}
-              `}
-              style={{
-                animationDuration: '4s',
-                animationTimingFunction: 'linear',
-                animationIterationCount: 'infinite'
-              }}
-            >
-              <div className="flex items-center justify-center w-full h-full">
-                <RandomLogo 
-                  size={window.innerWidth < 640 ? 60 : 80} 
-                  withAura={false}
-                  className="drop-shadow-lg"
-                />
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md mx-auto"
+        >
+          <Card className="glass-card border-brand-200/50">
+            <CardContent className="pt-8 pb-6 space-y-6">
+              {/* Header with Avatar and Status */}
+              <div className="flex items-center justify-between px-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Avatar className="h-10 w-10 border-2 border-brand-400">
+                        <AvatarFallback className="bg-gradient-brand text-white font-semibold">
+                          {userInitials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{user?.email}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <Badge variant={statusBadge.variant} className="font-heading">
+                  {statusBadge.text}
+                </Badge>
               </div>
-            </div>
-            
-            {/* Indicateur de statut */}
-            <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
-              {isSearching ? (
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500 animate-pulse"></div>
-              ) : (
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
-              )}
-            </div>
-          </button>
+              {/* Bouton circulaire avec logo Random */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      onClick={handleButtonClick}
+                      disabled={loading}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="
+                        relative w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto
+                        bg-gradient-to-br from-brand-400 to-brand-600 
+                        shadow-glow hover:shadow-glow-strong
+                        transition-all duration-300
+                        focus:outline-none focus:ring-4 focus:ring-brand-300
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                      "
+                    >
+                      <motion.div 
+                        className="absolute inset-2 rounded-full bg-white/10 backdrop-blur-sm"
+                        animate={{ rotate: isSearching ? 360 : 0 }}
+                        transition={{ 
+                          duration: 4, 
+                          repeat: isSearching ? Infinity : 0,
+                          ease: "linear" 
+                        }}
+                      >
+                        <div className="flex items-center justify-center w-full h-full">
+                          <RandomLogo 
+                            size={window.innerWidth < 640 ? 60 : 80} 
+                            withAura={false}
+                            className="drop-shadow-lg"
+                          />
+                        </div>
+                      </motion.div>
+                      
+                      {/* Indicateur de statut */}
+                      <div className="absolute -bottom-1 sm:-bottom-2 -right-1 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white shadow-medium flex items-center justify-center">
+                        <AnimatePresence mode="wait">
+                          {isSearching ? (
+                            <motion.div
+                              key="searching"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500 animate-pulse"
+                            />
+                          ) : (
+                            <motion.div
+                              key="ready"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"
+                            />
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isSearching ? t('dashboard.cancel') : t('dashboard.find_group')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-          {/* Texte d'état avec countdown */}
-          <div className="space-y-2 px-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-              {redirectCountdown > 0 
-                ? t('dashboard.group_found_title')
-                : isSearching 
-                ? t('dashboard.searching_title')
-                : t('dashboard.ready_title')
-              }
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-              {redirectCountdown > 0
-                ? t('dashboard.redirect_desc', { count: redirectCountdown })
-                : isSearching 
-                ? t('dashboard.searching_desc')
-                : t('dashboard.ready_desc')
-              }
-            </p>
-            
-            {/* Barre de progression pour le countdown */}
-            {redirectCountdown > 0 && (
-              <div className="w-full max-w-xs mx-auto mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-brand-500 h-2 rounded-full transition-all duration-1000 ease-linear"
-                    style={{ width: `${((15 - redirectCountdown) / 15) * 100}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2 px-2">
-                  {t('dashboard.progress_desc')}
-                </p>
-              </div>
-            )}
-          </div>
+              {/* Texte d'état avec countdown */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={redirectCountdown > 0 ? 'found' : isSearching ? 'searching' : 'ready'}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-3 px-2"
+                >
+                  <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">
+                    {redirectCountdown > 0 
+                      ? t('dashboard.group_found_title')
+                      : isSearching 
+                      ? t('dashboard.searching_title')
+                      : t('dashboard.ready_title')
+                    }
+                  </h1>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                    {redirectCountdown > 0
+                      ? t('dashboard.redirect_desc', { count: redirectCountdown })
+                      : isSearching 
+                      ? t('dashboard.searching_desc')
+                      : t('dashboard.ready_desc')
+                    }
+                  </p>
+                  
+                  {/* Barre de progression pour le countdown */}
+                  {redirectCountdown > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="w-full max-w-xs mx-auto mt-4 space-y-2"
+                    >
+                      <Progress value={((15 - redirectCountdown) / 15) * 100} className="h-2" />
+                      <p className="text-xs text-muted-foreground text-center">
+                        {t('dashboard.progress_desc')}
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
 
-          {/* Bouton d'accès rapide pendant le countdown */}
-          {redirectCountdown > 0 && (
-            <button
-            onClick={() => {
-              console.log('🔄 Redirection manuelle vers /groups')
-              clearActiveToasts()
-              navigate('/groups')
-              setIsSearching(false)
-              setRedirectCountdown(0)
-            }}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium transition-colors text-sm sm:text-base w-full max-w-xs"
-            >
-              {t('dashboard.view_group_now')}
-            </button>
-          )}
+              {/* Bouton d'accès rapide pendant le countdown */}
+              <AnimatePresence>
+                {redirectCountdown > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    onClick={() => {
+                      console.log('🔄 Redirection manuelle vers /groups')
+                      clearActiveToasts()
+                      navigate('/groups')
+                      setIsSearching(false)
+                      setRedirectCountdown(0)
+                    }}
+                    className="btn-primary w-full max-w-xs mx-auto"
+                  >
+                    {t('dashboard.view_group_now')}
+                  </motion.button>
+                )}
+              </AnimatePresence>
 
-          {/* Diagnostic Panel - Temporary */}
-          <div className="mt-8 border-t border-gray-200 pt-6">
+              {/* Diagnostic Panel - Temporary */}
+              <div className="mt-6 border-t border-border pt-6">
             <button
               onClick={() => setShowDiagnostics(!showDiagnostics)}
               className="text-xs text-gray-400 hover:text-gray-600 mb-3"
@@ -316,7 +397,12 @@ const Dashboard = () => {
             </button>
             
             {showDiagnostics && (
-              <div className="bg-gray-50 rounded-lg p-4 text-xs space-y-3">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-muted/50 rounded-lg p-4 text-xs space-y-3"
+              >
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={handleForceReconnect}
@@ -355,11 +441,12 @@ const Dashboard = () => {
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
-          </div>
-
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </AppLayout>
   )
