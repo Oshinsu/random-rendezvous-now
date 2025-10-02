@@ -35,6 +35,7 @@ export default {
         display: ['Clash Display', 'system-ui', 'sans-serif'],
         heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
+        grotesk: ['Space Grotesk', 'system-ui', 'sans-serif'],
       },
 			colors: {
 				border: 'hsl(var(--border))',
