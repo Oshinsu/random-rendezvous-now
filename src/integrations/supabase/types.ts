@@ -1011,6 +1011,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_user_connected_realtime: {
+        Args: { p_last_seen: string }
+        Returns: boolean
+      }
       is_user_in_group: {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean

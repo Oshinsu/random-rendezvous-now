@@ -19,11 +19,14 @@ import type { GroupMember } from '@/types/groups';
  */
 
 export class UnifiedGroupService {
+  // Note: Cette fonction utilise la même logique que la fonction PostgreSQL
+  // is_user_connected_realtime() pour garantir la cohérence frontend/backend
   static isUserConnected(lastSeen: string): boolean {
     const lastSeenDate = new Date(lastSeen);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
-    return diffMinutes <= 10;
+    const CONNECTION_THRESHOLD_MINUTES = 60; // Aligné avec is_user_connected_realtime() et HEARTBEAT_INTERVAL
+    return diffMinutes <= CONNECTION_THRESHOLD_MINUTES;
   }
 
   static async updateUserLastSeen(groupId: string, userId: string): Promise<void> {

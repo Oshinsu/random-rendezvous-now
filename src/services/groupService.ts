@@ -5,63 +5,11 @@ import type { Group } from '@/types/database';
 import type { LocationData } from '@/services/geolocation';
 
 export class GroupService {
-  static async cleanupInactiveParticipants(): Promise<void> {
-    try {
-      console.log('🧹 Nettoyage des participants inactifs (>5min)');
-      
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      
-      const { data: inactiveParticipants, error: selectError } = await supabase
-        .from('group_participants')
-        .select('group_id, user_id')
-        .lt('last_seen', fiveMinutesAgo);
-
-      if (selectError) {
-        console.error('❌ Erreur sélection participants inactifs:', selectError);
-        return;
-      }
-
-      if (!inactiveParticipants || inactiveParticipants.length === 0) {
-        console.log('✅ Aucun participant inactif à nettoyer');
-        return;
-      }
-
-      console.log(`🗑️ ${inactiveParticipants.length} participants inactifs trouvés`);
-
-      const { error: deleteError } = await supabase
-        .from('group_participants')
-        .delete()
-        .lt('last_seen', fiveMinutesAgo);
-
-      if (deleteError) {
-        console.error('❌ Erreur suppression participants inactifs:', deleteError);
-        return;
-      }
-
-      const affectedGroups = [...new Set(inactiveParticipants.map(p => p.group_id))];
-      
-      for (const groupId of affectedGroups) {
-        const { data: activeParticipants } = await supabase
-          .from('group_participants')
-          .select('id')
-          .eq('group_id', groupId)
-          .eq('status', 'confirmed');
-
-        const activeCount = activeParticipants?.length || 0;
-        
-        await supabase
-          .from('groups')
-          .update({ current_participants: activeCount })
-          .eq('id', groupId);
-
-        console.log(`🔄 Groupe ${groupId}: ${activeCount} participants actifs`);
-      }
-
-      console.log('✅ Nettoyage des participants inactifs terminé');
-    } catch (error) {
-      console.error('❌ Erreur cleanupInactiveParticipants:', error);
-    }
-  }
+  // ❌ SUPPRIMÉ : cleanupInactiveParticipants()
+  // Raison : Cette logique est maintenant centralisée dans la fonction PostgreSQL
+  // dissolve_old_groups() qui s'exécute toutes les 6 heures via cron.
+  // Les seuils de nettoyage sont alignés avec le SSOT get_user_active_groups().
+  // Voir CONSTANTES_TEMPORELLES.md pour plus de détails sur l'architecture.
 
   static async getCurrentParticipantCount(groupId: string): Promise<number> {
     try {

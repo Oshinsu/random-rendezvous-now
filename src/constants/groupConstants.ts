@@ -11,22 +11,27 @@ export const GROUP_CONSTANTS = {
   // Temps d'attente maximum pour formation de groupe
   GROUP_FORMATION_TIMEOUT: 60 * 60 * 1000, // 1 HEURE - délai d'attente réaliste
   
-  // === NETTOYAGE INTELLIGENT UNIFIÉ ===
-  // Participants considérés comme "abandonnés" - CORRIGÉ pour éviter suppression massive
-  PARTICIPANT_ABANDONED_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures pour abandon (sécurisé)
+  // === NETTOYAGE INTELLIGENT UNIFIÉ - ALIGNÉ AVEC SSOT ===
+  // ⚠️ IMPORTANT : Ces seuils DOIVENT correspondre aux constantes dans
+  // la fonction PostgreSQL get_user_active_groups() :
+  // - activity_threshold = '24 hours'
+  // - group_age_limit = '7 days'
   
-  // Groupes très anciens - nettoyage final - RESPECTER LES 72H DÉFINIS
-  VERY_OLD_GROUP_THRESHOLD: 72 * 60 * 60 * 1000, // 72 heures - délai ORIGINAL respecté
+  // Participants considérés comme "actifs" - ALIGNÉ AVEC SSOT
+  PARTICIPANT_ACTIVITY_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures - SSOT
+  PARTICIPANT_ABANDONED_THRESHOLD: 24 * 60 * 60 * 1000, // 24 heures - aligné SSOT
   
-  // === HARMONISATION DES SEUILS ===
-  PARTICIPANT_ACTIVITY_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
-  MAX_GROUP_AGE_FOR_JOIN: 8 * 60 * 60 * 1000, // 8 heures maximum pour rejoindre
-  PARTICIPANT_INACTIVE_THRESHOLD: 30 * 60 * 1000, // 30 minutes (réaliste)
-  PERIODIC_CLEANUP_THRESHOLD: 12 * 60 * 60 * 1000, // Désactivé mais alias conservé
+  // Groupes très anciens - nettoyage final - ALIGNÉ AVEC SSOT
+  VERY_OLD_GROUP_THRESHOLD: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
+  MAX_GROUP_AGE_FOR_JOIN: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
   
-  // Nettoyage géré par cleanup-groups edge function (quotidien)
-  CLEANUP_FREQUENCY: 24 * 60 * 60 * 1000, // 24 heures - edge function quotidienne
-  HEARTBEAT_INTERVAL: 60 * 60 * 1000, // 1 heure - comme demandé
+  // Seuil pour "inactif" (frontend display) - ALIGNÉ avec HEARTBEAT
+  PARTICIPANT_INACTIVE_THRESHOLD: 60 * 60 * 1000, // 1 heure (aligné heartbeat)
+  PERIODIC_CLEANUP_THRESHOLD: 6 * 60 * 60 * 1000, // 6 heures - aligné avec cron
+  
+  // Nettoyage géré par cleanup-groups edge function (toutes les 6 heures)
+  CLEANUP_FREQUENCY: 6 * 60 * 60 * 1000, // 6 heures - edge function toutes les 6h (cron: 0 */6 * * *)
+  HEARTBEAT_INTERVAL: 60 * 60 * 1000, // 1 heure - aligné avec is_user_connected_realtime()
   
   // Paramètres de groupe INCHANGÉS
   MAX_PARTICIPANTS: 5,
@@ -36,23 +41,31 @@ export const GROUP_CONSTANTS = {
   GROUP_REFETCH_INTERVAL: 2 * 60 * 1000, // 2 minutes (moins de stress)
   GROUP_STALE_TIME: 90 * 1000, // 90 secondes (plus patient)
   
-  // Seuils de nettoyage pour dissolve_old_groups() function
+  // Seuils de nettoyage pour dissolve_old_groups() function - ALIGNÉS AVEC SSOT
   CLEANUP_THRESHOLDS: {
-    // Participants inactifs alignés avec PARTICIPANT_ABANDONED_THRESHOLD
-    INACTIVE_PARTICIPANTS: 2 * 60 * 60 * 1000,
+    // Participants inactifs - ALIGNÉ AVEC SSOT (24h)
+    INACTIVE_PARTICIPANTS: 24 * 60 * 60 * 1000, // 24h - aligné SSOT
     
-    // Groupes en attente avec plus de patience
-    OLD_WAITING_GROUPS: 45 * 60 * 1000, // 45 minutes (plus patient)
+    // Groupes en attente - ALIGNÉ AVEC SSOT (7 jours)
+    OLD_WAITING_GROUPS: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
     
-    // Groupes terminés - RESPECTER délai original
-    COMPLETED_GROUPS: 72 * 60 * 60 * 1000, // 72h - délai ORIGINAL respecté
+    // Groupes terminés - Conservation courte (3 jours pour historique)
+    COMPLETED_GROUPS: 3 * 24 * 60 * 60 * 1000, // 3 jours - pour historique
     
-    // Groupes très anciens alignés avec VERY_OLD_GROUP_THRESHOLD - 72H
-    VERY_OLD_GROUPS: 72 * 60 * 60 * 1000, // 72h - aligné avec le seuil principal
+    // Groupes très anciens - ALIGNÉ AVEC SSOT (7 jours)
+    VERY_OLD_GROUPS: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
     
-    // Groupes vides avec plus de patience
-    EMPTY_GROUPS: 10 * 60 * 1000, // 10 minutes (plus patient)
+    // Groupes vides - Nettoyage rapide
+    EMPTY_GROUPS: 10 * 60 * 1000, // 10 minutes
   },
+  
+  // === FRÉQUENCES DE RAFRAÎCHISSEMENT ===
+  REFRESH_INTERVALS: {
+    HEARTBEAT: 60 * 60 * 1000,           // 1 heure - updateUserLastSeen
+    GROUP_REFETCH: 5 * 60 * 1000,        // 5 minutes - React Query
+    GROUP_STALE_TIME: 2 * 60 * 1000,     // 2 minutes - React Query
+    CLEANUP_CRON: 6 * 60 * 60 * 1000,    // 6 heures - Supabase cron
+  } as const,
   
   // Constantes pour rejoindre des groupes existants
   GROUP_JOIN: {

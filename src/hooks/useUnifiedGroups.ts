@@ -105,12 +105,12 @@ export const useUnifiedGroups = () => {
     refetchOnWindowFocus: true,
   });
 
-  // Battement de cœur simplifié - 15 minutes
+  // Battement de cœur simplifié - 1 heure (aligné avec GROUP_CONSTANTS.HEARTBEAT_INTERVAL)
   const activeGroupId = userGroups.length > 0 ? userGroups[0].id : null;
   const { isActive: isHeartbeatActive } = useActivityHeartbeat({
     groupId: activeGroupId,
     enabled: !!activeGroupId,
-    intervalMs: 15 * 60 * 1000 // 15 minutes simplifié
+    intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // ✅ Utilise la constante (1h)
   });
 
   // Fonction de création de groupe avec rate limiting
