@@ -33,7 +33,6 @@ import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage'));
-const BarAuthPage = React.lazy(() => import('./pages/BarAuthPage'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
@@ -99,11 +98,6 @@ const AppRoutes = () => (
           <BarApplicationPage />
         </React.Suspense>
       </ProtectedRoute>
-    } />
-    <Route path="/bar-auth" element={
-      <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-        <BarAuthPage />
-      </React.Suspense>
     } />
     <Route path="/auth" element={<AuthPage />} />
     <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />

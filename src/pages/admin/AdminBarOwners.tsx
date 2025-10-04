@@ -184,8 +184,8 @@ export default function AdminBarOwners() {
               <div className="flex items-center gap-2">
                 <Euro className="h-8 w-8 text-purple-500" />
                 <div>
-                  <p className="text-2xl font-bold">{stats.activeSubscriptions}</p>
-                  <p className="text-sm text-muted-foreground">Abonnés actifs</p>
+                  <p className="text-2xl font-bold">Stripe</p>
+                  <p className="text-sm text-muted-foreground">Voir Stripe Dashboard</p>
                 </div>
               </div>
             </CardContent>
@@ -215,7 +215,6 @@ export default function AdminBarOwners() {
               <TableHead>Gérant</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead>Abonnement</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
@@ -242,13 +241,6 @@ export default function AdminBarOwners() {
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(owner.status)}
-                </TableCell>
-                <TableCell>
-                  {owner.subscription ? (
-                    getSubscriptionBadge(owner.subscription.status)
-                  ) : (
-                    <span className="text-muted-foreground">Aucun</span>
-                  )}
                 </TableCell>
                 <TableCell>
                   {new Date(owner.created_at).toLocaleDateString('fr-FR')}
@@ -393,18 +385,8 @@ export default function AdminBarOwners() {
                   <div>
                     <h4 className="font-semibold">Abonnement</h4>
                     <div className="space-y-2 text-sm">
-                      {selectedBarOwner.subscription ? (
-                        <>
-                          <p><strong>Statut :</strong> {getSubscriptionBadge(selectedBarOwner.subscription.status)}</p>
-                          <p><strong>Type :</strong> {selectedBarOwner.subscription.plan_type}</p>
-                          <p><strong>Prix :</strong> {selectedBarOwner.subscription.monthly_price_eur / 100}€/mois</p>
-                          {selectedBarOwner.subscription.trial_end_date && (
-                            <p><strong>Fin essai :</strong> {new Date(selectedBarOwner.subscription.trial_end_date).toLocaleDateString('fr-FR')}</p>
-                          )}
-                        </>
-                      ) : (
-                        <p>Aucun abonnement</p>
-                      )}
+                      <p className="text-muted-foreground">Géré via Stripe Dashboard</p>
+                      <p className="text-xs">Les abonnements sont maintenant gérés exclusivement via Stripe</p>
                     </div>
                   </div>
                 </div>

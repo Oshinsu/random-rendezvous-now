@@ -21,20 +21,8 @@ export interface BarOwner {
   approved_by?: string;
 }
 
-export interface BarSubscription {
-  id: string;
-  bar_owner_id: string;
-  stripe_subscription_id?: string;
-  status: 'trial' | 'active' | 'past_due' | 'canceled' | 'unpaid';
-  plan_type: 'trial' | 'premium';
-  monthly_price_eur: number;
-  trial_start_date?: string;
-  trial_end_date?: string;
-  current_period_start?: string;
-  current_period_end?: string;
-  created_at: string;
-  updated_at: string;
-}
+// BarSubscription is now managed exclusively by Stripe
+// No local table needed - use useBarSubscription hook instead
 
 export interface BarAnalytics {
   id: string;
@@ -70,23 +58,8 @@ export const useBarOwner = () => {
     enabled: !!user,
   });
 
-  // Get bar owner's subscription
-  const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
-    queryKey: ['barSubscription', barOwner?.id],
-    queryFn: async () => {
-      if (!barOwner) return null;
-      
-      const { data, error } = await supabase
-        .from('bar_subscriptions')
-        .select('*')
-        .eq('bar_owner_id', barOwner.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data as BarSubscription | null;
-    },
-    enabled: !!barOwner,
-  });
+  // Subscription is now managed exclusively by Stripe
+  // Use useBarSubscription hook instead for subscription data
 
   // Get bar analytics
   const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
@@ -166,15 +139,11 @@ export const useBarOwner = () => {
 
   return {
     barOwner,
-    subscription,
     analytics,
     isLoadingProfile,
-    isLoadingSubscription,
     isLoadingAnalytics,
     applyAsBarOwner,
     updateProfile,
     isApproved: barOwner?.status === 'approved',
-    isTrialActive: subscription?.status === 'trial' && new Date() < new Date(subscription.trial_end_date || ''),
-    isSubscriptionActive: subscription?.status === 'active',
   };
 };

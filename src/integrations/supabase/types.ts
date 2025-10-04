@@ -139,56 +139,6 @@ export type Database = {
           },
         ]
       }
-      bar_claims: {
-        Row: {
-          bar_address: string
-          bar_name: string
-          bar_owner_id: string
-          bar_place_id: string
-          claim_evidence: Json | null
-          created_at: string
-          id: string
-          notes: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-        }
-        Insert: {
-          bar_address: string
-          bar_name: string
-          bar_owner_id: string
-          bar_place_id: string
-          claim_evidence?: Json | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-        }
-        Update: {
-          bar_address?: string
-          bar_name?: string
-          bar_owner_id?: string
-          bar_place_id?: string
-          claim_evidence?: Json | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bar_claims_bar_owner_id_fkey"
-            columns: ["bar_owner_id"]
-            isOneToOne: false
-            referencedRelation: "bar_owners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       bar_owners: {
         Row: {
           approved_at: string | null
@@ -275,59 +225,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      bar_subscriptions: {
-        Row: {
-          bar_owner_id: string
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          monthly_price_eur: number
-          plan_type: string
-          status: string
-          stripe_subscription_id: string | null
-          trial_end_date: string | null
-          trial_start_date: string | null
-          updated_at: string
-        }
-        Insert: {
-          bar_owner_id: string
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          monthly_price_eur?: number
-          plan_type?: string
-          status?: string
-          stripe_subscription_id?: string | null
-          trial_end_date?: string | null
-          trial_start_date?: string | null
-          updated_at?: string
-        }
-        Update: {
-          bar_owner_id?: string
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          monthly_price_eur?: number
-          plan_type?: string
-          status?: string
-          stripe_subscription_id?: string | null
-          trial_end_date?: string | null
-          trial_start_date?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bar_subscriptions_bar_owner_id_fkey"
-            columns: ["bar_owner_id"]
-            isOneToOne: false
-            referencedRelation: "bar_owners"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       group_messages: {
         Row: {
