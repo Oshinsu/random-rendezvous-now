@@ -46,65 +46,49 @@ export class UnifiedGroupService {
 
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
-      console.log('📋 Recherche des participations actives pour:', userId);
+      console.log('📋 [SSOT] Appel de get_user_active_groups pour:', userId);
       
-      const { data, error } = await supabase
-        .from('group_participants')
-        .select(`
-          id,
-          group_id,
-          joined_at,
-          status,
-          last_seen,
-          groups!inner(
-            id,
-            status,
-            created_at,
-            current_participants,
-            max_participants,
-            latitude,
-            longitude,
-            location_name,
-            search_radius,
-            bar_name,
-            bar_address,
-            meeting_time,
-            bar_latitude,
-            bar_longitude,
-            bar_place_id
-          )
-        `)
-        .eq('user_id', userId)
-        .eq('status', 'confirmed')
-        .in('groups.status', ['waiting', 'confirmed'])
-        .gt('last_seen', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      // PHASE 3: Utiliser la SSOT PostgreSQL au lieu de dupliquer la logique
+      const { data, error } = await supabase.rpc('get_user_active_groups', {
+        user_uuid: userId,
+        include_scheduled: false
+      });
 
       if (error) {
-        ErrorHandler.logError('FETCH_USER_PARTICIPATIONS', error);
+        ErrorHandler.logError('FETCH_USER_PARTICIPATIONS_SSOT', error);
         const appError = ErrorHandler.handleSupabaseError(error);
         ErrorHandler.showErrorToast(appError);
         return [];
       }
 
-      // Validation côté client pour éviter les groupes très anciens
-      const validParticipations = (data || []).filter(participation => {
-        const group = participation.groups;
-        if (!group) return false;
-        
-        // Filtrer les groupes de plus de 7 jours
-        const groupAge = Date.now() - new Date(group.created_at).getTime();
-        const maxAge = 7 * 24 * 60 * 60 * 1000;
-        
-        if (groupAge > maxAge) {
-          console.log('🗑️ Groupe très ancien filtré:', group.id);
-          return false;
+      // Transformer les données pour correspondre au format attendu
+      const participations = (data || []).map((row: any) => ({
+        id: row.participation_id,
+        group_id: row.group_id,
+        joined_at: row.joined_at,
+        status: 'confirmed',
+        last_seen: row.last_seen,
+        groups: {
+          id: row.group_id,
+          status: row.group_status,
+          created_at: row.created_at,
+          current_participants: row.current_participants,
+          max_participants: row.max_participants,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          location_name: row.location_name,
+          search_radius: row.search_radius,
+          bar_name: row.bar_name,
+          bar_address: row.bar_address,
+          meeting_time: row.meeting_time,
+          bar_latitude: row.bar_latitude,
+          bar_longitude: row.bar_longitude,
+          bar_place_id: row.bar_place_id
         }
-        
-        return true;
-      });
+      }));
 
-      console.log('✅ Participations valides trouvées:', validParticipations.length);
-      return validParticipations;
+      console.log('✅ [SSOT] Participations actives trouvées:', participations.length);
+      return participations;
     } catch (error) {
       ErrorHandler.logError('GET_USER_PARTICIPATIONS', error);
       return [];
