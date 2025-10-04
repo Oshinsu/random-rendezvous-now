@@ -30,7 +30,7 @@ export const useBarSubscription = () => {
       return data as StripeSubscriptionStatus;
     },
     enabled: !!user,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 5 * 60 * 1000, // 5 minutes - optimisé
   });
 
   // Create checkout session
