@@ -31,7 +31,7 @@ const Footer = () => {
           
           {/* Legal Links */}
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-6 pt-3 sm:pt-4">
-            <Link to="/bar-auth" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/bar-application" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               {i18n.language === 'en' ? 'Bar Owners' : 'Espace Gérants'}
             </Link>
             <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">

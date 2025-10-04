@@ -88,7 +88,7 @@ const Index = () => {
             <div className="flex items-center gap-1 sm:gap-2">
               <LanguageToggle />
               <Button asChild variant="ghost" className="text-amber-700 hover:bg-amber-50 text-xs sm:text-sm px-2 sm:px-3" size="sm">
-                <Link to="/bar-auth">
+                <Link to="/bar-application">
                   <span className="hidden sm:inline">Gérants</span>
                   <span className="sm:hidden">🏪</span>
                 </Link>
