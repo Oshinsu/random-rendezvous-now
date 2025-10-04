@@ -1,8 +1,8 @@
 
-import benefit1 from "@/assets/new-benefit-1.jpg";
-import benefit2 from "@/assets/new-benefit-2.jpg";
-import benefit3 from "@/assets/new-benefit-3.jpg";
-import benefit4 from "@/assets/new-benefit-4.jpg";
+import benefit1 from "@/assets/benefit-1.jpg";
+import benefit2 from "@/assets/benefit-2.jpg";
+import benefit3 from "@/assets/benefit-3.jpg";
+import benefit4 from "@/assets/benefit-4.jpg";
 import { useTranslation } from 'react-i18next';
 
 const WhyRandomSection = () => {
