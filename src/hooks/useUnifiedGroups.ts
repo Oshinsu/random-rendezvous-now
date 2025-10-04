@@ -13,7 +13,6 @@ import { showUniqueToast } from '@/utils/toastUtils';
 import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
 import { CoordinateValidator } from '@/utils/coordinateValidation';
 import { toast } from '@/hooks/use-toast';
-import { logger } from '@/utils/cleanLogging';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -100,8 +99,8 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 10 * 60 * 1000, // 10 minutes - optimisé
-    staleTime: 5 * 60 * 1000, // 5 minutes - optimisé
+    refetchInterval: 5 * 60 * 1000, // 5 minutes simplifié
+    staleTime: 2 * 60 * 1000, // 2 minutes simplifié
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
@@ -155,10 +154,10 @@ export const useUnifiedGroups = () => {
     setLoading(true);
     
     try {
-      logger.info('Recherche/Création de groupe avec nouveau système');
+      console.log('🎯 DÉBUT - Recherche/Création de groupe avec nouveau système');
       
       // 1. Géolocalisation fraîche
-      logger.debug('Géolocalisation...');
+      console.log('📍 Géolocalisation...');
       const location = await getUserLocation(true);
       if (!location) {
         toast({ 
@@ -170,11 +169,11 @@ export const useUnifiedGroups = () => {
       }
 
       // 2. Vérification UNIFIÉE des participations existantes avec nouveau système
-      logger.debug('Vérification des participations avec nouveau système');
+      console.log('🔍 Vérification des participations avec nouveau système...');
       const allParticipations = await UnifiedGroupService.getUserParticipations(user.id);
       
       if (allParticipations.length > 0) {
-        logger.warn('Participation active détectée');
+        console.log('⚠️ Participation active détectée avec nouveau système');
         toast({ 
           title: 'Déjà dans un groupe', 
           description: 'Vous êtes déjà dans un groupe actif.', 
@@ -184,12 +183,12 @@ export const useUnifiedGroups = () => {
       }
 
       // 3. Recherche de groupe compatible
-      logger.debug('Recherche de groupe compatible');
+      console.log('🌍 Recherche de groupe compatible...');
       const targetGroup = await GroupGeolocationService.findCompatibleGroup(location);
 
       if (!targetGroup) {
         // 4. Création de groupe neuf
-        logger.info('Création d\'un groupe neuf');
+        console.log('🆕 Création d\'un groupe neuf...');
         const newGroup = await UnifiedGroupService.createGroup(location, user.id);
         
         if (newGroup) {
@@ -206,7 +205,7 @@ export const useUnifiedGroups = () => {
         return false;
       } else {
         // 5. Rejoindre groupe existant
-        logger.info('Rejoindre groupe compatible existant');
+        console.log('🔗 Rejoindre groupe compatible existant...');
         const success = await UnifiedGroupService.joinGroup(targetGroup.id, user.id, location);
         
         if (success) {
@@ -249,7 +248,7 @@ export const useUnifiedGroups = () => {
 
     setLoading(true);
     try {
-      logger.info('Sortie de groupe');
+      console.log('🚪 [UNIFIED] Sortie de groupe...');
       
       // 1. Nettoyage immédiat de l'état local
       setGroupMembers([]);

@@ -5,7 +5,6 @@ import { SystemMessagingService } from './systemMessaging';
 import { AutomaticBarAssignmentService } from './automaticBarAssignment';
 import { toast } from '@/hooks/use-toast';
 import { getGroupLocation } from '@/utils/parisRedirection';
-import { logger } from '@/utils/cleanLogging';
 import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -41,7 +40,7 @@ export class UnifiedGroupService {
       if (error) {
         ErrorHandler.logError('UPDATE_LAST_SEEN', error);
       } else {
-        logger.debug('Last_seen mis à jour pour le groupe', groupId);
+        console.log('✅ Last_seen mis à jour pour le groupe:', groupId);
       }
     } catch (error) {
       ErrorHandler.logError('UPDATE_USER_LAST_SEEN', error);
@@ -50,7 +49,7 @@ export class UnifiedGroupService {
 
   static async getUserParticipations(userId: string): Promise<any[]> {
     try {
-      logger.debug('[SSOT] Appel de get_user_active_groups', { userId });
+      console.log('📋 [SSOT] Appel de get_user_active_groups pour:', userId);
       
       // PHASE 3: Utiliser la SSOT PostgreSQL au lieu de dupliquer la logique
       const { data, error } = await supabase.rpc('get_user_active_groups', {
@@ -91,7 +90,7 @@ export class UnifiedGroupService {
         }
       }));
 
-      logger.debug('[SSOT] Participations actives trouvées', { count: participations.length });
+      console.log('✅ [SSOT] Participations actives trouvées:', participations.length);
       return participations;
     } catch (error) {
       ErrorHandler.logError('GET_USER_PARTICIPATIONS', error);
@@ -101,7 +100,7 @@ export class UnifiedGroupService {
 
   static async getGroupMembers(groupId: string): Promise<GroupMember[]> {
     try {
-      logger.debug('Récupération des membres avec statut de connexion', { groupId });
+      console.log('👥 Récupération des membres avec statut de connexion:', groupId);
       
       const { data: participantsData, error: participantsError } = await supabase
         .from('group_participants')
@@ -124,7 +123,7 @@ export class UnifiedGroupService {
       }
 
       const realParticipantCount = participantsData?.length || 0;
-      logger.debug('Nombre RÉEL de participants confirmés', { count: realParticipantCount });
+      console.log('🔍 Nombre RÉEL de participants confirmés:', realParticipantCount);
 
       // Synchronisation du comptage avec la base de données
       const { data: currentGroup, error: groupError } = await supabase
@@ -134,13 +133,10 @@ export class UnifiedGroupService {
         .single();
 
       if (!groupError && currentGroup) {
-        logger.debug('Comptage actuel en BDD', { 
-          current: currentGroup.current_participants, 
-          real: realParticipantCount 
-        });
+        console.log('📊 Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
         
         if (currentGroup.current_participants !== realParticipantCount) {
-          logger.warn('INCOHÉRENCE DÉTECTÉE - Correction forcée');
+          console.log('🚨 INCOHÉRENCE DÉTECTÉE ! Correction forcée...');
           
           let newStatus = currentGroup.status;
           let updateData: any = {
@@ -159,14 +155,14 @@ export class UnifiedGroupService {
               bar_longitude: null,
               bar_place_id: null
             };
-            logger.info('Remise en waiting et suppression du bar');
+            console.log('⏳ Remise en waiting et suppression du bar');
           } else if (realParticipantCount === 5 && currentGroup.status === 'waiting') {
             newStatus = 'confirmed';
             updateData = {
               ...updateData,
               status: 'confirmed'
             };
-            logger.info('Groupe complet - Passage en confirmed et attribution automatique de bar');
+            console.log('🎉 Groupe complet ! Passage en confirmed et attribution automatique de bar');
           }
 
           const { error: correctionError } = await supabase
@@ -175,11 +171,11 @@ export class UnifiedGroupService {
             .eq('id', groupId);
 
           if (!correctionError) {
-            logger.info('Comptage corrigé avec succès', { count: realParticipantCount });
+            console.log('✅ Comptage corrigé avec succès:', realParticipantCount);
             
             // Attribution automatique de bar pour les groupes complets
             if (realParticipantCount === 5 && newStatus === 'confirmed' && !currentGroup.bar_name) {
-              logger.info('Déclenchement attribution automatique de bar');
+              console.log('🤖 Déclenchement attribution automatique de bar...');
               setTimeout(async () => {
                 await AutomaticBarAssignmentService.assignBarToGroup(groupId);
               }, 1000);
@@ -207,9 +203,7 @@ export class UnifiedGroupService {
         };
       });
 
-      logger.debug('Membres finaux avec statut de connexion', { 
-        members: members.map(m => ({ name: m.name, connected: m.isConnected })) 
-      });
+      console.log('✅ Membres finaux avec statut de connexion:', members.map(m => ({ name: m.name, connected: m.isConnected })));
       return members;
     } catch (error) {
       ErrorHandler.logError('GET_GROUP_MEMBERS', error);
@@ -235,7 +229,7 @@ export class UnifiedGroupService {
 
   static async createGroup(userLocation: LocationData, userId: string): Promise<Group | null> {
     try {
-      logger.info('Création ATOMIQUE d\'un nouveau groupe avec fonction PostgreSQL sécurisée');
+      console.log('🔐 Création ATOMIQUE d\'un nouveau groupe avec fonction PostgreSQL sécurisée');
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
@@ -252,7 +246,7 @@ export class UnifiedGroupService {
       const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
       
       if (!validation.isValid || !validation.sanitized) {
-        logger.error('Coordonnées invalides pour création de groupe');
+        console.error('❌ Coordonnées invalides pour création de groupe');
         toast({
           title: 'Coordonnées invalides',
           description: 'Les coordonnées de géolocalisation sont invalides.',
@@ -268,13 +262,13 @@ export class UnifiedGroupService {
         locationName: userLocation.locationName
       };
 
-      logger.debug('Coordonnées double-sanitisées pour création groupe', validation.sanitized);
+      console.log('🔧 Coordonnées double-sanitisées pour création groupe:', validation.sanitized);
 
       // Application de la redirection IDF
       const groupLocation = getGroupLocation(sanitizedLocation);
       
       if (groupLocation.locationName === 'Paris Centre') {
-        logger.info('Utilisateur IDF - création de groupe parisien');
+        console.log('🗺️ Utilisateur IDF - création de groupe parisien');
       }
 
       // Transaction atomique avec fonction PostgreSQL
@@ -286,7 +280,7 @@ export class UnifiedGroupService {
       });
 
       if (transactionError) {
-        logger.error('Erreur transaction atomique', transactionError);
+        console.error('❌ Erreur transaction atomique:', transactionError);
         
         if (transactionError.message.includes('User is already in an active group')) {
           toast({
@@ -308,7 +302,7 @@ export class UnifiedGroupService {
       }
 
       if (!result || result.length === 0) {
-        logger.error('Aucun résultat de la transaction atomique');
+        console.error('❌ Aucun résultat de la transaction atomique');
         toast({
           title: 'Erreur de création',
           description: 'Impossible de créer le groupe pour le moment.',
@@ -318,7 +312,7 @@ export class UnifiedGroupService {
       }
 
       const newGroup = result[0];
-      logger.info('Groupe créé avec transaction atomique sécurisée', { groupId: newGroup.id });
+      console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
       
       const typedGroup: Group = {
         ...newGroup,
@@ -336,7 +330,7 @@ export class UnifiedGroupService {
 
   static async joinGroup(groupId: string, userId: string, userLocation: LocationData): Promise<boolean> {
     try {
-      logger.info('Adhésion au groupe avec vérification de sécurité', { groupId });
+      console.log('🔐 Adhésion au groupe avec vérification de sécurité:', groupId);
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
@@ -356,7 +350,7 @@ export class UnifiedGroupService {
         .single();
 
       if (checkGroupError || !groupExists) {
-        logger.error('Groupe inexistant ou inaccessible', { groupId });
+        console.error('❌ Groupe inexistant ou inaccessible:', groupId);
         toast({
           title: 'Groupe introuvable',
           description: 'Ce groupe n\'existe plus ou n\'est plus accessible.',
@@ -403,7 +397,7 @@ export class UnifiedGroupService {
       const validation = CoordinateValidator.validateCoordinates(userLocation.latitude, userLocation.longitude);
       
       if (!validation.isValid || !validation.sanitized) {
-        logger.error('Coordonnées invalides pour insertion participant');
+        console.error('❌ Coordonnées invalides pour insertion participant');
         toast({
           title: 'Coordonnées invalides',
           description: 'Les coordonnées de géolocalisation sont invalides.',
@@ -412,7 +406,7 @@ export class UnifiedGroupService {
         return false;
       }
 
-      logger.debug('Coordonnées sanitisées pour insertion BDD', validation.sanitized);
+      console.log('🔧 Coordonnées sanitisées pour insertion BDD:', validation.sanitized);
 
       // Insertion du participant avec coordonnées sanitisées
       const participantData = {
@@ -430,7 +424,7 @@ export class UnifiedGroupService {
         .insert(participantData);
 
       if (joinError) {
-        logger.error('Erreur adhésion', joinError);
+        console.error('❌ Erreur adhésion:', joinError);
         if (joinError.message.includes('User is already in an active group')) {
           toast({
             title: 'Participation limitée',
@@ -444,7 +438,7 @@ export class UnifiedGroupService {
         return false;
       }
 
-      logger.info('Participation ajoutée avec succès');
+      console.log('✅ Participation ajoutée avec succès');
 
       // Vérification post-adhésion pour attribution automatique de bar
       setTimeout(async () => {
@@ -456,7 +450,7 @@ export class UnifiedGroupService {
 
         if (updatedGroup && updatedGroup.current_participants === 5 && 
             updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
-          logger.info('Groupe complet détecté, attribution de bar');
+          console.log('🤖 Groupe complet détecté, attribution de bar...');
           await AutomaticBarAssignmentService.assignBarToGroup(groupId);
         }
       }, 2000);
@@ -477,7 +471,7 @@ export class UnifiedGroupService {
 
   static async leaveGroup(groupId: string, userId: string): Promise<boolean> {
     try {
-      logger.info('Quitter le groupe', { groupId });
+      console.log('🚪 Quitter le groupe:', groupId);
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {

@@ -1,5 +1,5 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/utils/cleanLogging';
 
 export class AutomaticBarAssignmentService {
   /**
@@ -7,7 +7,7 @@ export class AutomaticBarAssignmentService {
    */
   static async assignBarToGroup(groupId: string): Promise<boolean> {
     try {
-      logger.info('Attribution automatique de bar pour groupe', { groupId });
+      console.log('🤖 [AUTOMATIC BAR ASSIGNMENT] Attribution améliorée pour groupe:', groupId);
 
       // 1. Vérifier le groupe
       const { data: group, error: groupError } = await supabase
@@ -17,19 +17,19 @@ export class AutomaticBarAssignmentService {
         .single();
 
       if (groupError || !group) {
-        logger.error('Groupe introuvable', groupError);
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Groupe introuvable:', groupError);
         return false;
       }
 
       // 2. Vérifier l'éligibilité (5 participants, confirmé, pas de bar)
       if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
-        logger.debug('Groupe non éligible pour attribution');
+        console.log('ℹ️ [AUTOMATIC BAR ASSIGNMENT] Groupe non éligible pour attribution');
         return false;
       }
 
       // 3. Vérifier les coordonnées (géolocalisation obligatoire)
       if (!group.latitude || !group.longitude) {
-        logger.error('Géolocalisation manquante pour le groupe');
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Géolocalisation manquante pour le groupe');
         await this.sendSystemMessage(groupId, '⚠️ Géolocalisation requise pour assigner un bar automatiquement.');
         return false;
       }
@@ -37,7 +37,7 @@ export class AutomaticBarAssignmentService {
       const searchLatitude = group.latitude;
       const searchLongitude = group.longitude;
 
-      logger.debug('Recherche avec coordonnées', { searchLatitude, searchLongitude });
+      console.log('📍 [AUTOMATIC BAR ASSIGNMENT] Recherche avec coordonnées:', { searchLatitude, searchLongitude });
 
       // 4. Appel Edge Function CORRIGÉE - simple-auto-assign-bar
       const { data: barResponse, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
@@ -49,13 +49,13 @@ export class AutomaticBarAssignmentService {
       });
 
       if (barError) {
-        logger.error('Erreur Edge Function', barError);
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur Edge Function:', barError);
         await this.sendSystemMessage(groupId, '⚠️ Erreur lors de la recherche automatique de bar.');
         return false;
       }
 
       if (!barResponse?.success || !barResponse?.bar?.name) {
-        logger.error('Aucun bar trouvé dans la réponse');
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Aucun bar trouvé dans la réponse');
         await this.sendSystemMessage(groupId, '⚠️ Aucun bar trouvé automatiquement dans votre zone.');
         return false;
       }
@@ -76,7 +76,7 @@ export class AutomaticBarAssignmentService {
         .eq('id', groupId);
 
       if (updateError) {
-        logger.error('Erreur mise à jour groupe', updateError);
+        console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur mise à jour groupe:', updateError);
         return false;
       }
 
@@ -100,7 +100,7 @@ export class AutomaticBarAssignmentService {
         `🍺 Votre groupe est complet ! Rendez-vous au ${barResponse.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} 🎉`
       );
 
-      logger.info('Attribution réussie', {
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Attribution réussie:', {
         groupId,
         barName: barResponse.bar.name,
         address: barResponse.bar.formatted_address,
@@ -110,7 +110,7 @@ export class AutomaticBarAssignmentService {
       return true;
 
     } catch (error) {
-      logger.error('Erreur globale', error);
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur globale:', error);
       await this.sendSystemMessage(groupId, '⚠️ Erreur technique lors de l\'attribution automatique.');
       return false;
     }
@@ -131,7 +131,7 @@ export class AutomaticBarAssignmentService {
         .ilike('message', '%bar%'); // Messages contenant "bar"
 
       if (recentMessages && recentMessages.length > 0) {
-        logger.debug('Message système similaire récent trouvé, éviter le doublon');
+        console.log('⏭️ [AUTOMATIC BAR ASSIGNMENT] Message système similaire récent trouvé, éviter le doublon');
         return;
       }
 
@@ -144,9 +144,9 @@ export class AutomaticBarAssignmentService {
           is_system: true
         });
       
-      logger.debug('Message système envoyé', { message });
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Message système envoyé:', message);
     } catch (error) {
-      logger.error('Erreur envoi message système', error);
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur envoi message système:', error);
     }
   }
 
@@ -162,9 +162,9 @@ export class AutomaticBarAssignmentService {
         .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
         .eq('is_system', true);
         
-      logger.debug('Messages de déclenchement nettoyés');
+      console.log('✅ [AUTOMATIC BAR ASSIGNMENT] Messages de déclenchement nettoyés');
     } catch (error) {
-      logger.error('Erreur nettoyage messages', error);
+      console.error('❌ [AUTOMATIC BAR ASSIGNMENT] Erreur nettoyage messages:', error);
     }
   }
 }
