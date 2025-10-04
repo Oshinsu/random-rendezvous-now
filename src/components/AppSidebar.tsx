@@ -1,10 +1,8 @@
 
-import { Home, Users, User, ExternalLink, Calendar, Shield, Building, Crown } from 'lucide-react';
+import { Home, Users, User, ExternalLink, Calendar, Shield, Building } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
   SidebarContent,
@@ -25,13 +23,9 @@ const navigationItems = [
   { title: 'Chercher un groupe', url: '/dashboard', icon: Home },
   { title: 'Mon groupe', url: '/groups', icon: Users },
   { title: 'Groupes planifiés', url: '/scheduled-groups', icon: Calendar },
-  { title: 'Profil', url: '/profile', icon: User },
-  { title: 'Mon Abonnement', url: '/subscription', icon: Crown },
-  { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
-];
-
-const barOwnerItems = [
   { title: 'Espace Gérant', url: '/bar-dashboard', icon: Building },
+  { title: 'Profil', url: '/profile', icon: User },
+  { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
 ];
 
 export function AppSidebar() {
@@ -40,25 +34,6 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  // Check if user is a bar owner
-  const [isBarOwner, setIsBarOwner] = useState(false);
-  
-  useEffect(() => {
-    const checkBarOwnerStatus = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('bar_owners')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'approved')
-        .maybeSingle();
-        
-      setIsBarOwner(!!data);
-    };
-    
-    checkBarOwnerStatus();
-  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
   const userName = user?.user_metadata?.first_name || 'Utilisateur';
@@ -75,7 +50,7 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="p-6 border-b border-neutral-200/50">
-        <NavLink to="/" className="flex items-center space-x-4 hover:opacity-90 transition-opacity">
+        <div className="flex items-center space-x-4">
           <RandomLogo size={48} withAura className="shadow-lg" />
           {!isCollapsed && (
             <div>
@@ -83,7 +58,7 @@ export function AppSidebar() {
               <p className="text-sm font-heading text-neutral-600 font-medium">Aventures</p>
             </div>
           )}
-        </NavLink>
+        </div>
       </SidebarHeader>
 
       <SidebarContent className="py-6">
@@ -106,22 +81,6 @@ export function AppSidebar() {
                     <NavLink to={item.url} className="flex items-center space-x-4 py-3 px-4 w-full">
                       <item.icon className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white" />
                       {!isCollapsed && <span className="font-heading font-semibold">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {/* Bar Owner Links - Only visible to approved bar owners */}
-              {isBarOwner && barOwnerItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(item.url)}
-                    className="mx-0 rounded-2xl hover:bg-orange-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-orange-500 data-[active=true]:to-orange-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12"
-                    tooltip={isCollapsed ? item.title : undefined}
-                  >
-                    <NavLink to={item.url} className="flex items-center space-x-4 py-3 px-4 w-full">
-                      <item.icon className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white text-orange-600" />
-                      {!isCollapsed && <span className="font-heading font-semibold text-orange-700 group-data-[active=true]:text-white">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

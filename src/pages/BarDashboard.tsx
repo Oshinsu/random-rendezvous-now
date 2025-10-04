@@ -2,7 +2,6 @@ import React from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useBarOwner } from '@/hooks/useBarOwner';
 import { useBarSubscription } from '@/hooks/useBarSubscription';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +35,6 @@ import {
 
 export default function BarDashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminAuth();
   const navigate = useNavigate();
   const {
     barOwner,
@@ -59,12 +57,12 @@ export default function BarDashboard() {
     }
   }, [user, authLoading, navigate]);
 
-  // Redirect non-bar owners to application page (except admins)
+  // Redirect non-bar owners to application page
   useEffect(() => {
-    if (!isLoadingProfile && !adminLoading && !barOwner && !isAdmin) {
+    if (!isLoadingProfile && !barOwner) {
       navigate('/bar-application');
     }
-  }, [barOwner, isLoadingProfile, adminLoading, isAdmin, navigate]);
+  }, [barOwner, isLoadingProfile, navigate]);
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -75,19 +73,19 @@ export default function BarDashboard() {
 
   const getSubscriptionStatusBadge = () => {
     if (isLoadingSubscription) return <Badge variant="outline">Chargement...</Badge>;
-    if (!displaySubscriptionStatus?.subscribed) return <Badge variant="destructive">Non actif</Badge>;
+    if (!subscriptionStatus?.subscribed) return <Badge variant="destructive">Non actif</Badge>;
     return <Badge variant="default">Actif</Badge>;
   };
 
   const handleSubscriptionAction = () => {
-    if (displaySubscriptionStatus?.subscribed) {
+    if (subscriptionStatus?.subscribed) {
       manageSubscription.mutate();
     } else {
       createCheckout.mutate();
     }
   };
 
-  if (authLoading || isLoadingProfile || adminLoading) {
+  if (authLoading || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto p-6 space-y-8">
@@ -140,20 +138,14 @@ export default function BarDashboard() {
     );
   }
 
-  // Allow access for approved bar owners OR admins
-  if (!barOwner && !isAdmin) {
+  if (!barOwner || !isApproved) {
     return null; // Will redirect to application page
   }
 
-  // Use real data only - no demo data
-  const displayBarOwner = barOwner;
-  const displayAnalytics = analytics;
-  const displaySubscriptionStatus = subscriptionStatus;
-
-  // Calculate metrics using display data
-  const currentMonth = displayAnalytics?.[0];
-  const previousMonth = displayAnalytics?.[1];
-  const lastSixMonths = displayAnalytics?.slice(0, 6) || [];
+  // Calculate metrics
+  const currentMonth = analytics?.[0];
+  const previousMonth = analytics?.[1];
+  const lastSixMonths = analytics?.slice(0, 6) || [];
   
   const totalCustomers = lastSixMonths.reduce((sum, month) => sum + month.total_customers, 0);
   const totalRevenue = lastSixMonths.reduce((sum, month) => sum + month.estimated_revenue_eur, 0);
@@ -180,48 +172,41 @@ export default function BarDashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-            {displayBarOwner && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building className="h-4 w-4" />
-                <span>{displayBarOwner.bar_name}</span>
-                <Separator orientation="vertical" className="h-4" />
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">{displayBarOwner.bar_address}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Building className="h-4 w-4" />
+              <span>{barOwner.bar_name}</span>
+              <Separator orientation="vertical" className="h-4" />
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">{barOwner.bar_address}</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {getSubscriptionStatusBadge()}
-              <Button 
-                variant={displaySubscriptionStatus?.subscribed ? "outline" : "default"}
-                onClick={handleSubscriptionAction}
-                disabled={createCheckout.isPending || manageSubscription.isPending}
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                {displaySubscriptionStatus?.subscribed ? "Gérer l'abonnement" : "S'abonner"}
-              </Button>
+            <Button 
+              variant={subscriptionStatus?.subscribed ? "outline" : "default"}
+              onClick={handleSubscriptionAction}
+              disabled={createCheckout.isPending || manageSubscription.isPending}
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              {subscriptionStatus?.subscribed ? "Gérer l'abonnement" : "S'abonner"}
+            </Button>
           </div>
         </div>
 
         <Separator />
 
         {/* Subscription Alert */}
-        {!displaySubscriptionStatus?.subscribed && (
+        {!subscriptionStatus?.subscribed && (
           <Card className="border-warning bg-warning/5">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <Sparkles className="h-6 w-6 text-warning flex-shrink-0 mt-1" />
                 <div className="space-y-2">
-                  <h3 className="font-semibold">
-                    Activez votre abonnement pour débloquer toutes les fonctionnalités
-                  </h3>
+                  <h3 className="font-semibold">Activez votre abonnement pour débloquer toutes les fonctionnalités</h3>
                   <p className="text-sm text-muted-foreground">
                     Accédez aux analytics avancés, aux rapports détaillés et maximisez vos revenus avec Random.
                   </p>
-                  <Button 
-                    size="sm" 
-                    onClick={handleSubscriptionAction}
-                  >
+                  <Button size="sm" onClick={handleSubscriptionAction}>
                     Commencer maintenant - 150€/mois
                     <ArrowUpRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -299,7 +284,7 @@ export default function BarDashboard() {
         </div>
 
         {/* Analytics Chart */}
-        {displayAnalytics && displayAnalytics.length > 0 && (
+        {analytics && analytics.length > 0 && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -319,7 +304,7 @@ export default function BarDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <BarAnalyticsChart data={displayAnalytics} />
+              <BarAnalyticsChart data={analytics} />
             </CardContent>
           </Card>
         )}

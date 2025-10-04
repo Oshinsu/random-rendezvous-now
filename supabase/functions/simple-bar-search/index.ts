@@ -646,7 +646,7 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ error: 'Erreur de recherche', details: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({ error: 'Erreur de recherche', details: error.message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

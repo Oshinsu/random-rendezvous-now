@@ -151,12 +151,11 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('❌ Unexpected error in activate-scheduled-groups:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
-        details: errorMessage,
+        details: error.message,
         timestamp: new Date().toISOString()
       }),
       { 

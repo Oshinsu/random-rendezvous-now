@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Coffee, BarChart3, Euro, Users, TrendingUp, Star } from 'lucide-react';
-import { useBarSubscription } from '@/hooks/useBarSubscription';
+import { Building, Coffee, BarChart3, Euro } from 'lucide-react';
 
 const BarAuthPage = () => {
   const navigate = useNavigate();
@@ -19,7 +18,6 @@ const BarAuthPage = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
-  const { createCheckout, isLoadingSubscription } = useBarSubscription();
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -50,9 +48,8 @@ const BarAuthPage = () => {
       } else if (data.user && data.user.identities?.length === 0) {
         toast.success('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.');
       } else if (data.user) {
-        toast.success('Inscription réussie ! Activez votre abonnement pour accéder à toutes les fonctionnalités.');
-        // Après inscription, lancer directement l'abonnement
-        handleSubscribe();
+        toast.success('Inscription réussie ! Redirection vers votre espace...');
+        navigate('/bar-dashboard');
       } else {
         toast.success('Inscription initialisée ! Vérifiez votre email pour confirmer votre compte.');
       }
@@ -70,10 +67,6 @@ const BarAuthPage = () => {
       }
     }
     setLoading(false);
-  };
-
-  const handleSubscribe = () => {
-    createCheckout.mutate();
   };
 
   return (
@@ -95,24 +88,19 @@ const BarAuthPage = () => {
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* Benefits Section */}
           <div className="space-y-6">
-            <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-primary mb-2">150€/mois</div>
-              <div className="text-lg text-muted-foreground">Accès complet à Random Business</div>
-            </div>
-
-            <Card className="border-primary/20 bg-primary/5">
+            <Card className="border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-primary">
-                  <Users className="h-5 w-5" />
-                  Nouveaux Clients Garantis
+                  <BarChart3 className="h-5 w-5" />
+                  Analytics Détaillées
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• Groupes de 5 personnes chaque semaine</li>
-                  <li>• Ciblage géographique précis</li>
-                  <li>• Clients pré-qualifiés et motivés</li>
-                  <li>• Horaires optimisés selon votre affluence</li>
+                  <li>• Nombre exact de clients Random amenés</li>
+                  <li>• Évolution mensuelle des groupes</li>
+                  <li>• Heures de pointe d'affluence</li>
+                  <li>• Impact financier estimé</li>
                 </ul>
               </CardContent>
             </Card>
@@ -120,34 +108,35 @@ const BarAuthPage = () => {
             <Card className="border-green-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-600">
-                  <TrendingUp className="h-5 w-5" />
-                  ROI Prouvé
+                  <Euro className="h-5 w-5" />
+                  ROI Transparent
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  <li>• En moyenne 3x votre investissement mensuel</li>
-                  <li>• Analytics détaillées en temps réel</li>
-                  <li>• Suivi du chiffre d'affaires généré</li>
-                  <li>• Rapports mensuels complets</li>
+                  <li>• Calcul précis du chiffre d'affaires généré</li>
+                  <li>• Comparaison coût/bénéfice</li>
+                  <li>• Preuves concrètes de la valeur ajoutée</li>
+                  <li>• Rapports mensuels détaillés</li>
                 </ul>
               </CardContent>
             </Card>
 
-            <Card className="border-orange-200">
+            <Card className="border-blue-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <Star className="h-5 w-5" />
-                  Service Premium
+                <CardTitle className="flex items-center gap-2 text-blue-600">
+                  <Coffee className="h-5 w-5" />
+                  Essai Gratuit 30 Jours
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li>• Support dédié 7j/7</li>
-                  <li>• Optimisation continue de votre profil</li>
-                  <li>• Accès prioritaire aux nouvelles fonctionnalités</li>
-                  <li>• Annulation possible à tout moment</li>
-                </ul>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">0€</div>
+                  <div className="text-sm text-muted-foreground">pendant 30 jours</div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Puis 150€/mois - Annulable à tout moment
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -202,9 +191,9 @@ const BarAuthPage = () => {
               <TabsContent value="signup">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Rejoignez Random Business</CardTitle>
+                    <CardTitle>Créer un compte</CardTitle>
                     <CardDescription>
-                      Créez votre compte et commencez à recevoir de nouveaux clients dès maintenant
+                      Commencez votre essai gratuit de 30 jours
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -255,13 +244,13 @@ const BarAuthPage = () => {
                           required 
                         />
                       </div>
-                      <Button type="submit" className="w-full" disabled={loading || createCheckout.isPending}>
-                        {loading ? 'Création du compte...' : 'Créer mon compte et m\'abonner'}
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? 'Création...' : 'Commencer l\'essai gratuit'}
                       </Button>
                     </form>
                     <div className="text-xs text-center text-muted-foreground mt-4">
                       En créant un compte, vous acceptez nos conditions d'utilisation.
-                      150€/mois.
+                      Pas de frais pendant 30 jours.
                     </div>
                   </CardContent>
                 </Card>

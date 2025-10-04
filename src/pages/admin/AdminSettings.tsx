@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
-import { PpuModeToggle } from '@/components/admin/PpuModeToggle';
 import { 
   Settings, 
   Database, 
@@ -19,8 +17,7 @@ import {
   Download, 
   Upload,
   Trash2,
-  AlertTriangle,
-  CreditCard
+  AlertTriangle
 } from "lucide-react";
 
 export const AdminSettings = () => {
@@ -153,35 +150,14 @@ export const AdminSettings = () => {
               <h1 className="text-3xl font-bold text-red-800">Paramètres système</h1>
               <p className="text-red-600 mt-2">Configuration et maintenance de l'application</p>
             </div>
+            <Button 
+              onClick={handleSaveSettings} 
+              disabled={saving || loading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {saving ? <LoadingSpinner size="sm" /> : 'Sauvegarder'}
+            </Button>
           </div>
-
-          <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Général
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Paiements PPU
-              </TabsTrigger>
-              <TabsTrigger value="maintenance" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                Maintenance
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-red-800">Configuration générale</h2>
-                <Button 
-                  onClick={handleSaveSettings} 
-                  disabled={saving || loading}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {saving ? <LoadingSpinner size="sm" /> : 'Sauvegarder'}
-                </Button>
-              </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Paramètres généraux */}
@@ -255,6 +231,103 @@ export const AdminSettings = () => {
           </CardContent>
         </Card>
 
+        {/* Maintenance automatique */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <Shield className="h-5 w-5" />
+              Maintenance automatique
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Nettoyage automatique</Label>
+                <p className="text-sm text-gray-600">Suppression automatique des anciennes données</p>
+              </div>
+              <Switch
+                checked={localSettings.autoCleanupEnabled}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({
+                  ...prev,
+                  autoCleanupEnabled: checked
+                }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="cleanupInterval">Intervalle de nettoyage (heures)</Label>
+              <Input
+                id="cleanupInterval"
+                type="number"
+                min="1"
+                max="168"
+                value={localSettings.cleanupIntervalHours}
+                onChange={(e) => setLocalSettings(prev => ({
+                  ...prev,
+                  cleanupIntervalHours: parseInt(e.target.value) || 24
+                }))}
+                disabled={!localSettings.autoCleanupEnabled}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Button 
+                onClick={handleCleanupDatabase}
+                disabled={cleanupLoading}
+                variant="outline"
+                className="w-full text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+              >
+                {cleanupLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Nettoyer maintenant
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sauvegarde et restauration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <Database className="h-5 w-5" />
+              Sauvegarde & Restauration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Button 
+                onClick={handleExportDatabase}
+                disabled={exportLoading}
+                variant="outline"
+                className="w-full text-blue-700 border-blue-300 hover:bg-blue-50"
+              >
+                {exportLoading ? <LoadingSpinner size="sm" /> : <Download className="h-4 w-4 mr-2" />}
+                Exporter base de données
+              </Button>
+              
+              <Button 
+                disabled
+                variant="outline"
+                className="w-full text-gray-500"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Importer base de données (Bientôt)
+              </Button>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <div className="text-sm text-yellow-800">
+                  <p className="font-medium">Important</p>
+                  <p>Effectuez des sauvegardes régulières avant les mises à jour importantes.</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Notifications et alertes */}
         <Card>
           <CardHeader>
@@ -283,114 +356,6 @@ export const AdminSettings = () => {
           </CardContent>
         </Card>
       </div>
-            </TabsContent>
-
-            <TabsContent value="payments" className="space-y-6">
-              <PpuModeToggle />
-            </TabsContent>
-
-            <TabsContent value="maintenance" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Maintenance automatique */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-800">
-                      <Shield className="h-5 w-5" />
-                      Maintenance automatique
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Nettoyage automatique</Label>
-                        <p className="text-sm text-gray-600">Suppression automatique des anciennes données</p>
-                      </div>
-                      <Switch
-                        checked={localSettings.autoCleanupEnabled}
-                        onCheckedChange={(checked) => setLocalSettings(prev => ({
-                          ...prev,
-                          autoCleanupEnabled: checked
-                        }))}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="cleanupInterval">Intervalle de nettoyage (heures)</Label>
-                      <Input
-                        id="cleanupInterval"
-                        type="number"
-                        min="1"
-                        max="168"
-                        value={localSettings.cleanupIntervalHours}
-                        onChange={(e) => setLocalSettings(prev => ({
-                          ...prev,
-                          cleanupIntervalHours: parseInt(e.target.value) || 24
-                        }))}
-                        disabled={!localSettings.autoCleanupEnabled}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={handleCleanupDatabase}
-                        disabled={cleanupLoading}
-                        variant="outline"
-                        className="w-full text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-                      >
-                        {cleanupLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                        Nettoyer maintenant
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Sauvegarde et restauration */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-800">
-                      <Database className="h-5 w-5" />
-                      Sauvegarde & Restauration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={handleExportDatabase}
-                        disabled={exportLoading}
-                        variant="outline"
-                        className="w-full text-blue-700 border-blue-300 hover:bg-blue-50"
-                      >
-                        {exportLoading ? <LoadingSpinner size="sm" /> : <Download className="h-4 w-4 mr-2" />}
-                        Exporter base de données
-                      </Button>
-                      
-                      <Button 
-                        disabled
-                        variant="outline"
-                        className="w-full text-gray-500"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Importer base de données (Bientôt)
-                      </Button>
-                    </div>
-
-                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                        <div className="text-sm text-yellow-800">
-                          <p className="font-medium">Important</p>
-                          <p>Effectuez des sauvegardes régulières avant les mises à jour importantes.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-          </Tabs>
         </>
       )}
     </div>

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { useBarOwner } from '@/hooks/useBarOwner';
 import { Button } from '@/components/ui/button';
 import { 
   NavigationMenu,
@@ -21,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe, BarChart3, Settings } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 import LanguageToggle from './LanguageToggle';
 import { useTranslation } from 'react-i18next';
@@ -31,11 +30,6 @@ const AppNavigation = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
-  const { isAdmin } = useAdminAuth();
-  const { barOwner, isLoadingProfile } = useBarOwner();
-
-  // Check if user is an approved bar owner
-  const isApprovedBarOwner = barOwner?.status === 'approved';
 
   const handleSignOut = async () => {
     await signOut();
@@ -123,48 +117,6 @@ const AppNavigation = () => {
                     </NavLink>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-
-                {/* Bar Owner Section */}
-                {isApprovedBarOwner && (
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <NavLink 
-                        to="/bar-dashboard" 
-                        className={({ isActive }) => 
-                          `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
-                            isActive 
-                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                          }`
-                        }
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                        <span>Espace Gérant</span>
-                      </NavLink>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                )}
-
-                {/* Admin Section */}
-                {isAdmin && (
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <NavLink 
-                        to="/admin" 
-                        className={({ isActive }) => 
-                          `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
-                            isActive 
-                              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                          }`
-                        }
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Admin</span>
-                      </NavLink>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                )}
 
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
@@ -287,42 +239,6 @@ const AppNavigation = () => {
                 <Clock className="h-4 w-4" />
                 <span>{t('navigation.scheduled_groups')}</span>
               </NavLink>
-
-              {/* Bar Owner Section - Mobile */}
-              {isApprovedBarOwner && (
-                <NavLink 
-                  to="/bar-dashboard" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md' 
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`
-                  }
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  <span>Espace Gérant</span>
-                </NavLink>
-              )}
-
-              {/* Admin Section - Mobile */}
-              {isAdmin && (
-                <NavLink 
-                  to="/admin" 
-                  className={({ isActive }) => 
-                    `flex items-center space-x-2 px-4 py-2 rounded-md transition-colors font-heading ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md' 
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`
-                  }
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Admin</span>
-                </NavLink>
-              )}
 
               <button 
                 onClick={() => {

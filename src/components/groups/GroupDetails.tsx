@@ -1,7 +1,7 @@
+
 import { Button } from '@/components/ui/button';
 import { Settings, Users2, Calendar, MapPin, Clock } from 'lucide-react';
 import { Group } from '@/types/database';
-import { PaymentRequestCard } from '@/components/PaymentRequestCard';
 
 interface GroupDetailsProps {
   group: Group;
@@ -19,47 +19,6 @@ const GroupDetails = ({ group, onLeaveGroup, loading }: GroupDetailsProps) => {
     }
     return "Recherche de bar en cours...";
   };
-
-  // Show payment request card if group is awaiting payment
-  if (group.status === 'awaiting_payment') {
-    return (
-      <div className="space-y-4">
-        <PaymentRequestCard groupId={group.id} />
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-soft border border-white/50">
-          <h3 className="text-base font-heading font-semibold text-neutral-800 mb-4 flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Détails de l'aventure
-          </h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-neutral-600 font-medium">Statut</span>
-              <span className="font-semibold text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700">
-                Paiement en attente
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-neutral-600 font-medium flex items-center gap-1">
-                <Users2 className="h-3 w-3" />
-                Participants
-              </span>
-              <span className="font-semibold text-neutral-800">
-                {group.current_participants}/{group.max_participants}
-              </span>
-            </div>
-          </div>
-          <Button
-            onClick={onLeaveGroup}
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="w-full mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-xs"
-          >
-            Quitter l'aventure
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-soft border border-white/50">

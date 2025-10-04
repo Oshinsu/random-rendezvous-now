@@ -2,21 +2,19 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBarOwner } from '@/hooks/useBarOwner';
-import { useBarSubscription } from '@/hooks/useBarSubscription';
+import { BarOwnerApplication } from '@/components/bar/BarOwnerApplication';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Building, ArrowLeft, Users, TrendingUp, Star, Euro } from 'lucide-react';
+import { Building, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function BarApplicationPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { barOwner, isLoadingProfile } = useBarOwner();
-  const { createCheckout } = useBarSubscription();
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/bar-auth');
+      navigate('/auth');
     }
   }, [user, authLoading, navigate]);
 
@@ -69,88 +67,19 @@ export default function BarApplicationPage() {
               </p>
             </div>
             
-            <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-primary mb-2">150€/mois</div>
-              <div className="text-lg text-muted-foreground">Accès complet à Random Business</div>
-            </div>
-
-            <div className="grid gap-6 mb-8">
-              <Card className="border-primary/20 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <Users className="h-5 w-5" />
-                    Nouveaux Clients Garantis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Groupes de 5 personnes chaque semaine</li>
-                    <li>• Ciblage géographique précis</li>
-                    <li>• Clients pré-qualifiés et motivés</li>
-                    <li>• Horaires optimisés selon votre affluence</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="border-green-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-600">
-                    <TrendingUp className="h-5 w-5" />
-                    ROI Prouvé
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    <li>• En moyenne 3x votre investissement mensuel</li>
-                    <li>• Analytics détaillées en temps réel</li>
-                    <li>• Suivi du chiffre d'affaires généré</li>
-                    <li>• Rapports mensuels complets</li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="border-orange-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-600">
-                    <Star className="h-5 w-5" />
-                    Service Premium
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    <li>• Support dédié 7j/7</li>
-                    <li>• Optimisation continue de votre profil</li>
-                    <li>• Accès prioritaire aux nouvelles fonctionnalités</li>
-                    <li>• Annulation possible à tout moment</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-4">
-              <Button 
-                onClick={() => createCheckout.mutate()} 
-                className="w-full"
-                size="lg"
-                disabled={createCheckout.isPending}
-              >
-                <Euro className="h-5 w-5 mr-2" />
-                {createCheckout.isPending ? 'Chargement...' : 'Commencer l\'abonnement'}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/bar-auth')}
-                className="w-full"
-              >
-                J'ai déjà un compte
-              </Button>
-              
-              <div className="text-xs text-center text-muted-foreground">
-                150€/mois. Annulation possible à tout moment.
-              </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 text-left">
+              <h3 className="font-semibold text-primary mb-2">Pourquoi rejoindre Random ?</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>• <strong>Nouveaux clients garantis</strong> - Groupes de 5 personnes chaque semaine</li>
+                <li>• <strong>ROI prouvé</strong> - En moyenne 3x votre investissement mensuel</li>
+                <li>• <strong>Zéro effort marketing</strong> - Nous nous occupons de tout</li>
+                <li>• <strong>Analytics détaillés</strong> - Suivez vos revenus en temps réel</li>
+              </ul>
             </div>
           </div>
+
+          {/* Application Form */}
+          <BarOwnerApplication />
         </div>
       </div>
     </div>

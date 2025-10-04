@@ -2,7 +2,7 @@
 export interface Group {
   id: string;
   created_at: string;
-  status: 'waiting' | 'full' | 'confirmed' | 'completed' | 'cancelled' | 'awaiting_payment';
+  status: 'waiting' | 'full' | 'confirmed' | 'completed' | 'cancelled';
   bar_name?: string;
   bar_address?: string;
   meeting_time?: string;
