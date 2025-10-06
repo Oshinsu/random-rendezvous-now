@@ -226,6 +226,375 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_campaign_sends: {
+        Row: {
+          bounced: boolean | null
+          campaign_id: string
+          clicked_at: string | null
+          converted_at: string | null
+          id: string
+          metadata: Json | null
+          opened_at: string | null
+          sent_at: string
+          unsubscribed: boolean | null
+          user_id: string
+        }
+        Insert: {
+          bounced?: boolean | null
+          campaign_id: string
+          clicked_at?: string | null
+          converted_at?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          sent_at?: string
+          unsubscribed?: boolean | null
+          user_id: string
+        }
+        Update: {
+          bounced?: boolean | null
+          campaign_id?: string
+          clicked_at?: string | null
+          converted_at?: string | null
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          sent_at?: string
+          unsubscribed?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_campaign_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_campaigns: {
+        Row: {
+          campaign_name: string
+          campaign_type: string
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          send_at: string | null
+          status: string
+          subject: string | null
+          target_lifecycle_stage_id: string | null
+          target_segment_id: string | null
+          template_data: Json | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_name: string
+          campaign_type: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          send_at?: string | null
+          status?: string
+          subject?: string | null
+          target_lifecycle_stage_id?: string | null
+          target_segment_id?: string | null
+          template_data?: Json | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_name?: string
+          campaign_type?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          send_at?: string | null
+          status?: string
+          subject?: string | null
+          target_lifecycle_stage_id?: string | null
+          target_segment_id?: string | null
+          template_data?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_campaigns_target_lifecycle_stage_id_fkey"
+            columns: ["target_lifecycle_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_lifecycle_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_campaigns_target_segment_id_fkey"
+            columns: ["target_segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_user_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lifecycle_stages: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          stage_key: string
+          stage_name: string
+          trigger_conditions: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index: number
+          stage_key: string
+          stage_name: string
+          trigger_conditions?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          stage_key?: string
+          stage_name?: string
+          trigger_conditions?: Json | null
+        }
+        Relationships: []
+      }
+      crm_referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_amount: number | null
+          reward_given_at: string | null
+          status: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_amount?: number | null
+          reward_given_at?: string | null
+          status?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_amount?: number | null
+          reward_given_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      crm_user_feedback: {
+        Row: {
+          context: Json | null
+          created_at: string
+          feedback_text: string | null
+          feedback_type: string
+          group_id: string | null
+          id: string
+          rating: number | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          feedback_text?: string | null
+          feedback_type: string
+          group_id?: string | null
+          id?: string
+          rating?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          feedback_text?: string | null
+          feedback_type?: string
+          group_id?: string | null
+          id?: string
+          rating?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_user_health: {
+        Row: {
+          avg_days_between_outings: number | null
+          calculated_at: string
+          churn_risk: string
+          days_since_last_activity: number | null
+          days_since_signup: number
+          health_score: number
+          id: string
+          last_activity_at: string | null
+          metadata: Json | null
+          total_groups: number
+          total_outings: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_days_between_outings?: number | null
+          calculated_at?: string
+          churn_risk?: string
+          days_since_last_activity?: number | null
+          days_since_signup?: number
+          health_score?: number
+          id?: string
+          last_activity_at?: string | null
+          metadata?: Json | null
+          total_groups?: number
+          total_outings?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_days_between_outings?: number | null
+          calculated_at?: string
+          churn_risk?: string
+          days_since_last_activity?: number | null
+          days_since_signup?: number
+          health_score?: number
+          id?: string
+          last_activity_at?: string | null
+          metadata?: Json | null
+          total_groups?: number
+          total_outings?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crm_user_lifecycle: {
+        Row: {
+          entered_at: string
+          exited_at: string | null
+          id: string
+          is_current: boolean
+          stage_id: string
+          user_id: string
+        }
+        Insert: {
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          is_current?: boolean
+          stage_id: string
+          user_id: string
+        }
+        Update: {
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          is_current?: boolean
+          stage_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_user_lifecycle_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "crm_lifecycle_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_user_segment_memberships: {
+        Row: {
+          assigned_at: string
+          id: string
+          segment_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          segment_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          segment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_user_segment_memberships_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_user_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_user_segments: {
+        Row: {
+          color: string | null
+          created_at: string
+          criteria: Json
+          description: string | null
+          id: string
+          segment_key: string
+          segment_name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          segment_key: string
+          segment_name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          criteria?: Json
+          description?: string | null
+          id?: string
+          segment_key?: string
+          segment_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_messages: {
         Row: {
           created_at: string
@@ -738,8 +1107,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      assign_user_segments: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       calculate_distance: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
+      calculate_user_health_score: {
+        Args: { target_user_id: string }
         Returns: number
       }
       can_view_group: {
