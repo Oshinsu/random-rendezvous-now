@@ -20,12 +20,17 @@ interface UserHealth {
   };
 }
 
-export const useCRMHealth = (churnRiskFilter?: string) => {
+export const useCRMHealth = (
+  churnRiskFilter: string | null = null,
+  segmentFilter: string | null = null,
+  searchQuery: string = ''
+) => {
   const [healthScores, setHealthScores] = useState<UserHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     avgHealthScore: 0,
+    totalUsers: 0,
     criticalRisk: 0,
     highRisk: 0,
     mediumRisk: 0,
@@ -45,6 +50,19 @@ export const useCRMHealth = (churnRiskFilter?: string) => {
         query = query.eq('churn_risk', churnRiskFilter);
       }
 
+      // Filter by segment if specified
+      if (segmentFilter) {
+        const { data: segmentMembers } = await supabase
+          .from('crm_user_segment_memberships')
+          .select('user_id')
+          .eq('segment_id', segmentFilter);
+        
+        if (segmentMembers && segmentMembers.length > 0) {
+          const userIds = segmentMembers.map(m => m.user_id);
+          query = query.in('user_id', userIds);
+        }
+      }
+
       const { data, error: healthError } = await query;
 
       if (healthError) throw healthError;
@@ -58,10 +76,21 @@ export const useCRMHealth = (churnRiskFilter?: string) => {
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
       
-      const healthWithProfiles = (data || []).map(h => ({
+      let healthWithProfiles = (data || []).map(h => ({
         ...h,
         profile: profilesMap.get(h.user_id)
       }));
+
+      // Apply search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        healthWithProfiles = healthWithProfiles.filter(item => {
+          const firstName = item.profile?.first_name?.toLowerCase() || '';
+          const lastName = item.profile?.last_name?.toLowerCase() || '';
+          const email = item.profile?.email?.toLowerCase() || '';
+          return firstName.includes(query) || lastName.includes(query) || email.includes(query);
+        });
+      }
 
       setHealthScores(healthWithProfiles as UserHealth[]);
 
@@ -75,6 +104,7 @@ export const useCRMHealth = (churnRiskFilter?: string) => {
 
         setStats({
           avgHealthScore: Math.round(avgScore),
+          totalUsers: data.length,
           criticalRisk: riskCounts.critical,
           highRisk: riskCounts.high,
           mediumRisk: riskCounts.medium,
@@ -104,7 +134,7 @@ export const useCRMHealth = (churnRiskFilter?: string) => {
 
   useEffect(() => {
     fetchHealthScores();
-  }, [churnRiskFilter]);
+  }, [churnRiskFilter, segmentFilter, searchQuery]);
 
   return { healthScores, stats, loading, error, refetch: fetchHealthScores, calculateAllScores };
 };

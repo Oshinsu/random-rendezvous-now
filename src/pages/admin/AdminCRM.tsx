@@ -1,7 +1,13 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, TrendingUp, Mail, BarChart3, AlertTriangle, Target } from 'lucide-react';
+import { Users, TrendingUp, Mail, BarChart3, AlertTriangle, Target, Download, MessageSquare, TestTube, Calendar } from 'lucide-react';
+import { CRMFilters } from '@/components/crm/CRMFilters';
+import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
+import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
+import { FeedbackPanel } from '@/components/crm/FeedbackPanel';
+import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
+import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
 import { useCRMAnalytics } from '@/hooks/useCRMAnalytics';
 import { useCRMSegments } from '@/hooks/useCRMSegments';
 import { useCRMHealth } from '@/hooks/useCRMHealth';
@@ -18,9 +24,17 @@ import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
 export default function AdminCRM() {
+  const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
+  const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const { analytics, loading: analyticsLoading } = useCRMAnalytics();
   const { segments, loading: segmentsLoading } = useCRMSegments();
-  const { healthScores, stats: healthStats, loading: healthLoading, calculateAllScores } = useCRMHealth();
+  const { healthScores, stats: healthStats, loading: healthLoading, calculateAllScores } = useCRMHealth(
+    churnRiskFilter,
+    segmentFilter,
+    searchQuery
+  );
   const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign } = useCRMCampaigns();
 
   const [newCampaign, setNewCampaign] = useState({
@@ -33,6 +47,11 @@ export default function AdminCRM() {
   });
   const [zapierWebhook, setZapierWebhook] = useState('');
   const [calculatingHealth, setCalculatingHealth] = useState(false);
+  const [emailTemplate, setEmailTemplate] = useState({
+    subject: '',
+    html_content: '',
+    variables: [] as string[]
+  });
 
   const handleCalculateHealth = async () => {
     setCalculatingHealth(true);
@@ -67,6 +86,28 @@ export default function AdminCRM() {
     } catch (error) {
       // Error handled in hook
     }
+  };
+
+  const exportToCSV = () => {
+    const csvContent = [
+      ['Email', 'Prénom', 'Nom', 'Health Score', 'Churn Risk', 'Total Outings', 'Last Activity'].join(','),
+      ...healthScores.map(item => [
+        item.profile?.email || '',
+        item.profile?.first_name || '',
+        item.profile?.last_name || '',
+        item.health_score,
+        item.churn_risk,
+        item.total_outings,
+        item.last_activity_at || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crm-export-${new Date().toISOString()}.csv`;
+    a.click();
   };
 
   return (
@@ -131,11 +172,14 @@ export default function AdminCRM() {
         ) : null}
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
             <TabsTrigger value="segments">👥 Segments</TabsTrigger>
-            <TabsTrigger value="health">💚 Health Scores</TabsTrigger>
+            <TabsTrigger value="health">💚 Health</TabsTrigger>
             <TabsTrigger value="campaigns">📧 Campagnes</TabsTrigger>
+            <TabsTrigger value="feedback">💬 Feedbacks</TabsTrigger>
+            <TabsTrigger value="cohorts">📈 Cohortes</TabsTrigger>
+            <TabsTrigger value="ab-testing">🧪 A/B Tests</TabsTrigger>
           </TabsList>
 
           {/* ANALYTICS TAB */}
@@ -228,13 +272,29 @@ export default function AdminCRM() {
                 <div>
                   <h3 className="text-xl font-bold">Health Scores Utilisateurs</h3>
                   <p className="text-sm text-muted-foreground">
-                    Score moyen: {healthStats.avgHealthScore}/100
+                    Score moyen: {healthStats.avgHealthScore}/100 • {healthStats.totalUsers} utilisateurs
                   </p>
                 </div>
-                <Button onClick={handleCalculateHealth} disabled={calculatingHealth}>
-                  {calculatingHealth ? 'Calcul...' : 'Recalculer Tous'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={exportToCSV}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+                  <Button onClick={handleCalculateHealth} disabled={calculatingHealth}>
+                    {calculatingHealth ? 'Calcul...' : 'Recalculer Tous'}
+                  </Button>
+                </div>
               </div>
+
+              <CRMFilters
+                churnRiskFilter={churnRiskFilter}
+                onChurnRiskChange={setChurnRiskFilter}
+                segmentFilter={segmentFilter}
+                onSegmentFilterChange={setSegmentFilter}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                segments={segments}
+              />
 
               {healthLoading ? (
                 <Skeleton className="h-64" />
@@ -273,8 +333,51 @@ export default function AdminCRM() {
 
           {/* CAMPAIGNS TAB */}
           <TabsContent value="campaigns" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="text-xl font-bold mb-4">Créer une Campagne</h3>
+                <EmailTemplateEditor
+                  template={emailTemplate}
+                  onChange={setEmailTemplate}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <Label>Nom de la campagne</Label>
+                    <Input
+                      value={newCampaign.campaign_name}
+                      onChange={(e) => setNewCampaign({ ...newCampaign, campaign_name: e.target.value })}
+                      placeholder="Ex: Relance utilisateurs dormants"
+                    />
+                  </div>
+                  <div>
+                    <Label>Segment cible</Label>
+                    <Select
+                      value={newCampaign.target_segment_id}
+                      onValueChange={(value) => setNewCampaign({ ...newCampaign, target_segment_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choisir un segment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {segments.map(segment => (
+                          <SelectItem key={segment.id} value={segment.id}>
+                            {segment.segment_name} ({segment.user_count} users)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button onClick={handleCreateCampaign} className="mt-4">
+                  Créer la Campagne
+                </Button>
+              </Card>
+
+              <CampaignCalendar campaigns={campaigns} />
+            </div>
+
             <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Créer une Campagne</h3>
+              <h3 className="text-xl font-bold mb-4">Campagnes Actives</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <Label>Nom de la campagne</Label>
@@ -384,6 +487,21 @@ export default function AdminCRM() {
                 </div>
               )}
             </Card>
+          </TabsContent>
+
+          {/* FEEDBACK TAB */}
+          <TabsContent value="feedback" className="space-y-6">
+            <FeedbackPanel />
+          </TabsContent>
+
+          {/* COHORTS TAB */}
+          <TabsContent value="cohorts" className="space-y-6">
+            <CohortAnalysis />
+          </TabsContent>
+
+          {/* A/B TESTING TAB */}
+          <TabsContent value="ab-testing" className="space-y-6">
+            <ABTestingPanel />
           </TabsContent>
         </Tabs>
       </div>
