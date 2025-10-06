@@ -30,6 +30,7 @@ import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import AdminCRM from "./pages/admin/AdminCRM";
+import ReferralPage from "./pages/ReferralPage";
 // Lazy import to prevent circular dependency issues
 import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
@@ -83,6 +84,7 @@ const AppRoutes = () => (
     <Route path="/scheduled-groups" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/explore-by-city" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+    <Route path="/referral" element={<ProtectedRoute><ReferralPage /></ProtectedRoute>} />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />

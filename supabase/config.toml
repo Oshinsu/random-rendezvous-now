@@ -111,3 +111,9 @@ verify_jwt = false
 
 [functions.track-campaign-interaction]
 verify_jwt = false
+
+[functions.send-zoho-email]
+verify_jwt = false
+
+[functions.lifecycle-automations]
+verify_jwt = false
