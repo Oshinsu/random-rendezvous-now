@@ -29,6 +29,7 @@ import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
+import AdminCRM from "./pages/admin/AdminCRM";
 // Lazy import to prevent circular dependency issues
 import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
@@ -109,6 +110,13 @@ const AppRoutes = () => (
           <AdminLayout>
             <AdminDashboard />
           </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/crm" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminCRM />
         </AdminRoute>
       </ProtectedRoute>
     } />

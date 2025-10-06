@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Shield,
   Edit3,
-  Building
+  Building,
+  Target
 } from "lucide-react";
 
 import {
@@ -27,6 +28,7 @@ import {
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3, exact: true },
+  { title: "CRM B2C", url: "/admin/crm", icon: Target },
   { title: "Utilisateurs", url: "/admin/users", icon: Users },
   { title: "Groupes", url: "/admin/groups", icon: MapPin },
   { title: "Gérants de Bar", url: "/admin/bar-owners", icon: Building },

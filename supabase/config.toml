@@ -102,3 +102,12 @@ verify_jwt = true
 
 [functions.bar-customer-portal]
 verify_jwt = true
+
+[functions.calculate-all-health-scores]
+verify_jwt = false
+
+[functions.send-lifecycle-campaign]
+verify_jwt = false
+
+[functions.track-campaign-interaction]
+verify_jwt = false
