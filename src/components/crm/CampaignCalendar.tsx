@@ -8,7 +8,7 @@ interface CampaignForCalendar {
   id: string;
   campaign_name: string;
   status: string;
-  send_at: string | null;
+  send_at?: string | null;
 }
 
 interface CampaignCalendarProps {
