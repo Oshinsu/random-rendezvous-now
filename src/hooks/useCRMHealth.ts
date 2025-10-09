@@ -23,11 +23,14 @@ interface UserHealth {
 export const useCRMHealth = (
   churnRiskFilter: string | null = null,
   segmentFilter: string | null = null,
-  searchQuery: string = ''
+  searchQuery: string = '',
+  page: number = 1,
+  pageSize: number = 50
 ) => {
   const [healthScores, setHealthScores] = useState<UserHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [stats, setStats] = useState({
     avgHealthScore: 0,
     totalUsers: 0,
@@ -41,6 +44,11 @@ export const useCRMHealth = (
     try {
       setLoading(true);
       
+      // Build base query with count
+      let countQuery = supabase
+        .from('crm_user_health')
+        .select('*', { count: 'exact', head: true });
+      
       let query = supabase
         .from('crm_user_health')
         .select('*')
@@ -48,9 +56,11 @@ export const useCRMHealth = (
 
       if (churnRiskFilter) {
         query = query.eq('churn_risk', churnRiskFilter);
+        countQuery = countQuery.eq('churn_risk', churnRiskFilter);
       }
 
       // Filter by segment if specified
+      let filteredUserIds: string[] | null = null;
       if (segmentFilter) {
         const { data: segmentMembers } = await supabase
           .from('crm_user_segment_memberships')
@@ -58,10 +68,20 @@ export const useCRMHealth = (
           .eq('segment_id', segmentFilter);
         
         if (segmentMembers && segmentMembers.length > 0) {
-          const userIds = segmentMembers.map(m => m.user_id);
-          query = query.in('user_id', userIds);
+          filteredUserIds = segmentMembers.map(m => m.user_id);
+          query = query.in('user_id', filteredUserIds);
+          countQuery = countQuery.in('user_id', filteredUserIds);
         }
       }
+
+      // Get total count
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
 
       const { data, error: healthError } = await query;
 
@@ -134,7 +154,17 @@ export const useCRMHealth = (
 
   useEffect(() => {
     fetchHealthScores();
-  }, [churnRiskFilter, segmentFilter, searchQuery]);
+  }, [churnRiskFilter, segmentFilter, searchQuery, page, pageSize]);
 
-  return { healthScores, stats, loading, error, refetch: fetchHealthScores, calculateAllScores };
+  return { 
+    healthScores, 
+    stats, 
+    loading, 
+    error, 
+    totalCount,
+    totalPages: Math.ceil(totalCount / pageSize),
+    currentPage: page,
+    refetch: fetchHealthScores, 
+    calculateAllScores 
+  };
 };

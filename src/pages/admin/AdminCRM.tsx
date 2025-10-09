@@ -25,19 +25,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { HealthScoreTable } from '@/components/crm/HealthScoreTable';
 
 export default function AdminCRM() {
   const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [healthPage, setHealthPage] = useState(1);
+  const healthPageSize = 50;
 
   const { analytics, loading: analyticsLoading } = useCRMAnalytics();
   const { data: overviewData, loading: overviewLoading } = useCRMOverview();
   const { segments } = useCRMSegments();
-  const { healthScores, stats: healthStats, loading: healthLoading, calculateAllScores } = useCRMHealth(
+  const { 
+    healthScores, 
+    stats: healthStats, 
+    loading: healthLoading, 
+    totalCount,
+    totalPages,
+    currentPage,
+    calculateAllScores 
+  } = useCRMHealth(
     churnRiskFilter,
     segmentFilter,
-    searchQuery
+    searchQuery,
+    healthPage,
+    healthPageSize
   );
   const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign } = useCRMCampaigns();
 
@@ -229,10 +242,18 @@ export default function AdminCRM() {
             <Card className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-xl font-bold">Health Scores Utilisateurs</h3>
+                  <h3 className="text-2xl font-bold">Health Scores Utilisateurs</h3>
                   <p className="text-sm text-muted-foreground">
-                    Score moyen: {healthStats.avgHealthScore}/100 • {healthStats.totalUsers} utilisateurs
+                    Score moyen: <span className="font-semibold">{healthStats.avgHealthScore}/100</span> • 
+                    <span className="font-semibold ml-1">{totalCount}</span> utilisateurs • 
+                    <span className="ml-1">Page {currentPage}/{totalPages}</span>
                   </p>
+                  <div className="flex gap-4 mt-2">
+                    <Badge variant="destructive">{healthStats.criticalRisk} critiques</Badge>
+                    <Badge variant="destructive">{healthStats.highRisk} élevés</Badge>
+                    <Badge variant="secondary">{healthStats.mediumRisk} moyens</Badge>
+                    <Badge variant="default">{healthStats.lowRisk} faibles</Badge>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={exportToCSV}>
@@ -240,6 +261,7 @@ export default function AdminCRM() {
                     Export CSV
                   </Button>
                   <Button onClick={handleCalculateHealth} disabled={calculatingHealth}>
+                    <Activity className="mr-2 h-4 w-4" />
                     {calculatingHealth ? 'Calcul...' : 'Recalculer Tous'}
                   </Button>
                 </div>
@@ -247,45 +269,29 @@ export default function AdminCRM() {
 
               <CRMFilters
                 churnRiskFilter={churnRiskFilter}
-                onChurnRiskChange={setChurnRiskFilter}
+                onChurnRiskChange={(value) => {
+                  setChurnRiskFilter(value);
+                  setHealthPage(1);
+                }}
                 segmentFilter={segmentFilter}
-                onSegmentFilterChange={setSegmentFilter}
+                onSegmentFilterChange={(value) => {
+                  setSegmentFilter(value);
+                  setHealthPage(1);
+                }}
                 searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
+                onSearchChange={(value) => {
+                  setSearchQuery(value);
+                  setHealthPage(1);
+                }}
               />
 
-              {healthLoading ? (
-                <Skeleton className="h-64" />
-              ) : (
-                <div className="space-y-3">
-                  {healthScores.slice(0, 10).map(health => (
-                    <div key={health.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium">
-                          {health.profile?.first_name} {health.profile?.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{health.profile?.email}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {health.total_outings} sorties • Inactif depuis {health.days_since_last_activity || 0} jours
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{health.health_score}</p>
-                          <Badge variant={
-                            health.churn_risk === 'critical' ? 'destructive' :
-                            health.churn_risk === 'high' ? 'destructive' :
-                            health.churn_risk === 'medium' ? 'secondary' : 'default'
-                          }>
-                            {health.churn_risk}
-                          </Badge>
-                        </div>
-                        <Progress value={health.health_score} className="w-24" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <HealthScoreTable
+                healthScores={healthScores}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setHealthPage}
+                loading={healthLoading}
+              />
             </Card>
           </TabsContent>
 
