@@ -19,6 +19,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage";
 import { AdminApi } from "./pages/admin/AdminApi";
 import { AdminRoute } from "./components/admin/AdminRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { BarOwnerRoute } from "./components/bar/BarOwnerRoute";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminGroups } from "./pages/admin/AdminGroups";
@@ -90,9 +91,11 @@ const AppRoutes = () => (
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/bar-dashboard" element={
       <ProtectedRoute>
-        <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-          <BarDashboard />
-        </React.Suspense>
+        <BarOwnerRoute>
+          <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <BarDashboard />
+          </React.Suspense>
+        </BarOwnerRoute>
       </ProtectedRoute>
     } />
     <Route path="/bar-application" element={

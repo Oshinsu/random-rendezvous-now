@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBarOwner } from '@/hooks/useBarOwner';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface BarOwnerRouteProps {
@@ -11,9 +12,10 @@ interface BarOwnerRouteProps {
 export function BarOwnerRoute({ children }: BarOwnerRouteProps) {
   const { user, loading: authLoading } = useAuth();
   const { barOwner, isLoadingProfile } = useBarOwner();
+  const { isAdmin, loading: adminLoading } = useAdminAuth();
   const navigate = useNavigate();
 
-  if (authLoading || isLoadingProfile) {
+  if (authLoading || isLoadingProfile || adminLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center space-y-4">
@@ -27,6 +29,11 @@ export function BarOwnerRoute({ children }: BarOwnerRouteProps) {
   if (!user) {
     navigate('/auth');
     return null;
+  }
+
+  // ADMINS have access to everything
+  if (isAdmin) {
+    return <>{children}</>;
   }
 
   // Allow access to application form if no bar owner profile exists

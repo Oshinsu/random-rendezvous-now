@@ -3,6 +3,7 @@ import { Home, Users, User, ExternalLink, Calendar, Shield, Building, Gift } fro
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useBarOwnerAuth } from '@/hooks/useBarOwnerAuth';
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +24,6 @@ const navigationItems = [
   { title: 'Chercher un groupe', url: '/dashboard', icon: Home },
   { title: 'Mon groupe', url: '/groups', icon: Users },
   { title: 'Groupes planifiés', url: '/scheduled-groups', icon: Calendar },
-  { title: 'Espace Gérant', url: '/bar-dashboard', icon: Building },
   { title: 'Profil', url: '/profile', icon: User },
   { title: 'Parrainage', url: '/referral', icon: Gift },
   { title: 'Page d\'accueil', url: '/', icon: ExternalLink },
@@ -32,6 +32,7 @@ const navigationItems = [
 export function AppSidebar() {
   const { user } = useAuth();
   const { isAdmin } = useAdminAuth();
+  const { isBarOwner } = useBarOwnerAuth();
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -86,6 +87,23 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Bar Owner Link - Visible to approved bar owners OR admins */}
+              {(isBarOwner || isAdmin) && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive('/bar-dashboard')}
+                    className="mx-0 rounded-2xl hover:bg-brand-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-brand-500 data-[active=true]:to-brand-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12"
+                    tooltip={isCollapsed ? "Espace Gérant" : undefined}
+                  >
+                    <NavLink to="/bar-dashboard" className="flex items-center space-x-4 py-3 px-4 w-full">
+                      <Building className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white" />
+                      {!isCollapsed && <span className="font-heading font-semibold">Espace Gérant</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               {/* Admin Link - Only visible to admins */}
               {isAdmin && (
