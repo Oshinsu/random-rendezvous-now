@@ -41,9 +41,16 @@ const CtaSection = () => {
         <div className="animate-slide-in-up" style={{
         animationDelay: '0.2s'
       }}>
-          <Button onClick={handleMainAction} size="lg" className="magnetic-button bg-primary hover:bg-primary text-primary-foreground font-bold px-12 sm:px-16 py-6 sm:py-7 text-lg sm:text-xl transform transition-all duration-300 shadow-glow-strong animate-pulse-glow group w-full sm:w-auto max-w-md sm:max-w-none rounded-2xl">
-            <Rocket className="mr-3 h-6 w-6 sm:h-7 sm:w-7 group-hover:animate-pulse" />
-            {user ? i18n.language === 'en' ? t('cta.button_logged') : 'Chercher un groupe' : i18n.language === 'en' ? t('cta.button') : 'Lancer Random'}
+          <Button 
+            onClick={handleMainAction} 
+            size="lg" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 sm:px-16 py-6 sm:py-7 text-lg sm:text-xl transform transition-all duration-300 hover:scale-105 shadow-glow-strong group w-full sm:w-auto max-w-md sm:max-w-none rounded-2xl"
+          >
+            <Rocket className="mr-3 h-6 w-6 sm:h-7 sm:w-7" />
+            {user 
+              ? (i18n.language === 'en' ? t('cta.button_logged') : 'Chercher un groupe')
+              : (i18n.language === 'en' ? t('cta.button') : 'Lancer Random')
+            }
           </Button>
         </div>
         

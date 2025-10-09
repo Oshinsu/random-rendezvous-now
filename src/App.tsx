@@ -37,6 +37,7 @@ import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SiteContentProvider } from "./contexts/SiteContentContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -224,17 +225,19 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <AnalyticsProvider>
-          <HelmetProvider>
-            <TooltipProvider>
-              <div className="min-h-screen bg-background font-sans antialiased">
-                <Toaster />
-                <Sonner />
-                <AppRoutes />
-              </div>
-            </TooltipProvider>
-          </HelmetProvider>
-        </AnalyticsProvider>
+        <SiteContentProvider>
+          <AnalyticsProvider>
+            <HelmetProvider>
+              <TooltipProvider>
+                <div className="min-h-screen bg-background font-sans antialiased">
+                  <Toaster />
+                  <Sonner />
+                  <AppRoutes />
+                </div>
+              </TooltipProvider>
+            </HelmetProvider>
+          </AnalyticsProvider>
+        </SiteContentProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

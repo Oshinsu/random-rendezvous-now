@@ -1,8 +1,8 @@
-import { useSiteContent } from './useSiteContent';
+import { useSiteContentContext } from '@/contexts/SiteContentContext';
 
 // Hook simplifié pour récupérer le contenu dynamique dans les composants
 export const useDynamicContent = () => {
-  const { getContentValue, loading } = useSiteContent();
+  const { getContentValue, loading } = useSiteContentContext();
 
   return {
     getContent: (key: string, fallback: string = '') => {
