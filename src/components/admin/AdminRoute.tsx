@@ -18,6 +18,11 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (!isAdmin) {
+    // ✅ OPTIMISATION: Log admin check failures
+    console.log('🔒 Admin access denied, redirecting to dashboard', {
+      timestamp: new Date().toISOString(),
+      path: window.location.pathname
+    });
     return <Navigate to="/dashboard" replace />;
   }
 

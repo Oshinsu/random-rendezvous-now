@@ -33,11 +33,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       (event, session) => {
         if (!isMounted) return;
         
+        // ✅ OPTIMISATION: Detailed logging for SIGNED_OUT events
+        console.log('🔐 Auth state change:', {
+          event,
+          hasSession: !!session,
+          userId: session?.user?.id,
+          timestamp: new Date().toISOString()
+        });
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // PLAN D'URGENCE: Navigation seulement sur SIGNED_OUT explicite
         if (event === 'SIGNED_OUT' && !session) {
+          console.log('🚪 SIGNED_OUT detected, navigating to home');
           setTimeout(() => navigate('/'), 100);
         }
         

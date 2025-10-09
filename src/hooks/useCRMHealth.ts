@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface UserHealth {
   id: string;
@@ -155,9 +156,12 @@ export const useCRMHealth = (
     }
   };
 
+  // ✅ OPTIMISATION: Debounce search query (500ms)
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   useEffect(() => {
     fetchHealthScores();
-  }, [churnRiskFilter, segmentFilter, searchQuery, page, pageSize]);
+  }, [churnRiskFilter, segmentFilter, debouncedSearchQuery, page, pageSize]);
 
   return { 
     healthScores, 

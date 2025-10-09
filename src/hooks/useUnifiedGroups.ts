@@ -99,10 +99,10 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 5 * 60 * 1000, // 5 minutes simplifié
-    staleTime: 2 * 60 * 1000, // 2 minutes simplifié
+    refetchInterval: 10 * 60 * 1000, // ✅ OPTIMISATION: 10 minutes (reduced polling)
+    staleTime: 5 * 60 * 1000, // ✅ OPTIMISATION: 5 minutes stale time
     refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // ✅ OPTIMISATION: Disabled to prevent aggressive refetching
   });
 
   // Battement de cœur simplifié - 1 heure (aligné avec GROUP_CONSTANTS.HEARTBEAT_INTERVAL)

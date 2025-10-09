@@ -312,53 +312,47 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
   useEffect(() => {
     fetchAllData();
 
-    // Set up polling for live updates (every 30 seconds for day, longer for other periods)
-    const pollInterval = period === 'day' ? 30000 : period === 'week' ? 60000 : 300000;
+    // ✅ OPTIMISATION: Reduced polling (2 min for day, 3 min for week, 5 min for others)
+    const pollInterval = period === 'day' ? 120000 : period === 'week' ? 180000 : 300000;
     const interval = setInterval(fetchAllData, pollInterval);
 
-    // Set up real-time subscriptions only for day view (most active)
-    let channels: any[] = [];
+    // ✅ OPTIMISATION: Single channel with throttled updates (5 seconds)
+    let channel: any = null;
+    let throttleTimeout: NodeJS.Timeout | null = null;
+    
+    const throttledFetchAllData = () => {
+      if (throttleTimeout) return;
+      throttleTimeout = setTimeout(() => {
+        fetchAllData();
+        throttleTimeout = null;
+      }, 5000);
+    };
     
     if (period === 'day') {
-      const groupsChannel = supabase
-        .channel('admin_groups_changes')
+      channel = supabase
+        .channel('admin_unified_changes')
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'groups' 
-        }, () => {
-          fetchAllData();
-        })
-        .subscribe();
-
-      const participantsChannel = supabase
-        .channel('admin_participants_changes')
+        }, throttledFetchAllData)
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'group_participants' 
-        }, () => {
-          fetchAllData();
-        })
-        .subscribe();
-
-      const messagesChannel = supabase
-        .channel('admin_messages_changes')
+        }, throttledFetchAllData)
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'group_messages' 
-        }, () => {
-          fetchAllData();
-        })
+        }, throttledFetchAllData)
         .subscribe();
-      
-      channels = [groupsChannel, participantsChannel, messagesChannel];
     }
 
     return () => {
       clearInterval(interval);
-      channels.forEach(channel => supabase.removeChannel(channel));
+      if (throttleTimeout) clearTimeout(throttleTimeout);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [period]);
 

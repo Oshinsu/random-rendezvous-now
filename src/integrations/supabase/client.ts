@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
+import { DebugLogger } from '@/utils/debugLogger';
+import { RequestThrottler } from '@/utils/requestThrottler';
 
 const SUPABASE_URL = "https://xhrievvdnajvylyrowwu.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocmlldnZkbmFqdnlseXJvd3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4OTQ1MzUsImV4cCI6MjA2NTQ3MDUzNX0.RfwNUnsTFAzfRqxiqCOtunXBTMJj90MKWOm1iwzVBAs";
@@ -22,6 +24,21 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   global: {
     headers: {
       'X-Client-Info': 'random-app@1.0.0'
+    },
+    // ✅ OPTIMISATION: Request interceptor for logging and throttling
+    fetch: (url, options) => {
+      const requestKey = `supabase_${url}`;
+      
+      // Log request
+      DebugLogger.log('request', requestKey, { url, method: options?.method });
+      
+      // Check throttle
+      if (!RequestThrottler.canMakeRequest('global_supabase')) {
+        console.error('🚨 Global request throttle exceeded!');
+        // Still allow the request but log the issue
+      }
+      
+      return fetch(url, options);
     }
   }
 });
