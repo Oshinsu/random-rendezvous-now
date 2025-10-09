@@ -1,14 +1,17 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, TrendingUp, Mail, BarChart3, AlertTriangle, Target, Download, MessageSquare, TestTube, Calendar } from 'lucide-react';
+import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download } from 'lucide-react';
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
 import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
 import { FeedbackPanel } from '@/components/crm/FeedbackPanel';
 import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
+import { CRMOverview } from '@/components/crm/CRMOverview';
+import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
 import { useCRMAnalytics } from '@/hooks/useCRMAnalytics';
+import { useCRMOverview } from '@/hooks/useCRMOverview';
 import { useCRMSegments } from '@/hooks/useCRMSegments';
 import { useCRMHealth } from '@/hooks/useCRMHealth';
 import { useCRMCampaigns } from '@/hooks/useCRMCampaigns';
@@ -29,7 +32,8 @@ export default function AdminCRM() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { analytics, loading: analyticsLoading } = useCRMAnalytics();
-  const { segments, loading: segmentsLoading } = useCRMSegments();
+  const { data: overviewData, loading: overviewLoading } = useCRMOverview();
+  const { segments } = useCRMSegments();
   const { healthScores, stats: healthStats, loading: healthLoading, calculateAllScores } = useCRMHealth(
     churnRiskFilter,
     segmentFilter,
@@ -131,55 +135,15 @@ export default function AdminCRM() {
         </div>
 
         {/* Overview Cards */}
-        {analyticsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32" />)}
-          </div>
-        ) : analytics ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <Users className="h-8 w-8 text-blue-500" />
-                <Badge variant="secondary">{analytics.activeUsers} actifs</Badge>
-              </div>
-              <h3 className="text-2xl font-bold">{analytics.totalUsers}</h3>
-              <p className="text-sm text-muted-foreground">Utilisateurs Total</p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="h-8 w-8 text-green-500" />
-                <Badge variant={analytics.avgHealthScore >= 70 ? 'default' : 'destructive'}>
-                  {analytics.avgHealthScore}/100
-                </Badge>
-              </div>
-              <h3 className="text-2xl font-bold">Health Score Moyen</h3>
-              <Progress value={analytics.avgHealthScore} className="mt-2" />
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <AlertTriangle className="h-8 w-8 text-red-500" />
-                <Badge variant="destructive">{analytics.churnRisk.critical + analytics.churnRisk.high}</Badge>
-              </div>
-              <h3 className="text-2xl font-bold">Risque de Churn</h3>
-              <p className="text-sm text-muted-foreground">
-                {analytics.churnRisk.critical} critiques, {analytics.churnRisk.high} élevés
-              </p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <Target className="h-8 w-8 text-purple-500" />
-                <Badge variant="secondary">{analytics.funnelStats.conversionRate}%</Badge>
-              </div>
-              <h3 className="text-2xl font-bold">Taux de Conversion</h3>
-              <p className="text-sm text-muted-foreground">
-                Signup → Première sortie
-              </p>
-            </Card>
-          </div>
-        ) : null}
+        <CRMOverview
+          totalUsers={overviewData.totalUsers}
+          activeUsers={overviewData.activeUsers}
+          avgHealthScore={overviewData.avgHealthScore}
+          criticalRisk={overviewData.criticalRisk}
+          highRisk={overviewData.highRisk}
+          conversionRate={overviewData.conversionRate}
+          loading={overviewLoading}
+        />
 
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="grid w-full grid-cols-7">
@@ -257,22 +221,7 @@ export default function AdminCRM() {
 
           {/* SEGMENTS TAB */}
           <TabsContent value="segments" className="space-y-6">
-            {segmentsLoading ? (
-              <Skeleton className="h-64" />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {segments.map(segment => (
-                  <Card key={segment.id} className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: segment.color }} />
-                      <Badge variant="secondary">{segment.user_count} users</Badge>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2">{segment.segment_name}</h3>
-                    <p className="text-sm text-muted-foreground">{segment.description}</p>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <CRMSegmentsTab />
           </TabsContent>
 
           {/* HEALTH SCORES TAB */}
@@ -303,7 +252,6 @@ export default function AdminCRM() {
                 onSegmentFilterChange={setSegmentFilter}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                segments={segments}
               />
 
               {healthLoading ? (

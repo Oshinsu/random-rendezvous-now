@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { useCRMSegments } from '@/hooks/useCRMSegments';
 
 interface CRMFiltersProps {
   churnRiskFilter: string | null;
@@ -10,7 +11,6 @@ interface CRMFiltersProps {
   onSegmentFilterChange: (value: string | null) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  segments: any[];
 }
 
 export const CRMFilters = ({
@@ -20,8 +20,9 @@ export const CRMFilters = ({
   onSegmentFilterChange,
   searchQuery,
   onSearchChange,
-  segments
 }: CRMFiltersProps) => {
+  const { segments } = useCRMSegments();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <Input
