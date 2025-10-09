@@ -74,7 +74,12 @@ export default function AdminCRM() {
 
   const handleCreateCampaign = async () => {
     try {
-      await createCampaign(newCampaign);
+      // Copy email template to campaign before creating
+      await createCampaign({
+        ...newCampaign,
+        subject: emailTemplate.subject,
+        content: emailTemplate.html_content
+      });
       setNewCampaign({
         campaign_name: '',
         campaign_type: 'email',
@@ -82,6 +87,11 @@ export default function AdminCRM() {
         subject: '',
         content: '',
         target_segment_id: ''
+      });
+      setEmailTemplate({
+        subject: '',
+        html_content: '',
+        variables: []
       });
     } catch (error) {
       // Error handled in hook
@@ -368,7 +378,11 @@ export default function AdminCRM() {
                     </Select>
                   </div>
                 </div>
-                <Button onClick={handleCreateCampaign} className="mt-4">
+                <Button 
+                  onClick={handleCreateCampaign} 
+                  className="mt-4 w-full"
+                  disabled={!newCampaign.campaign_name || !newCampaign.target_segment_id || !emailTemplate.subject || !emailTemplate.html_content}
+                >
                   Créer la Campagne
                 </Button>
               </Card>
@@ -377,69 +391,26 @@ export default function AdminCRM() {
             </div>
 
             <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Campagnes Actives</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Label>Nom de la campagne</Label>
-                  <Input
-                    value={newCampaign.campaign_name}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, campaign_name: e.target.value })}
-                    placeholder="Ex: Relance utilisateurs dormants"
-                  />
-                </div>
-                <div>
-                  <Label>Segment cible</Label>
-                  <Select
-                    value={newCampaign.target_segment_id}
-                    onValueChange={(value) => setNewCampaign({ ...newCampaign, target_segment_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir un segment" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {segments.map(segment => (
-                        <SelectItem key={segment.id} value={segment.id}>
-                          {segment.segment_name} ({segment.user_count} users)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Sujet (Email)</Label>
-                  <Input
-                    value={newCampaign.subject}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, subject: e.target.value })}
-                    placeholder="Sujet de l'email"
-                  />
-                </div>
-                <div>
-                  <Label>Webhook Zapier (optionnel)</Label>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Campagnes Créées</h3>
+                <div className="flex gap-2">
+                  <Label className="text-sm text-muted-foreground">Webhook Zapier (optionnel):</Label>
                   <Input
                     value={zapierWebhook}
                     onChange={(e) => setZapierWebhook(e.target.value)}
                     placeholder="https://hooks.zapier.com/..."
+                    className="max-w-xs"
                   />
                 </div>
               </div>
-              <div className="mb-4">
-                <Label>Contenu du message</Label>
-                <Textarea
-                  value={newCampaign.content}
-                  onChange={(e) => setNewCampaign({ ...newCampaign, content: e.target.value })}
-                  placeholder="Contenu de la campagne..."
-                  rows={5}
-                />
-              </div>
-              <Button onClick={handleCreateCampaign}>
-                Créer la Campagne
-              </Button>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Campagnes Actives</h3>
               {campaignsLoading ? (
                 <Skeleton className="h-48" />
+              ) : campaigns.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>Aucune campagne créée</p>
+                  <p className="text-sm">Créez votre première campagne ci-dessus</p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {campaigns.map(campaign => (
@@ -448,6 +419,10 @@ export default function AdminCRM() {
                         <div>
                           <h4 className="font-bold">{campaign.campaign_name}</h4>
                           <p className="text-sm text-muted-foreground">{campaign.subject}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {campaign.segment?.segment_name && `Segment: ${campaign.segment.segment_name}`}
+                            {campaign.lifecycle_stage?.stage_name && `Lifecycle: ${campaign.lifecycle_stage.stage_name}`}
+                          </p>
                         </div>
                         <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
                           {campaign.status}
@@ -461,11 +436,25 @@ export default function AdminCRM() {
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Ouvertures</p>
-                            <p className="text-lg font-bold">{campaign.stats.opened}</p>
+                            <p className="text-lg font-bold">
+                              {campaign.stats.opened}
+                              {campaign.stats.total_sent > 0 && (
+                                <span className="text-xs ml-1 text-muted-foreground">
+                                  ({Math.round((campaign.stats.opened / campaign.stats.total_sent) * 100)}%)
+                                </span>
+                              )}
+                            </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Clics</p>
-                            <p className="text-lg font-bold">{campaign.stats.clicked}</p>
+                            <p className="text-lg font-bold">
+                              {campaign.stats.clicked}
+                              {campaign.stats.total_sent > 0 && (
+                                <span className="text-xs ml-1 text-muted-foreground">
+                                  ({Math.round((campaign.stats.clicked / campaign.stats.total_sent) * 100)}%)
+                                </span>
+                              )}
+                            </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Conversions</p>
@@ -479,6 +468,7 @@ export default function AdminCRM() {
                           className="mt-4"
                           size="sm"
                         >
+                          <Mail className="mr-2 h-4 w-4" />
                           Envoyer Maintenant
                         </Button>
                       )}
