@@ -539,12 +539,16 @@ export type Database = {
           calculated_at: string
           churn_risk: string
           days_since_last_activity: number | null
+          days_since_last_login: number | null
           days_since_signup: number
           health_score: number
           id: string
           last_activity_at: string | null
+          last_login_at: string | null
           metadata: Json | null
+          never_logged_in: boolean | null
           total_groups: number
+          total_logins: number | null
           total_outings: number
           updated_at: string
           user_id: string
@@ -554,12 +558,16 @@ export type Database = {
           calculated_at?: string
           churn_risk?: string
           days_since_last_activity?: number | null
+          days_since_last_login?: number | null
           days_since_signup?: number
           health_score?: number
           id?: string
           last_activity_at?: string | null
+          last_login_at?: string | null
           metadata?: Json | null
+          never_logged_in?: boolean | null
           total_groups?: number
+          total_logins?: number | null
           total_outings?: number
           updated_at?: string
           user_id: string
@@ -569,12 +577,16 @@ export type Database = {
           calculated_at?: string
           churn_risk?: string
           days_since_last_activity?: number | null
+          days_since_last_login?: number | null
           days_since_signup?: number
           health_score?: number
           id?: string
           last_activity_at?: string | null
+          last_login_at?: string | null
           metadata?: Json | null
+          never_logged_in?: boolean | null
           total_groups?: number
+          total_logins?: number | null
           total_outings?: number
           updated_at?: string
           user_id?: string

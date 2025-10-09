@@ -12,6 +12,9 @@ interface UserHealth {
   days_since_signup: number;
   days_since_last_activity: number;
   avg_days_between_outings: number;
+  days_since_last_login: number | null;
+  never_logged_in: boolean;
+  last_login_at: string | null;
   calculated_at: string;
   profile?: {
     first_name: string;

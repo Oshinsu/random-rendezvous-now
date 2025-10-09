@@ -31,6 +31,7 @@ export default function AdminCRM() {
   const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loginStatusFilter, setLoginStatusFilter] = useState<string | null>(null);
   const [healthPage, setHealthPage] = useState(1);
   const healthPageSize = 50;
 
@@ -281,6 +282,11 @@ export default function AdminCRM() {
                 searchQuery={searchQuery}
                 onSearchChange={(value) => {
                   setSearchQuery(value);
+                  setHealthPage(1);
+                }}
+                loginStatusFilter={loginStatusFilter}
+                onLoginStatusChange={(value) => {
+                  setLoginStatusFilter(value);
                   setHealthPage(1);
                 }}
               />
