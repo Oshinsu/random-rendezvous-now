@@ -8,9 +8,8 @@ const segmentIcons: Record<string, any> = {
   'active': UserCheck,
   'dormant': UserX,
   'new_users': UserPlus,
-  'one_timer': Users,
+  'zombie_users': UserX,
   'churn_risk': AlertCircle,
-  'super_users': Star,
 };
 
 export const CRMSegmentsTab = () => {
