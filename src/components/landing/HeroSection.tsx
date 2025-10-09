@@ -78,20 +78,18 @@ const HeroSection = () => {
             </span>
           </div>
         )}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 text-sm text-white/80 animate-slide-in-up" style={{animationDelay: '0.8s'}}>
-          <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-            <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-            <span className="whitespace-nowrap font-medium">{i18n.language === 'en' ? t('hero.status_beta') : 'Beta en septembre'}</span>
-          </span>
-          <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-            <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse shadow-lg shadow-amber-400/50"></div>
-            <span className="whitespace-nowrap font-medium">{i18n.language === 'en' ? t('hero.status_random_bars') : 'Bars sélectionnés'}</span>
-          </span>
-          <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-            <div className="w-2.5 h-2.5 bg-blue-400 rounded-full animate-pulse shadow-lg shadow-blue-400/50"></div>
-            <span className="whitespace-nowrap text-center font-medium">{i18n.language === 'en' ? t('hero.status_free') : 'Gratuit'}</span>
-          </span>
-        </div>
+        <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm text-white/80 animate-slide-in-up" style={{animationDelay: '0.8s'}}>
+          <div className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+          <span className="whitespace-nowrap font-medium">{i18n.language === 'en' ? t('hero.status_beta') : 'Beta en septembre'}</span>
+        </span>
+        <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm text-white/80 animate-slide-in-up" style={{animationDelay: '0.8s'}}>
+          <div className="w-2.5 h-2.5 bg-amber-400 rounded-full animate-pulse shadow-lg shadow-amber-400/50"></div>
+          <span className="whitespace-nowrap font-medium">{i18n.language === 'en' ? t('hero.status_random_bars') : 'Bars sélectionnés'}</span>
+        </span>
+        <span className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm text-sm text-white/80 animate-slide-in-up" style={{animationDelay: '0.8s'}}>
+          <div className="w-2.5 h-2.5 bg-blue-400 rounded-full animate-pulse shadow-lg shadow-blue-400/50"></div>
+          <span className="whitespace-nowrap text-center font-medium">{i18n.language === 'en' ? t('hero.status_free') : 'Gratuit'}</span>
+        </span>
       </div>
     </section>
   );
