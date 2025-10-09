@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_tests: {
+        Row: {
+          campaign_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          status: string
+          test_name: string
+          updated_at: string
+          variant_a_clicks: number | null
+          variant_a_content: string
+          variant_a_conversions: number | null
+          variant_a_opens: number | null
+          variant_a_sends: number | null
+          variant_a_subject: string
+          variant_b_clicks: number | null
+          variant_b_content: string
+          variant_b_conversions: number | null
+          variant_b_opens: number | null
+          variant_b_sends: number | null
+          variant_b_subject: string
+          winner: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string
+          test_name: string
+          updated_at?: string
+          variant_a_clicks?: number | null
+          variant_a_content: string
+          variant_a_conversions?: number | null
+          variant_a_opens?: number | null
+          variant_a_sends?: number | null
+          variant_a_subject: string
+          variant_b_clicks?: number | null
+          variant_b_content: string
+          variant_b_conversions?: number | null
+          variant_b_opens?: number | null
+          variant_b_sends?: number | null
+          variant_b_subject: string
+          winner?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string
+          test_name?: string
+          updated_at?: string
+          variant_a_clicks?: number | null
+          variant_a_content?: string
+          variant_a_conversions?: number | null
+          variant_a_opens?: number | null
+          variant_a_sends?: number | null
+          variant_a_subject?: string
+          variant_b_clicks?: number | null
+          variant_b_content?: string
+          variant_b_conversions?: number | null
+          variant_b_opens?: number | null
+          variant_b_sends?: number | null
+          variant_b_subject?: string
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_tests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action_type: string

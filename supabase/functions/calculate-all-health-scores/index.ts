@@ -26,24 +26,35 @@ serve(async (req) => {
 
     if (usersError) throw usersError;
 
+    console.log(`Found ${users?.length || 0} users to process`);
+
     let processed = 0;
     let errors = 0;
 
     // Calculate health score for each user
     for (const user of users || []) {
       try {
-        const { error } = await supabaseClient.rpc('calculate_user_health_score', {
+        console.log(`Processing user ${user.id}...`);
+        
+        const { data: healthData, error: healthError } = await supabaseClient.rpc('calculate_user_health_score', {
           target_user_id: user.id
         });
 
-        if (error) {
-          console.error(`Error calculating health for user ${user.id}:`, error);
+        if (healthError) {
+          console.error(`Error calculating health for user ${user.id}:`, healthError);
           errors++;
         } else {
-          // Also assign segments
-          await supabaseClient.rpc('assign_user_segments', {
+          console.log(`Health score calculated for user ${user.id}: ${healthData}`);
+          
+          // Also assign segments (this calls the SQL function)
+          const { error: segmentError } = await supabaseClient.rpc('assign_user_segments', {
             target_user_id: user.id
           });
+          
+          if (segmentError) {
+            console.error(`Error assigning segments for user ${user.id}:`, segmentError);
+          }
+          
           processed++;
         }
       } catch (err) {
@@ -51,6 +62,8 @@ serve(async (req) => {
         errors++;
       }
     }
+    
+    console.log(`Finished processing. Processed: ${processed}, Errors: ${errors}`);
 
     console.log(`Health calculation complete: ${processed} users processed, ${errors} errors`);
 
