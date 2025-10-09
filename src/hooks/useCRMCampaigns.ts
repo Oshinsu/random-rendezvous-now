@@ -113,7 +113,7 @@ export const useCRMCampaigns = () => {
     try {
       const { data, error } = await supabase.functions.invoke('send-lifecycle-campaign', {
         body: { 
-          campaign_id: campaignId,
+          campaignId: campaignId,
           zapier_webhook_url: zapierWebhookUrl 
         }
       });

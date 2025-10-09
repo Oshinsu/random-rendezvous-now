@@ -117,6 +117,3 @@ verify_jwt = false
 
 [functions.lifecycle-automations]
 verify_jwt = false
-
-[functions.send-lifecycle-campaign]
-verify_jwt = false
