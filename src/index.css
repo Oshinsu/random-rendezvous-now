@@ -222,3 +222,90 @@
   0% { opacity: 0; transform: translateY(30px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* Scroll Progress Bar */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f1c232, #e6a91a, #f5d363);
+  transform-origin: 0%;
+  z-index: 9999;
+  transition: transform 0.1s ease-out;
+}
+
+/* Background Pattern */
+.bg-pattern {
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(241, 194, 50, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(241, 194, 50, 0.03) 0%, transparent 50%);
+}
+
+/* Ken Burns Effect */
+@keyframes kenburns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+.ken-burns {
+  animation: kenburns 20s ease-in-out infinite alternate;
+}
+
+/* Magnetic Button Effect */
+.magnetic-button {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.magnetic-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Gradient Text Animation */
+.gradient-text-animated {
+  background: linear-gradient(90deg, #f1c232, #e6a91a, #f5d363, #f1c232);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Glass Effect Enhanced */
+.glass-enhanced {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(241, 194, 50, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+}
+
+/* Bento Grid */
+.bento-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bento-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 60px rgba(241, 194, 50, 0.2);
+}
+
+/* Reduce Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

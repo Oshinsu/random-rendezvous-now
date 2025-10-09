@@ -53,7 +53,7 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
     </span>
     {withTitle && (
       <span
-        className="font-display font-bold text-3xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight"
+        className="font-signature text-4xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight"
         style={{
           letterSpacing: '-0.02em',
           textShadow: '0 1px 3px rgba(241, 194, 50, 0.2)',

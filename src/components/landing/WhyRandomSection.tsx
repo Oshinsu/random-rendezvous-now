@@ -31,47 +31,65 @@ const WhyRandomSection = () => {
     },
   ];
   return (
-    <section className="py-12 sm:py-16 md:py-20 bg-background">
-      <div className="container mx-auto px-4 sm:px-6">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-center mb-3 sm:mb-4">
+    <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-white via-brand-50/10 to-white relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-10 left-20 w-72 h-72 bg-brand-200/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-10 right-20 w-96 h-96 bg-brand-300/10 rounded-full blur-3xl"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-center mb-4 sm:mb-6 animate-slide-in-up">
           {t('why_random.title').split('Random').map((part, index, array) => (
             index < array.length - 1 ? (
-              <span key={index}>{part}<span className="text-primary">Random</span></span>
+              <span key={index}>{part}<span className="font-signature text-4xl sm:text-5xl md:text-6xl gradient-text-animated">Random</span></span>
             ) : (
               <span key={index}>{part}</span>
             )
           ))}
         </h2>
-        <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
           {t('why_random.subtitle')}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
           {benefits.map((benefit, index) => (
-            <div key={index} className="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-fade-in border border-amber-100" style={{animationDelay: `${index * 150}ms`}}>
-              {/* Image de fond avec overlay */}
-              <div className="relative h-40 sm:h-48 w-full overflow-hidden">
+            <div 
+              key={index} 
+              className="bento-card group relative overflow-hidden rounded-3xl bg-white shadow-strong border border-brand-200/20 animate-slide-in-up" 
+              style={{animationDelay: `${index * 100 + 200}ms`}}
+            >
+              {/* Image avec Ken Burns effect */}
+              <div className="relative h-56 sm:h-64 w-full overflow-hidden">
                 <img 
                   src={benefit.image} 
                   alt={`Random - ${benefit.title}`}
                   loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover ken-burns"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-80"></div>
+                <div 
+                  className="absolute inset-0 transition-all duration-500"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+                  }}
+                ></div>
                 
-                {/* Titre superposé sur l'image */}
-                <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-lg">{benefit.title}</h3>
+                {/* Numéro stylisé */}
+                <div className="absolute top-4 right-4 text-8xl font-signature text-white/20">
+                  {index + 1}
+                </div>
+                
+                {/* Titre sur l'image */}
+                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white drop-shadow-2xl">{benefit.title}</h3>
                 </div>
               </div>
               
-              {/* Contenu avec description */}
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-white to-amber-50/30">
-                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed group-hover:text-foreground transition-colors duration-300">
+              {/* Description */}
+              <div className="p-6 sm:p-8 bg-gradient-to-br from-white via-brand-50/30 to-white">
+                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed group-hover:text-foreground transition-colors duration-300">
                   {benefit.description}
                 </p>
                 
-                {/* Décoration */}
-                <div className="mt-3 sm:mt-4 w-10 sm:w-12 h-1 bg-gradient-to-r from-primary to-amber-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Barre décorative animée */}
+                <div className="mt-4 sm:mt-6 h-1.5 bg-gradient-to-r from-brand-400 via-brand-500 to-brand-600 rounded-full transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
               </div>
             </div>
           ))}

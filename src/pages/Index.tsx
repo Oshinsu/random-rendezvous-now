@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Star } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
 import LanguageToggle from "@/components/LanguageToggle";
+import ScrollProgressBar from "@/components/ScrollProgressBar";
 import { Helmet } from "react-helmet-async";
 
 const Index = () => {
@@ -27,7 +28,8 @@ const Index = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col">
+    <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
+      <ScrollProgressBar />
       <Helmet>
         <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
         <meta name="description" content="Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies. Beta gratuite à Paris." />
@@ -44,11 +46,11 @@ const Index = () => {
           "description":"Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies."
         })}</script>
       </Helmet>
-      <header className="p-3 sm:p-4 bg-white/90 backdrop-blur-sm border-b border-amber-200/50 sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <RandomLogo size={32} className="sm:w-10 sm:h-10" />
-            <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent tracking-tight">
+      <header className="p-3 sm:p-4 glass-enhanced sticky top-0 z-50">
+        <div className="container mx-auto flex justify-between items-center max-w-7xl">
+          <div className="flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
+            <RandomLogo size={36} className="sm:w-12 sm:h-12 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" withAura />
+            <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight drop-shadow-glow-gold">
               Random
             </span>
           </div>
