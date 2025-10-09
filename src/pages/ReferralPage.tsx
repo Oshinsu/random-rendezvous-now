@@ -90,7 +90,7 @@ export default function ReferralPage() {
                   {myReferralCode || 'Aucun code'}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Chaque ami qui s'inscrit avec votre code vous fait gagner 5€
+                  Chaque ami qui s'inscrit avec votre code vous fait gagner 1 crédit
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export default function ReferralPage() {
                     <p className="text-sm text-muted-foreground">
                       Récompenses gagnées
                     </p>
-                    <p className="text-2xl font-bold">{totalRewards}€</p>
+                    <p className="text-2xl font-bold">{totalRewards} crédit{totalRewards > 1 ? 's' : ''}</p>
                   </div>
                   <Gift className="h-8 w-8 text-purple-500" />
                 </div>
@@ -200,7 +200,7 @@ export default function ReferralPage() {
                         {referral.reward_amount > 0 && (
                           <div className="text-right">
                             <div className="font-semibold text-green-600">
-                              +{referral.reward_amount}€
+                              +{referral.reward_amount} crédit
                             </div>
                           </div>
                         )}
@@ -237,7 +237,7 @@ export default function ReferralPage() {
                     3
                   </span>
                   <p>
-                    Dès que votre ami complète sa première sortie, vous gagnez tous les deux 5€ !
+                    Dès que votre ami complète sa première sortie, vous gagnez tous les deux 1 crédit chacun !
                   </p>
                 </li>
               </ol>

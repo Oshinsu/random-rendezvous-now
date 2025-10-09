@@ -990,6 +990,87 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          group_id: string | null
+          id: string
+          metadata: Json | null
+          referral_id: string | null
+          source: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          metadata?: Json | null
+          referral_id?: string | null
+          source: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          metadata?: Json | null
+          referral_id?: string | null
+          source?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_credit_transactions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_credit_transactions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "crm_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_credits: {
+        Row: {
+          created_at: string
+          credits_available: number | null
+          credits_used: number
+          id: string
+          total_credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_available?: number | null
+          credits_used?: number
+          id?: string
+          total_credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_available?: number | null
+          credits_used?: number
+          id?: string
+          total_credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_email_preferences: {
         Row: {
           all_emails_disabled: boolean
@@ -1106,6 +1187,17 @@ export type Database = {
       activate_ready_scheduled_groups: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      add_user_credits: {
+        Args: {
+          amount: number
+          group_id?: string
+          referral_id?: string
+          source: string
+          target_user_id: string
+          transaction_type: string
+        }
+        Returns: undefined
       }
       assign_user_segments: {
         Args: { target_user_id: string }

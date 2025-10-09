@@ -10,6 +10,7 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
+import { CreditsBalance } from '@/components/CreditsBalance'
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth()
@@ -273,6 +274,13 @@ const Dashboard = () => {
                 : t('dashboard.ready_desc')
               }
             </p>
+            
+            {/* Credits Balance */}
+            {!isSearching && redirectCountdown === 0 && (
+              <div className="max-w-xs mx-auto mt-4">
+                <CreditsBalance />
+              </div>
+            )}
             
             {/* Barre de progression pour le countdown */}
             {redirectCountdown > 0 && (

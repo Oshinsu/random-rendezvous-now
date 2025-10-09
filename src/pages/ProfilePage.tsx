@@ -17,6 +17,7 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { EmailPreferencesSection } from '@/components/profile/EmailPreferencesSection';
 import { DangerZoneSection } from '@/components/profile/DangerZoneSection';
+import { CreditsBalance } from '@/components/CreditsBalance';
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
@@ -136,6 +137,9 @@ const ProfilePage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Credits Balance */}
+            <CreditsBalance />
           </div>
 
           {/* Main Content */}
