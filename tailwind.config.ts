@@ -31,7 +31,7 @@ export default {
 		},
 		extend: {
       fontFamily: {
-        signature: ['Parisienne', 'cursive'],
+        signature: ['Spicy Rice', 'serif'],
         sans: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
         display: ['Clash Display', 'system-ui', 'sans-serif'],
         heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
