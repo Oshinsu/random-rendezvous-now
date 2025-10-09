@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { AdvancedContentEditor } from '@/components/admin/cms/AdvancedContentEditor';
+import { ImageManager } from '@/components/admin/cms/ImageManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, 
   FileText, 
@@ -45,6 +47,7 @@ export default function AdminContent() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortBy>('section');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [activeTab, setActiveTab] = useState<'all' | 'images'>('all');
 
   const sections = Array.from(new Set(contents.map(c => c.page_section)));
   const contentTypes = ['text', 'image', 'html', 'json'] as const;
@@ -67,6 +70,11 @@ export default function AdminContent() {
       }).length
     };
   }, [contents, sections]);
+
+  // Images uniquement
+  const imageContents = useMemo(() => {
+    return contents.filter(content => content.content_type === 'image');
+  }, [contents]);
 
   // Contenus filtrés et triés
   const filteredAndSortedContents = useMemo(() => {
@@ -281,8 +289,22 @@ export default function AdminContent() {
 
       <Separator />
 
-      {/* Filtres optimisés pour mobile */}
-      <Card>
+      {/* Tabs pour basculer entre tout et images */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'images')} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Tout le contenu
+          </TabsTrigger>
+          <TabsTrigger value="images" className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            Images ({imageContents.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4 sm:space-y-6 mt-6">
+          {/* Filtres optimisés pour mobile */}
+          <Card>
         <CardHeader className="pb-3 sm:pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -529,6 +551,99 @@ export default function AdminContent() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        {/* Tab Images - Section dédiée aux images */}
+        <TabsContent value="images" className="space-y-4 sm:space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5" />
+                    Gestion des Images
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {imageContents.length} image{imageContents.length > 1 ? 's' : ''} sur le site
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => refresh()}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Actualiser</span>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {imageContents.map((image) => (
+                  <Card 
+                    key={image.id} 
+                    className="overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer"
+                    onClick={() => handleContentClick(image)}
+                  >
+                    <div className="relative aspect-video bg-muted">
+                      <img
+                        src={image.content_value as string}
+                        alt={image.content_key}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjEgMTJWMTlBMiAyIDAgMCAxIDE5IDIxSDVBMiAyIDAgMCAxIDMgMTlWNUEyIDIgMCAwIDEgNSAzSDEyIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMiIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2">
+                          <Button size="sm" variant="secondary">
+                            <Edit3 className="h-4 w-4 mr-1" />
+                            Modifier
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium truncate">
+                        {image.content_key.replace(/_/g, ' ')}
+                      </CardTitle>
+                      {image.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {image.description}
+                        </p>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className={`text-xs ${getSectionBadgeColor(image.page_section)}`}>
+                          {getSectionTitle(image.page_section)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(image.updated_at).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {imageContents.length === 0 && (
+                <div className="text-center py-12">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                    Aucune image trouvée
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des images depuis l'éditeur de contenu
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Sheet pour l'éditeur avancé - tiroir latéral */}
       <Sheet open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
