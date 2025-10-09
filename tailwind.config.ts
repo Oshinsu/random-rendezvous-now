@@ -32,10 +32,10 @@ export default {
 		extend: {
       fontFamily: {
         signature: ['Spicy Rice', 'serif'],
+        heading: ['Marcellus', 'serif'],
+        body: ['Spectral', 'serif'],
         sans: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
         display: ['Clash Display', 'system-ui', 'sans-serif'],
-        heading: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        body: ['Inter', 'system-ui', 'sans-serif'],
       },
 			colors: {
 				border: 'hsl(var(--border))',
