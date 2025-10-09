@@ -1491,6 +1491,10 @@ export type Database = {
         Args: { new_value: Json; setting_name: string }
         Returns: undefined
       }
+      update_user_lifecycle_stage: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       validate_and_clean_message: {
         Args: { input_message: string }
         Returns: string
