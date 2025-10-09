@@ -117,3 +117,7 @@ verify_jwt = false
 
 [functions.lifecycle-automations]
 verify_jwt = false
+
+[functions.get-maps-config]
+verify_jwt = false
+

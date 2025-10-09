@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { MapContainerProps } from './types';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { supabase } from '@/integrations/supabase/client';
 
 const MapContainer = ({
   barName,
@@ -108,8 +109,16 @@ const MapContainer = ({
       try {
         console.log('🗺️ Initialisation de Google Maps avec coordonnées:', { lat: mapLat, lng: mapLng });
         
+        // Récupérer la clé API de manière sécurisée
+        const { data: configData, error: configError } = await supabase.functions.invoke('get-maps-config');
+        
+        if (configError || !configData?.apiKey) {
+          console.error('❌ Failed to fetch Maps API key:', configError);
+          return;
+        }
+        
         const loader = new Loader({
-          apiKey: 'AIzaSyCySpM4EZYtGpOY6dhANdZ1ZzVfArTexBw',
+          apiKey: configData.apiKey,
           version: 'weekly',
           libraries: ['places', 'marker']
         });
