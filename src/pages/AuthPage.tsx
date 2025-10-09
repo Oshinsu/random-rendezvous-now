@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useTranslation } from 'react-i18next';
+import { useReferralProgram } from '@/hooks/useReferralProgram';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -19,14 +20,24 @@ const AuthPage = () => {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
+  const [referralCode, setReferralCode] = useState('');
   const { trackSignUp, trackLogin } = useAnalytics();
   const { t } = useTranslation();
+  const { applyReferralCode } = useReferralProgram();
 
   // Handle URL parameters to set the active tab
   useEffect(() => {
     const tab = searchParams.get('tab');
+    const refCode = searchParams.get('ref');
+    
     if (tab === 'signup' || tab === 'signin') {
       setActiveTab(tab);
+    }
+    
+    // If a referral code is in the URL, pre-fill it
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase());
+      setActiveTab('signup'); // Force signup tab
     }
   }, [searchParams]);
 
@@ -58,6 +69,21 @@ const AuthPage = () => {
         toast({ title: t('auth.signup_success'), description: t('auth.signup_confirm') });
       } else if (data.user) {
         trackSignUp();
+        
+        // Apply referral code if present
+        if (referralCode.trim()) {
+          try {
+            await applyReferralCode(referralCode.trim());
+            toast({ 
+              title: t('auth.referral_applied'), 
+              description: t('auth.referral_helper'),
+            });
+          } catch (error) {
+            // Don't block signup if code is invalid
+            console.error('Referral code error:', error);
+          }
+        }
+        
         // Signup auto-confirmed
         toast({ title: t('auth.signup_success'), description: t('auth.signup_auto_confirm') });
         navigate('/');
@@ -140,6 +166,23 @@ const AuthPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">{t('auth.password')}</Label>
                   <Input id="password-signup" type="password" placeholder={t('auth.password_placeholder')} value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="referral-code">
+                    {t('auth.referral_code')} <span className="text-xs text-muted-foreground">({t('common.optional', 'optionnel')})</span>
+                  </Label>
+                  <Input 
+                    id="referral-code" 
+                    type="text" 
+                    placeholder={t('auth.referral_placeholder')} 
+                    value={referralCode} 
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="rounded-2xl"
+                    maxLength={10}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('auth.referral_helper')}
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signup')}

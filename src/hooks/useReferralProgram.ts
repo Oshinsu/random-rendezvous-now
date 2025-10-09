@@ -89,13 +89,24 @@ export const useReferralProgram = () => {
     }
 
     try {
+      // Check if user already used a referral code
+      const { data: existingReferral, error: checkError } = await supabase
+        .from('crm_referrals')
+        .select('*')
+        .eq('referred_user_id', user.id)
+        .maybeSingle();
+
+      if (existingReferral) {
+        throw new Error('You have already used a referral code');
+      }
+
       // Find referral by code
       const { data: referral, error: findError } = await supabase
         .from('crm_referrals')
         .select('*')
         .eq('referral_code', code)
         .eq('status', 'pending')
-        .single();
+        .maybeSingle();
 
       if (findError || !referral) {
         throw new Error('Invalid or expired referral code');

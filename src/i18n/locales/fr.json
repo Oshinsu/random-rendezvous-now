@@ -141,7 +141,11 @@
     "signin_success": "Connexion réussie!",
     "signin_welcome": "Bienvenue !",
     "signup_error": "Erreur d'inscription",
-    "signin_error": "Erreur de connexion"
+    "signin_error": "Erreur de connexion",
+    "referral_applied": "Code de parrainage validé !",
+    "referral_code": "Code de parrainage",
+    "referral_placeholder": "RND-XXXXXX",
+    "referral_helper": "Recevez 1 crédit gratuit après votre première sortie"
   },
   "groups": {
     "adventure_group": "Groupe d'Aventure",
@@ -260,7 +264,8 @@
     "next": "Suivant",
     "previous": "Précédent",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "optional": "optionnel"
   },
   "scheduled_groups": {
     "title": "Groupes planifiés",

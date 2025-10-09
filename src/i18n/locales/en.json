@@ -137,7 +137,11 @@
     "signin_success": "Login successful!",
     "signin_welcome": "Welcome!",
     "signup_error": "Registration error",
-    "signin_error": "Login error"
+    "signin_error": "Login error",
+    "referral_applied": "Referral code applied!",
+    "referral_code": "Referral code",
+    "referral_placeholder": "RND-XXXXXX",
+    "referral_helper": "Receive 1 free credit after your first outing"
   },
   "groups": {
     "adventure_group": "Adventure Group",
@@ -256,7 +260,8 @@
     "next": "Next",
     "previous": "Previous",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "optional": "optional"
   },
   "scheduled_groups": {
     "title": "Scheduled Groups",
