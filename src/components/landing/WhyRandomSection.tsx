@@ -1,31 +1,28 @@
-
-import benefit1 from "@/assets/new-benefit-1.jpg";
-import benefit2 from "@/assets/new-benefit-2.jpg";
-import benefit3 from "@/assets/new-benefit-3.jpg";
-import benefit4 from "@/assets/new-benefit-4.jpg";
 import { useTranslation } from 'react-i18next';
+import { useDynamicContent } from '@/hooks/useDynamicContent';
 
 const WhyRandomSection = () => {
   const { t } = useTranslation();
+  const { getContent } = useDynamicContent();
 
   const benefits = [
     {
-      image: benefit1,
+      image: getContent('benefit_1_image_url', '/src/assets/new-benefit-1.jpg'),
       title: t('why_random.benefit1_title'),
       description: t('why_random.benefit1_desc'),
     },
     {
-      image: benefit2,
+      image: getContent('benefit_2_image_url', '/src/assets/new-benefit-2.jpg'),
       title: t('why_random.benefit2_title'),
       description: t('why_random.benefit2_desc'),
     },
     {
-      image: benefit3,
+      image: getContent('benefit_3_image_url', '/src/assets/new-benefit-3.jpg'),
       title: t('why_random.benefit3_title'),
       description: t('why_random.benefit3_desc'),
     },
     {
-      image: benefit4,
+      image: getContent('benefit_4_image_url', '/src/assets/new-benefit-4.jpg'),
       title: t('why_random.benefit4_title'),
       description: t('why_random.benefit4_desc'),
     },

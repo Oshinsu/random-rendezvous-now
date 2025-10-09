@@ -39,14 +39,9 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Images prédéfinies dans le projet
+  // Images actuellement utilisées dans le projet
   const galleryImages = [
-    '/src/assets/hero-banner.jpg',
     '/src/assets/new-hero-banner.jpg',
-    '/src/assets/benefit-1.jpg',
-    '/src/assets/benefit-2.jpg',
-    '/src/assets/benefit-3.jpg',
-    '/src/assets/benefit-4.jpg',
     '/src/assets/new-benefit-1.jpg',
     '/src/assets/new-benefit-2.jpg',
     '/src/assets/new-benefit-3.jpg',
