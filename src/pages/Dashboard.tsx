@@ -265,9 +265,7 @@ const Dashboard = () => {
                 width: `${(15 - redirectCountdown) / 15 * 100}%`
               }}></div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 px-2">
-                  {t('dashboard.progress_desc')}
-                </p>
+                
               </div>}
           </div>
 
