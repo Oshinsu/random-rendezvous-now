@@ -62,13 +62,7 @@ const HeroSection = () => {
             {user ? i18n.language === 'en' ? t('hero.cta_logged') : 'Chercher un groupe' : i18n.language === 'en' ? t('hero.cta') : 'Tenter l\'Aventure'}
           </Button>
         </div>
-        {!user && <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-500/20 backdrop-blur-sm border border-brand-400/30 mb-6 animate-slide-in-up" style={{
-        animationDelay: '0.8s'
-      }}>
-            <span className="text-sm sm:text-base font-semibold text-white">
-              ✨ {i18n.language === 'en' ? t('hero.beta_info') : "Beta gratuite à Paris en cours"}
-            </span>
-          </div>}
+        {!user}
         
         
         

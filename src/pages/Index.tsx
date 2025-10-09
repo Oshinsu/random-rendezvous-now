@@ -1,4 +1,3 @@
-
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import WhyRandomSection from "@/components/landing/WhyRandomSection";
@@ -14,21 +13,20 @@ import RandomLogo from "@/components/RandomLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import ScrollProgressBar from "@/components/ScrollProgressBar";
 import { Helmet } from "react-helmet-async";
-
 const Index = () => {
-  const { user, signOut, loading } = useAuth();
+  const {
+    user,
+    signOut,
+    loading
+  } = useAuth();
   const navigate = useNavigate();
-
   const handleSignOut = async () => {
     await signOut();
   };
-
   const handleGoToDashboard = () => {
     navigate('/dashboard');
   };
-
-  return (
-    <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
+  return <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
       <ScrollProgressBar />
       <Helmet>
         <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
@@ -39,11 +37,11 @@ const Index = () => {
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify({
-          "@context":"https://schema.org",
-          "@type":"WebSite",
-          "name":"Random",
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Random",
           "url": typeof window !== "undefined" ? `${window.location.origin}/` : "https://random.app/",
-          "description":"Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies."
+          "description": "Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies."
         })}</script>
       </Helmet>
       <header className="p-3 sm:p-4 glass-enhanced sticky top-0 z-50">
@@ -54,13 +52,10 @@ const Index = () => {
               Random
             </span>
           </div>
-          {loading ? (
-            <div className="flex items-center space-x-2">
+          {loading ? <div className="flex items-center space-x-2">
               <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-amber-700 font-medium text-sm hidden xs:block">Chargement...</p>
-            </div>
-          ) : user ? (
-            <div className="flex items-center gap-1 sm:gap-3">
+            </div> : user ? <div className="flex items-center gap-1 sm:gap-3">
               <LanguageToggle />
               <div className="hidden md:flex items-center space-x-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
                 <Star className="h-4 w-4 text-amber-500" />
@@ -68,32 +63,18 @@ const Index = () => {
                   {user.user_metadata?.first_name || user.email}
                 </span>
               </div>
-              <Button 
-                onClick={handleGoToDashboard} 
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4"
-                size="sm"
-              >
+              <Button onClick={handleGoToDashboard} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4" size="sm">
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden xs:inline">Chercher un </span>Groupe
               </Button>
-              <Button 
-                onClick={handleSignOut} 
-                variant="outline" 
-                className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4"
-                size="sm"
-              >
+              <Button onClick={handleSignOut} variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4" size="sm">
                 <span className="hidden xs:inline">Déconnexion</span>
                 <span className="xs:hidden">✕</span>
               </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 sm:gap-2">
+            </div> : <div className="flex items-center gap-1 sm:gap-2">
               <LanguageToggle />
               <Button asChild variant="ghost" className="text-amber-700 hover:bg-amber-50 text-xs sm:text-sm px-2 sm:px-3" size="sm">
-                <Link to="/bar-application">
-                  <span className="hidden sm:inline">Gérants</span>
-                  <span className="sm:hidden">🏪</span>
-                </Link>
+                
               </Button>
               <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
                 <Link to="/auth?tab=signin">
@@ -108,8 +89,7 @@ const Index = () => {
                   <span className="sm:hidden">⚡</span>
                 </Link>
               </Button>
-            </div>
-          )}
+            </div>}
         </div>
       </header>
       <main className="flex-grow">
@@ -121,8 +101,6 @@ const Index = () => {
         <CtaSection />
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
