@@ -1,10 +1,13 @@
+import { lazy, Suspense } from "react";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
-import WhyRandomSection from "@/components/landing/WhyRandomSection";
-import NoMoreSection from "@/components/landing/NoMoreSection";
-import FaqSection from "@/components/landing/FaqSection";
-import CtaSection from "@/components/landing/CtaSection";
 import Footer from "@/components/landing/Footer";
+
+// Lazy load below-the-fold sections
+const WhyRandomSection = lazy(() => import("@/components/landing/WhyRandomSection"));
+const NoMoreSection = lazy(() => import("@/components/landing/NoMoreSection"));
+const FaqSection = lazy(() => import("@/components/landing/FaqSection"));
+const CtaSection = lazy(() => import("@/components/landing/CtaSection"));
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -100,10 +103,13 @@ const Index = () => {
       <main className="flex-grow">
         <HeroSection />
         <HowItWorksSection />
-        <WhyRandomSection />
-        <NoMoreSection />
-        <FaqSection />
-        <CtaSection />
+        
+        <Suspense fallback={<div className="h-96 bg-gradient-to-br from-white via-brand-50/10 to-white animate-pulse" />}>
+          <WhyRandomSection />
+          <NoMoreSection />
+          <FaqSection />
+          <CtaSection />
+        </Suspense>
       </main>
       <Footer />
     </div>;
