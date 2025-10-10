@@ -4,12 +4,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDynamicContent } from "@/hooks/useDynamicContent";
-
 const HeroSection = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const { getContent } = useDynamicContent();
+  const {
+    t,
+    i18n
+  } = useTranslation();
+  const {
+    getContent
+  } = useDynamicContent();
   const handleMainAction = () => {
     if (user) {
       navigate('/dashboard');
@@ -17,9 +23,7 @@ const HeroSection = () => {
       navigate('/auth');
     }
   };
-  
   const heroBannerUrl = getContent('hero_background_image', '/src/assets/new-hero-banner.jpg');
-  
   return <section className="relative py-12 sm:py-16 md:py-20 text-white animate-fade-in overflow-hidden min-h-[85vh] flex items-center" style={{
     backgroundImage: `url(${heroBannerUrl})`,
     backgroundSize: 'cover',
@@ -49,11 +53,7 @@ const HeroSection = () => {
               </span>
             </>}
         </h1>
-        <p className="text-lg sm:text-xl md:text-2xl text-white/95 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed px-2 font-light animate-slide-in-up" style={{
-        animationDelay: '0.4s'
-      }}>
-          {i18n.language === 'en' ? t('hero.subtitle') : 'En un clic, on crée ton groupe de 5 et on choisit un bar ouvert près de toi. Des rencontres vraies, sans swipe.'}
-        </p>
+        
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-5 mb-8 sm:mb-10 animate-slide-in-up" style={{
         animationDelay: '0.6s'
       }}>
