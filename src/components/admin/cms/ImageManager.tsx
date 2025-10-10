@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageManagerProps {
   value: string;
@@ -56,7 +57,7 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
     onChange(newUrl);
   };
 
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -70,47 +71,80 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB
+    if (file.size > 5 * 1024 * 1024) { // 5MB (limite du bucket)
       toast({
         title: "Erreur", 
-        description: "L'image doit faire moins de 10MB",
+        description: "L'image doit faire moins de 5MB",
         variant: "destructive",
       });
       return;
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     
-    // Simulation d'upload (remplacer par vraie logique d'upload)
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setImagePreview(result);
+    try {
+      // Générer un nom de fichier unique avec timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = fileName;
+
+      // Preview local pendant l'upload
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload vers Supabase Storage
+      setUploadProgress(30);
       
-      // Simulation de progression
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        
-        if (progress >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setUploadProgress(0);
-          
-          // Dans un vrai cas, on aurait l'URL du serveur ici
-          const uploadedUrl = `/uploaded/${file.name}`;
-          handleUrlChange(uploadedUrl);
-          
-          toast({
-            title: "Succès",
-            description: "Image uploadée avec succès",
-          });
-        }
-      }, 100);
-    };
-    
-    reader.readAsDataURL(file);
+      const { data, error } = await supabase.storage
+        .from('site-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      setUploadProgress(70);
+
+      // Générer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('site-images')
+        .getPublicUrl(filePath);
+
+      setUploadProgress(100);
+      
+      // Mettre à jour l'URL dans le state
+      handleUrlChange(publicUrl);
+      
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }, 500);
+
+      toast({
+        title: "✅ Succès",
+        description: "Image uploadée vers Supabase Storage",
+      });
+
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      setImagePreview(null);
+      
+      toast({
+        title: "❌ Erreur d'upload",
+        description: error.message || "Impossible d'uploader l'image",
+        variant: "destructive",
+      });
+    }
   }, [onChange, toast]);
 
   const copyToClipboard = async (text: string) => {
