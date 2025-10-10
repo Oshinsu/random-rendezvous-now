@@ -39,6 +39,7 @@ const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage')
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
+import { SiteContentProvider } from "./contexts/SiteContentContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,7 +80,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 // Composant des routes qui utilise useAuth
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<Index />} />
+    <Route path="/" element={<SiteContentProvider><Index /></SiteContentProvider>} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
     <Route path="/scheduled-groups" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />

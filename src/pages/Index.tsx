@@ -32,6 +32,11 @@ const Index = () => {
         <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
         <meta name="description" content="Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies. Beta gratuite à Paris." />
         <link rel="canonical" href={typeof window !== "undefined" ? `${window.location.origin}/` : "/"} />
+        
+        {/* Performance optimizations */}
+        <link rel="preconnect" href="https://xhrievvdnajvylyrowwu.supabase.co" />
+        <link rel="dns-prefetch" href="https://xhrievvdnajvylyrowwu.supabase.co" />
+        
         <meta property="og:title" content="Random • 1 clic, 1 groupe, 1 bar" />
         <meta property="og:description" content="Clique, on forme ton groupe de 5 et on choisit un bar près de toi." />
         <meta property="og:type" content="website" />

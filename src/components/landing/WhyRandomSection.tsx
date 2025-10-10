@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useDynamicContent } from '@/hooks/useDynamicContent';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 const WhyRandomSection = () => {
   const { t } = useTranslation();
@@ -55,11 +56,13 @@ const WhyRandomSection = () => {
             >
               {/* Image avec Ken Burns effect */}
               <div className="relative h-56 sm:h-64 w-full overflow-hidden">
-                <img 
+                <OptimizedImage
                   src={benefit.image} 
                   alt={`Random - ${benefit.title}`}
-                  loading="lazy"
                   className="w-full h-full object-cover ken-burns"
+                  priority={index === 0}
+                  width={800}
+                  quality={85}
                 />
                 <div 
                   className="absolute inset-0 transition-all duration-500"
