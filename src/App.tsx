@@ -152,7 +152,35 @@ const AppRoutes = () => (
         </AdminRoute>
       </ProtectedRoute>
     } />
+    {/* CMS Routes with sub-navigation */}
     <Route path="/admin/content" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminContent />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/content/texts" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminContent />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/content/images" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminContent />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/content/templates" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
