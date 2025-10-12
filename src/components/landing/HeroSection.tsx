@@ -3,8 +3,7 @@ import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useDynamicContent } from "@/hooks/useDynamicContent";
-import { getOptimizedImageUrl } from "@/utils/imageOptimization";
+import heroImage from "@/assets/hero-banner.png";
 const HeroSection = () => {
   const {
     user
@@ -14,9 +13,6 @@ const HeroSection = () => {
     t,
     i18n
   } = useTranslation();
-  const {
-    getContent
-  } = useDynamicContent();
   const handleMainAction = () => {
     if (user) {
       navigate('/dashboard');
@@ -24,10 +20,8 @@ const HeroSection = () => {
       navigate('/auth');
     }
   };
-  const heroBannerUrl = getContent('hero_background_image', '/src/assets/new-hero-banner.jpg');
-  const optimizedHeroUrl = getOptimizedImageUrl(heroBannerUrl, { width: 1600, quality: 85 });
   return <section className="relative py-12 sm:py-16 md:py-20 text-white animate-fade-in overflow-hidden min-h-[85vh] flex items-center" style={{
-    backgroundImage: `url(${optimizedHeroUrl})`,
+    backgroundImage: `url(${heroImage})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
