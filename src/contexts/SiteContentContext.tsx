@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SiteContent {
@@ -48,7 +48,8 @@ export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
     fetchContents();
   }, []);
 
-  const getContent = (key: string, fallback = ''): string => {
+  // Mémoriser getContent pour éviter les recalculs inutiles
+  const getContent = useCallback((key: string, fallback = ''): string => {
     const item = contents.find(c => c.content_key === key);
     if (!item) return fallback;
     
@@ -73,7 +74,7 @@ export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
     }
     
     return item.content_value || fallback;
-  };
+  }, [contents]);
 
   const refresh = async () => {
     setLoading(true);

@@ -104,7 +104,18 @@ const Index = () => {
         <HeroSection />
         <HowItWorksSection />
         
-        <Suspense fallback={<div className="h-96 bg-gradient-to-br from-white via-brand-50/10 to-white animate-pulse" />}>
+        <Suspense fallback={
+          <div className="py-20 bg-gradient-to-br from-white via-brand-50/10 to-white">
+            <div className="container mx-auto px-4 max-w-7xl">
+              <div className="h-12 bg-muted/30 rounded-xl animate-pulse mb-8 max-w-2xl mx-auto"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="rounded-3xl bg-muted/20 h-96 animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        }>
           <WhyRandomSection />
           <NoMoreSection />
           <FaqSection />

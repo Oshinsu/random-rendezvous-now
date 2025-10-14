@@ -7,8 +7,8 @@ import './i18n';
 // 🧹 NETTOYAGE UNIFIÉ
 // Le nettoyage est maintenant géré uniquement par cleanup-groups Edge Function
 
-// Register Service Worker for image caching
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Register Service Worker for image caching (both dev and prod)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
