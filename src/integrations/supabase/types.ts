@@ -309,6 +309,137 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_articles: {
+        Row: {
+          content: string
+          created_at: string
+          excerpt: string | null
+          featured_image_url: string | null
+          generated_by_ai: boolean
+          id: string
+          keyword_id: string | null
+          meta_description: string
+          meta_title: string
+          published_at: string | null
+          seo_score: number | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          generated_by_ai?: boolean
+          id?: string
+          keyword_id?: string | null
+          meta_description: string
+          meta_title: string
+          published_at?: string | null
+          seo_score?: number | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          featured_image_url?: string | null
+          generated_by_ai?: boolean
+          id?: string
+          keyword_id?: string | null
+          meta_description?: string
+          meta_title?: string
+          published_at?: string | null
+          seo_score?: number | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_articles_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "blog_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_generation_schedule: {
+        Row: {
+          frequency_days: number
+          id: string
+          is_active: boolean
+          last_generation_at: string | null
+          next_generation_at: string | null
+          total_generated: number
+          updated_at: string
+        }
+        Insert: {
+          frequency_days?: number
+          id?: string
+          is_active?: boolean
+          last_generation_at?: string | null
+          next_generation_at?: string | null
+          total_generated?: number
+          updated_at?: string
+        }
+        Update: {
+          frequency_days?: number
+          id?: string
+          is_active?: boolean
+          last_generation_at?: string | null
+          next_generation_at?: string | null
+          total_generated?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_keywords: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          keyword: string
+          last_used_at: string | null
+          notes: string | null
+          priority: number
+          status: string
+          times_used: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keyword: string
+          last_used_at?: string | null
+          notes?: string | null
+          priority?: number
+          status?: string
+          times_used?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          keyword?: string
+          last_used_at?: string | null
+          notes?: string | null
+          priority?: number
+          status?: string
+          times_used?: number
+        }
+        Relationships: []
+      }
       crm_campaign_sends: {
         Row: {
           bounced: boolean | null
@@ -1451,6 +1582,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_article_views: {
+        Args: { article_id: string }
+        Returns: undefined
       }
       initiate_group_payment: {
         Args: { target_group_id: string }

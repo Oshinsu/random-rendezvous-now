@@ -34,6 +34,9 @@ const Footer = () => {
             <Link to="/bar-application" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               {i18n.language === 'en' ? 'Bar Owners' : 'Espace Gérants'}
             </Link>
+            <Link to="/blog" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Blog
+            </Link>
             <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">
               {i18n.language === 'en' ? t('footer.terms') : 'Conditions d\'utilisation'}
             </Link>

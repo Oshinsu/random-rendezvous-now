@@ -32,6 +32,9 @@ import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import AdminCRM from "./pages/admin/AdminCRM";
 import ReferralPage from "./pages/ReferralPage";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
+import AdminBlogSEO from "./pages/admin/AdminBlogSEO";
 // Lazy import to prevent circular dependency issues
 import React from 'react';
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
@@ -90,6 +93,8 @@ const AppRoutes = () => (
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
+    <Route path="/blog" element={<Blog />} />
+    <Route path="/blog/:slug" element={<BlogArticle />} />
     <Route path="/bar-dashboard" element={
       <ProtectedRoute>
         <BarOwnerRoute>
@@ -240,6 +245,15 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminSettings />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/blog-seo" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminBlogSEO />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
