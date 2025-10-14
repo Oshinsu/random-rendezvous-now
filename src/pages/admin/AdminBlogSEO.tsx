@@ -16,15 +16,6 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -244,79 +235,81 @@ export default function AdminBlogSEO() {
                       Ajoutez des mots-clés pour générer automatiquement des articles SEO optimisés
                     </CardDescription>
                   </div>
-                  <Dialog open={isAddingKeyword} onOpenChange={setIsAddingKeyword}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-red-600 hover:bg-red-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Ajouter un mot-clé
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl flex items-center gap-2">
-                          <Plus className="h-5 w-5" />
-                          Nouveau mot-clé SEO
-                        </DialogTitle>
-                        <DialogDescription>
-                          Ajoutez un mot-clé pour générer automatiquement un article optimisé SEO
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-5 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="keyword" className="text-sm font-medium">
-                            Mot-clé <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="keyword"
-                            value={newKeyword}
-                            onChange={(e) => setNewKeyword(e.target.value)}
-                            placeholder="Ex: rencontrer de nouvelles personnes à Paris"
-                            className="h-11"
-                            autoFocus
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Utilisez des mots-clés longue traîne pour un meilleur SEO
-                          </p>
-                        </div>
+                  <Button 
+                    onClick={() => setIsAddingKeyword(!isAddingKeyword)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {isAddingKeyword ? 'Annuler' : 'Ajouter un mot-clé'}
+                  </Button>
+                </div>
+              </CardHeader>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="priority" className="text-sm font-medium">
-                            Priorité <span className="text-red-500">*</span>
-                          </Label>
-                          <Select
-                            value={newPriority.toString()}
-                            onValueChange={(value) => setNewPriority(parseInt(value))}
-                          >
-                            <SelectTrigger id="priority" className="h-11">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((num) => (
-                                <SelectItem key={num} value={num.toString()}>
-                                  {num} {num >= 8 ? '(Haute priorité)' : num >= 5 ? '(Moyenne)' : '(Basse)'}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">
-                            10 = priorité maximale, sera utilisé en premier
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="notes" className="text-sm font-medium">
-                            Notes internes (optionnel)
-                          </Label>
-                          <Textarea
-                            id="notes"
-                            value={newNotes}
-                            onChange={(e) => setNewNotes(e.target.value)}
-                            placeholder="Notes sur ce mot-clé, contexte, idées d'angles..."
-                            className="min-h-[100px] resize-none"
-                          />
-                        </div>
+              {/* Inline Add Form */}
+              {isAddingKeyword && (
+                <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
+                  <div className="max-w-2xl mx-auto space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-red-600" />
+                      Nouveau mot-clé SEO
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="keyword" className="text-sm font-medium">
+                          Mot-clé <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="keyword"
+                          value={newKeyword}
+                          onChange={(e) => setNewKeyword(e.target.value)}
+                          placeholder="Ex: rencontrer de nouvelles personnes à Paris"
+                          className="h-11"
+                          autoFocus
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Utilisez des mots-clés longue traîne pour un meilleur SEO
+                        </p>
                       </div>
-                      <DialogFooter className="gap-2">
+
+                      <div className="space-y-2">
+                        <Label htmlFor="priority" className="text-sm font-medium">
+                          Priorité <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={newPriority.toString()}
+                          onValueChange={(value) => setNewPriority(parseInt(value))}
+                        >
+                          <SelectTrigger id="priority" className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num} {num >= 8 ? '(Haute priorité)' : num >= 5 ? '(Moyenne)' : '(Basse)'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          10 = priorité maximale, sera utilisé en premier
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="notes" className="text-sm font-medium">
+                          Notes internes (optionnel)
+                        </Label>
+                        <Textarea
+                          id="notes"
+                          value={newNotes}
+                          onChange={(e) => setNewNotes(e.target.value)}
+                          placeholder="Notes sur ce mot-clé, contexte, idées d'angles..."
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2">
                         <Button
                           variant="outline"
                           onClick={() => {
@@ -345,11 +338,12 @@ export default function AdminBlogSEO() {
                             </>
                           )}
                         </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </CardHeader>
+              )}
+
               <CardContent className="p-0">
                 {keywordsLoading ? (
                   <div className="flex items-center justify-center py-16">
