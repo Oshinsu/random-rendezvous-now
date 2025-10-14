@@ -105,6 +105,30 @@ export const useBlogArticles = (status?: 'draft' | 'published' | 'archived') => 
     },
   });
 
+  const unpublishArticle = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from('blog_articles')
+        .update({
+          status: 'draft',
+          published_at: null,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-articles'] });
+      toast.success('Article dépublié');
+    },
+    onError: (error: any) => {
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
   const deleteArticle = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -129,6 +153,7 @@ export const useBlogArticles = (status?: 'draft' | 'published' | 'archived') => 
     getArticleBySlug,
     updateArticle,
     publishArticle,
+    unpublishArticle,
     deleteArticle,
   };
 };

@@ -55,7 +55,7 @@ export default function AdminBlogSEO() {
   const [selectedArticle, setSelectedArticle] = useState<string | null>(null);
 
   const { keywords, isLoading: keywordsLoading, addKeyword, updateKeyword, deleteKeyword } = useBlogKeywords();
-  const { articles, isLoading: articlesLoading, publishArticle, deleteArticle, updateArticle } = useBlogArticles();
+  const { articles, isLoading: articlesLoading, publishArticle, unpublishArticle, deleteArticle, updateArticle } = useBlogArticles();
   const { schedule, generateNow, updateSchedule } = useBlogGeneration();
 
   const handleAddKeyword = async () => {
@@ -503,7 +503,15 @@ export default function AdminBlogSEO() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {getStatusBadge(article.status)}
+                              <div className="flex gap-2">
+                                {getStatusBadge(article.status)}
+                                {article.generated_by_ai && (
+                                  <Badge variant="outline" className="gap-1">
+                                    <Sparkles className="h-3 w-3" />
+                                    IA
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1 text-muted-foreground">
@@ -533,6 +541,17 @@ export default function AdminBlogSEO() {
                                     className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                   >
                                     <Send className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {article.status === 'published' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => unpublishArticle.mutate(article.id)}
+                                    title="Dépublier"
+                                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                  >
+                                    <Archive className="h-4 w-4" />
                                   </Button>
                                 )}
                                 <Button

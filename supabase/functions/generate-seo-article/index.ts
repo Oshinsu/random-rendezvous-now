@@ -161,7 +161,8 @@ Important:
         content: articleData.content,
         excerpt: articleData.excerpt,
         seo_score: Math.min(100, seoScore),
-        status: 'draft',
+        status: 'published',
+        published_at: new Date().toISOString(),
         generated_by_ai: true,
       })
       .select()
