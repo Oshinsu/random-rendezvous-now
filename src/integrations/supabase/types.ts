@@ -1072,6 +1072,41 @@ export type Database = {
           },
         ]
       }
+      notification_analytics: {
+        Row: {
+          created_at: string | null
+          device_type: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          notification_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_type?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          notification_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_analytics_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "user_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1333,6 +1368,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notifications: {
+        Row: {
+          action_url: string | null
+          body: string
+          clicked_at: string | null
+          created_at: string | null
+          data: Json | null
+          icon: string | null
+          id: string
+          image: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          body: string
+          clicked_at?: string | null
+          created_at?: string | null
+          data?: Json | null
+          icon?: string | null
+          id?: string
+          image?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          body?: string
+          clicked_at?: string | null
+          created_at?: string | null
+          data?: Json | null
+          icon?: string | null
+          id?: string
+          image?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_outings_history: {
         Row: {
           bar_address: string
@@ -1381,6 +1461,36 @@ export type Database = {
           user_id?: string
           user_rating?: number | null
           user_review?: string | null
+        }
+        Relationships: []
+      }
+      user_push_tokens: {
+        Row: {
+          created_at: string | null
+          device_name: string | null
+          device_type: string
+          id: string
+          last_used_at: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_name?: string | null
+          device_type: string
+          id?: string
+          last_used_at?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_name?: string | null
+          device_type?: string
+          id?: string
+          last_used_at?: string | null
+          token?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1471,6 +1581,18 @@ export type Database = {
           search_radius: number
           status: string
         }[]
+      }
+      create_in_app_notification: {
+        Args: {
+          notif_action_url?: string
+          notif_body: string
+          notif_data?: Json
+          notif_icon?: string
+          notif_title: string
+          notif_type: string
+          target_user_id: string
+        }
+        Returns: string
       }
       delete_user_account: {
         Args: { target_user_id: string }

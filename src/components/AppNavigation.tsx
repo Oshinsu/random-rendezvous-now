@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 import LanguageToggle from './LanguageToggle';
+import { NotificationCenter } from './NotificationCenter';
 import { useTranslation } from 'react-i18next';
 
 const AppNavigation = () => {
@@ -136,6 +137,8 @@ const AppNavigation = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
+            {/* Notification Center */}
+            <NotificationCenter />
             
             {/* Mobile menu button */}
             <Button
