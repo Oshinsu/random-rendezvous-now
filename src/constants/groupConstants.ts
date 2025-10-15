@@ -46,17 +46,17 @@ export const GROUP_CONSTANTS = {
     // Participants inactifs - ALIGNÉ AVEC SSOT (24h)
     INACTIVE_PARTICIPANTS: 24 * 60 * 60 * 1000, // 24h - aligné SSOT
     
-    // Groupes en attente - ALIGNÉ AVEC SSOT (7 jours)
-    OLD_WAITING_GROUPS: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
+    // Groupes en attente - NOUVEAU: 3 jours au lieu de 7j (buffer 3.4x sur durée max réaliste 21h)
+    OLD_WAITING_GROUPS: 3 * 24 * 60 * 60 * 1000, // 3 jours
     
     // Groupes terminés - Conservation courte (3 jours pour historique)
     COMPLETED_GROUPS: 3 * 24 * 60 * 60 * 1000, // 3 jours - pour historique
     
-    // Groupes très anciens - ALIGNÉ AVEC SSOT (7 jours)
-    VERY_OLD_GROUPS: 7 * 24 * 60 * 60 * 1000, // 7 jours - aligné SSOT
+    // Groupes très anciens - NOUVEAU: 3 jours au lieu de 7j
+    VERY_OLD_GROUPS: 3 * 24 * 60 * 60 * 1000, // 3 jours
     
-    // Groupes vides - Nettoyage rapide
-    EMPTY_GROUPS: 10 * 60 * 1000, // 10 minutes
+    // Groupes vides - NOUVEAU: 3 jours au lieu de 10 minutes (cohérence avec autres seuils)
+    EMPTY_GROUPS: 3 * 24 * 60 * 60 * 1000, // 3 jours
   },
   
   // === FRÉQUENCES DE RAFRAÎCHISSEMENT ===
