@@ -72,7 +72,7 @@ export const GROUP_CONSTANTS = {
     // Seuil minimum de participants dans un groupe pour considérer le rejoindre
     MIN_PARTICIPANTS_TO_JOIN: 1,
     
-    // Âge maximum d'un groupe pour le considérer viable (2 heures)
-    MAX_GROUP_AGE: 2 * 60 * 60 * 1000,
+    // Âge maximum d'un groupe pour le considérer viable (6 heures)
+    MAX_GROUP_AGE: 6 * 60 * 60 * 1000,
   }
 };

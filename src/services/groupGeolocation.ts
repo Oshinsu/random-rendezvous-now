@@ -34,8 +34,8 @@ export class GroupGeolocationService {
         console.log('🗺️ Utilisateur IDF détecté - recherche de groupes parisiens');
       }
       
-      // NOUVEAU: Filtrer les groupes par âge (max 3 heures)
-      const maxGroupAge = new Date(Date.now() - GROUP_CONSTANTS.MAX_GROUP_AGE_FOR_JOIN).toISOString();
+      // NOUVEAU: Filtrer les groupes par âge (max 6 heures)
+      const maxGroupAge = new Date(Date.now() - GROUP_CONSTANTS.GROUP_JOIN.MAX_GROUP_AGE).toISOString();
       
       const { data: waitingGroups, error } = await supabase
         .from('groups')
@@ -53,11 +53,11 @@ export class GroupGeolocationService {
       }
 
       if (!waitingGroups || waitingGroups.length === 0) {
-        console.log('📍 Aucun groupe trouvé (âge < 3h)');
+        console.log('📍 Aucun groupe trouvé (âge < 6h)');
         return null;
       }
 
-      console.log(`🔍 ${waitingGroups.length} groupes trouvés (âge < 3h)`);
+      console.log(`🔍 ${waitingGroups.length} groupes trouvés (âge < 6h)`);
 
       // Filtrer les groupes viables (âge et participants)
       const viableGroups = waitingGroups.filter(group => {
