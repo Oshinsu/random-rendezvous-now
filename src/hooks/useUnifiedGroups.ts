@@ -11,7 +11,7 @@ import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { showUniqueToast } from '@/utils/toastUtils';
-import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
+
 import { CoordinateValidator } from '@/utils/coordinateValidation';
 import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
@@ -194,18 +194,6 @@ export const useUnifiedGroups = () => {
       return false;
     }
 
-    // Apply rate limiting
-    if (RateLimiter.isRateLimited(`group_creation_${user.id}`, RATE_LIMITS.GROUP_CREATION)) {
-      const status = RateLimiter.getStatus(`group_creation_${user.id}`);
-      const remainingMinutes = Math.ceil(status.remainingTime / 60000);
-      
-      toast({ 
-        title: 'Trop de tentatives', 
-        description: `Veuillez attendre ${remainingMinutes} minute(s) avant de créer un nouveau groupe.`, 
-        variant: 'destructive' 
-      });
-      return false;
-    }
 
     const isAuthenticated = await UnifiedGroupService.verifyUserAuthentication();
     if (!isAuthenticated) {
@@ -302,15 +290,6 @@ export const useUnifiedGroups = () => {
       return;
     }
 
-    // Apply rate limiting
-    if (RateLimiter.isRateLimited(`group_leave_${user.id}`, RATE_LIMITS.GROUP_JOIN)) {
-      toast({ 
-        title: 'Trop de tentatives', 
-        description: 'Veuillez attendre avant de quitter/rejoindre un groupe.', 
-        variant: 'destructive' 
-      });
-      return;
-    }
 
     setLoading(true);
     try {
