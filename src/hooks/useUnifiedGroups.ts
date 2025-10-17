@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { GeolocationService, LocationData } from '@/services/geolocation';
 import { GroupGeolocationService } from '@/services/groupGeolocation';
 import { UnifiedGroupService } from '@/services/unifiedGroupService';
+import { supabase } from '@/integrations/supabase/client';
 // Nettoyage géré automatiquement par cleanup-groups edge function
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
@@ -112,6 +113,71 @@ export const useUnifiedGroups = () => {
     enabled: !!activeGroupId,
     intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // ✅ Utilise la constante (1h)
   });
+
+  // ✅ REALTIME: Souscription aux changements de groupe ET participants
+  useEffect(() => {
+    if (!activeGroupId || !user) return;
+
+    console.log('🔄 [REALTIME] Souscription au groupe:', activeGroupId);
+
+    // Canal unique pour écouter à la fois groups et group_participants
+    const channel = supabase
+      .channel(`group-updates-${activeGroupId}`)
+      // Écouter les changements sur la table groups
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'groups',
+          filter: `id=eq.${activeGroupId}`,
+        },
+        (payload) => {
+          console.log('🔄 [REALTIME] Groupe modifié:', payload);
+          // Refetch immédiat pour mettre à jour l'UI
+          refetchGroups();
+        }
+      )
+      // Écouter les changements sur la table group_participants
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'group_participants',
+          filter: `group_id=eq.${activeGroupId}`,
+        },
+        async (payload) => {
+          console.log('🔄 [REALTIME] Participant modifié:', payload);
+          
+          // Refetch les membres immédiatement
+          try {
+            const members = await UnifiedGroupService.getGroupMembers(activeGroupId);
+            setGroupMembers(members);
+            
+            // Refetch aussi les groupes pour mettre à jour current_participants
+            refetchGroups();
+            
+            // Animation visuelle si c'est une insertion (nouveau membre)
+            if (payload.eventType === 'INSERT') {
+              window.dispatchEvent(new CustomEvent('group:member-joined'));
+              showUniqueToast(
+                'Un nouveau membre a rejoint le groupe !',
+                '✨ Nouveau membre'
+              );
+            }
+          } catch (error) {
+            console.error('Erreur lors du refetch des membres:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔄 [REALTIME] Désinscription du groupe:', activeGroupId);
+      supabase.removeChannel(channel);
+    };
+  }, [activeGroupId, user]);
 
   // Fonction de création de groupe avec rate limiting
   const joinRandomGroup = async (): Promise<boolean> => {
