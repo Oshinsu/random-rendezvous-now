@@ -21,8 +21,8 @@ export class AutomaticBarAssignmentService {
         return false;
       }
 
-      // 2. Vérifier l'éligibilité (5 participants, confirmé, pas de bar)
-      if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
+      // 2. Vérifier l'éligibilité (3+ participants, confirmé, pas de bar)
+      if (group.current_participants < 3 || group.status !== 'confirmed' || group.bar_name) {
         console.log('ℹ️ [AUTOMATIC BAR ASSIGNMENT] Groupe non éligible pour attribution');
         return false;
       }
