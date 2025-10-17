@@ -116,9 +116,13 @@ export const useUnifiedGroups = () => {
 
   // ✅ REALTIME: Souscription aux changements de groupe ET participants
   useEffect(() => {
-    if (!activeGroupId || !user) return;
+    if (!activeGroupId || !user) {
+      console.log('🔄 [REALTIME] ❌ Pas de souscription:', { activeGroupId, user: !!user });
+      return;
+    }
 
-    console.log('🔄 [REALTIME] Souscription au groupe:', activeGroupId);
+    console.log('🔄 [REALTIME] ✅ Souscription au groupe:', activeGroupId);
+    console.log('🔄 [REALTIME] User ID:', user.id);
 
     // Canal unique pour écouter à la fois groups et group_participants
     const channel = supabase
@@ -136,14 +140,21 @@ export const useUnifiedGroups = () => {
           console.log('🔄 [REALTIME] Groupe modifié:', payload);
           
           // ✅ Mise à jour INSTANTANÉE du cache (synchrone)
-          queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map(group => 
-              group.id === activeGroupId 
-                ? { ...group, ...payload.new }
-                : group
-            );
-          });
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map(group => 
+                group.id === activeGroupId 
+                  ? { ...group, ...payload.new }
+                  : group
+              );
+            });
+          } else if (payload.eventType === 'DELETE') {
+            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.filter(group => group.id !== activeGroupId);
+            });
+          }
         }
       )
       // Écouter les changements sur la table group_participants
@@ -191,13 +202,66 @@ export const useUnifiedGroups = () => {
             });
         }
       )
+      // ✅ CORRECTION #2 : Écouter les triggers d'attribution de bar
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'group_messages',
+          filter: `group_id=eq.${activeGroupId}`,
+        },
+        async (payload) => {
+          const message = payload.new;
+          
+          // Si c'est un trigger d'attribution de bar
+          if (message.is_system && message.message === 'AUTO_BAR_ASSIGNMENT_TRIGGER') {
+            console.log('🎯 [TRIGGER BAR] Détecté, appel de l\'edge function...');
+            
+            try {
+              // Récupérer les coordonnées du groupe
+              const { data: groupData, error: fetchError } = await supabase
+                .from('groups')
+                .select('latitude, longitude')
+                .eq('id', activeGroupId)
+                .single();
+              
+              if (fetchError) {
+                console.error('❌ [TRIGGER BAR] Erreur fetch groupe:', fetchError);
+                return;
+              }
+              
+              if (groupData?.latitude && groupData?.longitude) {
+                // Appeler l'edge function pour attribuer un bar
+                const { data, error } = await supabase.functions.invoke('simple-auto-assign-bar', {
+                  body: {
+                    group_id: activeGroupId,
+                    latitude: groupData.latitude,
+                    longitude: groupData.longitude
+                  }
+                });
+                
+                if (error) {
+                  console.error('❌ [TRIGGER BAR] Erreur invocation:', error);
+                } else {
+                  console.log('✅ [TRIGGER BAR] Attribution réussie:', data);
+                }
+              } else {
+                console.error('❌ [TRIGGER BAR] Coordonnées manquantes');
+              }
+            } catch (error) {
+              console.error('❌ [TRIGGER BAR] Erreur:', error);
+            }
+          }
+        }
+      )
       .subscribe();
 
     return () => {
       console.log('🔄 [REALTIME] Désinscription du groupe:', activeGroupId);
       supabase.removeChannel(channel);
     };
-  }, [activeGroupId, user]);
+  }, [activeGroupId, user, queryClient]);
 
   // Fonction de création de groupe avec rate limiting
   const joinRandomGroup = async (): Promise<boolean> => {
