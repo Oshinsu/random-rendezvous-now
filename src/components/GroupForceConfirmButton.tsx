@@ -44,6 +44,28 @@ const GroupForceConfirmButton = ({ groupId, currentParticipants }: GroupForceCon
       if (result.confirmed) {
         toast.success('🎉 Groupe confirmé ! Recherche de bar en cours...');
         
+        // ✅ Déclencher l'attribution de bar automatiquement
+        try {
+          console.log('🚀 [FORCE CONFIRM] Déclenchement auto-assign bar pour groupe:', groupId);
+          
+          const { data: barData, error: barError } = await supabase.functions.invoke('simple-auto-assign-bar', {
+            body: {
+              group_id: groupId,
+              latitude: null,  // L'Edge Function utilisera les coordonnées du groupe
+              longitude: null,
+            },
+          });
+          
+          if (barError) {
+            console.error('❌ [FORCE CONFIRM] Erreur auto-assign:', barError);
+            toast.error('Erreur lors de la recherche de bar');
+          } else {
+            console.log('✅ [FORCE CONFIRM] Bar assignment déclenché:', barData);
+          }
+        } catch (error) {
+          console.error('❌ [FORCE CONFIRM] Exception auto-assign:', error);
+        }
+        
         // Envoyer notification push aux autres membres
         const { data: participants } = await supabase
           .from('group_participants')

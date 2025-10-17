@@ -381,30 +381,38 @@ serve(async (req) => {
 
     console.log('🤖 [AUTO-ASSIGN INTELLIGENTE AMÉLIORÉE] Attribution avec filtrage renforcé pour groupe:', group_id);
 
-    // Vérifier l'éligibilité du groupe
+    // Récupérer le groupe avec ses coordonnées
     const { data: group, error: groupError } = await supabase
       .from('groups')
-      .select('current_participants, status, bar_name')
+      .select('current_participants, status, bar_name, latitude, longitude, search_radius')
       .eq('id', group_id)
       .single();
 
     if (groupError || !group) {
+      console.error('❌ [AUTO-ASSIGN] Groupe introuvable:', group_id);
       return new Response(
         JSON.stringify({ success: false, error: 'Groupe introuvable' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (group.current_participants !== 5 || group.status !== 'confirmed' || group.bar_name) {
+    if (group.status !== 'confirmed' || group.bar_name) {
+      console.log('⚠️ [AUTO-ASSIGN] Groupe non éligible:', { status: group.status, bar_name: group.bar_name });
       return new Response(
         JSON.stringify({ success: false, error: 'Groupe non éligible' }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Coordonnées avec fallback sur Fort-de-France
-    const searchLatitude = latitude || 14.633945;
-    const searchLongitude = longitude || -61.027498;
+    // ✅ Utiliser les coordonnées du groupe (fallback sur Fort-de-France si aucune coordonnée)
+    const searchLatitude = latitude || group.latitude || 14.633945;
+    const searchLongitude = longitude || group.longitude || -61.027498;
+    
+    console.log('📍 [AUTO-ASSIGN] Coordonnées de recherche:', {
+      provided: { latitude, longitude },
+      fromGroup: { latitude: group.latitude, longitude: group.longitude },
+      final: { searchLatitude, searchLongitude }
+    });
 
     const apiKey = Deno.env.get('GOOGLE_PLACES_API_KEY')
     if (!apiKey) {
