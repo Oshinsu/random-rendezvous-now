@@ -162,6 +162,26 @@ export const HealthScoreTable = ({
                         {badge.icon} {badge.label}
                       </span>
                     </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.open(`/admin/users?user_id=${health.user_id}`, '_blank')}
+                      >
+                        👤 Voir profil
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const campaignTab = document.querySelector('[value="campaigns"]') as HTMLElement;
+                          campaignTab?.click();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        📧 Campagne ciblée
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

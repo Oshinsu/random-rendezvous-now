@@ -384,9 +384,18 @@ export default function AdminCRM() {
                             {campaign.lifecycle_stage?.stage_name && `Lifecycle: ${campaign.lifecycle_stage.stage_name}`}
                           </p>
                         </div>
-                        <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                          {campaign.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
+                            {campaign.status}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            onClick={() => sendCampaign(campaign.id, zapierWebhook)}
+                            disabled={campaign.status !== 'draft'}
+                          >
+                            📧 Envoyer
+                          </Button>
+                        </div>
                       </div>
                       {campaign.stats && (
                         <div className="grid grid-cols-4 gap-4 mt-4">

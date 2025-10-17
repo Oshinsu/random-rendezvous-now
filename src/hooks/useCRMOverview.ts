@@ -38,7 +38,7 @@ export const useCRMOverview = () => {
       // Get health scores data
       const { data: healthData, error: healthError } = await supabase
         .from('crm_user_health')
-        .select('health_score, churn_risk, days_since_last_activity');
+        .select('health_score, churn_risk, days_since_last_login, total_outings');
 
       if (healthError) throw healthError;
 
@@ -52,9 +52,9 @@ export const useCRMOverview = () => {
         return acc;
       }, {} as Record<string, number>);
 
-      // Active users = users with activity in last 7 days
+      // Active users = users connected in last 30 days OR with at least 1 outing
       const activeCount = (healthData || []).filter(
-        h => h.days_since_last_activity !== null && h.days_since_last_activity <= 7
+        h => (h.days_since_last_login !== null && h.days_since_last_login <= 30) || h.total_outings >= 1
       ).length;
 
       // Calculate conversion rate (users with at least 1 outing / total users)
