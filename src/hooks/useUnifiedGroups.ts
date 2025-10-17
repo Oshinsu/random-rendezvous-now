@@ -100,10 +100,10 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: false, // ✅ REALTIME PUR: Pas de polling, tout est géré par Realtime
-    staleTime: 30 * 1000, // ✅ REALTIME PUR: Cache de 30 secondes seulement
+    refetchInterval: 10 * 60 * 1000, // ✅ REALTIME: Polling 10 min (fallback sécurité)
+    staleTime: 5 * 60 * 1000, // ✅ REALTIME: Cache 5 min (évite refetchs inutiles)
     refetchOnMount: 'always',
-    refetchOnWindowFocus: true, // ✅ REALTIME PUR: Rafraîchir au retour sur l'app
+    refetchOnWindowFocus: false, // ✅ REALTIME: Pas de refetch brutal (Realtime gère)
   });
 
   // Battement de cœur simplifié - 1 heure (aligné avec GROUP_CONSTANTS.HEARTBEAT_INTERVAL)
@@ -134,8 +134,16 @@ export const useUnifiedGroups = () => {
         },
         (payload) => {
           console.log('🔄 [REALTIME] Groupe modifié:', payload);
-          // Refetch immédiat pour mettre à jour l'UI
-          refetchGroups();
+          
+          // ✅ Mise à jour INSTANTANÉE du cache (synchrone)
+          queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map(group => 
+              group.id === activeGroupId 
+                ? { ...group, ...payload.new }
+                : group
+            );
+          });
         }
       )
       // Écouter les changements sur la table group_participants
@@ -147,40 +155,40 @@ export const useUnifiedGroups = () => {
           table: 'group_participants',
           filter: `group_id=eq.${activeGroupId}`,
         },
-        async (payload) => {
+        (payload) => {
           console.log('🔄 [REALTIME] Participant modifié:', payload);
           
-          // Refetch les membres immédiatement
-          try {
-            const members = await UnifiedGroupService.getGroupMembers(activeGroupId);
-            setGroupMembers(members);
-            
-            // ✅ REALTIME PUR: Mise à jour instantanée du cache React Query
+          // ✅ Mise à jour INSTANTANÉE du compteur (synchrone)
+          if (payload.eventType === 'INSERT') {
             queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
-              if (!oldData || oldData.length === 0) return oldData;
-              
-              // Mettre à jour current_participants du groupe actif avec le nombre réel
+              if (!oldData) return oldData;
               return oldData.map(group => 
                 group.id === activeGroupId 
-                  ? { ...group, current_participants: members.length }
+                  ? { ...group, current_participants: group.current_participants + 1 }
                   : group
               );
             });
-            
-            // Refetch en arrière-plan (sans bloquer l'UI)
-            refetchGroups();
-            
-            // Animation visuelle si c'est une insertion (nouveau membre)
-            if (payload.eventType === 'INSERT') {
-              window.dispatchEvent(new CustomEvent('group:member-joined'));
-              showUniqueToast(
-                'Un nouveau membre a rejoint le groupe !',
-                '✨ Nouveau membre'
+            window.dispatchEvent(new CustomEvent('group:member-joined'));
+            showUniqueToast('Un nouveau membre a rejoint le groupe !', '✨ Nouveau membre');
+          } else if (payload.eventType === 'DELETE') {
+            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map(group => 
+                group.id === activeGroupId 
+                  ? { ...group, current_participants: Math.max(0, group.current_participants - 1) }
+                  : group
               );
-            }
-          } catch (error) {
-            console.error('Erreur lors du refetch des membres:', error);
+            });
           }
+          
+          // ✅ Refetch membres en ARRIÈRE-PLAN (sans bloquer UI)
+          UnifiedGroupService.getGroupMembers(activeGroupId)
+            .then(members => {
+              setGroupMembers(members);
+            })
+            .catch(error => {
+              console.error('Erreur refetch membres:', error);
+            });
         }
       )
       .subscribe();
