@@ -821,6 +821,42 @@ export type Database = {
         }
         Relationships: []
       }
+      group_force_confirm_votes: {
+        Row: {
+          group_id: string
+          id: string
+          user_id: string
+          voted_at: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          user_id: string
+          voted_at?: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          user_id?: string
+          voted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_force_confirm_votes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_force_confirm_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_messages: {
         Row: {
           created_at: string
@@ -1559,6 +1595,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      cleanup_expired_force_confirm_votes: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_old_security_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1618,6 +1658,10 @@ export type Database = {
           max_participants: number
           status: string
         }[]
+      }
+      force_confirm_incomplete_group: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: Json
       }
       generate_bar_analytics: {
         Args: { target_bar_place_id: string; target_month: string }
