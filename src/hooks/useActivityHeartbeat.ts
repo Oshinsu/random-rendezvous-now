@@ -14,7 +14,7 @@ interface ActivityHeartbeatOptions {
 export const useActivityHeartbeat = ({ 
   groupId, 
   enabled = true, 
-  intervalMs = GROUP_CONSTANTS.HEARTBEAT_INTERVAL 
+  intervalMs = 30 * 60 * 1000 // 30 minutes par défaut au lieu de 1h
 }: ActivityHeartbeatOptions = {}) => {
   const { user } = useAuth();
   const isActiveRef = useRef(true);

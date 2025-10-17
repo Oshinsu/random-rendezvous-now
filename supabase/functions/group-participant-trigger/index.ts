@@ -74,6 +74,23 @@ serve(async (req) => {
       console.log('🤖 [TRIGGER] Déclenchement attribution pour groupe:', groupId);
 
       try {
+        // Vérifier s'il n'y a pas déjà un message AUTO_BAR_ASSIGNMENT_TRIGGER récent (protection anti-doublon)
+        const { data: recentTriggers } = await supabase
+          .from('group_messages')
+          .select('id')
+          .eq('group_id', groupId)
+          .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
+          .eq('is_system', true)
+          .gte('created_at', new Date(Date.now() - 2 * 60 * 1000).toISOString()); // 2 minutes
+
+        const hasPendingBarAssignment = (recentTriggers?.length || 0) > 1; // Plus de 1 = doublon
+
+        if (hasPendingBarAssignment) {
+          console.log('⚠️ [TRIGGER] Déjà un trigger en cours, nettoyage du doublon');
+          await supabase.from('group_messages').delete().eq('id', record.id);
+          return new Response('OK', { status: 200 });
+        }
+
         // Vérification immédiate de l'éligibilité avec verrouillage
         const { data: group, error: groupError } = await supabase
           .from('groups')

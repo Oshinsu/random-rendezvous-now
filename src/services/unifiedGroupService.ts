@@ -125,64 +125,8 @@ export class UnifiedGroupService {
       const realParticipantCount = participantsData?.length || 0;
       console.log('🔍 Nombre RÉEL de participants confirmés:', realParticipantCount);
 
-      // Synchronisation du comptage avec la base de données
-      const { data: currentGroup, error: groupError } = await supabase
-        .from('groups')
-        .select('current_participants, status, bar_name')
-        .eq('id', groupId)
-        .single();
-
-      if (!groupError && currentGroup) {
-        console.log('📊 Comptage actuel en BDD:', currentGroup.current_participants, 'vs réel:', realParticipantCount);
-        
-        if (currentGroup.current_participants !== realParticipantCount) {
-          console.log('🚨 INCOHÉRENCE DÉTECTÉE ! Correction forcée...');
-          
-          let newStatus = currentGroup.status;
-          let updateData: any = {
-            current_participants: realParticipantCount
-          };
-
-          if (realParticipantCount < 5 && currentGroup.status === 'confirmed') {
-            newStatus = 'waiting';
-            updateData = {
-              ...updateData,
-              status: 'waiting',
-              bar_name: null,
-              bar_address: null,
-              meeting_time: null,
-              bar_latitude: null,
-              bar_longitude: null,
-              bar_place_id: null
-            };
-            console.log('⏳ Remise en waiting et suppression du bar');
-          } else if (realParticipantCount === 5 && currentGroup.status === 'waiting') {
-            newStatus = 'confirmed';
-            updateData = {
-              ...updateData,
-              status: 'confirmed'
-            };
-            console.log('🎉 Groupe complet ! Passage en confirmed et attribution automatique de bar');
-          }
-
-          const { error: correctionError } = await supabase
-            .from('groups')
-            .update(updateData)
-            .eq('id', groupId);
-
-          if (!correctionError) {
-            console.log('✅ Comptage corrigé avec succès:', realParticipantCount);
-            
-            // Attribution automatique de bar pour les groupes complets
-            if (realParticipantCount === 5 && newStatus === 'confirmed' && !currentGroup.bar_name) {
-              console.log('🤖 Déclenchement attribution automatique de bar...');
-              setTimeout(async () => {
-                await AutomaticBarAssignmentService.assignBarToGroup(groupId);
-              }, 1000);
-            }
-          }
-        }
-      }
+      // Le comptage est géré automatiquement par le trigger PostgreSQL handle_group_participant_changes_ppu
+      // Pas besoin de "correction forcée" manuelle qui créerait une boucle infinie avec Realtime
 
       if (!participantsData) {
         return [];

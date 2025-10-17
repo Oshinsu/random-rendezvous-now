@@ -32,11 +32,8 @@ const GroupsPage = () => {
   // Déclenchement du système unifié au montage
   useEffect(() => {
     // Fetching groups data
-    
     // Le nettoyage est géré automatiquement par cleanup-groups edge function
-    
-    // Force un refetch immédiat pour la récupération
-    refetchGroups();
+    // Realtime va charger les données automatiquement, pas besoin de refetch manuel
   }, []);
 
   // 🎯 Écouter les events de bar assignment et refetch automatiquement
