@@ -31,7 +31,7 @@ export const GROUP_CONSTANTS = {
   
   // Nettoyage géré par cleanup-groups edge function (toutes les 6 heures)
   CLEANUP_FREQUENCY: 6 * 60 * 60 * 1000, // 6 heures - edge function toutes les 6h (cron: 0 */6 * * *)
-  HEARTBEAT_INTERVAL: 60 * 60 * 1000, // 1 heure - aligné avec is_user_connected_realtime()
+  HEARTBEAT_INTERVAL: 30 * 60 * 1000, // 30 minutes - optimisé pour réduire la charge
   
   // Paramètres de groupe INCHANGÉS
   MAX_PARTICIPANTS: 5,

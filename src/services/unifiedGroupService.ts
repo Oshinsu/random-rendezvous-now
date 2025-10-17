@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { SystemMessagingService } from './systemMessaging';
-import { AutomaticBarAssignmentService } from './automaticBarAssignment';
 import { toast } from '@/hooks/use-toast';
 import { getGroupLocation } from '@/utils/parisRedirection';
 import type { Group, GroupParticipant } from '@/types/database';
@@ -384,20 +383,8 @@ export class UnifiedGroupService {
 
       console.log('✅ Participation ajoutée avec succès');
 
-      // Vérification post-adhésion pour attribution automatique de bar
-      setTimeout(async () => {
-        const { data: updatedGroup } = await supabase
-          .from('groups')
-          .select('current_participants, status, bar_name')
-          .eq('id', groupId)
-          .single();
-
-        if (updatedGroup && updatedGroup.current_participants === 5 && 
-            updatedGroup.status === 'confirmed' && !updatedGroup.bar_name) {
-          console.log('🤖 Groupe complet détecté, attribution de bar...');
-          await AutomaticBarAssignmentService.assignBarToGroup(groupId);
-        }
-      }, 2000);
+      // L'attribution automatique de bar est maintenant gérée par le trigger PostgreSQL
+      // trigger_auto_bar_assignment qui se déclenche quand un groupe atteint 3+ participants
 
       toast({
         title: '✅ Groupe rejoint',
