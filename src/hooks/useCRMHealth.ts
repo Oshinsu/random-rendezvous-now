@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useDebounce } from '@/hooks/useDebounce';
+import { crmEventBus } from '@/utils/crmEventBus';
 
 interface UserHealth {
   id: string;
@@ -150,6 +151,9 @@ export const useCRMHealth = (
       const { error } = await supabase.functions.invoke('calculate-all-health-scores');
       if (error) throw error;
       await fetchHealthScores();
+      
+      // Notify other hooks
+      crmEventBus.emit('health-scores-updated');
     } catch (err) {
       console.error('Error calculating health scores:', err);
       throw err;

@@ -7,6 +7,7 @@ import { Users, UserX, UserPlus, UserCheck, AlertCircle, RefreshCw } from 'lucid
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { crmEventBus } from '@/utils/crmEventBus';
 
 const segmentIcons: Record<string, any> = {
   'active': UserCheck,
@@ -32,6 +33,7 @@ export const CRMSegmentsTab = () => {
       // Attendre 2 secondes avant de rafraîchir pour laisser le temps au calcul
       setTimeout(() => {
         refetch();
+        crmEventBus.emit('segments-updated');
         setIsRecalculating(false);
       }, 2000);
     } catch (error) {

@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Users, TrendingUp, AlertTriangle, Target } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, Target, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface CRMOverviewProps {
@@ -36,7 +36,13 @@ export const CRMOverview = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="relative">
+      {loading && (
+        <div className="absolute top-2 right-2 z-10">
+          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Total Users */}
       <Card className="p-6 hover:shadow-lg transition-all duration-200">
         <div className="flex items-center justify-between mb-4">
@@ -102,6 +108,7 @@ export const CRMOverview = ({
         <div className="text-2xl font-bold mb-1">Taux de Conversion</div>
         <p className="text-sm text-muted-foreground">Signup → Première sortie</p>
       </Card>
+      </div>
     </div>
   );
 };

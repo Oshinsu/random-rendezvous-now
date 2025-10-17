@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { crmEventBus } from '@/utils/crmEventBus';
 
 interface CRMOverviewData {
   totalUsers: number;
@@ -89,6 +90,15 @@ export const useCRMOverview = () => {
 
   useEffect(() => {
     fetchOverview();
+
+    // Subscribe to CRM events
+    const unsubscribe1 = crmEventBus.subscribe('health-scores-updated', fetchOverview);
+    const unsubscribe2 = crmEventBus.subscribe('segments-updated', fetchOverview);
+
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+    };
   }, []);
 
   return { data, loading, error, refetch: fetchOverview };
