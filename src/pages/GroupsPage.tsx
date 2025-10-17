@@ -1,6 +1,7 @@
 
 import { useEffect, lazy, Suspense } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
+import { useGlobalBarTriggers } from '@/hooks/useGlobalBarTriggers';
 // Nettoyage géré automatiquement par cleanup-groups edge function
 import AppLayout from '@/components/AppLayout';
 import GroupMembersList from '@/components/GroupMembersList';
@@ -27,6 +28,10 @@ const GroupsPage = () => {
     leaveGroup, 
     userLocation
   } = useUnifiedGroups();
+  
+  // 🌍 SOUSCRIPTION REALTIME GLOBALE pour détection instantanée des triggers
+  useGlobalBarTriggers();
+  
   // No tracking for page views - only core business events
 
   // Déclenchement du système unifié au montage
