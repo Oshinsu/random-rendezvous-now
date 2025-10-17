@@ -2,7 +2,11 @@ import { CRMSegmentCard } from './CRMSegmentCard';
 import { useCRMSegments } from '@/hooks/useCRMSegments';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { Users, UserX, UserPlus, UserCheck, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, UserX, UserPlus, UserCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 const segmentIcons: Record<string, any> = {
   'active': UserCheck,
@@ -13,7 +17,29 @@ const segmentIcons: Record<string, any> = {
 };
 
 export const CRMSegmentsTab = () => {
-  const { segments, loading } = useCRMSegments();
+  const { segments, loading, refetch } = useCRMSegments();
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
+  const handleRecalculate = async () => {
+    setIsRecalculating(true);
+    try {
+      const { error } = await supabase.functions.invoke('calculate-all-health-scores');
+      
+      if (error) throw error;
+      
+      toast.success('Segments recalculés avec succès');
+      
+      // Attendre 2 secondes avant de rafraîchir pour laisser le temps au calcul
+      setTimeout(() => {
+        refetch();
+        setIsRecalculating(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error recalculating segments:', error);
+      toast.error('Erreur lors du recalcul des segments');
+      setIsRecalculating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -30,9 +56,20 @@ export const CRMSegmentsTab = () => {
   return (
     <div className="space-y-6">
       <div className="bg-muted/50 p-4 rounded-lg border border-border">
-        <h3 className="font-semibold mb-2 flex items-center gap-2">
-          📊 Les 5 Segments Essentiels
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold flex items-center gap-2">
+            📊 Les 5 Segments Essentiels
+          </h3>
+          <Button
+            onClick={handleRecalculate}
+            disabled={isRecalculating}
+            size="sm"
+            variant="outline"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+            Recalculer les segments
+          </Button>
+        </div>
         <p className="text-sm text-muted-foreground">
           <span className="font-medium">✅ Actifs</span> (connectés + sorties) • 
           <span className="font-medium ml-1">🆕 Nouveaux</span> ({"<"} 7 jours) • 
