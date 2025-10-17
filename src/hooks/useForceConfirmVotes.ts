@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,20 +20,18 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
     loading: true,
   });
 
-  const fetchVotes = async () => {
+  const fetchVotes = useCallback(async () => {
     if (!groupId || !user) {
       setData(prev => ({ ...prev, loading: false }));
       return;
     }
 
     try {
-      // Récupérer tous les votes valides (< 1 heure) via RPC personnalisé
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
-      // Utiliser une requête SQL directe via edge function ou raw SQL
-      const { data: votes, error, count } = await supabase
-        .from('group_force_confirm_votes' as any)
-        .select('user_id', { count: 'exact' })
+      const { data: votes, error } = await supabase
+        .from('group_force_confirm_votes')
+        .select('user_id')
         .eq('group_id', groupId)
         .gt('voted_at', oneHourAgo);
 
@@ -43,10 +41,12 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
         return;
       }
 
-      const votesArray = (votes || []) as unknown as Array<{ user_id: string }>;
+      const votesArray = (votes || []) as Array<{ user_id: string }>;
       const votesCount = votesArray.length;
       const hasVoted = votesArray.some(v => v.user_id === user.id);
       const canConfirm = votesCount >= currentParticipants;
+
+      console.log('🗳️ [VOTES] Mise à jour:', { votesCount, requiredVotes: currentParticipants, hasVoted, canConfirm });
 
       setData({
         votesCount,
@@ -59,14 +59,16 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
       console.error('Error fetching votes:', error);
       setData(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, [groupId, user, currentParticipants]);
 
   useEffect(() => {
     fetchVotes();
 
     if (!groupId) return;
 
-    // S'abonner aux changements en temps réel
+    console.log('🗳️ [REALTIME] Souscription aux votes pour groupe:', groupId);
+
+    // Realtime pour détecter les nouveaux votes immédiatement
     const channel = supabase
       .channel(`votes-${groupId}`)
       .on(
@@ -77,16 +79,25 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
           table: 'group_force_confirm_votes',
           filter: `group_id=eq.${groupId}`,
         },
-        () => {
+        (payload) => {
+          console.log('🗳️ [REALTIME] Vote modifié:', payload);
           fetchVotes();
         }
       )
       .subscribe();
 
+    // Polling de secours toutes les 10 secondes
+    const pollInterval = setInterval(() => {
+      console.log('🔄 [POLLING] Rafraîchissement des votes...');
+      fetchVotes();
+    }, 10000);
+
     return () => {
+      console.log('🗳️ [REALTIME] Désinscription des votes pour groupe:', groupId);
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
-  }, [groupId, user, currentParticipants]);
+  }, [groupId, fetchVotes]);
 
   return { ...data, refetch: fetchVotes };
 };

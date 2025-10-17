@@ -7,7 +7,7 @@ import { useForceConfirmVotes } from '@/hooks/useForceConfirmVotes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface GroupForceConfirmButtonProps {
   groupId: string;
@@ -17,10 +17,19 @@ interface GroupForceConfirmButtonProps {
 const GroupForceConfirmButton = ({ groupId, currentParticipants }: GroupForceConfirmButtonProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [justUpdated, setJustUpdated] = useState(false);
   const { votesCount, requiredVotes, hasVoted, canConfirm, refetch } = useForceConfirmVotes(
     groupId,
     currentParticipants
   );
+
+  useEffect(() => {
+    if (votesCount > 0) {
+      setJustUpdated(true);
+      const timer = setTimeout(() => setJustUpdated(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [votesCount]);
 
   const handleVote = async () => {
     if (!user) return;
@@ -127,7 +136,13 @@ const GroupForceConfirmButton = ({ groupId, currentParticipants }: GroupForceCon
               <Clock className="h-3 w-3" />
               Votes pour confirmer :
             </span>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+            <Badge 
+              variant="secondary" 
+              className={`
+                bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100
+                ${justUpdated ? 'animate-pulse ring-2 ring-amber-500' : ''}
+              `}
+            >
               {votesCount}/{requiredVotes}
             </Badge>
           </div>
