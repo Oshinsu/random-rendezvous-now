@@ -77,3 +77,18 @@ export interface GroupMessage {
   is_system: boolean;
   reactions?: Record<string, string[]>;
 }
+
+export interface GroupForceConfirmVote {
+  id: string;
+  group_id: string;
+  user_id: string;
+  voted_at: string;
+}
+
+export interface ForceConfirmResult {
+  success: boolean;
+  confirmed: boolean;
+  votes: number;
+  required: number;
+  error?: string;
+}

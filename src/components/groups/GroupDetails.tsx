@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Settings, Users2, Calendar, MapPin, Clock } from 'lucide-react';
 import { Group } from '@/types/database';
+import GroupForceConfirmButton from '@/components/GroupForceConfirmButton';
 
 interface GroupDetailsProps {
   group: Group;
@@ -20,12 +21,27 @@ const GroupDetails = ({ group, onLeaveGroup, loading }: GroupDetailsProps) => {
     return "Recherche de bar en cours...";
   };
 
+  const canForceConfirm = 
+    group.current_participants >= 3 && 
+    group.current_participants < 5 && 
+    group.status === 'waiting' && 
+    !group.bar_name;
+
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-soft border border-white/50">
-      <h3 className="text-base font-heading font-semibold text-neutral-800 mb-4 flex items-center gap-2">
-        <Settings className="h-4 w-4" />
-        Détails de l'aventure
-      </h3>
+    <div className="space-y-4">
+      {/* Bouton de confirmation anticipée */}
+      {canForceConfirm && (
+        <GroupForceConfirmButton 
+          groupId={group.id} 
+          currentParticipants={group.current_participants} 
+        />
+      )}
+
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-soft border border-white/50 dark:bg-neutral-900/80 dark:border-neutral-700">
+        <h3 className="text-base font-heading font-semibold text-neutral-800 dark:text-neutral-200 mb-4 flex items-center gap-2">
+          <Settings className="h-4 w-4" />
+          Détails de l'aventure
+        </h3>
       <div className="space-y-3 text-sm">
         <div className="flex justify-between items-center">
           <span className="text-neutral-600 font-medium">Statut</span>
@@ -97,17 +113,18 @@ const GroupDetails = ({ group, onLeaveGroup, loading }: GroupDetailsProps) => {
         )}
       </div>
 
-      {group.status !== 'completed' && (
-        <Button
-          onClick={onLeaveGroup}
-          disabled={loading}
-          variant="outline"
-          size="sm"
-          className="w-full mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-xs"
-        >
-          Quitter l'aventure
-        </Button>
-      )}
+        {group.status !== 'completed' && (
+          <Button
+            onClick={onLeaveGroup}
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="w-full mt-4 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-xs dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            Quitter l'aventure
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
