@@ -39,6 +39,20 @@ const GroupsPage = () => {
     refetchGroups();
   }, []);
 
+  // 🎯 Écouter les events de bar assignment et refetch automatiquement
+  useEffect(() => {
+    const handleBarAssigned = (event: CustomEvent) => {
+      console.log('🍺 Bar assigné détecté dans GroupsPage, refetch des groupes');
+      refetchGroups();
+    };
+
+    window.addEventListener('group:bar-assigned', handleBarAssigned as EventListener);
+    
+    return () => {
+      window.removeEventListener('group:bar-assigned', handleBarAssigned as EventListener);
+    };
+  }, [refetchGroups]);
+
   const activeGroups = userGroups.filter(group => 
     group.status === 'waiting' || group.status === 'confirmed'
   );
