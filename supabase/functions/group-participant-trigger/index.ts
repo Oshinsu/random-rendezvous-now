@@ -17,7 +17,7 @@ async function updateGroupWithBar(groupId: string, barData: any): Promise<boolea
   try {
     const meetingTime = new Date(Date.now() + 60 * 60 * 1000);
     
-    // Mise à jour atomique avec conditions strictes
+    // Mise à jour atomique avec conditions strictes (accepter 3+ participants)
     const { error: updateError } = await supabase
       .from('groups')
       .update({
@@ -30,7 +30,7 @@ async function updateGroupWithBar(groupId: string, barData: any): Promise<boolea
       })
       .eq('id', groupId)
       .eq('status', 'confirmed')
-      .eq('current_participants', 5)
+      .gte('current_participants', 3)
       .is('bar_name', null);
 
     if (updateError) {
@@ -87,9 +87,9 @@ serve(async (req) => {
           return new Response('OK', { status: 200 })
         }
 
-        // Vérifications d'éligibilité STRICTES
+        // Vérifications d'éligibilité - Accepter 3+ participants
         const isEligible = (
-          group.current_participants === 5 &&
+          group.current_participants >= 3 &&
           group.status === 'confirmed' &&
           !group.bar_name &&
           !group.bar_place_id
