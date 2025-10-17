@@ -100,10 +100,10 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 10 * 60 * 1000, // ✅ OPTIMISATION: 10 minutes (reduced polling)
-    staleTime: 5 * 60 * 1000, // ✅ OPTIMISATION: 5 minutes stale time
+    refetchInterval: false, // ✅ REALTIME PUR: Pas de polling, tout est géré par Realtime
+    staleTime: 30 * 1000, // ✅ REALTIME PUR: Cache de 30 secondes seulement
     refetchOnMount: 'always',
-    refetchOnWindowFocus: false, // ✅ OPTIMISATION: Disabled to prevent aggressive refetching
+    refetchOnWindowFocus: true, // ✅ REALTIME PUR: Rafraîchir au retour sur l'app
   });
 
   // Battement de cœur simplifié - 1 heure (aligné avec GROUP_CONSTANTS.HEARTBEAT_INTERVAL)
@@ -155,7 +155,19 @@ export const useUnifiedGroups = () => {
             const members = await UnifiedGroupService.getGroupMembers(activeGroupId);
             setGroupMembers(members);
             
-            // Refetch aussi les groupes pour mettre à jour current_participants
+            // ✅ REALTIME PUR: Mise à jour instantanée du cache React Query
+            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
+              if (!oldData || oldData.length === 0) return oldData;
+              
+              // Mettre à jour current_participants du groupe actif avec le nombre réel
+              return oldData.map(group => 
+                group.id === activeGroupId 
+                  ? { ...group, current_participants: members.length }
+                  : group
+              );
+            });
+            
+            // Refetch en arrière-plan (sans bloquer l'UI)
             refetchGroups();
             
             // Animation visuelle si c'est une insertion (nouveau membre)
