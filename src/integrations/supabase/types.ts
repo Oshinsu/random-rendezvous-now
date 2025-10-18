@@ -1796,6 +1796,10 @@ export type Database = {
           sanitized_lng: number
         }[]
       }
+      test_trigger_auto_bar_assignment: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       transition_groups_to_completed: {
         Args: Record<PropertyKey, never>
         Returns: undefined

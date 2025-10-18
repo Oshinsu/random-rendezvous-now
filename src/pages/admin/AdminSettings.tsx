@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { TriggerTestPanel } from '@/components/admin/TriggerTestPanel';
 import { 
   Settings, 
   Database, 
@@ -355,6 +356,12 @@ export const AdminSettings = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Section Tests du Système */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-red-800 mb-4">Tests du Système Auto-Assignment</h2>
+        <TriggerTestPanel />
       </div>
         </>
       )}
