@@ -38,6 +38,7 @@ export const BarAssignmentTest = () => {
     setIsRunning(true);
     setTestResult(null);
     let testGroupId: string | null = null;
+    const testUserIds: string[] = [];
 
     try {
       // Step 1: Créer un groupe test
@@ -71,17 +72,37 @@ export const BarAssignmentTest = () => {
         details: `Groupe créé: ${group.id}`
       });
 
-      // Step 2: Ajouter 5 participants
+      // Step 2: Créer 5 utilisateurs temporaires et les ajouter comme participants
       updateStep(1, { status: "running" });
       const startStep2 = Date.now();
 
+      const timestamp = Date.now();
       const participants = [];
+
       for (let i = 0; i < 5; i++) {
+        // Créer un utilisateur temporaire
+        const { data: { user: testUser }, error: userError } = await supabase.auth.admin.createUser({
+          email: `test-${timestamp}-${i}@random-test.local`,
+          email_confirm: true,
+          user_metadata: {
+            first_name: `TestUser${i}`,
+            last_name: 'AutoTest',
+            is_test_user: true
+          },
+          password: `test-${crypto.randomUUID()}`
+        });
+
+        if (userError) throw userError;
+        if (!testUser) throw new Error("Failed to create test user");
+        
+        testUserIds.push(testUser.id);
+
+        // Ajouter le participant au groupe
         const { error: partError } = await supabase
           .from('group_participants')
           .insert({
             group_id: group.id,
-            user_id: user.id,
+            user_id: testUser.id,
             status: 'confirmed',
             latitude: 14.6037 + (Math.random() - 0.5) * 0.01,
             longitude: -61.0731 + (Math.random() - 0.5) * 0.01,
@@ -202,6 +223,15 @@ export const BarAssignmentTest = () => {
       setTestResult({ success: false, error: error.message });
     } finally {
       setIsRunning(false);
+      
+      // Cleanup: supprimer les utilisateurs de test
+      for (const userId of testUserIds) {
+        try {
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (err) {
+          console.warn("Failed to delete test user:", userId, err);
+        }
+      }
       
       // Cleanup: supprimer le groupe test
       if (testGroupId) {
