@@ -665,8 +665,7 @@ serve(async (req) => {
         bar_place_id: result.bar.place_id,
         bar_latitude: result.bar.geometry.location.lat,
         bar_longitude: result.bar.geometry.location.lng,
-        meeting_time: meetingTime.toISOString(),
-        updated_at: new Date().toISOString()
+        meeting_time: meetingTime.toISOString()
       })
       .eq('id', group_id);
 
