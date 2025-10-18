@@ -133,3 +133,6 @@ verify_jwt = false
 [functions.test-bar-assignment]
 verify_jwt = true
 
+[functions.trigger-bar-assignment]
+verify_jwt = false
+

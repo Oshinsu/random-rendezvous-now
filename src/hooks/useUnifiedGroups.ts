@@ -25,9 +25,6 @@ export const useUnifiedGroups = () => {
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   
-  // ✅ CORRECTION #3 : Protection anti-spam pour triggers de bar
-  const processedTriggers = useRef(new Set<string>());
-  
   const isGettingLocation = useRef(false);
   const locationPromise = useRef<Promise<LocationData> | null>(null);
   const lastLocationTime = useRef<number>(0);
@@ -117,102 +114,8 @@ export const useUnifiedGroups = () => {
     intervalMs: GROUP_CONSTANTS.HEARTBEAT_INTERVAL // ✅ Utilise la constante (1h)
   });
 
-  // ✅ CORRECTION #1 : Détection des triggers existants au montage
-  const checkExistingTriggers = async (groupId: string) => {
-    if (!user) return;
-    
-    console.log('🔍 [TRIGGER MOUNT] Vérification triggers existants pour groupe:', groupId);
-    
-    try {
-      // Chercher les triggers AUTO_BAR_ASSIGNMENT_TRIGGER créés il y a moins de 5 minutes
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      
-      const { data: triggers, error: triggerError } = await supabase
-        .from('group_messages')
-        .select('id, group_id, created_at')
-        .eq('group_id', groupId)
-        .eq('is_system', true)
-        .eq('message', 'AUTO_BAR_ASSIGNMENT_TRIGGER')
-        .gte('created_at', fiveMinutesAgo)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      console.log('🔍 [TRIGGER MOUNT] Triggers trouvés:', triggers?.length || 0);
-      
-      if (triggerError) {
-        console.error('❌ [TRIGGER MOUNT] Erreur recherche triggers:', triggerError);
-        return;
-      }
-      
-      if (!triggers || triggers.length === 0) {
-        console.log('✅ [TRIGGER MOUNT] Aucun trigger en attente');
-        return;
-      }
-      
-      const trigger = triggers[0];
-      
-      // Vérifier si déjà traité
-      if (processedTriggers.current.has(trigger.id)) {
-        console.log('⏭️ [TRIGGER MOUNT] Trigger déjà traité:', trigger.id);
-        return;
-      }
-      
-      // Vérifier si le groupe a déjà un bar assigné
-      const { data: groupData, error: groupError } = await supabase
-        .from('groups')
-        .select('bar_name, bar_place_id, latitude, longitude')
-        .eq('id', groupId)
-        .single();
-      
-      if (groupError) {
-        console.error('❌ [TRIGGER MOUNT] Erreur fetch groupe:', groupError);
-        return;
-      }
-      
-      if (groupData?.bar_place_id) {
-        console.log('✅ [TRIGGER MOUNT] Bar déjà assigné:', groupData.bar_name);
-        processedTriggers.current.add(trigger.id);
-        return;
-      }
-      
-      if (!groupData?.latitude || !groupData?.longitude) {
-        console.error('❌ [TRIGGER MOUNT] Coordonnées manquantes pour le groupe');
-        return;
-      }
-      
-      // Marquer comme traité AVANT l'appel pour éviter les doublons
-      processedTriggers.current.add(trigger.id);
-      
-      console.log('🎯 [TRIGGER MOUNT] Appel edge function pour trigger:', trigger.id);
-      
-      // Appeler l'edge function
-      const { data, error: invokeError } = await supabase.functions.invoke('simple-auto-assign-bar', {
-        body: {
-          group_id: groupId,
-          latitude: groupData.latitude,
-          longitude: groupData.longitude
-        }
-      });
-      
-      if (invokeError) {
-        console.error('❌ [TRIGGER MOUNT] Erreur invocation edge function:', invokeError);
-        processedTriggers.current.delete(trigger.id); // Retirer en cas d'échec pour réessayer
-      } else {
-        console.log('✅ [TRIGGER MOUNT] Edge function appelée avec succès:', data);
-      }
-      
-    } catch (error) {
-      console.error('❌ [TRIGGER MOUNT] Erreur globale:', error);
-    }
-  };
-
-  // ✅ CORRECTION #1 : useEffect pour vérifier les triggers au montage
-  useEffect(() => {
-    if (activeGroupId && user) {
-      console.log('🚀 [TRIGGER MOUNT] Montage - vérification triggers...');
-      checkExistingTriggers(activeGroupId);
-    }
-  }, [activeGroupId, user?.id]);
+  // 🎯 OPTION A: Architecture Backend Pure - Pas besoin d'écouter les messages trigger
+  // Le backend gère l'auto-assignment, on écoute juste les changements sur groups directement
 
   // ✅ REALTIME: Souscription aux changements de groupe ET participants
   useEffect(() => {
@@ -221,8 +124,8 @@ export const useUnifiedGroups = () => {
       return;
     }
 
-    console.log('🔄 [REALTIME] ✅ Souscription au groupe:', activeGroupId);
-    console.log('🔄 [REALTIME] User ID:', user.id);
+    console.log('🔄 [REALTIME] Souscription au groupe:', activeGroupId);
+    console.log('🎯 [BACKEND PURE] Backend gère auto-assignment, frontend écoute groups.bar_name');
 
     // Canal unique pour écouter à la fois groups et group_participants
     const channel = supabase
@@ -322,116 +225,6 @@ export const useUnifiedGroups = () => {
             .catch(error => {
               console.error('Erreur refetch membres:', error);
             });
-        }
-      )
-      // ✅ CORRECTION #2 : Écouter les triggers d'attribution de bar (SYNCHRONE avec .then())
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'group_messages',
-          filter: `group_id=eq.${activeGroupId}`,
-        },
-        (payload) => {
-          console.log('🔔 [TRIGGER REALTIME] Message reçu:', {
-            eventType: payload.eventType,
-            new: payload.new,
-            timestamp: new Date().toISOString()
-          });
-          
-          // ✅ CORRECTION #5 : Vérification payload.new
-          if (!payload.new) {
-            console.warn('⚠️ [TRIGGER REALTIME] payload.new est undefined');
-            return;
-          }
-          
-          const message = payload.new;
-          
-          console.log('📨 [TRIGGER REALTIME] Contenu message:', {
-            id: message.id,
-            is_system: message.is_system,
-            message: message.message,
-            group_id: message.group_id
-          });
-          
-          // Si c'est un trigger d'attribution de bar
-          if (message.is_system && message.message === 'AUTO_BAR_ASSIGNMENT_TRIGGER') {
-            console.log('🎯 [TRIGGER REALTIME] ✅ Trigger AUTO_BAR_ASSIGNMENT détecté!');
-            
-            // ✅ CORRECTION #3 : Protection anti-spam
-            if (processedTriggers.current.has(message.id)) {
-              console.log('⏭️ [TRIGGER REALTIME] Trigger déjà traité, ignore:', message.id);
-              return;
-            }
-            
-            // Marquer comme traité IMMÉDIATEMENT
-            processedTriggers.current.add(message.id);
-            console.log('✅ [TRIGGER REALTIME] Marqué comme traité:', message.id);
-            
-            // ✅ CORRECTION #2 : Chaîne .then() au lieu de async/await
-            console.log('📡 [TRIGGER REALTIME] Récupération coordonnées groupe...');
-            
-            const invokeBarAssignment = async () => {
-              try {
-                const { data: groupData, error: fetchError } = await supabase
-                  .from('groups')
-                  .select('latitude, longitude, bar_place_id')
-                  .eq('id', activeGroupId)
-                  .single();
-                
-                if (fetchError) {
-                  console.error('❌ [TRIGGER REALTIME] Erreur fetch groupe:', fetchError);
-                  processedTriggers.current.delete(message.id);
-                  return;
-                }
-                
-                console.log('📍 [TRIGGER REALTIME] Données groupe:', {
-                  latitude: groupData?.latitude,
-                  longitude: groupData?.longitude,
-                  bar_place_id: groupData?.bar_place_id
-                });
-                
-                if (groupData?.bar_place_id) {
-                  console.log('⏭️ [TRIGGER REALTIME] Bar déjà assigné, ignore');
-                  return;
-                }
-                
-                if (!groupData?.latitude || !groupData?.longitude) {
-                  console.error('❌ [TRIGGER REALTIME] Coordonnées manquantes');
-                  processedTriggers.current.delete(message.id);
-                  return;
-                }
-                
-                console.log('🚀 [TRIGGER REALTIME] Invocation edge function simple-auto-assign-bar...');
-                const { data, error } = await supabase.functions.invoke('simple-auto-assign-bar', {
-                  body: {
-                    group_id: activeGroupId,
-                    latitude: groupData.latitude,
-                    longitude: groupData.longitude
-                  }
-                });
-                
-                if (error) {
-                  console.error('❌ [TRIGGER REALTIME] Erreur invocation edge function:', error);
-                  processedTriggers.current.delete(message.id);
-                } else {
-                  console.log('✅ [TRIGGER REALTIME] Edge function appelée avec succès:', data);
-                }
-              } catch (error) {
-                console.error('❌ [TRIGGER REALTIME] Erreur globale:', error);
-                processedTriggers.current.delete(message.id);
-              }
-            };
-            
-            // Appeler sans bloquer le callback Realtime
-            invokeBarAssignment();
-          } else {
-            console.log('ℹ️ [TRIGGER REALTIME] Message non-trigger:', {
-              is_system: message.is_system,
-              message: message.message?.substring(0, 50)
-            });
-          }
         }
       )
       .subscribe();
