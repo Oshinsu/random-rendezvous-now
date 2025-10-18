@@ -646,6 +646,49 @@ serve(async (req) => {
       console.error('Failed to log API success:', logError);
     }
 
+    // ✅ ÉTAPE CRITIQUE : Mettre à jour le groupe avec le bar assigné
+    console.log('💾 [UPDATE DB] Mise à jour du groupe avec le bar assigné...');
+
+    const meetingTime = new Date();
+    meetingTime.setHours(meetingTime.getHours() + 1); // RDV dans 1h
+
+    const { error: updateError } = await supabaseAdmin
+      .from('groups')
+      .update({
+        bar_name: result.bar.name,
+        bar_address: result.bar.formatted_address,
+        bar_place_id: result.bar.place_id,
+        bar_latitude: result.bar.geometry.location.lat,
+        bar_longitude: result.bar.geometry.location.lng,
+        meeting_time: meetingTime.toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', group_id);
+
+    if (updateError) {
+      console.error('❌ [UPDATE DB] Erreur lors de la mise à jour:', updateError);
+      throw new Error(`Échec update DB: ${updateError.message}`);
+    }
+
+    console.log('✅ [UPDATE DB] Groupe mis à jour avec succès');
+
+    // Message système dans le chat du groupe
+    const { error: messageError } = await supabaseAdmin
+      .from('group_messages')
+      .insert({
+        group_id: group_id,
+        user_id: '00000000-0000-0000-0000-000000000000', // Système
+        message: `🎉 Bar assigné ! Rendez-vous au ${result.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        is_system: true
+      });
+
+    if (messageError) {
+      console.error('⚠️ [MESSAGE] Erreur création message système:', messageError);
+      // Non-bloquant, on continue
+    }
+
+    console.log('✅ [MESSAGE] Message système créé dans le chat');
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
