@@ -19,8 +19,9 @@ interface GroupMembersListProps {
 }
 
 const GroupMembersList = ({ members, maxParticipants, currentParticipants }: GroupMembersListProps) => {
-  // Maintenant tous les membres affichés sont connectés par définition
-  const connectedMembers = members; // Tous sont connectés
+  // ✅ Filtrer les membres par statut de connexion
+  const connectedMembers = members.filter(m => m.isConnected);
+  const disconnectedMembers = members.filter(m => !m.isConnected);
   
   // Animation joyeuse à l'arrivée d'un membre
   const [animateJoin, setAnimateJoin] = useState(false);
@@ -72,6 +73,34 @@ const GroupMembersList = ({ members, maxParticipants, currentParticipants }: Gro
                     </div>
                     <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs flex-shrink-0">
                       En ligne
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Membres déconnectés */}
+        {disconnectedMembers.length > 0 && (
+          <div>
+            <h4 className="flex items-center gap-2 text-gray-500 font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+              <UserX className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span>Hors ligne ({disconnectedMembers.length})</span>
+            </h4>
+            <div className="space-y-2">
+              {disconnectedMembers.map((member, index) => {
+                const maskedName = getMaskedName(connectedMembers.length + index);
+                return (
+                  <div key={member.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 opacity-60">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0">
+                        {maskedName.charAt(0)}
+                      </div>
+                      <span className="font-medium text-gray-700 text-sm sm:text-base truncate">{maskedName}</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-gray-200 text-gray-600 text-xs flex-shrink-0">
+                      Hors ligne
                     </Badge>
                   </div>
                 );

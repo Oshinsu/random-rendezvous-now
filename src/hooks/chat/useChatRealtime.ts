@@ -96,17 +96,6 @@ export const useChatRealtime = (
 
           console.log('✅ Message VALIDÉ et accepté pour groupe:', groupId);
           updateMessagesCache(newMessage);
-
-          // 🎯 Détecter les messages système de bar assignment et dispatcher un event
-          if (newMessage.is_system && 
-              (newMessage.message.includes('BAR_ASSIGNMENT') || 
-               newMessage.message.includes('bar assigné') ||
-               newMessage.message.includes('Rendez-vous au'))) {
-            console.log('🍺 Bar assignment détecté, dispatch event de refetch');
-            window.dispatchEvent(new CustomEvent('group:bar-assigned', { 
-              detail: { groupId } 
-            }));
-          }
         }
       )
       .subscribe((status) => {
