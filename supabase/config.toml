@@ -130,3 +130,6 @@ verify_jwt = false
 [functions.create-test-scenario]
 verify_jwt = false
 
+[functions.test-bar-assignment]
+verify_jwt = true
+

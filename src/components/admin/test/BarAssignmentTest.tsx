@@ -18,6 +18,7 @@ interface TestStep {
 export const BarAssignmentTest = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [steps, setSteps] = useState<TestStep[]>([
+    { name: "Création de 5 utilisateurs test", status: "pending" },
     { name: "Création du groupe test", status: "pending" },
     { name: "Ajout de 5 participants", status: "pending" },
     { name: "Confirmation automatique", status: "pending" },
@@ -26,220 +27,62 @@ export const BarAssignmentTest = () => {
   ]);
   const [testResult, setTestResult] = useState<any>(null);
 
-  const updateStep = (index: number, updates: Partial<TestStep>) => {
-    setSteps(prev => prev.map((step, i) => 
-      i === index ? { ...step, ...updates, timestamp: new Date().toISOString() } : step
-    ));
-  };
-
   const runTest = async () => {
     setIsRunning(true);
     setTestResult(null);
-    let testGroupId: string | null = null;
-    const testUserIds: string[] = [];
+
+    // Réinitialiser les steps
+    setSteps([
+      { name: "Création de 5 utilisateurs test", status: "pending" },
+      { name: "Création du groupe test", status: "pending" },
+      { name: "Ajout de 5 participants", status: "pending" },
+      { name: "Confirmation automatique", status: "pending" },
+      { name: "Vérification bar assigné", status: "pending" },
+      { name: "Vérification données complètes", status: "pending" },
+    ]);
 
     try {
-      // Step 1: Créer un groupe test
-      updateStep(0, { status: "running" });
-      const startStep1 = Date.now();
+      console.log('🧪 Appel de l\'Edge Function test-bar-assignment...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
-
-      const { data: group, error: groupError } = await supabase
-        .from('groups')
-        .insert({
-          location_name: "Test Auto-Assignment",
-          latitude: 14.6037,
-          longitude: -61.0731,
-          city_name: "Fort-de-France",
-          max_participants: 5,
-          current_participants: 0,
-          status: 'waiting',
-          created_by_user_id: user.id
-        })
-        .select()
-        .single();
-
-      if (groupError) throw groupError;
-      testGroupId = group.id;
-      
-      updateStep(0, { 
-        status: "success", 
-        duration: Date.now() - startStep1,
-        details: `Groupe créé: ${group.id}`
+      // Appeler l'Edge Function
+      const { data, error } = await supabase.functions.invoke('test-bar-assignment', {
+        body: {}
       });
 
-      // Step 2: Créer 5 utilisateurs temporaires et les ajouter comme participants
-      updateStep(1, { status: "running" });
-      const startStep2 = Date.now();
+      if (error) throw error;
 
-      const timestamp = Date.now();
-      const participants = [];
+      console.log('✅ Réponse reçue:', data);
 
-      for (let i = 0; i < 5; i++) {
-        // Créer un utilisateur temporaire
-        const { data: { user: testUser }, error: userError } = await supabase.auth.admin.createUser({
-          email: `test-${timestamp}-${i}@random-test.local`,
-          email_confirm: true,
-          user_metadata: {
-            first_name: `TestUser${i}`,
-            last_name: 'AutoTest',
-            is_test_user: true
-          },
-          password: `test-${crypto.randomUUID()}`
-        });
-
-        if (userError) throw userError;
-        if (!testUser) throw new Error("Failed to create test user");
-        
-        testUserIds.push(testUser.id);
-
-        // Ajouter le participant au groupe
-        const { error: partError } = await supabase
-          .from('group_participants')
-          .insert({
-            group_id: group.id,
-            user_id: testUser.id,
-            status: 'confirmed',
-            latitude: 14.6037 + (Math.random() - 0.5) * 0.01,
-            longitude: -61.0731 + (Math.random() - 0.5) * 0.01,
-            location_name: `Participant ${i + 1}`
-          });
-        
-        if (partError) throw partError;
-        participants.push(i + 1);
+      // Mettre à jour les steps avec les résultats
+      if (data.steps && Array.isArray(data.steps)) {
+        setSteps(data.steps.map((step: any) => ({
+          name: step.name,
+          status: step.status,
+          duration: step.duration,
+          details: step.details,
+          timestamp: new Date().toISOString()
+        })));
       }
-
-      updateStep(1, { 
-        status: "success", 
-        duration: Date.now() - startStep2,
-        details: `5 participants ajoutés`
-      });
-
-      // Step 3: Attendre confirmation automatique par le trigger
-      updateStep(2, { status: "running" });
-      const startStep3 = Date.now();
-
-      let attempts = 0;
-      let groupConfirmed = false;
-
-      while (attempts < 20 && !groupConfirmed) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const { data: updatedGroup } = await supabase
-          .from('groups')
-          .select('status')
-          .eq('id', group.id)
-          .single();
-        
-        if (updatedGroup?.status === 'confirmed') {
-          groupConfirmed = true;
-        }
-        
-        attempts++;
-      }
-
-      if (!groupConfirmed) {
-        throw new Error('Le groupe n\'a pas été confirmé automatiquement après 10 secondes');
-      }
-
-      updateStep(2, {
-        status: "success",
-        duration: Date.now() - startStep3,
-        details: "Groupe confirmé automatiquement par le trigger"
-      });
-
-      // Step 4: Vérifier que le bar a été assigné
-      updateStep(3, { status: "running" });
-      const startStep4 = Date.now();
-
-      // Attendre que le bar soit assigné (max 15 secondes)
-      let barAssigned = false;
-      let barCheckAttempts = 0;
-
-      while (barCheckAttempts < 30 && !barAssigned) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const { data: checkedGroup } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('id', group.id)
-          .single();
-        
-        if (checkedGroup?.bar_name) {
-          barAssigned = true;
-        }
-        
-        barCheckAttempts++;
-      }
-
-      const { data: updatedGroup, error: checkError } = await supabase
-        .from('groups')
-        .select('*')
-        .eq('id', group.id)
-        .single();
-
-      if (checkError) throw checkError;
-
-      updateStep(3, { 
-        status: updatedGroup.bar_name ? "success" : "error", 
-        duration: Date.now() - startStep4,
-        details: updatedGroup.bar_name ? 
-          `Bar: ${updatedGroup.bar_name}` : 
-          "Aucun bar assigné après 15 secondes"
-      });
-
-      // Step 5: Vérification finale des données
-      updateStep(4, { status: "running" });
-      const startStep5 = Date.now();
-
-      const isValid = 
-        updatedGroup.bar_name &&
-        updatedGroup.bar_address &&
-        updatedGroup.bar_latitude &&
-        updatedGroup.bar_longitude &&
-        updatedGroup.bar_place_id &&
-        updatedGroup.meeting_time;
-
-      updateStep(4, { 
-        status: isValid ? "success" : "error", 
-        duration: Date.now() - startStep5,
-        details: isValid ? "Toutes les données présentes" : "Données manquantes"
-      });
 
       setTestResult({
-        success: isValid,
-        group: updatedGroup,
-        totalDuration: steps.reduce((acc, s) => acc + (s.duration || 0), 0)
+        success: data.success,
+        group: data.barInfo,
+        totalDuration: data.totalDuration,
+        message: data.message
       });
 
     } catch (error: any) {
-      console.error("Test error:", error);
-      const currentStep = steps.findIndex(s => s.status === "running");
-      if (currentStep >= 0) {
-        updateStep(currentStep, { 
-          status: "error", 
-          details: error.message 
-        });
-      }
+      console.error("❌ Erreur test:", error);
       setTestResult({ success: false, error: error.message });
+      
+      // Marquer toutes les étapes en erreur
+      setSteps(prev => prev.map(step => ({
+        ...step,
+        status: step.status === 'pending' ? 'error' : step.status,
+        details: step.status === 'pending' ? error.message : step.details
+      })));
     } finally {
       setIsRunning(false);
-      
-      // Cleanup: supprimer les utilisateurs de test
-      for (const userId of testUserIds) {
-        try {
-          await supabase.auth.admin.deleteUser(userId);
-        } catch (err) {
-          console.warn("Failed to delete test user:", userId, err);
-        }
-      }
-      
-      // Cleanup: supprimer le groupe test
-      if (testGroupId) {
-        await supabase.from('groups').delete().eq('id', testGroupId);
-      }
     }
   };
 
@@ -336,15 +179,15 @@ export const BarAssignmentTest = () => {
                 <div className="space-y-2">
                   <p className="font-semibold text-green-800">✅ Test réussi !</p>
                   <div className="text-sm space-y-1">
-                    <p><strong>Bar:</strong> {testResult.group.bar_name}</p>
-                    <p><strong>Adresse:</strong> {testResult.group.bar_address}</p>
-                    <p><strong>Coordonnées:</strong> {testResult.group.bar_latitude?.toFixed(4)}, {testResult.group.bar_longitude?.toFixed(4)}</p>
+                    <p><strong>Bar:</strong> {testResult.group?.bar_name}</p>
+                    <p><strong>Adresse:</strong> {testResult.group?.bar_address}</p>
+                    <p><strong>Coordonnées:</strong> {testResult.group?.bar_latitude?.toFixed(4)}, {testResult.group?.bar_longitude?.toFixed(4)}</p>
                     <p><strong>Durée totale:</strong> {testResult.totalDuration}ms</p>
                   </div>
                 </div>
               ) : (
                 <p className="font-semibold text-red-800">
-                  ❌ Test échoué: {testResult.error || "Erreur inconnue"}
+                  ❌ Test échoué: {testResult.error || testResult.message || "Erreur inconnue"}
                 </p>
               )}
             </AlertDescription>
