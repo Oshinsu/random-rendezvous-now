@@ -1,7 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarAssignmentTest } from "@/components/admin/test/BarAssignmentTest";
+import { GroupLifecycleTest } from "@/components/admin/test/GroupLifecycleTest";
+import { RealtimeTest } from "@/components/admin/test/RealtimeTest";
+import { CleanupTest } from "@/components/admin/test/CleanupTest";
 import { ApiDiagnosticPanel } from "@/components/admin/ApiDiagnosticPanel";
-import { TriggerTestPanel } from "@/components/admin/TriggerTestPanel";
-import { TestTube, Zap } from "lucide-react";
+import { TestTube } from "lucide-react";
 
 export const AdminTest = () => {
   return (
@@ -9,38 +12,42 @@ export const AdminTest = () => {
       <div className="flex items-center gap-3">
         <TestTube className="h-8 w-8 text-red-700" />
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Tests & Diagnostics</h1>
+          <h1 className="text-3xl font-bold text-red-800">Tests & Diagnostics Système</h1>
           <p className="text-red-600 mt-2">
-            Outils de test pour l'assignation automatique de bars et diagnostics API
+            Suite complète de tests pour toutes les fonctions critiques de Random
           </p>
         </div>
       </div>
 
-      {/* Auto Bar Assignment Testing */}
-      <Card className="border-red-200">
-        <CardHeader className="bg-red-50">
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <Zap className="h-5 w-5" />
-            Test d'Assignation Automatique de Bar
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <TriggerTestPanel />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="bar-assignment" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="bar-assignment">Assignation Bar</TabsTrigger>
+          <TabsTrigger value="lifecycle">Cycle de Vie</TabsTrigger>
+          <TabsTrigger value="realtime">Realtime</TabsTrigger>
+          <TabsTrigger value="cleanup">Cleanup</TabsTrigger>
+          <TabsTrigger value="api">Diagnostic API</TabsTrigger>
+        </TabsList>
 
-      {/* API Diagnostics */}
-      <Card className="border-red-200">
-        <CardHeader className="bg-red-50">
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <TestTube className="h-5 w-5" />
-            Diagnostic API Google Places
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
+        <TabsContent value="bar-assignment" className="space-y-4">
+          <BarAssignmentTest />
+        </TabsContent>
+
+        <TabsContent value="lifecycle" className="space-y-4">
+          <GroupLifecycleTest />
+        </TabsContent>
+
+        <TabsContent value="realtime" className="space-y-4">
+          <RealtimeTest />
+        </TabsContent>
+
+        <TabsContent value="cleanup" className="space-y-4">
+          <CleanupTest />
+        </TabsContent>
+
+        <TabsContent value="api" className="space-y-4">
           <ApiDiagnosticPanel />
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
