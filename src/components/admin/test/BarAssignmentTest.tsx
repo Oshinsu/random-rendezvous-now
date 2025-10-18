@@ -20,11 +20,9 @@ export const BarAssignmentTest = () => {
   const [steps, setSteps] = useState<TestStep[]>([
     { name: "Création du groupe test", status: "pending" },
     { name: "Ajout de 5 participants", status: "pending" },
-    { name: "Trigger auto-assignment", status: "pending" },
-    { name: "Appel Google Places API", status: "pending" },
-    { name: "Mise à jour coordonnées bar", status: "pending" },
-    { name: "Propagation Realtime", status: "pending" },
-    { name: "Vérification données", status: "pending" },
+    { name: "Confirmation automatique", status: "pending" },
+    { name: "Vérification bar assigné", status: "pending" },
+    { name: "Vérification données complètes", status: "pending" },
   ]);
   const [testResult, setTestResult] = useState<any>(null);
 
@@ -113,56 +111,68 @@ export const BarAssignmentTest = () => {
         participants.push(i + 1);
       }
 
-      // Update group count
-      const { error: updateError } = await supabase
-        .from('groups')
-        .update({ 
-          current_participants: 5,
-          status: 'confirmed'
-        })
-        .eq('id', group.id);
-
-      if (updateError) throw updateError;
-
       updateStep(1, { 
         status: "success", 
         duration: Date.now() - startStep2,
         details: `5 participants ajoutés`
       });
 
-      // Step 3: Trigger auto-assignment
+      // Step 3: Attendre confirmation automatique par le trigger
       updateStep(2, { status: "running" });
       const startStep3 = Date.now();
 
+      let attempts = 0;
+      let groupConfirmed = false;
+
+      while (attempts < 20 && !groupConfirmed) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: updatedGroup } = await supabase
+          .from('groups')
+          .select('status')
+          .eq('id', group.id)
+          .single();
+        
+        if (updatedGroup?.status === 'confirmed') {
+          groupConfirmed = true;
+        }
+        
+        attempts++;
+      }
+
+      if (!groupConfirmed) {
+        throw new Error('Le groupe n\'a pas été confirmé automatiquement après 10 secondes');
+      }
+
+      updateStep(2, {
+        status: "success",
+        duration: Date.now() - startStep3,
+        details: "Groupe confirmé automatiquement par le trigger"
+      });
+
+      // Step 4: Vérifier que le bar a été assigné
       updateStep(3, { status: "running" });
       const startStep4 = Date.now();
 
-      const { data: assignData, error: assignError } = await supabase.functions.invoke(
-        'simple-auto-assign-bar',
-        {
-          body: { group_id: group.id }
+      // Attendre que le bar soit assigné (max 15 secondes)
+      let barAssigned = false;
+      let barCheckAttempts = 0;
+
+      while (barCheckAttempts < 30 && !barAssigned) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: checkedGroup } = await supabase
+          .from('groups')
+          .select('*')
+          .eq('id', group.id)
+          .single();
+        
+        if (checkedGroup?.bar_name) {
+          barAssigned = true;
         }
-      );
-
-      if (assignError) throw assignError;
-
-      updateStep(2, { 
-        status: "success", 
-        duration: Date.now() - startStep3,
-        details: "Edge function appelée"
-      });
-
-      updateStep(3, { 
-        status: "success", 
-        duration: Date.now() - startStep4,
-        details: `API: ${assignData?.bar?.name || 'Bar trouvé'}`
-      });
-
-      // Step 4: Vérifier mise à jour
-      updateStep(4, { status: "running" });
-      const startStep5 = Date.now();
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        barCheckAttempts++;
+      }
 
       const { data: updatedGroup, error: checkError } = await supabase
         .from('groups')
@@ -172,24 +182,17 @@ export const BarAssignmentTest = () => {
 
       if (checkError) throw checkError;
 
-      updateStep(4, { 
+      updateStep(3, { 
         status: updatedGroup.bar_name ? "success" : "error", 
-        duration: Date.now() - startStep5,
+        duration: Date.now() - startStep4,
         details: updatedGroup.bar_name ? 
           `Bar: ${updatedGroup.bar_name}` : 
-          "Aucun bar assigné"
+          "Aucun bar assigné après 15 secondes"
       });
 
-      // Step 5: Propagation Realtime
-      updateStep(5, { 
-        status: "success", 
-        duration: 500,
-        details: "Realtime vérifié"
-      });
-
-      // Step 6: Vérification finale
-      updateStep(6, { status: "running" });
-      const startStep7 = Date.now();
+      // Step 5: Vérification finale des données
+      updateStep(4, { status: "running" });
+      const startStep5 = Date.now();
 
       const isValid = 
         updatedGroup.bar_name &&
@@ -199,9 +202,9 @@ export const BarAssignmentTest = () => {
         updatedGroup.bar_place_id &&
         updatedGroup.meeting_time;
 
-      updateStep(6, { 
+      updateStep(4, { 
         status: isValid ? "success" : "error", 
-        duration: Date.now() - startStep7,
+        duration: Date.now() - startStep5,
         details: isValid ? "Toutes les données présentes" : "Données manquantes"
       });
 
