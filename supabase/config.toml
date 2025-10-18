@@ -127,3 +127,6 @@ verify_jwt = false
 [functions.test-auto-bar-assignment]
 verify_jwt = false
 
+[functions.create-test-scenario]
+verify_jwt = false
+

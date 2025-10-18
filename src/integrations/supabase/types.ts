@@ -1002,6 +1002,7 @@ export type Database = {
           current_participants: number
           id: string
           is_scheduled: boolean | null
+          is_test_group: boolean | null
           latitude: number | null
           location_name: string | null
           longitude: number | null
@@ -1028,6 +1029,7 @@ export type Database = {
           current_participants?: number
           id?: string
           is_scheduled?: boolean | null
+          is_test_group?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null
@@ -1054,6 +1056,7 @@ export type Database = {
           current_participants?: number
           id?: string
           is_scheduled?: boolean | null
+          is_test_group?: boolean | null
           latitude?: number | null
           location_name?: string | null
           longitude?: number | null

@@ -5,6 +5,7 @@ import { RealtimeTest } from "@/components/admin/test/RealtimeTest";
 import { CleanupTest } from "@/components/admin/test/CleanupTest";
 import { AuthenticationTest } from "@/components/admin/test/AuthenticationTest";
 import { ChatSystemTest } from "@/components/admin/test/ChatSystemTest";
+import { AdvancedTestPanel } from "@/components/admin/test/AdvancedTestPanel";
 import { ApiDiagnosticPanel } from "@/components/admin/ApiDiagnosticPanel";
 import { TestTube } from "lucide-react";
 
@@ -21,8 +22,9 @@ export const AdminTest = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="bar-assignment" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7 gap-1">
+      <Tabs defaultValue="advanced" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-8 gap-1">
+          <TabsTrigger value="advanced">Test Avancé</TabsTrigger>
           <TabsTrigger value="bar-assignment">Bar</TabsTrigger>
           <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
           <TabsTrigger value="realtime">Realtime</TabsTrigger>
@@ -31,6 +33,10 @@ export const AdminTest = () => {
           <TabsTrigger value="cleanup">Cleanup</TabsTrigger>
           <TabsTrigger value="api">API</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="advanced" className="space-y-4">
+          <AdvancedTestPanel />
+        </TabsContent>
 
         <TabsContent value="bar-assignment" className="space-y-4">
           <BarAssignmentTest />
