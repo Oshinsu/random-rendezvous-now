@@ -1,5 +1,4 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarAssignmentTest } from "@/components/admin/test/BarAssignmentTest";
 import { GroupLifecycleTest } from "@/components/admin/test/GroupLifecycleTest";
 import { RealtimeTest } from "@/components/admin/test/RealtimeTest";
 import { CleanupTest } from "@/components/admin/test/CleanupTest";
@@ -23,9 +22,8 @@ export const AdminTest = () => {
       </div>
 
       <Tabs defaultValue="advanced" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8 gap-1">
+        <TabsList className="grid w-full grid-cols-7 gap-1">
           <TabsTrigger value="advanced">Test Avancé</TabsTrigger>
-          <TabsTrigger value="bar-assignment">Bar</TabsTrigger>
           <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
           <TabsTrigger value="realtime">Realtime</TabsTrigger>
           <TabsTrigger value="chat">Chat</TabsTrigger>
@@ -36,10 +34,6 @@ export const AdminTest = () => {
 
         <TabsContent value="advanced" className="space-y-4">
           <AdvancedTestPanel />
-        </TabsContent>
-
-        <TabsContent value="bar-assignment" className="space-y-4">
-          <BarAssignmentTest />
         </TabsContent>
 
         <TabsContent value="lifecycle" className="space-y-4">
