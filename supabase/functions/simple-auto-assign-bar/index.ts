@@ -369,8 +369,13 @@ serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+  let group_id: string | undefined;
+  
   try {
-    const { group_id, latitude, longitude } = await req.json()
+    const body = await req.json();
+    group_id = body.group_id;
+    const latitude = body.latitude;
+    const longitude = body.longitude;
 
     if (!group_id) {
       return new Response(
@@ -652,7 +657,7 @@ serve(async (req) => {
     const meetingTime = new Date();
     meetingTime.setHours(meetingTime.getHours() + 1); // RDV dans 1h
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from('groups')
       .update({
         bar_name: result.bar.name,
@@ -673,7 +678,7 @@ serve(async (req) => {
     console.log('✅ [UPDATE DB] Groupe mis à jour avec succès');
 
     // Message système dans le chat du groupe
-    const { error: messageError } = await supabaseAdmin
+    const { error: messageError } = await supabase
       .from('group_messages')
       .insert({
         group_id: group_id,
