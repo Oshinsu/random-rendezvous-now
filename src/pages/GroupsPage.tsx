@@ -15,6 +15,7 @@ import NoActiveGroupMessage from '@/components/groups/NoActiveGroupMessage';
 import GroupDetails from '@/components/groups/GroupDetails';
 import GroupMudra from '@/components/groups/GroupMudra';
 import LoadingState from '@/components/groups/LoadingState';
+import { BarSearchLoadingCard } from '@/components/groups/BarSearchLoadingCard';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 // Lazy-load heavy map component to improve initial load
@@ -127,23 +128,7 @@ const GroupsPage = () => {
                   </div>
 
                   <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
-                    {needsBarAssignment && (
-                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
-                        <div className="text-center">
-                          <h3 className="text-sm sm:text-base font-heading font-semibold text-amber-800 mb-2">
-                            🍺 Recherche de destination
-                          </h3>
-                          <p className="text-xs sm:text-sm text-amber-700 mb-3 sm:mb-4 leading-relaxed">
-                            Votre groupe est complet ! Trouvons le bar parfait pour votre aventure.
-                          </p>
-                          <BarAssignmentButton
-                            groupId={currentGroup.id}
-                            onBarAssigned={handleRefresh}
-                            userLocation={userLocation}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    {needsBarAssignment && <BarSearchLoadingCard />}
 
                     {canShowMap && (
                       <Suspense
