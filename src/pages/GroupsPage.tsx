@@ -79,7 +79,7 @@ const GroupsPage = () => {
 
   const isGroupComplete = currentGroup?.current_participants >= 5;
   const needsBarAssignment = isGroupComplete && currentGroup?.status === 'confirmed' && !currentGroup?.bar_name;
-  const canShowMap = isGroupComplete;
+  const canShowMap = isGroupComplete && currentGroup?.bar_name && currentGroup?.bar_latitude && currentGroup?.bar_longitude;
   const shouldShowMudra = isGroupComplete && currentGroup?.bar_name;
 
   const getBarAddress = () => {

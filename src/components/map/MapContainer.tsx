@@ -21,11 +21,18 @@ const MapContainer = ({
   const lastCoordinatesRef = useRef<{ lat?: number; lng?: number }>({});
   const { track } = useAnalytics();
 
-  // Coordonnées par défaut pour Paris si les coordonnées du bar ne sont pas disponibles
-  const defaultLat = 48.8566;
-  const defaultLng = 2.3522;
-  const mapLat = barLatitude || defaultLat;
-  const mapLng = barLongitude || defaultLng;
+  // Ne devrait JAMAIS être appelé sans coordonnées valides (vérifié dans GroupsPage)
+  if (!barLatitude || !barLongitude) {
+    console.error('❌ MapContainer appelé sans coordonnées valides');
+    return (
+      <div className="w-full h-64 bg-red-50 flex items-center justify-center text-red-600 rounded-lg">
+        Erreur : coordonnées du bar manquantes
+      </div>
+    );
+  }
+
+  const mapLat = barLatitude;
+  const mapLng = barLongitude;
 
   console.log('🗺️ [MapContainer] Props reçues:', {
     barName,
