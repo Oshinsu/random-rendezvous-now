@@ -657,6 +657,15 @@ serve(async (req) => {
     const meetingTime = new Date();
     meetingTime.setHours(meetingTime.getHours() + 1); // RDV dans 1h
 
+    // Format identique à celui utilisé dans l'app (formatMeetingTime)
+    const formattedMeetingTime = meetingTime.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
     const { error: updateError } = await supabase
       .from('groups')
       .update({
@@ -677,13 +686,13 @@ serve(async (req) => {
 
     console.log('✅ [UPDATE DB] Groupe mis à jour avec succès');
 
-    // Message système dans le chat du groupe
+    // Message système dans le chat du groupe avec format identique à l'app
     const { error: messageError } = await supabase
       .from('group_messages')
       .insert({
         group_id: group_id,
         user_id: '00000000-0000-0000-0000-000000000000', // Système
-        message: `🎉 Bar assigné ! Rendez-vous au ${result.bar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        message: `🍹 Rendez-vous au ${result.bar.name}\n📅 ${formattedMeetingTime}`,
         is_system: true
       });
 
