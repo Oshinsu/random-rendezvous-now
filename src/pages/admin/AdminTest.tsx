@@ -3,6 +3,8 @@ import { BarAssignmentTest } from "@/components/admin/test/BarAssignmentTest";
 import { GroupLifecycleTest } from "@/components/admin/test/GroupLifecycleTest";
 import { RealtimeTest } from "@/components/admin/test/RealtimeTest";
 import { CleanupTest } from "@/components/admin/test/CleanupTest";
+import { AuthenticationTest } from "@/components/admin/test/AuthenticationTest";
+import { ChatSystemTest } from "@/components/admin/test/ChatSystemTest";
 import { ApiDiagnosticPanel } from "@/components/admin/ApiDiagnosticPanel";
 import { TestTube } from "lucide-react";
 
@@ -20,12 +22,14 @@ export const AdminTest = () => {
       </div>
 
       <Tabs defaultValue="bar-assignment" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="bar-assignment">Assignation Bar</TabsTrigger>
-          <TabsTrigger value="lifecycle">Cycle de Vie</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-7 gap-1">
+          <TabsTrigger value="bar-assignment">Bar</TabsTrigger>
+          <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
           <TabsTrigger value="realtime">Realtime</TabsTrigger>
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="auth">Auth</TabsTrigger>
           <TabsTrigger value="cleanup">Cleanup</TabsTrigger>
-          <TabsTrigger value="api">Diagnostic API</TabsTrigger>
+          <TabsTrigger value="api">API</TabsTrigger>
         </TabsList>
 
         <TabsContent value="bar-assignment" className="space-y-4">
@@ -38,6 +42,14 @@ export const AdminTest = () => {
 
         <TabsContent value="realtime" className="space-y-4">
           <RealtimeTest />
+        </TabsContent>
+
+        <TabsContent value="chat" className="space-y-4">
+          <ChatSystemTest />
+        </TabsContent>
+
+        <TabsContent value="auth" className="space-y-4">
+          <AuthenticationTest />
         </TabsContent>
 
         <TabsContent value="cleanup" className="space-y-4">
