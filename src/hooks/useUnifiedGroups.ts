@@ -239,8 +239,27 @@ export const useUnifiedGroups = () => {
         (payload) => {
           console.log('🔄 [REALTIME] Groupe modifié:', payload);
           
-          // ✅ Mise à jour INSTANTANÉE du cache (synchrone)
           if (payload.eventType === 'UPDATE' && payload.new) {
+            // ✅ Récupérer l'ancien état pour comparaison
+            const oldGroups = queryClient.getQueryData<Group[]>(['unifiedUserGroups', user.id]);
+            const oldGroup = oldGroups?.find(g => g.id === activeGroupId);
+            const newGroup = payload.new;
+            
+            // ✅ Détection de l'assignation de bar
+            if (!oldGroup?.bar_name && newGroup.bar_name) {
+              console.log('🎉 [REALTIME] Bar assigné:', newGroup.bar_name);
+              
+              // ✅ DISPATCH de l'event custom
+              window.dispatchEvent(new CustomEvent('group:bar-assigned', {
+                detail: {
+                  barName: newGroup.bar_name,
+                  barAddress: newGroup.bar_address,
+                  meetingTime: newGroup.meeting_time
+                }
+              }));
+            }
+            
+            // ✅ Mise à jour INSTANTANÉE du cache (synchrone)
             queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
               if (!oldData) return oldData;
               return oldData.map(group => 
@@ -249,6 +268,9 @@ export const useUnifiedGroups = () => {
                   : group
               );
             });
+            
+            // ✅ Invalider le cache pour forcer re-render
+            queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups', user.id] });
           } else if (payload.eventType === 'DELETE') {
             queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
               if (!oldData) return oldData;

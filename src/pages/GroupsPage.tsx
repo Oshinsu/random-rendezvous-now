@@ -1,6 +1,7 @@
 
 import { useEffect, lazy, Suspense } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
+import { toast } from '@/hooks/use-toast';
 
 // Nettoyage géré automatiquement par cleanup-groups edge function
 import AppLayout from '@/components/AppLayout';
@@ -41,7 +42,15 @@ const GroupsPage = () => {
   // 🎯 Écouter les events de bar assignment et refetch automatiquement
   useEffect(() => {
     const handleBarAssigned = (event: CustomEvent) => {
-      console.log('🍺 Bar assigné détecté dans GroupsPage, refetch des groupes');
+      console.log('🍺 Bar assigné détecté dans GroupsPage');
+      
+      // ✅ Toast notification
+      toast({
+        title: "🎉 Bar assigné !",
+        description: `Rendez-vous au ${event.detail.barName}`,
+        duration: 5000,
+      });
+      
       refetchGroups();
     };
 
