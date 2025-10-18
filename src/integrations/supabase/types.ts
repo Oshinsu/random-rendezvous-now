@@ -1011,6 +1011,7 @@ export type Database = {
           scheduled_for: string | null
           search_radius: number | null
           status: string
+          updated_at: string
         }
         Insert: {
           bar_address?: string | null
@@ -1036,6 +1037,7 @@ export type Database = {
           scheduled_for?: string | null
           search_radius?: number | null
           status?: string
+          updated_at?: string
         }
         Update: {
           bar_address?: string | null
@@ -1061,6 +1063,7 @@ export type Database = {
           scheduled_for?: string | null
           search_radius?: number | null
           status?: string
+          updated_at?: string
         }
         Relationships: []
       }
