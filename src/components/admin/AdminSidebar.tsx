@@ -13,7 +13,8 @@ import {
   Edit3,
   Building,
   Target,
-  Newspaper
+  Newspaper,
+  TestTube
 } from "lucide-react";
 
 import {
@@ -40,6 +41,7 @@ const adminItems = [
   { title: "Activité", url: "/admin/activity", icon: Activity },
   { title: "Logs", url: "/admin/logs", icon: FileText },
   { title: "Analytics API", url: "/admin/api", icon: Globe },
+  { title: "Tests & Diagnostics", url: "/admin/test", icon: TestTube },
   { title: "Paramètres", url: "/admin/settings", icon: Settings },
 ];
 
