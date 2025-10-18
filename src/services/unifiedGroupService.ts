@@ -386,6 +386,11 @@ export class UnifiedGroupService {
       // L'attribution automatique de bar est maintenant gérée par le trigger PostgreSQL
       // trigger_auto_bar_assignment qui se déclenche quand un groupe atteint 3+ participants
 
+      // 💬 Envoyer un message système de bienvenue (en arrière-plan)
+      SystemMessagingService.createJoinMessage(groupId).catch(error => {
+        console.error('⚠️ Erreur envoi message join:', error);
+      });
+
       toast({
         title: '✅ Groupe rejoint',
         description: 'Vous avez rejoint le groupe avec succès !',
@@ -428,6 +433,11 @@ export class UnifiedGroupService {
       }
 
       console.log('✅ Groupe quitté avec succès');
+      
+      // 💬 Envoyer un message système de départ (en arrière-plan)
+      SystemMessagingService.createLeaveMessage(groupId).catch(error => {
+        console.error('⚠️ Erreur envoi message leave:', error);
+      });
       
       toast({
         title: '👋 Groupe quitté',

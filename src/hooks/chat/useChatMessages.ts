@@ -55,7 +55,16 @@ export const useChatMessages = (groupId: string) => {
         }
 
         // Filtrage strict pour s'assurer qu'on n'a que les messages du bon groupe
-        const strictMessages = data.filter(msg => msg.group_id === groupId);
+        // + Filtrer les messages techniques qui ne doivent pas être affichés
+        const strictMessages = data
+          .filter(msg => msg.group_id === groupId)
+          .filter(msg => {
+            // Filtrer les messages techniques de trigger
+            if (msg.is_system && msg.message.includes('AUTO_BAR_ASSIGNMENT_TRIGGER')) {
+              return false;
+            }
+            return true;
+          });
 
         // Si aucun message et que c'est un nouveau groupe, créer le message de bienvenue
         if (strictMessages.length === 0) {

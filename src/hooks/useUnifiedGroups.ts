@@ -204,6 +204,22 @@ export const useUnifiedGroups = () => {
                   : group
               );
             });
+            
+            // 🎯 OPTIMISTIC UI: Ajouter immédiatement un membre temporaire
+            setGroupMembers(prevMembers => {
+              const nextMemberNumber = prevMembers.length + 1;
+              const tempMember: GroupMember = {
+                id: `temp-${Date.now()}`,
+                name: `Aventurier ${nextMemberNumber}`,
+                isConnected: true,
+                joinedAt: new Date().toISOString(),
+                status: 'confirmed',
+                lastSeen: new Date().toISOString()
+              };
+              console.log('⚡ [OPTIMISTIC UI] Ajout immédiat du membre temporaire:', tempMember.name);
+              return [...prevMembers, tempMember];
+            });
+            
             window.dispatchEvent(new CustomEvent('group:member-joined'));
             showUniqueToast('Un nouveau membre a rejoint le groupe !', '✨ Nouveau membre');
           } else if (payload.eventType === 'DELETE') {
@@ -217,9 +233,10 @@ export const useUnifiedGroups = () => {
             });
           }
           
-          // ✅ Refetch membres en ARRIÈRE-PLAN (sans bloquer UI)
+          // ✅ Refetch membres en ARRIÈRE-PLAN (mettra à jour avec vraies données)
           UnifiedGroupService.getGroupMembers(activeGroupId)
             .then(members => {
+              console.log('✅ [REALTIME] Membres réels récupérés, remplacement de l\'optimistic UI');
               setGroupMembers(members);
             })
             .catch(error => {
