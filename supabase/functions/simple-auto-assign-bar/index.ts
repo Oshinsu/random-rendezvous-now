@@ -108,7 +108,10 @@ const verifyBarBusinessStatus = async (placeId: string, apiKey: string, groupId?
 // Liste noire manuelle des bars à exclure
 const MANUAL_BLACKLIST = [
   'ti plage',
-  // Ajouter d'autres bars problématiques ici
+  'la gare',
+  'le gore',
+  'gore',
+  // Bars bizarres/inappropriés pour Random
 ];
 
 // Fonction AMÉLIORÉE de filtrage intelligent contre les lieux non désirés
@@ -478,11 +481,10 @@ serve(async (req) => {
         
         if (isIdfUser) {
           // ⚠️ SYNCHRONISATION REQUISE avec src/utils/parisRedirection.ts
-          // Ces 8 zones DOIVENT correspondre à PARIS_STRATEGIC_ZONES
-          // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 8 zones Paris intra-muros
+          // Ces 7 zones DOIVENT correspondre à PARIS_STRATEGIC_ZONES
+          // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 7 zones Paris intra-muros
           const parisZones = [
             { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
-            { latitude: 48.8566, longitude: 2.3639, locationName: 'Paris - Marais' },
             { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
             { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
             { latitude: 48.8823, longitude: 2.3367, locationName: 'Paris - Pigalle' },
