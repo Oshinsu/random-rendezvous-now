@@ -10,16 +10,36 @@ import { CoordinateValidator } from './coordinateValidation';
  * pour garantir une redirection précise de TOUS les utilisateurs IDF.
  */
 
-// Coordonnées de Paris Centre (Place du Châtelet)
-export const PARIS_CENTRE_COORDINATES = {
-  latitude: 48.8566,
-  longitude: 2.3522,
-  locationName: 'Paris Centre'
-} as const;
+// 8 zones stratégiques de Paris intra-muros pour diversifier les recherches
+export const PARIS_STRATEGIC_ZONES = [
+  { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
+  { latitude: 48.8566, longitude: 2.3639, locationName: 'Paris - Marais' },
+  { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
+  { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
+  { latitude: 48.8823, longitude: 2.3367, locationName: 'Paris - Pigalle' },
+  { latitude: 48.8676, longitude: 2.3635, locationName: 'Paris - République' },
+  { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' },
+  { latitude: 48.8698, longitude: 2.3075, locationName: 'Paris - Champs-Élysées' }
+] as const;
+
+// Fallback vers Châtelet si besoin
+export const PARIS_CENTRE_FALLBACK = PARIS_STRATEGIC_ZONES[0];
+
+/**
+ * Sélectionne une zone stratégique aléatoire parmi les 8 zones Paris intra-muros
+ */
+function selectRandomParisZone(): LocationData {
+  const randomIndex = Math.floor(Math.random() * PARIS_STRATEGIC_ZONES.length);
+  const selectedZone = PARIS_STRATEGIC_ZONES[randomIndex];
+  
+  console.log(`🎲 [DIVERSIFICATION] Zone Paris sélectionnée (${randomIndex + 1}/8):`, selectedZone.locationName);
+  
+  return selectedZone;
+}
 
 /**
  * Retourne la location pour créer/rechercher un groupe
- * - Si utilisateur IDF : Paris Centre (force la compatibilité)
+ * - Si utilisateur IDF : Zone aléatoire parmi 8 zones Paris intra-muros
  * - Si utilisateur hors IDF : location originale
  */
 export function getGroupLocation(userLocation: LocationData): LocationData {
@@ -40,9 +60,10 @@ export function getGroupLocation(userLocation: LocationData): LocationData {
   );
   
   if (isIdfUser) {
-    console.log('🗺️ [PARIS REDIRECTION] Utilisateur IDF détecté → Redirection vers Paris Centre');
-    console.log('🗺️ [PARIS REDIRECTION] Redirection:', userLocation.locationName, '→ Paris Centre');
-    return PARIS_CENTRE_COORDINATES;
+    const selectedZone = selectRandomParisZone();
+    console.log('🗺️ [PARIS REDIRECTION] Utilisateur IDF détecté → Redirection vers zone Paris');
+    console.log('🗺️ [PARIS REDIRECTION] Redirection:', userLocation.locationName, '→', selectedZone.locationName);
+    return selectedZone;
   }
   
   console.log('📍 [PARIS REDIRECTION] Utilisateur hors IDF → Location originale conservée (avec sanitisation)');
@@ -55,8 +76,8 @@ export function getGroupLocation(userLocation: LocationData): LocationData {
   
   if (!validationResult.isValid || !validationResult.sanitized) {
     console.error('🚨 [PARIS REDIRECTION] Coordonnées invalides:', validationResult.error);
-    // Fallback vers Paris Centre si coordonnées invalides
-    return PARIS_CENTRE_COORDINATES;
+    // Fallback vers Paris Châtelet si coordonnées invalides
+    return PARIS_CENTRE_FALLBACK;
   }
   
   const sanitizedLocation: LocationData = {

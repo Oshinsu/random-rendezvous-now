@@ -477,11 +477,26 @@ serve(async (req) => {
         detectionMethod = postalTest ? 'postal_code' : keywordTest ? 'keyword' : 'none';
         
         if (isIdfUser) {
-          // Rediriger la recherche vers le centre de Paris
-          finalLatitude = 48.8566;  // Centre de Paris (Place du Châtelet)
-          finalLongitude = 2.3522;
+          // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 8 zones Paris intra-muros
+          const parisZones = [
+            { lat: 48.8606, lng: 2.3475, name: 'Châtelet' },
+            { lat: 48.8566, lng: 2.3639, name: 'Marais' },
+            { lat: 48.8534, lng: 2.3330, name: 'Saint-Germain' },
+            { lat: 48.8421, lng: 2.3219, name: 'Montparnasse' },
+            { lat: 48.8823, lng: 2.3367, name: 'Pigalle' },
+            { lat: 48.8676, lng: 2.3635, name: 'République' },
+            { lat: 48.8532, lng: 2.3697, name: 'Bastille' },
+            { lat: 48.8698, lng: 2.3075, name: 'Champs-Élysées' }
+          ];
+          
+          const selectedZone = parisZones[Math.floor(Math.random() * parisZones.length)];
+          
+          finalLatitude = selectedZone.lat;
+          finalLongitude = selectedZone.lng;
+          
           console.log('🗼 [REDIRECTION PARIS] ✅ Utilisateur IDF détecté - recherche redirigée vers Paris intra-muros');
           console.log(`📍 [REDIRECTION PARIS] Coordonnées originales: ${searchLatitude}, ${searchLongitude}`);
+          console.log(`🎲 [DIVERSIFICATION] Zone Paris sélectionnée: ${selectedZone.name}`);
           console.log(`🎯 [REDIRECTION PARIS] Nouvelles coordonnées: ${finalLatitude}, ${finalLongitude}`);
           console.log(`🔍 [REDIRECTION PARIS] Méthode de détection: ${detectionMethod}`);
         } else {
