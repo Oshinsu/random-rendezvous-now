@@ -10,12 +10,11 @@ import { CoordinateValidator } from './coordinateValidation';
  * pour garantir une redirection précise de TOUS les utilisateurs IDF.
  */
 
-// 7 zones stratégiques de Paris intra-muros pour diversifier les recherches
+// 6 zones stratégiques de Paris intra-muros pour diversifier les recherches
 export const PARIS_STRATEGIC_ZONES = [
   { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
   { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
   { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
-  { latitude: 48.8823, longitude: 2.3367, locationName: 'Paris - Pigalle' },
   { latitude: 48.8676, longitude: 2.3635, locationName: 'Paris - République' },
   { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' },
   { latitude: 48.8698, longitude: 2.3075, locationName: 'Paris - Champs-Élysées' }
@@ -25,20 +24,20 @@ export const PARIS_STRATEGIC_ZONES = [
 export const PARIS_CENTRE_FALLBACK = PARIS_STRATEGIC_ZONES[0];
 
 /**
- * Sélectionne une zone stratégique aléatoire parmi les 7 zones Paris intra-muros
+ * Sélectionne une zone stratégique aléatoire parmi les 6 zones Paris intra-muros
  */
 function selectRandomParisZone(): LocationData {
   const randomIndex = Math.floor(Math.random() * PARIS_STRATEGIC_ZONES.length);
   const selectedZone = PARIS_STRATEGIC_ZONES[randomIndex];
   
-  console.log(`🎲 [DIVERSIFICATION] Zone Paris sélectionnée (${randomIndex + 1}/7):`, selectedZone.locationName);
+  console.log(`🎲 [DIVERSIFICATION] Zone Paris sélectionnée (${randomIndex + 1}/6):`, selectedZone.locationName);
   
   return selectedZone;
 }
 
 /**
  * Retourne la location pour créer/rechercher un groupe
- * - Si utilisateur IDF : Zone aléatoire parmi 7 zones Paris intra-muros
+ * - Si utilisateur IDF : Zone aléatoire parmi 6 zones Paris intra-muros
  * - Si utilisateur hors IDF : location originale
  */
 export function getGroupLocation(userLocation: LocationData): LocationData {

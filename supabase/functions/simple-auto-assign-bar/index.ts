@@ -481,13 +481,12 @@ serve(async (req) => {
         
         if (isIdfUser) {
           // ⚠️ SYNCHRONISATION REQUISE avec src/utils/parisRedirection.ts
-          // Ces 7 zones DOIVENT correspondre à PARIS_STRATEGIC_ZONES
-          // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 7 zones Paris intra-muros
+          // Ces 6 zones DOIVENT correspondre à PARIS_STRATEGIC_ZONES
+          // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 6 zones Paris intra-muros
           const parisZones = [
             { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
             { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
             { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
-            { latitude: 48.8823, longitude: 2.3367, locationName: 'Paris - Pigalle' },
             { latitude: 48.8676, longitude: 2.3635, locationName: 'Paris - République' },
             { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' },
             { latitude: 48.8698, longitude: 2.3075, locationName: 'Paris - Champs-Élysées' }
