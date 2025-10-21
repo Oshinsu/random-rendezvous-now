@@ -483,13 +483,14 @@ serve(async (req) => {
           // ⚠️ SYNCHRONISATION REQUISE avec src/utils/parisRedirection.ts
           // Ces 6 zones DOIVENT correspondre à PARIS_STRATEGIC_ZONES
           // 🎲 DIVERSIFICATION PARIS: Sélectionner une zone aléatoire parmi 6 zones Paris intra-muros
+          // Zones optimisées pour les jeunes 20-35 ans, prix abordables (4-7€/pinte)
           const parisZones = [
             { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
-            { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
+            { latitude: 48.8646, longitude: 2.3733, locationName: 'Paris - Oberkampf' },
+            { latitude: 48.8719, longitude: 2.3658, locationName: 'Paris - Canal Saint-Martin' },
             { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
             { latitude: 48.8676, longitude: 2.3635, locationName: 'Paris - République' },
-            { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' },
-            { latitude: 48.8698, longitude: 2.3075, locationName: 'Paris - Champs-Élysées' }
+            { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' }
           ];
           
           const selectedZone = parisZones[Math.floor(Math.random() * parisZones.length)];

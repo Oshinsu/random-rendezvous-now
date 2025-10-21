@@ -11,13 +11,14 @@ import { CoordinateValidator } from './coordinateValidation';
  */
 
 // 6 zones stratégiques de Paris intra-muros pour diversifier les recherches
+// Zones optimisées pour les jeunes 20-35 ans, prix abordables (4-7€/pinte)
 export const PARIS_STRATEGIC_ZONES = [
   { latitude: 48.8606, longitude: 2.3475, locationName: 'Paris - Châtelet' },
-  { latitude: 48.8534, longitude: 2.3330, locationName: 'Paris - Saint-Germain' },
+  { latitude: 48.8646, longitude: 2.3733, locationName: 'Paris - Oberkampf' },
+  { latitude: 48.8719, longitude: 2.3658, locationName: 'Paris - Canal Saint-Martin' },
   { latitude: 48.8421, longitude: 2.3219, locationName: 'Paris - Montparnasse' },
   { latitude: 48.8676, longitude: 2.3635, locationName: 'Paris - République' },
-  { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' },
-  { latitude: 48.8698, longitude: 2.3075, locationName: 'Paris - Champs-Élysées' }
+  { latitude: 48.8532, longitude: 2.3697, locationName: 'Paris - Bastille' }
 ] as const;
 
 // Fallback vers Châtelet si besoin
