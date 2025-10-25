@@ -14,7 +14,8 @@ import {
   Building,
   Target,
   Newspaper,
-  TestTube
+  TestTube,
+  Bot
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ import {
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3, exact: true },
+  { title: "Chatbot Analytics", url: "/admin/chatbot", icon: Bot },
   { title: "CRM B2C", url: "/admin/crm", icon: Target },
   { title: "Blog SEO", url: "/admin/blog-seo", icon: Newspaper },
   { title: "Utilisateurs", url: "/admin/users", icon: Users },

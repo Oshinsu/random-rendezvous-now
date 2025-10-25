@@ -32,6 +32,7 @@ import { AdminLogs } from "./pages/admin/AdminLogs";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import AdminCRM from "./pages/admin/AdminCRM";
+import AdminChatbot from "./pages/admin/AdminChatbot";
 import ReferralPage from "./pages/ReferralPage";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
@@ -265,6 +266,13 @@ const AppRoutes = () => (
           <AdminLayout>
             <AdminBlogSEO />
           </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/chatbot" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminChatbot />
         </AdminRoute>
       </ProtectedRoute>
     } />
