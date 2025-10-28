@@ -544,6 +544,92 @@ export type Database = {
           },
         ]
       }
+      crm_campaign_sequence_steps: {
+        Row: {
+          campaign_id: string | null
+          condition: Json | null
+          created_at: string
+          delay_hours: number
+          id: string
+          sequence_id: string
+          step_order: number
+        }
+        Insert: {
+          campaign_id?: string | null
+          condition?: Json | null
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          sequence_id: string
+          step_order: number
+        }
+        Update: {
+          campaign_id?: string | null
+          condition?: Json | null
+          created_at?: string
+          delay_hours?: number
+          id?: string
+          sequence_id?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_campaign_sequence_steps_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_campaign_sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaign_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_campaign_sequences: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          sequence_name: string
+          target_segment_id: string | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sequence_name: string
+          target_segment_id?: string | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sequence_name?: string
+          target_segment_id?: string | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_campaign_sequences_target_segment_id_fkey"
+            columns: ["target_segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_user_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_campaigns: {
         Row: {
           campaign_name: string
@@ -553,6 +639,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_recurring: boolean | null
+          recurrence_pattern: Json | null
           send_at: string | null
           status: string
           subject: string | null
@@ -570,6 +658,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_recurring?: boolean | null
+          recurrence_pattern?: Json | null
           send_at?: string | null
           status?: string
           subject?: string | null
@@ -587,6 +677,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_recurring?: boolean | null
+          recurrence_pattern?: Json | null
           send_at?: string | null
           status?: string
           subject?: string | null

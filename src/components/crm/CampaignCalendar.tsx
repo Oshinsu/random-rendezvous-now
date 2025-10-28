@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Mail } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import frLocale from '@fullcalendar/core/locales/fr';
 
 interface CampaignForCalendar {
   id: string;
@@ -13,79 +15,63 @@ interface CampaignForCalendar {
 
 interface CampaignCalendarProps {
   campaigns: CampaignForCalendar[];
+  onDateClick?: (date: Date) => void;
+  onEventClick?: (campaignId: string) => void;
 }
 
-export const CampaignCalendar = ({ campaigns }: CampaignCalendarProps) => {
-  const today = new Date();
-  const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick }: CampaignCalendarProps) => {
+  const [view, setView] = useState<'dayGridMonth' | 'timeGridWeek'>('dayGridMonth');
 
-  const getCampaignsForDay = (day: Date) => {
-    return campaigns.filter(c => 
-      c.send_at && isSameDay(parseISO(c.send_at), day)
-    );
-  };
+  const events = campaigns
+    .filter(c => c.send_at)
+    .map(c => ({
+      id: c.id,
+      title: c.campaign_name,
+      start: c.send_at!,
+      backgroundColor: c.status === 'scheduled' ? 'hsl(var(--primary))' : 
+                       c.status === 'active' ? 'hsl(var(--green-500))' : 
+                       'hsl(var(--muted))',
+      borderColor: 'transparent'
+    }));
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarIcon className="h-5 w-5" />
-          Calendrier des Campagnes
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Calendrier des Campagnes</CardTitle>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setView('dayGridMonth')}
+              className={`px-3 py-1 text-xs rounded ${view === 'dayGridMonth' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+            >
+              Mois
+            </button>
+            <button 
+              onClick={() => setView('timeGridWeek')}
+              className={`px-3 py-1 text-xs rounded ${view === 'timeGridWeek' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+            >
+              Semaine
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">
-            {format(today, 'MMMM yyyy', { locale: fr })}
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-7 gap-2">
-          {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
-            <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
-              {day}
-            </div>
-          ))}
-          
-          {daysInMonth.map((day) => {
-            const campaignsForDay = getCampaignsForDay(day);
-            const isToday = isSameDay(day, today);
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`min-h-[80px] p-2 border rounded-lg ${
-                  isToday ? 'border-primary bg-primary/5' : 'border-border'
-                }`}
-              >
-                <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
-                  {format(day, 'd')}
-                </div>
-                {campaignsForDay.length > 0 && (
-                  <div className="space-y-1">
-                    {campaignsForDay.slice(0, 2).map(campaign => (
-                      <Badge
-                        key={campaign.id}
-                        variant="secondary"
-                        className="text-[10px] w-full justify-start truncate"
-                      >
-                        <Mail className="h-3 w-3 mr-1" />
-                        {campaign.campaign_name}
-                      </Badge>
-                    ))}
-                    {campaignsForDay.length > 2 && (
-                      <p className="text-[10px] text-muted-foreground">
-                        +{campaignsForDay.length - 2} autres
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView={view}
+          locale={frLocale}
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: ''
+          }}
+          events={events}
+          eventClick={(info) => onEventClick?.(info.event.id)}
+          dateClick={(info) => onDateClick?.(info.date)}
+          height="auto"
+          editable={true}
+          droppable={true}
+        />
       </CardContent>
     </Card>
   );

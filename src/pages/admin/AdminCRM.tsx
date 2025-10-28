@@ -8,6 +8,13 @@ import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
 import { FeedbackPanel } from '@/components/crm/FeedbackPanel';
 import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
+import { TemplateSelector } from '@/components/crm/TemplateSelector';
+import { QuickCampaignModal } from '@/components/crm/QuickCampaignModal';
+import { SequenceBuilder } from '@/components/crm/SequenceBuilder';
+import { AISuggestionsPanel } from '@/components/crm/AISuggestionsPanel';
+import { CampaignStatsWidget } from '@/components/crm/CampaignStatsWidget';
+import { useCRMSequences } from '@/hooks/useCRMSequences';
+import { getTemplateById } from '@/data/campaignTemplateLibrary';
 import { CRMOverview } from '@/components/crm/CRMOverview';
 import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
 import { AutomationRulesPanel } from '@/components/crm/AutomationRulesPanel';
@@ -66,6 +73,13 @@ export default function AdminCRM() {
     channels: ['email'] as string[]
   });
   const [zapierWebhook, setZapierWebhook] = useState('');
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickModalDate, setQuickModalDate] = useState<Date>();
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showSequences, setShowSequences] = useState(false);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+
+  const { sequences, createSequence } = useCRMSequences();
   const [calculatingHealth, setCalculatingHealth] = useState(false);
   const [emailTemplate, setEmailTemplate] = useState({
     subject: '',
@@ -311,8 +325,60 @@ export default function AdminCRM() {
           </TabsContent>
 
           {/* CAMPAIGNS TAB */}
-          <TabsContent value="campaigns" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="campaigns" className="space-y-6">
+              <div className="flex gap-2 mb-4">
+                <Button onClick={() => setShowQuickModal(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer
+                </Button>
+                <Button variant="outline" onClick={() => setShowTemplates(!showTemplates)}>
+                  📚 Templates
+                </Button>
+                <Button variant="outline" onClick={() => setShowSequences(!showSequences)}>
+                  🔗 Séquences
+                </Button>
+                <Button variant="outline" onClick={() => setShowAISuggestions(!showAISuggestions)}>
+                  ✨ IA Suggestions
+                </Button>
+              </div>
+
+              {showTemplates && (
+                <TemplateSelector
+                  segments={segments}
+                  onSelectTemplate={(template) => {
+                    const segment = segments.find(s => s.segment_key === template.segment_key);
+                    setNewCampaign({
+                      ...newCampaign,
+                      campaign_name: template.name,
+                      subject: template.subject || '',
+                      target_segment_id: segment?.id || '',
+                      channels: ['email']
+                    });
+                    setEmailTemplate({ ...emailTemplate, html_content: template.html_content });
+                    setShowTemplates(false);
+                  }}
+                />
+              )}
+
+              {showSequences && (
+                <SequenceBuilder
+                  campaigns={campaigns}
+                  segments={segments}
+                  onSave={createSequence}
+                />
+              )}
+
+              {showAISuggestions && (
+                <AISuggestionsPanel
+                  segments={segments}
+                  onUseSuggestion={(suggestion) => {
+                    setNewCampaign({ ...newCampaign, ...suggestion });
+                    setShowAISuggestions(false);
+                  }}
+                />
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr,350px] gap-6">
               <Card className="p-6">
                 <h3 className="text-xl font-bold mb-4">Créer une Campagne</h3>
                 <EmailTemplateEditor
@@ -394,7 +460,17 @@ export default function AdminCRM() {
                 </Button>
               </Card>
 
-              <CampaignCalendar campaigns={campaigns} />
+                <div className="space-y-4">
+                  <CampaignCalendar 
+                    campaigns={campaigns}
+                    onDateClick={(date) => {
+                      setQuickModalDate(date);
+                      setShowQuickModal(true);
+                    }}
+                  />
+                </div>
+                
+                <CampaignStatsWidget campaigns={campaigns} />
             </div>
 
             <Card className="p-6">
