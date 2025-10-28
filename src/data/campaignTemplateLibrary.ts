@@ -22,17 +22,24 @@ export const campaignTemplates: CampaignTemplate[] = [
     id: 'new_welcome',
     name: '🎉 Bienvenue sur Random',
     segment_key: 'new_users',
-    subject: 'Bienvenue chez Random ! Votre première sortie vous attend 🍻',
+    subject: 'Bienvenue sur Random - On est encore en phase de lancement',
     html_content: `
-      <h2>Bienvenue {{first_name}} !</h2>
-      <p>Tu viens de rejoindre Random, l'app qui transforme tes soirées en aventures ! 🎉</p>
-      <p><strong>Voici comment ça marche :</strong></p>
+      <h2>Salut {{first_name}} ! 👋</h2>
+      <p>Merci d'avoir rejoint Random. On est ravis de t'accueillir parmi nous.</p>
+      
+      <p><strong>Petit point important :</strong> On est encore en période de lancement, donc l'expérience n'est pas encore parfaite.</p>
+      
+      <p><strong>Pour maximiser tes chances de rencontrer du monde :</strong></p>
       <ul>
-        <li>Crée ou rejoins un groupe</li>
-        <li>On te trouve le bar parfait</li>
-        <li>Rencontre de nouvelles personnes</li>
+        <li>📍 On est actuellement disponible sur Paris uniquement</li>
+        <li>🕐 Connecte-toi aux horaires de forte affluence : 18h-22h</li>
+        <li>📅 Les meilleurs jours : Jeudi, Vendredi, Samedi</li>
       </ul>
-      <a href="https://random.app/groups" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Créer mon premier groupe</a>
+      
+      <p>On bosse dur pour améliorer l'expérience et élargir à d'autres villes bientôt !</p>
+      
+      <a href="https://random.app/groups" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Créer mon groupe</a>
+      
       <p>À très vite ! 🍺</p>
     `,
     trigger_type: 'lifecycle',
@@ -41,152 +48,160 @@ export const campaignTemplates: CampaignTemplate[] = [
   },
   {
     id: 'new_tips',
-    name: '💡 Tips pour ta première sortie',
+    name: '💡 Conseils pour profiter de Random',
     segment_key: 'new_users',
-    subject: '5 astuces pour réussir ta première sortie Random',
+    subject: 'Quelques astuces pour profiter au max de Random',
     html_content: `
-      <h2>Prêt pour l'aventure {{first_name}} ? 🚀</h2>
-      <p><strong>5 tips pour une première sortie réussie :</strong></p>
+      <h2>Hey {{first_name}} ! 💡</h2>
+      <p>Tu as créé ton compte mais tu n'as peut-être pas encore trouvé de groupe ?</p>
+      
+      <p><strong>C'est normal, on est encore en phase de lancement.</strong></p>
+      
+      <p><strong>Nos meilleurs conseils :</strong></p>
       <ol>
-        <li>Active tes notifications pour ne rien manquer</li>
-        <li>Complète ton profil pour matcher avec des personnes intéressantes</li>
-        <li>Choisis un créneau en soirée (18h-20h = plus de monde)</li>
-        <li>Rejoins un groupe existant pour ton premier essai</li>
-        <li>Sois ouvert et curieux, c'est l'esprit Random !</li>
+        <li>🕐 Connecte-toi entre 18h et 22h (c'est là qu'il y a le plus de monde)</li>
+        <li>📅 Privilégie le jeudi, vendredi ou samedi soir</li>
+        <li>📍 Pour l'instant, Random marche uniquement sur Paris</li>
+        <li>👥 Rejoins un groupe existant plutôt que d'en créer un nouveau</li>
+        <li>🔔 Active les notifications pour être prévenu quand un groupe se forme</li>
       </ol>
-      <a href="https://random.app/profile">Compléter mon profil</a>
+      
+      <p>On travaille activement pour élargir notre couverture et améliorer l'expérience !</p>
+      
+      <a href="https://random.app/groups">Voir les groupes actifs</a>
     `,
     trigger_type: 'lifecycle',
     delay_hours: 48,
     tags: ['onboarding', 'tips']
   },
   {
-    id: 'new_incentive',
-    name: '🎁 Offre spéciale nouveau membre',
+    id: 'new_reminder',
+    name: '🔔 Rappel - Random est là pour toi',
     segment_key: 'new_users',
-    subject: '🎁 Cadeau : Ta première sortie à -50% !',
+    subject: 'On est toujours là {{first_name}} !',
     html_content: `
-      <h2>On t'offre ta première sortie {{first_name}} ! 🎁</h2>
-      <p>Parce que tu viens de nous rejoindre, profite de <strong>50% de réduction</strong> sur ta première sortie Random.</p>
-      <p>Code : <strong>BIENVENUE50</strong></p>
-      <p>Valable 7 jours, ne rate pas cette occasion de découvrir Random !</p>
-      <a href="https://random.app/groups/new" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Créer mon groupe</a>
+      <h2>Salut {{first_name}},</h2>
+      <p>On a remarqué que tu ne t'étais pas encore lancé sur Random.</p>
+      
+      <p>Désolé si l'expérience n'a pas été au rendez-vous jusqu'ici. On est encore en phase de lancement et on fait tout pour améliorer les choses.</p>
+      
+      <p><strong>Notre conseil :</strong></p>
+      <ul>
+        <li>Essaie de te connecter en soirée (18h-22h) jeudi, vendredi ou samedi</li>
+        <li>C'est à ces moments qu'il y a le plus d'activité</li>
+        <li>Random fonctionne actuellement uniquement sur Paris</li>
+      </ul>
+      
+      <p>On espère te voir bientôt sur l'app ! 🍻</p>
+      
+      <a href="https://random.app/groups">Voir les groupes disponibles</a>
     `,
     trigger_type: 'lifecycle',
     delay_hours: 72,
-    tags: ['incentive', 'promotion']
+    tags: ['reminder', 'engagement']
   },
 
   // CHURN RISK
   {
     id: 'churn_comeback',
-    name: '💔 On te manque ?',
+    name: '💔 Désolé si l\'expérience n\'était pas top',
     segment_key: 'churn_risk',
-    subject: 'Ça fait longtemps {{first_name}}... On a gardé ta place 🍺',
+    subject: 'Hey {{first_name}}, désolé si Random ne t\'a pas convaincu',
     html_content: `
-      <h2>Tu nous manques {{first_name}} ! 😢</h2>
-      <p>Ça fait <strong>{{days_since_last_activity}} jours</strong> qu'on ne s'est pas vus...</p>
-      <p>Tes amis Random se demandent ce que tu deviens. Pourquoi ne pas organiser une sortie cette semaine ?</p>
-      <p><strong>Nouveau :</strong> On a ajouté {{new_bars_count}} bars près de chez toi !</p>
+      <h2>Salut {{first_name}},</h2>
+      <p>On a remarqué que tu ne t'es pas reconnecté depuis un moment sur Random.</p>
+      
+      <p><strong>Désolé si ton expérience n'a pas été à la hauteur.</strong> On est encore en période de lancement et on sait que tout n'est pas parfait.</p>
+      
+      <p>On aimerait te redonner une chance ! Voici ce qu'on te propose :</p>
+      <ul>
+        <li>🕐 Essaie de te connecter aux horaires de forte affluence : 18h-22h</li>
+        <li>📅 Privilégie le jeudi, vendredi ou samedi soir</li>
+        <li>📍 Random marche actuellement sur Paris uniquement</li>
+      </ul>
+      
+      <p>On bosse dur pour améliorer l'expérience chaque jour. Si tu veux retenter, on sera ravis de te revoir !</p>
+      
       <a href="https://random.app/groups">Voir les groupes disponibles</a>
+      
+      <p>L'équipe Random 🍺</p>
     `,
     trigger_type: 'segment',
     tags: ['retention', 'win-back']
   },
   {
-    id: 'churn_incentive',
-    name: '🔥 Offre retour exclusive',
+    id: 'churn_feedback',
+    name: '💬 On t\'écoute',
     segment_key: 'churn_risk',
-    subject: 'On t\'offre ton retour : -30% sur ta prochaine sortie',
+    subject: 'Aide-nous à améliorer Random',
     html_content: `
-      <h2>Reviens {{first_name}}, on a une surprise ! 🎁</h2>
-      <p>Pour ton retour, profite de <strong>30% de réduction</strong> sur ta prochaine sortie.</p>
-      <p>Code : <strong>RETOUR30</strong></p>
-      <p>Valable jusqu'à dimanche. L'occasion parfaite pour retrouver l'esprit Random !</p>
-      <a href="https://random.app/groups" style="background: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Je reviens !</a>
+      <h2>{{first_name}}, ton avis compte 💭</h2>
+      <p>On a vu que tu ne t'es pas reconnecté depuis un moment. On aimerait comprendre pourquoi.</p>
+      
+      <p><strong>Qu'est-ce qui n'a pas marché pour toi ?</strong></p>
+      <ul>
+        <li>Pas assez de monde aux heures où tu te connectes ?</li>
+        <li>L'expérience n'était pas assez fluide ?</li>
+        <li>Tu aurais aimé d'autres fonctionnalités ?</li>
+      </ul>
+      
+      <p>Ton feedback nous aide vraiment à améliorer Random pour tout le monde.</p>
+      
+      <p><strong>PS :</strong> On est encore en période de lancement. Si tu veux retenter, connecte-toi en soirée (18h-22h) le jeudi, vendredi ou samedi. C'est là qu'il y a le plus de monde !</p>
+      
+      <a href="https://random.app/feedback">Partager mon avis (2 min)</a>
     `,
     trigger_type: 'segment',
-    delay_hours: 168, // 7 days after churn detection
-    tags: ['retention', 'incentive']
-  },
-  {
-    id: 'churn_survey',
-    name: '📊 Aide-nous à t\'améliorer',
-    segment_key: 'churn_risk',
-    subject: '2 min pour nous aider ? On t\'écoute {{first_name}}',
-    html_content: `
-      <h2>Ton avis compte {{first_name}} 💭</h2>
-      <p>On a remarqué que tu n'utilises plus Random. Peux-tu nous dire pourquoi en 2 minutes ?</p>
-      <p>Tes retours nous aident à améliorer l'expérience pour tout le monde.</p>
-      <a href="https://random.app/feedback?utm_source=churn">Donner mon avis (2 min)</a>
-      <p><em>En cadeau : 100 crédits offerts pour ton prochain groupe</em></p>
-    `,
-    trigger_type: 'segment',
-    tags: ['feedback', 'retention']
+    delay_hours: 168,
+    tags: ['retention', 'feedback']
   },
 
   // ACTIVE USERS
   {
-    id: 'active_streak',
-    name: '🔥 Série de sorties',
+    id: 'active_thanks',
+    name: '🙏 Merci pour ta fidélité',
     segment_key: 'active',
-    subject: '🔥 {{outing_count}} sorties ! Tu es un Random addict',
+    subject: 'Merci {{first_name}}, tu es génial ! 🙏',
     html_content: `
-      <h2>Incroyable {{first_name}} ! 🎉</h2>
-      <p>Tu as fait <strong>{{outing_count}} sorties</strong> sur Random. Tu es dans le top 10% des utilisateurs les plus actifs !</p>
-      <p><strong>Ton statut :</strong> Random Insider 🌟</p>
-      <p>Continue comme ça et débloque des avantages exclusifs :</p>
+      <h2>Un grand merci {{first_name}} ! 🎉</h2>
+      <p>Tu fais partie des utilisateurs les plus actifs de Random et ça nous fait vraiment plaisir.</p>
+      
+      <p><strong>Grâce à toi et aux early adopters comme toi, Random grandit chaque jour !</strong></p>
+      
+      <p>On continue de bosser dur pour améliorer l'expérience :</p>
       <ul>
-        <li>✅ Priorité dans les groupes</li>
-        <li>✅ Accès early aux nouveaux bars</li>
-        <li>⏳ -20% permanent (3 sorties de plus)</li>
+        <li>🌍 Extension à d'autres villes bientôt</li>
+        <li>✨ Nouvelles fonctionnalités en préparation</li>
+        <li>🎯 Amélioration du matching de bars</li>
       </ul>
+      
+      <p>Continue de profiter de Random et n'hésite pas à nous faire des retours pour qu'on s'améliore !</p>
+      
       <a href="https://random.app/groups">Organiser ma prochaine sortie</a>
+      
+      <p>Merci encore 🍺<br>L'équipe Random</p>
     `,
     trigger_type: 'behavior',
-    is_recurring: true,
-    recurrence_pattern: {
-      frequency: 'weekly',
-      day: 5, // Friday
-      hour: 16
-    },
-    tags: ['engagement', 'gamification']
-  },
-  {
-    id: 'active_referral',
-    name: '👥 Programme de parrainage',
-    segment_key: 'active',
-    subject: 'Invite tes amis et gagne 50€ de crédit Random',
-    html_content: `
-      <h2>Partage l'expérience Random {{first_name}} ! 👥</h2>
-      <p>Tu adores Random ? Invite tes amis !</p>
-      <p><strong>Comment ça marche :</strong></p>
-      <ul>
-        <li>Ton ami s'inscrit avec ton code : <strong>{{referral_code}}</strong></li>
-        <li>Il fait sa première sortie</li>
-        <li>Vous gagnez chacun <strong>25€ de crédit</strong> !</li>
-      </ul>
-      <p>Pas de limite, invite autant d'amis que tu veux.</p>
-      <a href="https://random.app/referral" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Partager mon code</a>
-    `,
-    trigger_type: 'segment',
-    tags: ['referral', 'growth']
+    tags: ['engagement', 'thanks']
   },
   {
     id: 'active_new_feature',
-    name: '✨ Nouvelle fonctionnalité',
+    name: '✨ Nouvelles améliorations',
     segment_key: 'active',
-    subject: '✨ Nouveau : Groupes programmés à l\'avance !',
+    subject: 'On a amélioré Random grâce à tes retours !',
     html_content: `
-      <h2>Nouvelle fonctionnalité {{first_name}} ! 🚀</h2>
-      <p>Tu peux maintenant <strong>programmer tes sorties à l'avance</strong> !</p>
-      <p><strong>Pourquoi c'est génial :</strong></p>
+      <h2>Des nouveautés sur Random {{first_name}} ! 🚀</h2>
+      <p>Grâce aux retours des utilisateurs comme toi, on a pu améliorer pas mal de choses :</p>
       <ul>
-        <li>Organise ta semaine facilement</li>
-        <li>Réserve les meilleurs créneaux</li>
-        <li>Reçois des rappels automatiques</li>
+        <li>✨ Meilleur matching de bars selon vos préférences</li>
+        <li>⚡ Interface plus fluide et rapide</li>
+        <li>📅 Possibilité de programmer des sorties à l'avance</li>
+        <li>🔔 Notifications plus pertinentes</li>
       </ul>
-      <a href="https://random.app/scheduled-groups">Essayer maintenant</a>
+      
+      <p>Continue de nous faire des retours, ça nous aide vraiment à améliorer l'app !</p>
+      
+      <a href="https://random.app/groups">Essayer les nouveautés</a>
     `,
     trigger_type: 'manual',
     tags: ['feature', 'product']
@@ -195,120 +210,95 @@ export const campaignTemplates: CampaignTemplate[] = [
   // DORMANT USERS
   {
     id: 'dormant_reactivation',
-    name: '😴 Réveille-toi !',
+    name: '😴 On a pensé à toi',
     segment_key: 'dormant',
-    subject: 'Random a changé {{first_name}}... Redécouvre l\'app',
+    subject: 'Ça fait longtemps {{first_name}}... On a amélioré Random',
     html_content: `
-      <h2>Ça bouge sur Random ! 🎉</h2>
-      <p>Depuis ta dernière sortie il y a <strong>{{weeks_inactive}} semaines</strong>, beaucoup de choses ont changé :</p>
+      <h2>Hey {{first_name}},</h2>
+      <p>Ça fait un moment qu'on ne t'a pas vu sur Random...</p>
+      
+      <p><strong>Désolé si ton expérience n'a pas été top la dernière fois.</strong> On est encore en phase de lancement et on travaille dur pour améliorer l'app chaque jour.</p>
+      
+      <p><strong>On a fait pas mal de progrès depuis :</strong></p>
       <ul>
-        <li>🆕 {{new_bars_count}} nouveaux bars</li>
-        <li>⚡ Groupes instantanés (trouve un bar en 2 min)</li>
-        <li>📅 Programmation de sorties</li>
-        <li>💬 Chat de groupe amélioré</li>
+        <li>✨ Meilleur matching de bars</li>
+        <li>⚡ Interface plus fluide</li>
+        <li>📅 Possibilité de programmer ses sorties</li>
+        <li>👥 Plus d'utilisateurs actifs aux heures de pointe</li>
       </ul>
-      <p><strong>Offre spéciale :</strong> -20% sur ton retour avec le code <strong>COMEBACK20</strong></p>
-      <a href="https://random.app/groups">Découvrir les nouveautés</a>
+      
+      <p><strong>Si tu veux retenter, voici nos conseils :</strong></p>
+      <ul>
+        <li>🕐 Connecte-toi entre 18h et 22h</li>
+        <li>📅 Privilégie jeudi, vendredi ou samedi soir</li>
+        <li>📍 Random fonctionne actuellement sur Paris</li>
+      </ul>
+      
+      <a href="https://random.app/groups">Redonner une chance à Random</a>
+      
+      <p>On espère te revoir bientôt ! 🍺</p>
     `,
     trigger_type: 'segment',
     tags: ['reactivation', 'product']
-  },
-  {
-    id: 'dormant_event',
-    name: '🎊 Événement spécial',
-    segment_key: 'dormant',
-    subject: '🎊 Soirée Random exclusive ce weekend !',
-    html_content: `
-      <h2>Événement spécial {{first_name}} ! 🎊</h2>
-      <p>On organise une <strong>soirée Random géante</strong> ce samedi soir !</p>
-      <p><strong>Au programme :</strong></p>
-      <ul>
-        <li>20+ groupes simultanés dans toute la ville</li>
-        <li>After-party pour tous les participants</li>
-        <li>Concours et cadeaux</li>
-      </ul>
-      <p>C'est l'occasion parfaite pour revenir et rencontrer la communauté !</p>
-      <a href="https://random.app/events/saturday-special" style="background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Je m'inscris</a>
-    `,
-    trigger_type: 'manual',
-    tags: ['event', 'reactivation']
   },
 
   // ZOMBIE USERS
   {
     id: 'zombie_last_chance',
-    name: '💀 Dernière chance',
+    name: '💀 Dernière nouvelle',
     segment_key: 'zombie_users',
-    subject: 'Dernière chance {{first_name}}... On supprime ton compte ?',
+    subject: 'C\'est notre dernier message {{first_name}}',
     html_content: `
-      <h2>C'est notre dernier email {{first_name}} 💔</h2>
-      <p>Ça fait <strong>plus de 6 mois</strong> qu'on ne s'est pas vus.</p>
-      <p>Si tu ne reviens pas d'ici <strong>30 jours</strong>, on supprimera ton compte pour respecter ta vie privée.</p>
-      <p><strong>Mais il est encore temps !</strong></p>
-      <p>Si Random ne t'intéresse plus, pas de problème. Mais si tu veux nous redonner une chance, on te fait un <strong>cadeau de 50€ de crédit</strong> pour ton retour.</p>
-      <a href="https://random.app/reactivate?code=LASTCHANCE50" style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Réactiver mon compte</a>
-      <p><small>Pour te désinscrire définitivement : <a href="https://random.app/unsubscribe">Cliquer ici</a></small></p>
+      <h2>Dernier message {{first_name}},</h2>
+      <p>Ça fait plus de <strong>6 mois</strong> qu'on ne t'a pas vu sur Random.</p>
+      
+      <p>On comprend que l'app ne t'ait pas convaincu ou que le timing n'était pas bon.</p>
+      
+      <p><strong>Si tu veux nous redonner une chance, voici ce qui a changé :</strong></p>
+      <ul>
+        <li>✨ Random s'est énormément amélioré depuis ton dernier passage</li>
+        <li>👥 Beaucoup plus d'utilisateurs actifs aux heures de pointe</li>
+        <li>📍 Toujours sur Paris, mais on va bientôt s'étendre</li>
+        <li>🕐 Meilleurs créneaux : 18h-22h, jeudi/vendredi/samedi</li>
+      </ul>
+      
+      <p>Si Random ne t'intéresse plus, pas de problème. On supprimera ton compte dans 30 jours pour respecter ta vie privée.</p>
+      
+      <a href="https://random.app/groups">Redonner une chance à Random</a>
+      
+      <p><small>Pour te désinscrire : <a href="https://random.app/unsubscribe">Clique ici</a></small></p>
     `,
     trigger_type: 'segment',
     tags: ['reactivation', 'last-chance']
   },
 
-  // RECURRING CAMPAIGNS
+  // OFF PEAK USERS
   {
-    id: 'weekly_digest',
-    name: '📬 Digest hebdomadaire',
-    segment_key: 'active',
-    subject: '📬 Cette semaine sur Random : {{new_groups_count}} nouveaux groupes',
+    id: 'off_peak_advice',
+    name: '🕐 Meilleurs horaires pour toi',
+    segment_key: 'off_peak_users',
+    subject: 'Astuce {{first_name}} : Connecte-toi aux heures de pointe !',
     html_content: `
-      <h2>Ta semaine Random {{first_name}} 📊</h2>
-      <p><strong>En bref :</strong></p>
+      <h2>Hey {{first_name}} ! 🕐</h2>
+      <p>On a remarqué que tu te connectes souvent sur Random, mais pas forcément aux meilleurs moments.</p>
+      
+      <p><strong>Le truc, c'est que Random fonctionne mieux aux heures de forte affluence.</strong></p>
+      
+      <p><strong>Pour trouver plus facilement un groupe :</strong></p>
       <ul>
-        <li>{{new_groups_count}} nouveaux groupes près de chez toi</li>
-        <li>{{new_bars_count}} bars ajoutés cette semaine</li>
-        <li>Pic d'activité : {{peak_day}} soir</li>
+        <li>🕐 Connecte-toi entre 18h et 22h</li>
+        <li>📅 Privilégie le jeudi, vendredi ou samedi soir</li>
+        <li>👥 C'est à ces moments qu'il y a le plus de monde</li>
       </ul>
-      <p><strong>Recommandations pour toi :</strong></p>
-      <ul>
-        <li>🔥 Groupe jeudi 19h - Quartier Latin (4 places)</li>
-        <li>🍸 Nouveau bar à tester : Le Perchoir Marais</li>
-      </ul>
-      <a href="https://random.app/groups">Voir tous les groupes</a>
+      
+      <p>On est encore en phase de lancement, donc on n'a pas encore assez d'utilisateurs pour couvrir tous les horaires. Mais ça va venir !</p>
+      
+      <p>Merci de ta patience 🙏</p>
+      
+      <a href="https://random.app/groups">Essayer maintenant</a>
     `,
-    trigger_type: 'manual',
-    is_recurring: true,
-    recurrence_pattern: {
-      frequency: 'weekly',
-      day: 1, // Monday
-      hour: 10
-    },
-    tags: ['newsletter', 'recurring']
-  },
-  {
-    id: 'monthly_stats',
-    name: '📊 Récap mensuel',
-    segment_key: 'active',
-    subject: '📊 Ton mois Random : {{outings_count}} sorties, {{bars_visited}} bars',
-    html_content: `
-      <h2>Ton mois de {{month}} sur Random 🎉</h2>
-      <p>Voici ton recap {{first_name}} :</p>
-      <ul>
-        <li>🍺 <strong>{{outings_count}} sorties</strong></li>
-        <li>🏪 <strong>{{bars_visited}} bars différents</strong></li>
-        <li>👥 <strong>{{people_met}} nouvelles personnes</strong></li>
-        <li>⭐ Note moyenne des bars : <strong>{{avg_rating}}/5</strong></li>
-      </ul>
-      <p>Tu es dans le <strong>top {{percentile}}%</strong> des utilisateurs les plus actifs !</p>
-      <p>Objectif pour {{next_month}} : Découvrir {{goal_bars}} nouveaux bars ?</p>
-      <a href="https://random.app/stats">Voir mes statistiques détaillées</a>
-    `,
-    trigger_type: 'manual',
-    is_recurring: true,
-    recurrence_pattern: {
-      frequency: 'monthly',
-      date: 1,
-      hour: 12
-    },
-    tags: ['stats', 'recurring', 'engagement']
+    trigger_type: 'segment',
+    tags: ['engagement', 'timing']
   }
 ];
 

@@ -17,9 +17,10 @@ interface CampaignCalendarProps {
   campaigns: CampaignForCalendar[];
   onDateClick?: (date: Date) => void;
   onEventClick?: (campaignId: string) => void;
+  onEventDrop?: (campaignId: string, newDate: string) => void;
 }
 
-export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick }: CampaignCalendarProps) => {
+export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick, onEventDrop }: CampaignCalendarProps) => {
   const [view, setView] = useState<'dayGridMonth' | 'timeGridWeek'>('dayGridMonth');
 
   const events = campaigns
@@ -73,8 +74,9 @@ export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick }: Campa
           editable={true}
           droppable={true}
           eventDrop={(info) => {
-            // Will be handled by parent component
-            console.log('Event dropped:', info.event.id, info.event.start);
+            if (info.event.start && onEventDrop) {
+              onEventDrop(info.event.id, info.event.start.toISOString());
+            }
           }}
         />
       </CardContent>

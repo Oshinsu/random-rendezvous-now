@@ -357,8 +357,16 @@ export default function AdminCRM() {
                       target_segment_id: segment?.id || '',
                       channels: ['email']
                     });
-                    setEmailTemplate({ ...emailTemplate, html_content: template.html_content });
+                    setEmailTemplate({ 
+                      subject: template.subject || '',
+                      html_content: template.html_content,
+                      variables: []
+                    });
                     setShowTemplates(false);
+                    toast({
+                      title: 'Template appliqué',
+                      description: 'Vous pouvez maintenant personnaliser le contenu'
+                    });
                   }}
                 />
               )}
@@ -367,7 +375,10 @@ export default function AdminCRM() {
                 <SequenceBuilder
                   campaigns={campaigns}
                   segments={segments}
-                  onSave={createSequence}
+                  onSave={async (sequenceData) => {
+                    await createSequence(sequenceData);
+                    setShowSequences(false);
+                  }}
                 />
               )}
 
@@ -525,6 +536,13 @@ export default function AdminCRM() {
                         setSelectedCampaign(campaign);
                         setShowCampaignDetailsModal(true);
                       }
+                    }}
+                    onEventDrop={async (campaignId, newDate) => {
+                      await rescheduleCampaign(campaignId, newDate);
+                      toast({
+                        title: 'Campagne déplacée',
+                        description: 'La date d\'envoi a été mise à jour'
+                      });
                     }}
                   />
                 </div>
