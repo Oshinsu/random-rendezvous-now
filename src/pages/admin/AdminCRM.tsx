@@ -1,7 +1,7 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download } from 'lucide-react';
+import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus } from 'lucide-react';
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
 import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
