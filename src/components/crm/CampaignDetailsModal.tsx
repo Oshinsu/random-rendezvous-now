@@ -38,17 +38,15 @@ export const CampaignDetailsModal = ({
   onSend,
   onDelete
 }: CampaignDetailsModalProps) => {
-  if (!campaign) return null;
-
-  const openRate = campaign.total_sends && campaign.total_opens 
+  const openRate = campaign?.total_sends && campaign?.total_opens 
     ? ((campaign.total_opens / campaign.total_sends) * 100).toFixed(1)
     : '0';
 
-  const clickRate = campaign.total_sends && campaign.total_clicks
+  const clickRate = campaign?.total_sends && campaign?.total_clicks
     ? ((campaign.total_clicks / campaign.total_sends) * 100).toFixed(1)
     : '0';
 
-  const conversionRate = campaign.total_sends && campaign.total_conversions
+  const conversionRate = campaign?.total_sends && campaign?.total_conversions
     ? ((campaign.total_conversions / campaign.total_sends) * 100).toFixed(1)
     : '0';
 
@@ -69,17 +67,24 @@ export const CampaignDetailsModal = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <DialogTitle>{campaign.campaign_name}</DialogTitle>
-              <DialogDescription>{campaign.subject}</DialogDescription>
-            </div>
-            <Badge className={statusColors[campaign.status]}>
-              {statusLabels[campaign.status]}
-            </Badge>
-          </div>
-        </DialogHeader>
+        {!campaign ? (
+          <DialogHeader>
+            <DialogTitle>Chargement...</DialogTitle>
+            <DialogDescription>Chargement des détails de la campagne</DialogDescription>
+          </DialogHeader>
+        ) : (
+          <>
+            <DialogHeader>
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <DialogTitle>{campaign.campaign_name}</DialogTitle>
+                  <DialogDescription>{campaign.subject}</DialogDescription>
+                </div>
+                <Badge className={statusColors[campaign.status]}>
+                  {statusLabels[campaign.status]}
+                </Badge>
+              </div>
+            </DialogHeader>
 
         <div className="space-y-6">
           {/* Stats */}
@@ -181,6 +186,8 @@ export const CampaignDetailsModal = ({
             )}
           </div>
         </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
