@@ -13,16 +13,18 @@ import { Zap, Edit } from 'lucide-react';
 interface QuickCampaignModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  prefilledDate?: Date;
+  initialDate?: Date;
   segments: Array<{ id: string; segment_key: string; segment_name: string }>;
+  campaigns?: any[];
   onCreateCampaign: (campaign: any) => void;
 }
 
 export const QuickCampaignModal = ({
   open,
   onOpenChange,
-  prefilledDate,
+  initialDate,
   segments,
+  campaigns,
   onCreateCampaign
 }: QuickCampaignModalProps) => {
   const [activeTab, setActiveTab] = useState<'quick' | 'custom'>('quick');
@@ -31,7 +33,7 @@ export const QuickCampaignModal = ({
     subject: '',
     content: '',
     target_segment_id: '',
-    send_at: prefilledDate?.toISOString().slice(0, 16) || '',
+    send_at: initialDate?.toISOString().slice(0, 16) || '',
     channels: ['email']
   });
 

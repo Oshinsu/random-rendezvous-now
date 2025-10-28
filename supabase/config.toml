@@ -142,7 +142,19 @@ verify_jwt = false
 [functions.scheduled-campaigns.schedule]
 cron = "*/15 * * * *"
 
-[functions.lifecycle-automations]
+[functions.process-recurring-campaigns]
+verify_jwt = false
+
+[functions.process-recurring-campaigns.schedule]
+cron = "0 2 * * *"
+
+[functions.optimize-send-time]
+verify_jwt = false
+
+[functions.campaign-ai-suggestions]
+verify_jwt = false
+
+[functions.execute-sequence]
 verify_jwt = false
 
 [functions.admin-chat]

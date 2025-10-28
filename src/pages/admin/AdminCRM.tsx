@@ -1,7 +1,7 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus } from 'lucide-react';
+import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus, Sparkles } from 'lucide-react';
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
 import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
@@ -14,6 +14,7 @@ import { SequenceBuilder } from '@/components/crm/SequenceBuilder';
 import { AISuggestionsPanel } from '@/components/crm/AISuggestionsPanel';
 import { CampaignStatsWidget } from '@/components/crm/CampaignStatsWidget';
 import { useCRMSequences } from '@/hooks/useCRMSequences';
+import { useSendTimeOptimization } from '@/hooks/useSendTimeOptimization';
 import { getTemplateById } from '@/data/campaignTemplateLibrary';
 import { CRMOverview } from '@/components/crm/CRMOverview';
 import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
@@ -61,7 +62,7 @@ export default function AdminCRM() {
     healthPage,
     healthPageSize
   );
-  const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign } = useCRMCampaigns();
+  const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign, rescheduleCampaign } = useCRMCampaigns();
 
   const [newCampaign, setNewCampaign] = useState({
     campaign_name: '',
@@ -70,7 +71,8 @@ export default function AdminCRM() {
     subject: '',
     content: '',
     target_segment_id: '',
-    channels: ['email'] as string[]
+    channels: ['email'] as string[],
+    send_at: ''
   });
   const [zapierWebhook, setZapierWebhook] = useState('');
   const [showQuickModal, setShowQuickModal] = useState(false);
@@ -80,6 +82,7 @@ export default function AdminCRM() {
   const [showAISuggestions, setShowAISuggestions] = useState(false);
 
   const { sequences, createSequence } = useCRMSequences();
+  const { data: optimization, isLoading: optimizationLoading } = useSendTimeOptimization(newCampaign.target_segment_id);
   const [calculatingHealth, setCalculatingHealth] = useState(false);
   const [emailTemplate, setEmailTemplate] = useState({
     subject: '',
@@ -121,7 +124,8 @@ export default function AdminCRM() {
         subject: '',
         content: '',
         target_segment_id: '',
-        channels: ['email']
+        channels: ['email'],
+        send_at: ''
       });
       setEmailTemplate({
         subject: '',
@@ -451,6 +455,39 @@ export default function AdminCRM() {
                     <p className="text-xs text-destructive mt-1">Au moins un canal doit être sélectionné</p>
                   )}
                 </div>
+
+                {/* AI Send Time Optimization */}
+                {optimization && newCampaign.target_segment_id && (
+                  <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="h-4 w-4 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">🤖 IA Recommande</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {optimization.recommended_day} à {optimization.recommended_hour}h 
+                          <span className="ml-1">
+                            (Taux d'ouverture estimé : {optimization.estimated_open_rate}%)
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Confiance : {typeof optimization.confidence === 'number' ? Math.round(optimization.confidence * 100) : optimization.confidence}%
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const recommendedDate = new Date();
+                          recommendedDate.setHours(optimization.recommended_hour, 0, 0, 0);
+                          setNewCampaign({ ...newCampaign, send_at: recommendedDate.toISOString() });
+                        }}
+                      >
+                        Appliquer
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <Button 
                   onClick={handleCreateCampaign} 
                   className="mt-4 w-full"
@@ -466,6 +503,12 @@ export default function AdminCRM() {
                     onDateClick={(date) => {
                       setQuickModalDate(date);
                       setShowQuickModal(true);
+                    }}
+                    onEventClick={(campaignId) => {
+                      const campaign = campaigns.find(c => c.id === campaignId);
+                      if (campaign) {
+                        console.log('Campaign clicked:', campaign);
+                      }
                     }}
                   />
                 </div>

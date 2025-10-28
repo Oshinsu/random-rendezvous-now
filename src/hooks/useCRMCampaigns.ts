@@ -165,6 +165,32 @@ export const useCRMCampaigns = () => {
     }
   };
 
+  const rescheduleCampaign = async (campaignId: string, newSendAt: string) => {
+    try {
+      const { error } = await supabase
+        .from('crm_campaigns')
+        .update({ send_at: newSendAt, status: 'scheduled' })
+        .eq('id', campaignId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Campagne reprogrammée',
+        description: 'La date d\'envoi a été mise à jour'
+      });
+
+      await fetchCampaigns();
+    } catch (err) {
+      console.error('Error rescheduling campaign:', err);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de reprogrammer la campagne',
+        variant: 'destructive'
+      });
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchCampaigns();
   }, []);
@@ -176,6 +202,7 @@ export const useCRMCampaigns = () => {
     refetch: fetchCampaigns,
     createCampaign,
     sendCampaign,
-    updateCampaignStatus
+    updateCampaignStatus,
+    rescheduleCampaign
   };
 };
