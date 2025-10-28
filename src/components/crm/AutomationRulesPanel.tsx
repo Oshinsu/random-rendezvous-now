@@ -5,7 +5,6 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useCRMAutomation } from '@/hooks/useCRMAutomation';
 import { useCRMCampaigns } from '@/hooks/useCRMCampaigns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -67,97 +66,10 @@ export const AutomationRulesPanel = () => {
             Déclenchez automatiquement des campagnes selon le comportement utilisateur
           </p>
         </div>
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle Règle
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Créer une Règle d'Automation</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Nom de la règle</Label>
-                <Input
-                  value={newRule.rule_name}
-                  onChange={(e) => setNewRule({ ...newRule, rule_name: e.target.value })}
-                  placeholder="Ex: Relance utilisateurs churned"
-                />
-              </div>
-              <div>
-                <Label>Type de déclencheur</Label>
-                <Select
-                  value={newRule.trigger_type}
-                  onValueChange={(value: any) => setNewRule({ ...newRule, trigger_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lifecycle_change">Changement de lifecycle</SelectItem>
-                    <SelectItem value="segment_entry">Entrée dans un segment</SelectItem>
-                    <SelectItem value="health_threshold">Seuil de health score</SelectItem>
-                    <SelectItem value="inactivity">Inactivité prolongée</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Campagne à envoyer</Label>
-                <Select
-                  value={newRule.campaign_id}
-                  onValueChange={(value) => setNewRule({ ...newRule, campaign_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une campagne" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaigns.map(campaign => (
-                      <SelectItem key={campaign.id} value={campaign.id}>
-                        {campaign.campaign_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Délai avant envoi (minutes)</Label>
-                <Input
-                  type="number"
-                  value={newRule.delay_minutes}
-                  onChange={(e) => setNewRule({ ...newRule, delay_minutes: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  0 = envoi immédiat
-                </p>
-              </div>
-              <div>
-                <Label>Priorité (1-10)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={newRule.priority}
-                  onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) || 5 })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreating(false)}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={handleCreateRule}
-                disabled={!newRule.rule_name || !newRule.campaign_id}
-              >
-                Créer la Règle
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsCreating(!isCreating)}>
+          <Plus className="h-4 w-4 mr-2" />
+          {isCreating ? 'Annuler' : 'Nouvelle Règle'}
+        </Button>
       </div>
 
       {/* Info Banner */}
@@ -174,6 +86,92 @@ export const AutomationRulesPanel = () => {
           </div>
         </div>
       </Card>
+
+      {/* Creation Form */}
+      {isCreating && (
+        <Card className="p-6 border-primary">
+          <h3 className="text-lg font-bold mb-4">Créer une Règle d'Automation</h3>
+          <div className="space-y-4">
+            <div>
+              <Label>Nom de la règle</Label>
+              <Input
+                value={newRule.rule_name}
+                onChange={(e) => setNewRule({ ...newRule, rule_name: e.target.value })}
+                placeholder="Ex: Relance utilisateurs churned"
+              />
+            </div>
+            <div>
+              <Label>Type de déclencheur</Label>
+              <Select
+                value={newRule.trigger_type}
+                onValueChange={(value: any) => setNewRule({ ...newRule, trigger_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lifecycle_change">Changement de lifecycle</SelectItem>
+                  <SelectItem value="segment_entry">Entrée dans un segment</SelectItem>
+                  <SelectItem value="health_threshold">Seuil de health score</SelectItem>
+                  <SelectItem value="inactivity">Inactivité prolongée</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Campagne à envoyer</Label>
+              <Select
+                value={newRule.campaign_id}
+                onValueChange={(value) => setNewRule({ ...newRule, campaign_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une campagne" />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaigns.map(campaign => (
+                    <SelectItem key={campaign.id} value={campaign.id}>
+                      {campaign.campaign_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Délai avant envoi (minutes)</Label>
+              <Input
+                type="number"
+                value={newRule.delay_minutes}
+                onChange={(e) => setNewRule({ ...newRule, delay_minutes: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                0 = envoi immédiat
+              </p>
+            </div>
+            <div>
+              <Label>Priorité (1-10)</Label>
+              <Input
+                type="number"
+                min="1"
+                max="10"
+                value={newRule.priority}
+                onChange={(e) => setNewRule({ ...newRule, priority: parseInt(e.target.value) || 5 })}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsCreating(false)} className="flex-1">
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleCreateRule}
+                disabled={!newRule.rule_name || !newRule.campaign_id}
+                className="flex-1"
+              >
+                Créer la Règle
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Rules List */}
       {rules.length === 0 ? (

@@ -386,8 +386,22 @@ export default function AdminCRM() {
                 <AISuggestionsPanel
                   segments={segments}
                   onUseSuggestion={(suggestion) => {
-                    setNewCampaign({ ...newCampaign, ...suggestion });
+                    setNewCampaign({ 
+                      ...newCampaign, 
+                      campaign_name: suggestion.campaign_name,
+                      subject: suggestion.subject || '',
+                      target_segment_id: suggestion.target_segment_id || ''
+                    });
+                    setEmailTemplate({
+                      subject: suggestion.subject || '',
+                      html_content: suggestion.content || '',
+                      variables: []
+                    });
                     setShowAISuggestions(false);
+                    toast({
+                      title: 'Suggestion appliquée',
+                      description: 'Vous pouvez maintenant personnaliser le contenu'
+                    });
                   }}
                 />
               )}
