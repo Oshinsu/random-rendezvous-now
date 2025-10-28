@@ -10,6 +10,7 @@ import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
 import { CRMOverview } from '@/components/crm/CRMOverview';
 import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
+import { AutomationRulesPanel } from '@/components/crm/AutomationRulesPanel';
 import { useCRMAnalytics } from '@/hooks/useCRMAnalytics';
 import { useCRMOverview } from '@/hooks/useCRMOverview';
 import { useCRMSegments } from '@/hooks/useCRMSegments';
@@ -162,11 +163,12 @@ export default function AdminCRM() {
         />
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8 gap-1">
             <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
             <TabsTrigger value="segments">👥 Segments</TabsTrigger>
             <TabsTrigger value="health">💚 Health</TabsTrigger>
             <TabsTrigger value="campaigns">📧 Campagnes</TabsTrigger>
+            <TabsTrigger value="automation">⚡ Automation</TabsTrigger>
             <TabsTrigger value="feedback">💬 Feedbacks</TabsTrigger>
             <TabsTrigger value="cohorts">📈 Cohortes</TabsTrigger>
             <TabsTrigger value="ab-testing">🧪 A/B Tests</TabsTrigger>
@@ -301,6 +303,11 @@ export default function AdminCRM() {
                 loading={healthLoading}
               />
             </Card>
+          </TabsContent>
+
+          {/* AUTOMATION TAB */}
+          <TabsContent value="automation" className="space-y-6">
+            <AutomationRulesPanel />
           </TabsContent>
 
           {/* CAMPAIGNS TAB */}

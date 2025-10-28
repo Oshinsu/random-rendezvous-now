@@ -440,6 +440,63 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_automation_rules: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          created_by: string | null
+          delay_minutes: number | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          rule_name: string
+          trigger_condition: Json
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name: string
+          trigger_condition?: Json
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          delay_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          rule_name?: string
+          trigger_condition?: Json
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_automation_rules_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_campaign_sends: {
         Row: {
           bounced: boolean | null
@@ -624,6 +681,44 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      crm_unsubscribes: {
+        Row: {
+          channel: string
+          id: string
+          ip_address: unknown
+          reason: string | null
+          unsubscribed_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel: string
+          id?: string
+          ip_address?: unknown
+          reason?: string | null
+          unsubscribed_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          id?: string
+          ip_address?: unknown
+          reason?: string | null
+          unsubscribed_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_unsubscribes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_user_feedback: {
         Row: {

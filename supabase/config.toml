@@ -136,6 +136,15 @@ verify_jwt = true
 [functions.trigger-bar-assignment]
 verify_jwt = false
 
+[functions.scheduled-campaigns]
+verify_jwt = false
+
+[functions.scheduled-campaigns.schedule]
+cron = "*/15 * * * *"
+
+[functions.lifecycle-automations]
+verify_jwt = false
+
 [functions.admin-chat]
 verify_jwt = true
 
