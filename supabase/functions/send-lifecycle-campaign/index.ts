@@ -33,6 +33,10 @@ serve(async (req) => {
 
     console.log('Campaign found:', campaign.campaign_name);
 
+    // Get channels (default to email if not set)
+    const channels = campaign.channels || ['email'];
+    console.log('Campaign channels:', channels);
+
     // Get target users based on segment or lifecycle stage
     let targetUsers = [];
 
@@ -71,40 +75,76 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Sending to ${targetUsers.length} users`);
+    console.log(`Sending to ${targetUsers.length} users via ${channels.join(', ')}`);
 
-    // Send emails to all target users
+    // Send to all target users (multi-channel)
     let sentCount = 0;
+    let emailsSent = 0;
+    let notificationsSent = 0;
     const errors = [];
 
     for (const user of targetUsers) {
       try {
         // Replace template variables
-        let htmlContent = campaign.content;
+        let content = campaign.content;
+        let subject = campaign.subject || '';
         
-        htmlContent = htmlContent
+        content = content
+          .replace(/\{\{first_name\}\}/g, user.first_name || 'utilisateur')
+          .replace(/\{\{last_name\}\}/g, user.last_name || '');
+        
+        subject = subject
           .replace(/\{\{first_name\}\}/g, user.first_name || 'utilisateur')
           .replace(/\{\{last_name\}\}/g, user.last_name || '');
 
-        // Send email via Zoho
-        const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
-          body: {
-            to: [user.email],
-            subject: campaign.subject,
-            html_content: htmlContent,
-            campaign_id: campaign.id,
-            user_id: user.user_id,
-            track_opens: true,
-            track_clicks: true
-          }
-        });
+        // Send via EMAIL channel
+        if (channels.includes('email')) {
+          const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
+            body: {
+              to: [user.email],
+              subject: subject,
+              html_content: content,
+              campaign_id: campaign.id,
+              user_id: user.user_id,
+              track_opens: true,
+              track_clicks: true
+            }
+          });
 
-        if (sendError) {
-          console.error('Error sending to user:', user.user_id, sendError);
-          errors.push({ user_id: user.user_id, error: sendError.message });
-        } else {
-          sentCount++;
+          if (sendError) {
+            console.error('Error sending email to user:', user.user_id, sendError);
+            errors.push({ user_id: user.user_id, channel: 'email', error: sendError.message });
+          } else {
+            emailsSent++;
+          }
         }
+
+        // Send via IN-APP channel
+        if (channels.includes('in_app')) {
+          // Strip HTML tags for in-app notification body
+          const plainTextBody = content.replace(/<[^>]*>/g, '').substring(0, 200);
+          
+          const { error: notifError } = await supabase.rpc('create_in_app_notification', {
+            target_user_id: user.user_id,
+            notif_type: 'campaign',
+            notif_title: subject,
+            notif_body: plainTextBody,
+            notif_data: {
+              campaign_id: campaign.id,
+              campaign_name: campaign.campaign_name
+            },
+            notif_icon: 'https://api.iconify.design/mdi:email-newsletter.svg'
+          });
+
+          if (notifError) {
+            console.error('Error sending in-app notification to user:', user.user_id, notifError);
+            errors.push({ user_id: user.user_id, channel: 'in_app', error: notifError.message });
+          } else {
+            notificationsSent++;
+          }
+        }
+
+        sentCount++;
       } catch (error) {
         console.error('Error processing user:', user.user_id, error);
         errors.push({ user_id: user.user_id, error: error.message });
@@ -117,13 +157,17 @@ serve(async (req) => {
       .update({ status: 'sent' })
       .eq('id', campaignId);
 
-    console.log(`Campaign sent: ${sentCount}/${targetUsers.length} successful`);
+    console.log(`Campaign sent: ${sentCount}/${targetUsers.length} users reached`);
+    console.log(`Emails sent: ${emailsSent}, In-app notifications: ${notificationsSent}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         sent: sentCount,
         total: targetUsers.length,
+        emailsSent,
+        notificationsSent,
+        channels,
         errors: errors.length > 0 ? errors : undefined
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

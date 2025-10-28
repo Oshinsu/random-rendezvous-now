@@ -491,6 +491,7 @@ export type Database = {
         Row: {
           campaign_name: string
           campaign_type: string
+          channels: string[] | null
           content: string
           created_at: string
           created_by: string | null
@@ -507,6 +508,7 @@ export type Database = {
         Insert: {
           campaign_name: string
           campaign_type: string
+          channels?: string[] | null
           content: string
           created_at?: string
           created_by?: string | null
@@ -523,6 +525,7 @@ export type Database = {
         Update: {
           campaign_name?: string
           campaign_type?: string
+          channels?: string[] | null
           content?: string
           created_at?: string
           created_by?: string | null
@@ -1181,7 +1184,7 @@ export type Database = {
           created_at: string | null
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           user_agent: string | null
           user_id: string | null
@@ -1190,7 +1193,7 @@ export type Database = {
           created_at?: string | null
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
@@ -1199,7 +1202,7 @@ export type Database = {
           created_at?: string | null
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
@@ -1562,10 +1565,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      activate_ready_scheduled_groups: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      activate_ready_scheduled_groups: { Args: never; Returns: number }
       add_user_credits: {
         Args: {
           amount: number
@@ -1589,10 +1589,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: number
       }
-      can_view_group: {
-        Args: { group_uuid: string }
-        Returns: boolean
-      }
+      can_view_group: { Args: { group_uuid: string }; Returns: boolean }
       check_group_payment_completion: {
         Args: { target_group_id: string }
         Returns: boolean
@@ -1601,14 +1598,8 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
-      cleanup_expired_force_confirm_votes: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      cleanup_old_security_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_force_confirm_votes: { Args: never; Returns: number }
+      cleanup_old_security_logs: { Args: never; Returns: undefined }
       create_group_with_participant: {
         Args: {
           p_latitude: number
@@ -1644,10 +1635,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
-      dissolve_old_groups: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      dissolve_old_groups: { Args: never; Returns: undefined }
       find_compatible_group_fixed: {
         Args: {
           search_radius?: number
@@ -1673,12 +1661,9 @@ export type Database = {
         Args: { target_bar_place_id: string; target_month: string }
         Returns: Json
       }
-      get_admin_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_admin_stats: { Args: never; Returns: Json }
       get_all_users_admin: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_groups_count: number
           created_at: string
@@ -1691,30 +1676,15 @@ export type Database = {
           total_outings_count: number
         }[]
       }
-      get_comprehensive_admin_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_ppu_config: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_ppu_price_cents: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_security_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_comprehensive_admin_stats: { Args: never; Returns: Json }
+      get_ppu_config: { Args: never; Returns: Json }
+      get_ppu_price_cents: { Args: never; Returns: number }
+      get_security_stats: { Args: never; Returns: Json }
       get_signup_stats: {
         Args: { period_end: string; period_start: string }
         Returns: Json
       }
-      get_system_setting: {
-        Args: { setting_name: string }
-        Returns: Json
-      }
+      get_system_setting: { Args: { setting_name: string }; Returns: Json }
       get_user_active_groups: {
         Args: { include_scheduled?: boolean; user_uuid: string }
         Returns: {
@@ -1744,10 +1714,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
-      get_user_group_ids: {
-        Args: { user_uuid: string }
-        Returns: string[]
-      }
+      get_user_group_ids: { Args: { user_uuid: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1763,22 +1730,13 @@ export type Database = {
         Args: { target_group_id: string }
         Returns: string
       }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_bar_owner: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_user: { Args: never; Returns: boolean }
+      is_bar_owner: { Args: never; Returns: boolean }
       is_group_member: {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      is_ppu_mode_enabled: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_ppu_mode_enabled: { Args: never; Returns: boolean }
       is_user_connected_realtime: {
         Args: { p_last_seen: string }
         Returns: boolean
@@ -1787,14 +1745,8 @@ export type Database = {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      migrate_existing_users: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      repair_missing_outings_history: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      migrate_existing_users: { Args: never; Returns: number }
+      repair_missing_outings_history: { Args: never; Returns: number }
       sanitize_coordinates_pg: {
         Args: { lat: number; lng: number }
         Returns: {
@@ -1802,14 +1754,8 @@ export type Database = {
           sanitized_lng: number
         }[]
       }
-      test_trigger_auto_bar_assignment: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      transition_groups_to_completed: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      test_trigger_auto_bar_assignment: { Args: never; Returns: Json }
+      transition_groups_to_completed: { Args: never; Returns: undefined }
       update_system_setting: {
         Args: { new_value: Json; setting_name: string }
         Returns: undefined
@@ -1822,10 +1768,7 @@ export type Database = {
         Args: { input_message: string }
         Returns: string
       }
-      validate_bar_name: {
-        Args: { input_name: string }
-        Returns: boolean
-      }
+      validate_bar_name: { Args: { input_name: string }; Returns: boolean }
       validate_coordinates: {
         Args: { lat: number; lng: number }
         Returns: boolean

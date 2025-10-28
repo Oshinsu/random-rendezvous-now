@@ -61,7 +61,8 @@ export default function AdminCRM() {
     trigger_type: 'manual' as const,
     subject: '',
     content: '',
-    target_segment_id: ''
+    target_segment_id: '',
+    channels: ['email'] as string[]
   });
   const [zapierWebhook, setZapierWebhook] = useState('');
   const [calculatingHealth, setCalculatingHealth] = useState(false);
@@ -104,7 +105,8 @@ export default function AdminCRM() {
         trigger_type: 'manual',
         subject: '',
         content: '',
-        target_segment_id: ''
+        target_segment_id: '',
+        channels: ['email']
       });
       setEmailTemplate({
         subject: '',
@@ -338,10 +340,48 @@ export default function AdminCRM() {
                     </Select>
                   </div>
                 </div>
+                <div className="mt-4">
+                  <Label className="mb-2 block">Canaux d'envoi</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCampaign.channels.includes('email')}
+                        onChange={(e) => {
+                          const channels = e.target.checked 
+                            ? [...newCampaign.channels, 'email']
+                            : newCampaign.channels.filter(c => c !== 'email');
+                          setNewCampaign({ ...newCampaign, channels });
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <Mail className="h-4 w-4" />
+                      <span className="text-sm">Email</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCampaign.channels.includes('in_app')}
+                        onChange={(e) => {
+                          const channels = e.target.checked 
+                            ? [...newCampaign.channels, 'in_app']
+                            : newCampaign.channels.filter(c => c !== 'in_app');
+                          setNewCampaign({ ...newCampaign, channels });
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="text-sm">In-App</span>
+                    </label>
+                  </div>
+                  {newCampaign.channels.length === 0 && (
+                    <p className="text-xs text-destructive mt-1">Au moins un canal doit être sélectionné</p>
+                  )}
+                </div>
                 <Button 
                   onClick={handleCreateCampaign} 
                   className="mt-4 w-full"
-                  disabled={!newCampaign.campaign_name || !newCampaign.target_segment_id || !emailTemplate.subject || !emailTemplate.html_content}
+                  disabled={!newCampaign.campaign_name || !newCampaign.target_segment_id || !emailTemplate.subject || !emailTemplate.html_content || newCampaign.channels.length === 0}
                 >
                   Créer la Campagne
                 </Button>
@@ -383,6 +423,15 @@ export default function AdminCRM() {
                             {campaign.segment?.segment_name && `Segment: ${campaign.segment.segment_name}`}
                             {campaign.lifecycle_stage?.stage_name && `Lifecycle: ${campaign.lifecycle_stage.stage_name}`}
                           </p>
+                          <div className="flex gap-2 mt-1">
+                            {campaign.channels?.map(channel => (
+                              <Badge key={channel} variant="outline" className="text-xs">
+                                {channel === 'email' && '📧'}
+                                {channel === 'in_app' && '💬'}
+                                {channel}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>

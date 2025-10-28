@@ -11,6 +11,7 @@ interface Campaign {
   target_lifecycle_stage_id?: string;
   subject?: string;
   content: string;
+  channels: string[]; // ['email', 'in_app', 'push']
   status: 'draft' | 'active' | 'paused' | 'completed';
   send_at?: string;
   created_at: string;
