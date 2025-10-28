@@ -1,21 +1,39 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { useCRMAnalytics } from '@/hooks/useCRMAnalytics';
+import { useCRMCohortsDB } from '@/hooks/useCRMCohortsDB';
 import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export const CohortAnalysis = () => {
-  const { analytics, loading } = useCRMAnalytics();
+  const { data: cohortData, isLoading } = useCRMCohortsDB();
 
-  if (loading) {
+  if (isLoading) {
     return <Skeleton className="h-[400px] w-full" />;
   }
 
-  const cohortData = analytics?.cohorts || [];
+  if (!cohortData || cohortData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Analyse de Cohortes</CardTitle>
+          <CardDescription>Suivez la rétention de vos utilisateurs par cohorte mensuelle</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-12 text-muted-foreground">
+            Pas encore de données de cohorte disponibles
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Analyse de Cohortes</CardTitle>
+        <CardDescription>Rétention par mois d'inscription (données en temps réel)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -50,7 +68,9 @@ export const CohortAnalysis = () => {
 
                 return (
                   <tr key={cohort.cohort_month} className="border-b hover:bg-muted/50">
-                    <td className="p-2 font-medium">{cohort.cohort_month}</td>
+                    <td className="p-2 font-medium">
+                      {format(new Date(cohort.cohort_month), 'MMMM yyyy', { locale: fr })}
+                    </td>
                     <td className="text-right p-2">{cohort.total_signups}</td>
                     <td className="text-right p-2">
                       {cohort.activated_users}

@@ -13,11 +13,17 @@ interface AISuggestionsPanelProps {
 
 export const AISuggestionsPanel = ({ segments, onUseSuggestion }: AISuggestionsPanelProps) => {
   const [selectedSegmentKey, setSelectedSegmentKey] = useState('');
+  const [error, setError] = useState(false);
   const { loading, suggestions, segmentName, fetchSuggestions } = useAISuggestions();
 
   const handleGenerate = async () => {
     if (!selectedSegmentKey) return;
-    await fetchSuggestions(selectedSegmentKey);
+    try {
+      setError(false);
+      await fetchSuggestions(selectedSegmentKey);
+    } catch (err) {
+      setError(true);
+    }
   };
 
   return (
@@ -118,7 +124,13 @@ export const AISuggestionsPanel = ({ segments, onUseSuggestion }: AISuggestionsP
             </div>
           )}
 
-          {!loading && suggestions.length === 0 && selectedSegmentKey && (
+          {error && (
+            <div className="text-center py-8 text-amber-600">
+              <p className="text-sm">Service IA temporairement indisponible. Utilisez les templates standards.</p>
+            </div>
+          )}
+
+          {!loading && !error && suggestions.length === 0 && selectedSegmentKey && (
             <div className="text-center py-8 text-muted-foreground">
               <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>Cliquez sur "Générer" pour obtenir des suggestions IA</p>

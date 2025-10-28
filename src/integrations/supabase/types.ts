@@ -1749,7 +1749,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      crm_cohort_analysis: {
+        Row: {
+          activated_users: number | null
+          avg_ltv: number | null
+          cohort_month: string | null
+          first_outing_users: number | null
+          regular_users: number | null
+          retention_rate: number | null
+          total_signups: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       activate_ready_scheduled_groups: { Args: never; Returns: number }
@@ -1933,6 +1944,7 @@ export type Database = {
         Returns: boolean
       }
       migrate_existing_users: { Args: never; Returns: number }
+      refresh_crm_cohort_analysis: { Args: never; Returns: undefined }
       repair_missing_outings_history: { Args: never; Returns: number }
       sanitize_coordinates_pg: {
         Args: { lat: number; lng: number }

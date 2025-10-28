@@ -28,9 +28,10 @@ export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick }: Campa
       id: c.id,
       title: c.campaign_name,
       start: c.send_at!,
-      backgroundColor: c.status === 'scheduled' ? 'hsl(var(--primary))' : 
-                       c.status === 'active' ? 'hsl(var(--green-500))' : 
-                       'hsl(var(--muted))',
+      backgroundColor: c.status === 'draft' ? 'hsl(220 13% 69%)' : 
+                       c.status === 'active' ? 'hsl(142 76% 36%)' : 
+                       c.status === 'paused' ? 'hsl(48 96% 53%)' :
+                       'hsl(240 5% 65%)',
       borderColor: 'transparent'
     }));
 
@@ -71,6 +72,10 @@ export const CampaignCalendar = ({ campaigns, onDateClick, onEventClick }: Campa
           height="auto"
           editable={true}
           droppable={true}
+          eventDrop={(info) => {
+            // Will be handled by parent component
+            console.log('Event dropped:', info.event.id, info.event.start);
+          }}
         />
       </CardContent>
     </Card>

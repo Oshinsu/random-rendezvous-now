@@ -4,9 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus, Sparkles } from 'lucide-react';
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
-import { ABTestingPanel } from '@/components/crm/ABTestingPanel';
-import { FeedbackPanel } from '@/components/crm/FeedbackPanel';
 import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
+import { CampaignDetailsModal } from '@/components/crm/CampaignDetailsModal';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
 import { TemplateSelector } from '@/components/crm/TemplateSelector';
 import { QuickCampaignModal } from '@/components/crm/QuickCampaignModal';
@@ -80,6 +79,8 @@ export default function AdminCRM() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showSequences, setShowSequences] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [showCampaignDetailsModal, setShowCampaignDetailsModal] = useState(false);
 
   const { sequences, createSequence } = useCRMSequences();
   const { data: optimization, isLoading: optimizationLoading } = useSendTimeOptimization(newCampaign.target_segment_id);
@@ -181,15 +182,13 @@ export default function AdminCRM() {
         />
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 gap-1">
+          <TabsList className="grid w-full grid-cols-6 gap-1">
             <TabsTrigger value="analytics">📊 Analytics</TabsTrigger>
             <TabsTrigger value="segments">👥 Segments</TabsTrigger>
             <TabsTrigger value="health">💚 Health</TabsTrigger>
             <TabsTrigger value="campaigns">📧 Campagnes</TabsTrigger>
             <TabsTrigger value="automation">⚡ Automation</TabsTrigger>
-            <TabsTrigger value="feedback">💬 Feedbacks</TabsTrigger>
             <TabsTrigger value="cohorts">📈 Cohortes</TabsTrigger>
-            <TabsTrigger value="ab-testing">🧪 A/B Tests</TabsTrigger>
           </TabsList>
 
           {/* ANALYTICS TAB */}
@@ -457,20 +456,27 @@ export default function AdminCRM() {
                 </div>
 
                 {/* AI Send Time Optimization */}
-                {optimization && newCampaign.target_segment_id && (
+                {optimization && newCampaign.target_segment_id && !optimizationLoading && (
                   <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                     <div className="flex items-start gap-2">
                       <Sparkles className="h-4 w-4 text-primary mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">🤖 IA Recommande</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {optimization.recommended_day} à {optimization.recommended_hour}h 
+                          {optimization.recommended_day === 4 ? 'Jeudi' : 
+                           optimization.recommended_day === 5 ? 'Vendredi' : 
+                           'Jour ' + optimization.recommended_day} à {optimization.recommended_hour}h 
                           <span className="ml-1">
-                            (Taux d'ouverture estimé : {optimization.estimated_open_rate}%)
+                            (Taux d'ouverture estimé : {optimization.estimated_open_rate ? Math.round(optimization.estimated_open_rate) : 0}%)
                           </span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Confiance : {typeof optimization.confidence === 'number' ? Math.round(optimization.confidence * 100) : optimization.confidence}%
+                          Confiance : {
+                            optimization.confidence === 'high' ? 'Élevée' :
+                            optimization.confidence === 'medium' ? 'Moyenne' :
+                            optimization.confidence === 'low' ? 'Faible' :
+                            'Non disponible'
+                          } ({optimization.data_points || 0} points de données)
                         </p>
                       </div>
                       <Button
@@ -484,6 +490,15 @@ export default function AdminCRM() {
                       >
                         Appliquer
                       </Button>
+                    </div>
+                  </div>
+                )}
+
+                {optimizationLoading && newCampaign.target_segment_id && (
+                  <div className="mt-4 p-3 bg-muted/50 border rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Sparkles className="h-4 w-4 animate-pulse" />
+                      Analyse du meilleur moment d'envoi...
                     </div>
                   </div>
                 )}
@@ -507,7 +522,8 @@ export default function AdminCRM() {
                     onEventClick={(campaignId) => {
                       const campaign = campaigns.find(c => c.id === campaignId);
                       if (campaign) {
-                        console.log('Campaign clicked:', campaign);
+                        setSelectedCampaign(campaign);
+                        setShowCampaignDetailsModal(true);
                       }
                     }}
                   />
@@ -623,21 +639,62 @@ export default function AdminCRM() {
             </Card>
           </TabsContent>
 
-          {/* FEEDBACK TAB */}
-          <TabsContent value="feedback" className="space-y-6">
-            <FeedbackPanel />
-          </TabsContent>
-
           {/* COHORTS TAB */}
           <TabsContent value="cohorts" className="space-y-6">
             <CohortAnalysis />
           </TabsContent>
-
-          {/* A/B TESTING TAB */}
-          <TabsContent value="ab-testing" className="space-y-6">
-            <ABTestingPanel />
-          </TabsContent>
         </Tabs>
+
+        {/* Modals */}
+        <QuickCampaignModal
+          open={showQuickModal}
+          onOpenChange={setShowQuickModal}
+          initialDate={quickModalDate}
+          segments={segments}
+          campaigns={campaigns}
+          onCreateCampaign={handleCreateCampaign}
+        />
+
+        <CampaignDetailsModal
+          campaign={selectedCampaign}
+          open={showCampaignDetailsModal}
+          onClose={() => {
+            setShowCampaignDetailsModal(false);
+            setSelectedCampaign(null);
+          }}
+          onReschedule={async (campaignId, newDate) => {
+            await rescheduleCampaign(campaignId, newDate);
+            toast({
+              title: 'Campagne reprogrammée',
+              description: 'La date d\'envoi a été mise à jour'
+            });
+          }}
+          onDuplicate={(campaign: any) => {
+            setNewCampaign({
+              campaign_name: `${campaign.campaign_name} (copie)`,
+              campaign_type: 'email',
+              trigger_type: 'manual',
+              subject: campaign.subject || campaign.campaign_name,
+              content: '',
+              target_segment_id: '',
+              channels: ['email'],
+              send_at: ''
+            });
+            setEmailTemplate({
+              subject: campaign.subject || campaign.campaign_name,
+              html_content: '',
+              variables: []
+            });
+            setShowCampaignDetailsModal(false);
+            toast({
+              title: 'Campagne dupliquée',
+              description: 'Modifiez les paramètres et créez la campagne'
+            });
+          }}
+          onSend={async (campaignId) => {
+            await sendCampaign(campaignId, zapierWebhook);
+          }}
+        />
       </div>
     </AdminLayout>
   );
