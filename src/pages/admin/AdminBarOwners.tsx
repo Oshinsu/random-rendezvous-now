@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAdminBarOwners } from '@/hooks/useAdminBarOwners';
+import { EmptyBarOwnersState } from '@/components/admin/EmptyBarOwnersState';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ import {
   UserCheck,
   UserX,
   AlertTriangle,
+  ExternalLink,
+  DollarSign,
 } from 'lucide-react';
 import type { BarOwnerWithSubscription } from '@/hooks/useAdminBarOwners';
 
@@ -131,6 +134,21 @@ export default function AdminBarOwners() {
     );
   }
 
+  // ✅ PHASE 3: Show empty state if no bar owners
+  if (!barOwners || barOwners.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Gestion des Gérants de Bar</h1>
+          <p className="text-muted-foreground">
+            Gérez les demandes et abonnements des gérants de bar partenaires
+          </p>
+        </div>
+        <EmptyBarOwnersState />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -179,15 +197,24 @@ export default function AdminBarOwners() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Euro className="h-8 w-8 text-purple-500" />
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign className="h-8 w-8 text-green-600" />
                 <div>
-                  <p className="text-2xl font-bold">Stripe</p>
-                  <p className="text-sm text-muted-foreground">Voir Stripe Dashboard</p>
+                  <p className="text-2xl font-bold text-green-800">Stripe</p>
+                  <p className="text-sm text-green-600">Gestion des abonnements</p>
                 </div>
               </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                className="w-full border-green-300 text-green-700 hover:bg-green-100"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Ouvrir Stripe Dashboard
+              </Button>
             </CardContent>
           </Card>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,17 @@ export const AdminMessages = () => {
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
-  const handleSearch = () => {
-    fetchMessages({ 
-      search: searchTerm || undefined,
-      isSystem: filterSystem
-    });
-  };
+  // ✅ PHASE 1: Auto-fetch on filter change with debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchMessages({ 
+        search: searchTerm || undefined,
+        isSystem: filterSystem
+      });
+    }, searchTerm ? 300 : 0); // Debounce only for search term
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, filterSystem]);
 
   const handleDelete = async (messageId: string) => {
     const success = await deleteMessage(messageId);
@@ -103,7 +108,6 @@ export const AdminMessages = () => {
                 placeholder="Rechercher dans les messages..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <div className="flex gap-2">
@@ -123,11 +127,8 @@ export const AdminMessages = () => {
                 <Bot className="h-4 w-4 mr-1" />
                 Système
               </Button>
-              <Button onClick={handleSearch} size="sm">
-                <Search className="h-4 w-4 mr-1" />
-                Rechercher
-              </Button>
             </div>
+            {loading && <LoadingSpinner size="sm" />}
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRealTimeActivity } from '@/hooks/useRealTimeActivity';
 import { RealtimeChart } from '@/components/admin/RealtimeChart';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -24,6 +24,18 @@ type TimePeriod = 'day' | 'week' | 'month' | 'year';
 export const AdminActivity = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('day');
   const { activityEvents, liveStats, chartData, loading, error, refetch } = useRealTimeActivity(selectedPeriod);
+
+  // ✅ PHASE 5: Auto-refresh every 30s in 'day' mode
+  useEffect(() => {
+    if (selectedPeriod === 'day') {
+      const interval = setInterval(() => {
+        console.log('🔄 Auto-refresh activity data (30s interval)...');
+        refetch();
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [selectedPeriod, refetch]);
 
   const getEventIcon = (type: string) => {
     switch (type) {

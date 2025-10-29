@@ -18,13 +18,15 @@ interface LogEntry {
   metadata?: any;
 }
 
+const pageSize = 100;
+
 export const AdminLogs = () => {
-  const { logs, loading, error, fetchLogs } = useAdminLogs();
+  const { logs, loading, error, fetchLogs, currentPage, totalPages, setCurrentPage } = useAdminLogs();
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<'all' | 'error' | 'warn' | 'info' | 'debug'>('all');
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs(1);
   }, []);
 
   const getLevelBadge = (level: string) => {
@@ -146,7 +148,7 @@ export const AdminLogs = () => {
             filename="system-logs"
             format="csv"
           />
-          <Button onClick={fetchLogs} variant="outline" size="sm">
+          <Button onClick={() => fetchLogs(1)} variant="outline" size="sm">
             Actualiser
           </Button>
         </div>
@@ -254,6 +256,34 @@ export const AdminLogs = () => {
           <CardContent className="p-8 text-center">
             <div className="text-gray-500">
               Aucun log trouvé pour les critères sélectionnés
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ✅ PHASE 7: Pagination Controls */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <Button 
+                disabled={currentPage === 1} 
+                onClick={() => setCurrentPage(currentPage - 1)}
+                variant="outline"
+              >
+                ← Précédent
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Page <strong>{currentPage}</strong> sur <strong>{totalPages}</strong>
+                <span className="ml-2">({pageSize} logs par page)</span>
+              </div>
+              <Button 
+                disabled={currentPage === totalPages} 
+                onClick={() => setCurrentPage(currentPage + 1)}
+                variant="outline"
+              >
+                Suivant →
+              </Button>
             </div>
           </CardContent>
         </Card>

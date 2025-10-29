@@ -14,8 +14,12 @@ export const useAdminLogs = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 100;
 
-  const fetchLogs = async () => {
+  // ✅ PHASE 7: Server-side pagination
+  const fetchLogs = async (page: number = 1) => {
     setLoading(true);
     setError(null);
     
@@ -113,7 +117,15 @@ export const useAdminLogs = () => {
       // Sort by timestamp (newest first)
       realLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       
-      setLogs(realLogs.slice(0, 50));
+      // Apply pagination
+      const totalLogs = realLogs.length;
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedLogs = realLogs.slice(startIndex, endIndex);
+      
+      setLogs(paginatedLogs);
+      setCurrentPage(page);
+      setTotalPages(Math.ceil(totalLogs / pageSize));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des logs');
       console.error('Error fetching logs:', err);
@@ -126,6 +138,9 @@ export const useAdminLogs = () => {
     logs,
     loading,
     error,
-    fetchLogs
+    fetchLogs,
+    currentPage,
+    totalPages,
+    setCurrentPage: (page: number) => fetchLogs(page)
   };
 };

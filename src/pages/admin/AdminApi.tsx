@@ -138,6 +138,21 @@ export const AdminApi = () => {
       {/* Phase 1 - Diagnostic Panel */}
       <ApiDiagnosticPanel />
 
+      {/* ✅ PHASE 6: Cost Alert */}
+      {analytics && analytics.stats.totalCost > 5 && (
+        <Alert className="border-red-300 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            <strong>⚠️ Coût API élevé détecté</strong>
+            <br />
+            Vous avez dépensé <strong>${analytics.stats.totalCost.toFixed(2)}</strong> aujourd'hui, 
+            soit environ <strong>${(analytics.stats.totalCost * 30).toFixed(2)}/mois</strong>.
+            <br />
+            💡 <em>Action recommandée : Activez un cache local ou réduisez le rayon de recherche pour optimiser les coûts.</em>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Alert when no data */}
       {analytics && analytics.requests.length === 0 && (
         <Alert>
