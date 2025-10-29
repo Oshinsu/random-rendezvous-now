@@ -172,3 +172,6 @@ verify_jwt = false
 [functions.test-zoho-send]
 verify_jwt = false
 
+[functions.monitor-blog-health]
+verify_jwt = false
+
