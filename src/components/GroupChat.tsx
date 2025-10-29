@@ -3,6 +3,7 @@ import { useRef, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUnifiedGroupChat } from '@/hooks/useUnifiedGroupChat';
+import { useChatPresence } from '@/hooks/chat/useChatPresence';
 import { useAuth } from '@/contexts/AuthContext';
 import ChatHeader from '@/components/chat/ChatHeader';
 import ChatMessages from '@/components/chat/ChatMessages';
@@ -18,6 +19,7 @@ interface GroupChatProps {
 const GroupChat = ({ groupId, isGroupComplete, barName }: GroupChatProps) => {
   const { user } = useAuth();
   const { messages, loading, sending, sendMessage, refreshMessages } = useUnifiedGroupChat(groupId);
+  const { onlineMembers } = useChatPresence(groupId);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus moins agressif - seulement au premier chargement

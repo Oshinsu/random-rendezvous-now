@@ -8,25 +8,17 @@ export class GroupMessagingService {
   // Cache pour les derniers messages d'attribution de bar (délai augmenté à 5 minutes)
   private static lastBarAssignmentTime = new Map<string, number>();
   
-  // NOUVEAU: Filtre plus strict pour réduire les messages système
-  private static readonly CRITICAL_MESSAGE_PATTERNS = [
-    'Rendez-vous au',
-    'groupe complet',
-    'bar assigné',
-    'Attribution automatique'
-  ];
-
   /**
-   * Envoyer un message système à un groupe avec filtrage STRICT pour réduire le spam
+   * Envoyer un message système à un groupe avec filtrage ULTRA STRICT
+   * SEULEMENT 2 types de messages autorisés : Bienvenue + Confirmation bar
    */
   static async sendGroupSystemMessage(groupId: string, message: string): Promise<void> {
     try {
-      // NOUVEAU: Filtrage plus strict - seulement les messages vraiment critiques
-      const isCriticalMessage = this.CRITICAL_MESSAGE_PATTERNS.some(pattern => 
-        message.includes(pattern)
-      );
+      // Whitelist stricte : SEULEMENT ces 2 messages passent
+      const isWelcomeMessage = message.includes('Bienvenue') && message.includes('groupe créé');
+      const isBarConfirmed = message.includes('Rendez-vous au');
       
-      if (!isCriticalMessage) {
+      if (!isWelcomeMessage && !isBarConfirmed) {
         console.log('⏭️ [GROUP MESSAGING] Message système filtré (non critique):', message);
         return;
       }

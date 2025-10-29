@@ -51,9 +51,38 @@ export const useChatMutation = (groupId: string, onSuccess: (message: ChatMessag
 
       return data;
     },
-    onSuccess: (newMessage) => {
+    onSuccess: async (newMessage) => {
       logger.info('✅ Message envoyé au groupe', { groupId });
       onSuccess(newMessage);
+      
+      // NOUVEAU : Notifier les autres membres du groupe
+      try {
+        const { data: members } = await supabase
+          .from('group_participants')
+          .select('user_id')
+          .eq('group_id', groupId)
+          .eq('status', 'confirmed')
+          .neq('user_id', user.id);
+        
+        if (members && members.length > 0) {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              user_ids: members.map(m => m.user_id),
+              title: '💬 Nouveau message dans ton groupe',
+              body: newMessage.message.substring(0, 100),
+              type: 'new_chat_message',
+              action_url: `/groups?group_id=${groupId}`,
+              data: {
+                group_id: groupId,
+                message_id: newMessage.id,
+                sender_id: user.id
+              }
+            }
+          });
+        }
+      } catch (error) {
+        logger.error('Erreur notification push message', error);
+      }
     },
     onError: (error) => {
       ErrorHandler.logError('SEND_MESSAGE_MUTATION', error);
