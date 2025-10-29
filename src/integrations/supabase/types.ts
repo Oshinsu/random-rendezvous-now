@@ -1971,6 +1971,7 @@ export type Database = {
           device_name: string | null
           device_type: string
           id: string
+          is_active: boolean | null
           last_used_at: string | null
           token: string
           user_id: string
@@ -1980,6 +1981,7 @@ export type Database = {
           device_name?: string | null
           device_type: string
           id?: string
+          is_active?: boolean | null
           last_used_at?: string | null
           token: string
           user_id: string
@@ -1989,6 +1991,7 @@ export type Database = {
           device_name?: string | null
           device_type?: string
           id?: string
+          is_active?: boolean | null
           last_used_at?: string | null
           token?: string
           user_id?: string
@@ -2112,6 +2115,10 @@ export type Database = {
         Returns: boolean
       }
       dissolve_old_groups: { Args: never; Returns: undefined }
+      filter_valid_notification_recipients: {
+        Args: { p_notification_type: string; p_user_ids: string[] }
+        Returns: string[]
+      }
       find_compatible_group_fixed: {
         Args: {
           search_radius?: number

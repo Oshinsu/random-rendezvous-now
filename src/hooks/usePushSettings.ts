@@ -17,25 +17,69 @@ export const usePushSettings = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['push-settings'],
     queryFn: async (): Promise<PushSettings> => {
-      // Return default settings
+      // Fetch from system_settings table
+      const { data: rateLimitData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'push_rate_limit_per_day')
+        .maybeSingle();
+
+      const { data: quietHoursData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'push_quiet_hours')
+        .maybeSingle();
+
+      const { data: abTestingData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'push_ab_testing_enabled')
+        .maybeSingle();
+
+      const { data: cleanupData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'push_auto_cleanup_days')
+        .maybeSingle();
+
       return {
-        maxNotificationsPerDay: 5,
-        quietHoursStart: 22,
-        quietHoursEnd: 9,
-        abTestingEnabled: false,
-        autoCleanupDays: 30,
+        maxNotificationsPerDay: typeof rateLimitData?.setting_value === 'object' && Array.isArray(rateLimitData.setting_value) 
+          ? (rateLimitData.setting_value[0] as number) 
+          : 5,
+        quietHoursStart: typeof quietHoursData?.setting_value === 'object' && !Array.isArray(quietHoursData.setting_value)
+          ? ((quietHoursData.setting_value as any).start as number)
+          : 22,
+        quietHoursEnd: typeof quietHoursData?.setting_value === 'object' && !Array.isArray(quietHoursData.setting_value)
+          ? ((quietHoursData.setting_value as any).end as number)
+          : 9,
+        abTestingEnabled: typeof abTestingData?.setting_value === 'object' && Array.isArray(abTestingData.setting_value)
+          ? (abTestingData.setting_value[0] as boolean)
+          : false,
+        autoCleanupDays: typeof cleanupData?.setting_value === 'object' && Array.isArray(cleanupData.setting_value)
+          ? (cleanupData.setting_value[0] as number)
+          : 30,
         vapidPublicKey: 'BJzU_iwlBkf3bUOvpwBxhXyEA-G4bUGVr9kIwxHXnHJDG0VXrkLXjHNOvOXwPvLHyh4z0bQgT2pFxvJkqWqsm7s',
       };
     },
+    staleTime: Infinity, // Config rarely changes
   });
 
   const updateSetting = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: number | boolean }) => {
-      // Update via system_settings if exists
-      toast.success('✅ Paramètre mis à jour');
+    mutationFn: async ({ key, value }: { key: string; value: number | boolean | { start: number; end: number } }) => {
+      const settingKey = `push_${key}`;
+      const settingValue = typeof value === 'object' ? value : [value];
+      
+      await supabase.rpc('update_system_setting', {
+        setting_name: settingKey,
+        new_value: settingValue,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['push-settings'] });
+      toast.success('✅ Paramètre mis à jour');
+    },
+    onError: (error: Error) => {
+      toast.error(`❌ Erreur: ${error.message}`);
     },
   });
 
@@ -45,11 +89,10 @@ export const usePushSettings = () => {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
 
-      // @ts-ignore TS2589: Supabase type inference issue - See https://github.com/supabase/supabase-js/issues/1372
       const result = await supabase
         .from('user_push_tokens')
         .delete()
-        .eq('active', false)
+        .eq('is_active', false)
         .lt('updated_at', cutoffDate.toISOString());
 
       if (result.error) throw result.error;

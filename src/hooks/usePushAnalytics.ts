@@ -26,7 +26,7 @@ export const usePushAnalytics = (dateRange: 'week' | 'month' | 'all' = 'month') 
       const { count: activeTokens } = await supabase
         .from('user_push_tokens')
         .select('*', { count: 'exact', head: true })
-        .eq('active', true);
+        .eq('is_active', true);
 
       const permissionRate = totalUsers ? (activeTokens! / totalUsers) * 100 : 0;
 
