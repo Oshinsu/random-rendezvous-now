@@ -277,6 +277,13 @@ const AppRoutes = () => (
         </AdminRoute>
       </ProtectedRoute>
     } />
+    <Route path="/admin/push-notifications" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminPushNotifications />
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
     
     <Route path="*" element={<NotFound />} />
   </Routes>
