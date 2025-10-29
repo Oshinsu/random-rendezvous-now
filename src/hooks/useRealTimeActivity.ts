@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface ActivityEvent {
   id: string;
@@ -37,6 +38,9 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
   const [chartData, setChartData] = useState<ActivityMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 🔧 FIX: Protection contre memory leak
+  const isActiveRef = useRef(true);
 
   const getDateRange = () => {
     const now = new Date();
@@ -147,9 +151,12 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
       // Sort events by timestamp (newest first)
       events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       
-      setActivityEvents(events.slice(0, 50)); // Keep more events for longer periods
+      // 🔧 FIX: Vérifier si toujours actif avant de mettre à jour
+      if (isActiveRef.current) {
+        setActivityEvents(events.slice(0, 50));
+      }
     } catch (error) {
-      console.error('Error fetching recent activity:', error);
+      logger.error('Erreur fetch recent activity', error);
     }
   };
 
@@ -186,23 +193,28 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
 
-      setLiveStats({
-        activeUsers: (signupStats as any)?.active_users_in_period || 0,
-        pendingGroups: pendingGroupsCount || 0,
-        completedGroups: completedGroupsCount || 0,
-        signups: (signupStats as any)?.signups_in_period || 0,
-        messages: messagesCount || 0
-      });
+      // 🔧 FIX: Vérifier si toujours actif avant de mettre à jour
+      if (isActiveRef.current) {
+        setLiveStats({
+          activeUsers: (signupStats as any)?.active_users_in_period || 0,
+          pendingGroups: pendingGroupsCount || 0,
+          completedGroups: completedGroupsCount || 0,
+          signups: (signupStats as any)?.signups_in_period || 0,
+          messages: messagesCount || 0
+        });
+      }
     } catch (error) {
-      console.error('Error fetching live stats:', error);
+      logger.error('Erreur fetch live stats', error);
       // Set fallback values
-      setLiveStats({
-        activeUsers: 0,
-        pendingGroups: 0,
-        completedGroups: 0,
-        signups: 0,
-        messages: 0
-      });
+      if (isActiveRef.current) {
+        setLiveStats({
+          activeUsers: 0,
+          pendingGroups: 0,
+          completedGroups: 0,
+          signups: 0,
+          messages: 0
+        });
+      }
     }
   };
 
@@ -286,9 +298,12 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
         });
       }
 
-      setChartData(chartMetrics);
+      // 🔧 FIX: Vérifier si toujours actif avant de mettre à jour
+      if (isActiveRef.current) {
+        setChartData(chartMetrics);
+      }
     } catch (error) {
-      console.error('Error fetching chart data:', error);
+      logger.error('Erreur fetch chart data', error);
     }
   };
 
@@ -310,20 +325,33 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
   };
 
   useEffect(() => {
+    // 🔧 FIX: Marquer comme actif au montage
+    isActiveRef.current = true;
+    
     fetchAllData();
 
     // ✅ OPTIMISATION: Reduced polling (2 min for day, 3 min for week, 5 min for others)
     const pollInterval = period === 'day' ? 120000 : period === 'week' ? 180000 : 300000;
-    const interval = setInterval(fetchAllData, pollInterval);
+    const interval = setInterval(() => {
+      // 🔧 FIX: Ne fetch que si toujours actif
+      if (isActiveRef.current) {
+        fetchAllData();
+      }
+    }, pollInterval);
 
     // ✅ OPTIMISATION: Single channel with throttled updates (5 seconds)
     let channel: any = null;
     let throttleTimeout: NodeJS.Timeout | null = null;
     
     const throttledFetchAllData = () => {
+      // 🔧 FIX: Ne fetch que si toujours actif
+      if (!isActiveRef.current) return;
       if (throttleTimeout) return;
+      
       throttleTimeout = setTimeout(() => {
-        fetchAllData();
+        if (isActiveRef.current) {
+          fetchAllData();
+        }
         throttleTimeout = null;
       }, 5000);
     };
@@ -350,9 +378,14 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
     }
 
     return () => {
+      // 🔧 FIX: Marquer comme inactif au démontage
+      isActiveRef.current = false;
       clearInterval(interval);
       if (throttleTimeout) clearTimeout(throttleTimeout);
-      if (channel) supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+        logger.debug('Nettoyage admin realtime channel');
+      }
     };
   }, [period]);
 

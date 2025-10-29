@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ChatMessage } from '@/types/chat';
+import { logger } from '@/utils/logger';
 
 export const useChatRealtime = (
   groupId: string, 
@@ -32,28 +33,46 @@ export const useChatRealtime = (
     // Marquer comme actif
     isActiveRef.current = true;
 
-    // Nettoyage BRUTAL de l'ancienne souscription
+    // 🔧 CHECK: Supprimer le canal existant s'il existe déjà
+    const existingChannels = supabase.getChannels();
+    const duplicateChannel = existingChannels.find(ch => 
+      ch.topic.includes(`strict-group-${groupId}-${user.id}`)
+    );
+    
+    if (duplicateChannel) {
+      logger.warn('Canal déjà enregistré, suppression', { groupId });
+      try {
+        supabase.removeChannel(duplicateChannel);
+      } catch (error) {
+        logger.error('Erreur suppression canal dupliqué', error);
+      }
+    }
+
+    // Nettoyage de l'ancienne souscription
     if (channelRef.current) {
-      console.log('🧹 SUPPRESSION BRUTALE de l\'ancienne souscription');
+      logger.debug('Suppression ancienne souscription');
       try {
         supabase.removeChannel(channelRef.current);
       } catch (error) {
-        console.warn('Erreur lors de la suppression du canal:', error);
+        logger.warn('Erreur lors de la suppression du canal', error);
       }
       channelRef.current = null;
     }
 
     // Détecter changement de groupe et nettoyer
     if (currentGroupIdRef.current && currentGroupIdRef.current !== groupId) {
-      console.log('🧹 CHANGEMENT DE GROUPE - nettoyage immédiat du cache');
+      logger.debug('Changement de groupe détecté', { 
+        old: currentGroupIdRef.current, 
+        new: groupId 
+      });
       invalidateMessagesRef.current();
     }
 
-    console.log('🛰️ Configuration STRICTE realtime pour groupe:', groupId);
+    logger.realtime('Configuration realtime pour groupe', groupId);
     currentGroupIdRef.current = groupId;
 
     // Canal avec timestamp pour garantir l'unicité
-    const channelName = `strict-group-${groupId}-${user.id}-${Date.now()}-${Math.random()}`;
+    const channelName = `strict-group-${groupId}-${user.id}-${Date.now()}`;
     
     const channel = supabase
       .channel(channelName)
@@ -68,7 +87,7 @@ export const useChatRealtime = (
         (payload) => {
           // Vérifier si le hook est toujours actif
           if (!isActiveRef.current) {
-            console.log('🚫 Hook inactif, message ignoré');
+            logger.debug('Hook inactif, message ignoré');
             return;
           }
 
@@ -76,7 +95,7 @@ export const useChatRealtime = (
           
           // TRIPLE vérification ultra stricte
           if (!newMessage || newMessage.group_id !== groupId) {
-            console.error('🚨 Message ÉTRANGER REJETÉ:', {
+            logger.error('Message étranger rejeté', {
               messageGroup: newMessage?.group_id,
               expectedGroup: groupId,
               currentGroup: currentGroupIdRef.current,
@@ -87,22 +106,43 @@ export const useChatRealtime = (
 
           // Vérifier que c'est toujours le groupe actuel
           if (currentGroupIdRef.current !== groupId) {
-            console.error('🚨 Message pour ANCIEN groupe rejeté:', {
+            logger.error('Message pour ancien groupe rejeté', {
               messageGroup: newMessage.group_id,
               currentGroup: currentGroupIdRef.current
             });
             return;
           }
 
-          console.log('✅ Message VALIDÉ et accepté pour groupe:', groupId);
+          logger.debug('Message validé et accepté', { groupId });
           updateMessagesCache(newMessage);
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Souscription STRICTE active pour:', groupId);
+          logger.realtime('Souscription active', groupId);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Erreur souscription STRICTE pour:', groupId);
+          logger.error('Erreur souscription realtime', groupId);
+          // 🔧 RECONNECTION: Invalider et retry après 3 secondes
+          setTimeout(() => {
+            if (isActiveRef.current) {
+              logger.info('Tentative de reconnexion...', groupId);
+              invalidateMessagesRef.current();
+            }
+          }, 3000);
+        } else if (status === 'TIMED_OUT') {
+          logger.warn('Timeout souscription realtime', groupId);
+          // 🔧 RECONNECTION: Retry après 5 secondes
+          setTimeout(() => {
+            if (isActiveRef.current) {
+              logger.info('Retry après timeout...', groupId);
+              invalidateMessagesRef.current();
+            }
+          }, 5000);
+        } else if (status === 'CLOSED') {
+          logger.warn('Canal fermé', groupId);
+          if (isActiveRef.current) {
+            invalidateMessagesRef.current();
+          }
         }
       });
 
@@ -113,27 +153,27 @@ export const useChatRealtime = (
       isActiveRef.current = false;
       
       if (channelRef.current) {
-        console.log('🛰️ Nettoyage souscription STRICTE pour:', groupId);
+        logger.debug('Nettoyage souscription', groupId);
         try {
           supabase.removeChannel(channelRef.current);
         } catch (error) {
-          console.warn('Erreur lors du nettoyage:', error);
+          logger.warn('Erreur lors du nettoyage', error);
         }
         channelRef.current = null;
       }
     };
   }, [groupId, user?.id]);
 
-  // Nettoyage final BRUTAL au démontage
+  // Nettoyage final au démontage
   useEffect(() => {
     return () => {
       isActiveRef.current = false;
       if (channelRef.current) {
-        console.log('🛰️ Nettoyage FINAL BRUTAL');
+        logger.debug('Nettoyage final realtime');
         try {
           supabase.removeChannel(channelRef.current);
         } catch (error) {
-          console.warn('Erreur nettoyage final:', error);
+          logger.warn('Erreur nettoyage final', error);
         }
         channelRef.current = null;
       }
