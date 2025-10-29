@@ -47,16 +47,27 @@ export const RealtimeTest = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      const testStartTime = Date.now();
+      // Timestamps pour calcul latence PRÉCIS
+      let groupInsertTime = 0;
+      let groupUpdateTime = 0;
+      let messageInsertTime = 0;
 
-      // Setup realtime listeners avec latence correcte
+      // Setup realtime listeners avec latence CORRECTE
       const groupsCh = supabase
         .channel('groups-test-channel')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'groups' },
           (payload) => {
             const eventReceivedTime = Date.now();
-            const latency = eventReceivedTime - testStartTime;
+            let latency = 0;
+            
+            // Calcul latence selon type d'événement
+            if (payload.eventType === 'INSERT') {
+              latency = eventReceivedTime - groupInsertTime;
+            } else if (payload.eventType === 'UPDATE') {
+              latency = eventReceivedTime - groupUpdateTime;
+            }
+            
             setEvents(prev => [...prev, {
               timestamp: new Date().toISOString(),
               table: 'groups',
@@ -74,7 +85,8 @@ export const RealtimeTest = () => {
           { event: '*', schema: 'public', table: 'group_messages' },
           (payload) => {
             const eventReceivedTime = Date.now();
-            const latency = eventReceivedTime - testStartTime;
+            const latency = eventReceivedTime - messageInsertTime;
+            
             setEvents(prev => [...prev, {
               timestamp: new Date().toISOString(),
               table: 'group_messages',
@@ -95,7 +107,7 @@ export const RealtimeTest = () => {
       setTestStatus('testing');
 
       // Create group (should trigger INSERT event)
-      const insertStart = Date.now();
+      groupInsertTime = Date.now(); // ✅ Timestamp JUSTE AVANT insert
       const { data: group, error: groupError } = await supabase
         .from('groups')
         .insert({
@@ -118,7 +130,7 @@ export const RealtimeTest = () => {
       await new Promise(r => setTimeout(r, 2000));
 
       // Update group (should trigger UPDATE event)
-      const updateStart = Date.now();
+      groupUpdateTime = Date.now(); // ✅ Timestamp JUSTE AVANT update
       await supabase
         .from('groups')
         .update({ 
@@ -130,6 +142,7 @@ export const RealtimeTest = () => {
       await new Promise(r => setTimeout(r, 2000));
 
       // Insert message (should trigger INSERT event)
+      messageInsertTime = Date.now(); // ✅ Timestamp JUSTE AVANT insert message
       await supabase
         .from('group_messages')
         .insert({

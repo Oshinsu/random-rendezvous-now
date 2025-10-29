@@ -15,6 +15,7 @@ interface LifecycleStep {
 export const GroupLifecycleTest = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [steps, setSteps] = useState<LifecycleStep[]>([
+    { name: "Création 5 users test", status: "pending" },
     { name: "Création groupe", status: "pending" },
     { name: "Ajout participant 1", status: "pending" },
     { name: "Ajout participant 2", status: "pending" },
@@ -36,13 +37,39 @@ export const GroupLifecycleTest = () => {
   const runTest = async () => {
     setIsRunning(true);
     let groupId: string | null = null;
+    const testUsers: any[] = [];
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      // Étape 0: Créer 5 users test DISTINCTS (évite violation UNIQUE constraint)
+      updateStep(0, { status: "running" });
+      const usersStart = Date.now();
+      
+      for (let i = 0; i < 5; i++) {
+        const timestamp = Date.now();
+        const { data, error } = await supabase.auth.signUp({
+          email: `test-lifecycle-${timestamp}-${i}@random-test.local`,
+          password: crypto.randomUUID(),
+          options: {
+            data: {
+              first_name: `TestUser${i}`,
+              last_name: 'Lifecycle',
+              is_test_user: true
+            }
+          }
+        });
+        
+        if (error || !data.user) throw error || new Error(`User ${i} creation failed`);
+        testUsers.push(data.user);
+      }
+      
+      updateStep(0, { 
+        status: "success", 
+        duration: Date.now() - usersStart,
+        details: `5 users créés avec IDs distincts`
+      });
 
       // Étape 1: Créer groupe
-      updateStep(0, { status: "running" });
+      updateStep(1, { status: "running" });
       const start0 = Date.now();
       
       const { data: group, error: groupError } = await supabase
@@ -55,7 +82,7 @@ export const GroupLifecycleTest = () => {
           max_participants: 5,
           current_participants: 0,
           status: 'waiting',
-          created_by_user_id: user.id
+          created_by_user_id: testUsers[0].id
         })
         .select()
         .single();
@@ -63,22 +90,22 @@ export const GroupLifecycleTest = () => {
       if (groupError) throw groupError;
       groupId = group.id;
       
-      updateStep(0, { 
+      updateStep(1, { 
         status: "success", 
         duration: Date.now() - start0,
         details: `ID: ${group.id.substring(0, 8)}...`
       });
 
-      // Étapes 2-5: Ajouter participants progressivement
+      // Étapes 2-5: Ajouter participants progressivement avec des USER IDS DIFFÉRENTS
       for (let i = 0; i < 4; i++) {
-        updateStep(i + 1, { status: "running" });
+        updateStep(i + 2, { status: "running" });
         const startP = Date.now();
 
         const { error: partError } = await supabase
           .from('group_participants')
           .insert({
             group_id: group.id,
-            user_id: user.id,
+            user_id: testUsers[i].id, // ✅ User DISTINCT pour chaque participant
             status: 'confirmed',
             latitude: 14.6037,
             longitude: -61.0731,
@@ -91,73 +118,71 @@ export const GroupLifecycleTest = () => {
           .update({ current_participants: i + 1 })
           .eq('id', group.id);
 
-        updateStep(i + 1, { 
+        updateStep(i + 2, { 
           status: "success", 
           duration: Date.now() - startP,
-          details: `${i + 1}/5 participants`
+          details: `${i + 1}/5 participants (User ${i + 1})`
         });
       }
 
       // Vérif status waiting
-      updateStep(4, { status: "running" });
+      updateStep(6, { status: "running" });
       const { data: checkWaiting } = await supabase
         .from('groups')
         .select('status')
         .eq('id', group.id)
         .single();
 
-      updateStep(4, { 
+      updateStep(6, { 
         status: checkWaiting?.status === 'waiting' ? "success" : "error", 
         duration: 100,
         details: `Status: ${checkWaiting?.status}`
       });
 
-      // Ajout 5ème participant
-      for (let i = 4; i < 5; i++) {
-        updateStep(i + 2, { status: "running" });
-        const startP = Date.now();
+      // Ajout 5ème participant (User 5 distinct)
+      updateStep(7, { status: "running" });
+      const startP5 = Date.now();
 
-        await supabase
-          .from('group_participants')
-          .insert({
-            group_id: group.id,
-            user_id: user.id,
-            status: 'confirmed',
-            latitude: 14.6037,
-            longitude: -61.0731,
-          });
-
-        await supabase
-          .from('groups')
-          .update({ 
-            current_participants: 5,
-            status: 'confirmed'
-          })
-          .eq('id', group.id);
-
-        updateStep(i + 2, { 
-          status: "success", 
-          duration: Date.now() - startP,
-          details: "5/5 participants - Groupe complet"
+      await supabase
+        .from('group_participants')
+        .insert({
+          group_id: group.id,
+          user_id: testUsers[4].id, // ✅ User 5 DISTINCT
+          status: 'confirmed',
+          latitude: 14.6037,
+          longitude: -61.0731,
         });
-      }
+
+      await supabase
+        .from('groups')
+        .update({ 
+          current_participants: 5,
+          status: 'confirmed'
+        })
+        .eq('id', group.id);
+
+      updateStep(7, { 
+        status: "success", 
+        duration: Date.now() - startP5,
+        details: "5/5 participants - Groupe complet (User 5)"
+      });
 
       // Vérif status confirmed
-      updateStep(7, { status: "running" });
+      updateStep(8, { status: "running" });
       const { data: checkConfirmed } = await supabase
         .from('groups')
         .select('status')
         .eq('id', group.id)
         .single();
 
-      updateStep(7, { 
+      updateStep(8, { 
         status: checkConfirmed?.status === 'confirmed' ? "success" : "error", 
         duration: 100,
         details: `Status: ${checkConfirmed?.status}`
       });
 
       // Trigger assignment
-      updateStep(8, { status: "running" });
+      updateStep(9, { status: "running" });
       const startAssign = Date.now();
       
       try {
@@ -166,7 +191,7 @@ export const GroupLifecycleTest = () => {
         });
         
         if (functionError) {
-          updateStep(8, { 
+          updateStep(9, { 
             status: "error", 
             duration: Date.now() - startAssign,
             details: `Erreur function: ${functionError.message}`
@@ -174,13 +199,13 @@ export const GroupLifecycleTest = () => {
           return;
         }
 
-        updateStep(8, { 
+        updateStep(9, { 
           status: "success", 
           duration: Date.now() - startAssign,
           details: "Bar assignment déclenché"
         });
       } catch (err: any) {
-        updateStep(8, { 
+        updateStep(9, { 
           status: "error", 
           duration: Date.now() - startAssign,
           details: `Exception: ${err.message}`
@@ -189,7 +214,7 @@ export const GroupLifecycleTest = () => {
       }
 
       // Vérif completion
-      updateStep(9, { status: "running" });
+      updateStep(10, { status: "running" });
       await new Promise(r => setTimeout(r, 3000));
 
       const { data: final } = await supabase
@@ -200,7 +225,7 @@ export const GroupLifecycleTest = () => {
 
       const isComplete = final?.bar_name && final?.bar_latitude && final?.bar_longitude;
 
-      updateStep(9, { 
+      updateStep(10, { 
         status: isComplete ? "success" : "error", 
         duration: 3000,
         details: isComplete ? `Bar: ${final.bar_name}` : "Pas de bar assigné"
@@ -213,8 +238,20 @@ export const GroupLifecycleTest = () => {
       }
     } finally {
       setIsRunning(false);
+      
+      // Cleanup: supprimer groupe ET users test
       if (groupId) {
+        await supabase.from('group_participants').delete().eq('group_id', groupId);
         await supabase.from('groups').delete().eq('id', groupId);
+      }
+      
+      // Supprimer tous les users test créés
+      for (const testUser of testUsers) {
+        try {
+          await supabase.auth.admin.deleteUser(testUser.id);
+        } catch (e) {
+          console.warn('Impossible de supprimer user test:', testUser.id);
+        }
       }
     }
   };

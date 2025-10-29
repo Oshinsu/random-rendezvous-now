@@ -14,11 +14,11 @@ interface ChatStep {
 export const ChatSystemTest = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [steps, setSteps] = useState<ChatStep[]>([
-    { name: "Création groupe test", status: "pending" },
+    { name: "Création groupe + participant", status: "pending" },
     { name: "Envoi message utilisateur", status: "pending" },
     { name: "Envoi message système", status: "pending" },
     { name: "Lecture messages", status: "pending" },
-    { name: "Ajout réaction", status: "pending" },
+    { name: "Ajout réactions (3)", status: "pending" },
     { name: "Vérif persistance", status: "pending" },
   ]);
 
@@ -37,7 +37,7 @@ export const ChatSystemTest = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      // Créer groupe
+      // Étape 0: Créer groupe + ajouter participant (OBLIGATOIRE pour RLS!)
       updateStep(0, { status: "running" });
       const { data: group, error: groupError } = await supabase
         .from('groups')
@@ -57,8 +57,8 @@ export const ChatSystemTest = () => {
       if (groupError) throw groupError;
       groupId = group.id;
 
-      // Ajouter participant
-      await supabase
+      // ✅ CRITIQUE: Ajouter participant AVANT d'envoyer message (RLS policy)
+      const { error: participantError } = await supabase
         .from('group_participants')
         .insert({
           group_id: group.id,
@@ -68,9 +68,10 @@ export const ChatSystemTest = () => {
           longitude: -61.0731,
         });
 
-      updateStep(0, { status: "success", details: "Groupe créé" });
+      if (participantError) throw participantError;
+      updateStep(0, { status: "success", details: "Groupe + participant créés (RLS OK)" });
 
-      // Message utilisateur
+      // Étape 1: Message utilisateur (maintenant autorisé par RLS)
       updateStep(1, { status: "running" });
       const { data: userMsg, error: msgError } = await supabase
         .from('group_messages')
