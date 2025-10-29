@@ -1451,11 +1451,18 @@ export type Database = {
           created_at: string | null
           device_type: string | null
           event_type: string
+          failed_sends: number | null
+          filtered_recipients: number | null
           id: string
+          is_control_group: boolean | null
           metadata: Json | null
           notification_id: string | null
           open_rate: number | null
           opened_count: number | null
+          successful_sends: number | null
+          total_recipients: number | null
+          variant_id: string | null
+          variant_metadata: Json | null
         }
         Insert: {
           click_rate?: number | null
@@ -1465,11 +1472,18 @@ export type Database = {
           created_at?: string | null
           device_type?: string | null
           event_type: string
+          failed_sends?: number | null
+          filtered_recipients?: number | null
           id?: string
+          is_control_group?: boolean | null
           metadata?: Json | null
           notification_id?: string | null
           open_rate?: number | null
           opened_count?: number | null
+          successful_sends?: number | null
+          total_recipients?: number | null
+          variant_id?: string | null
+          variant_metadata?: Json | null
         }
         Update: {
           click_rate?: number | null
@@ -1479,11 +1493,18 @@ export type Database = {
           created_at?: string | null
           device_type?: string | null
           event_type?: string
+          failed_sends?: number | null
+          filtered_recipients?: number | null
           id?: string
+          is_control_group?: boolean | null
           metadata?: Json | null
           notification_id?: string | null
           open_rate?: number | null
           opened_count?: number | null
+          successful_sends?: number | null
+          total_recipients?: number | null
+          variant_id?: string | null
+          variant_metadata?: Json | null
         }
         Relationships: [
           {

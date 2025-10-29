@@ -166,6 +166,42 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // SOTA 2025: Defensive validation of request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('❌ Request parsing failed:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request body', 
+          details: parseError.message 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate user_ids is a non-empty array
+    if (!requestBody.user_ids || !Array.isArray(requestBody.user_ids)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'user_ids must be an array',
+          received_type: typeof requestBody.user_ids
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (requestBody.user_ids.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'user_ids array is empty',
+          message: 'At least one user_id is required'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const {
       user_ids,
       title,
@@ -175,7 +211,7 @@ Deno.serve(async (req) => {
       image,
       icon = 'https://random.app/notification-icon.png',
       actions,
-    }: PushNotificationRequest = await req.json();
+    }: PushNotificationRequest = requestBody;
 
     console.log(`📤 Sending push notifications to ${user_ids.length} users`);
 
@@ -300,9 +336,9 @@ Deno.serve(async (req) => {
 
     console.log(`✅ FCM send complete: ${totalSuccess} success, ${totalFailure} failures`);
 
-    // Step 8: Track analytics
+    // Step 8: Track analytics (SOTA October 2025)
     await supabase.from('notification_analytics').insert({
-      notification_type: notificationType,
+      event_type: notificationType, // ✅ Use event_type (table column name)
       total_recipients: user_ids.length,
       filtered_recipients: validUserIds.length,
       successful_sends: totalSuccess,

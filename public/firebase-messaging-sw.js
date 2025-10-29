@@ -10,9 +10,10 @@
  * - Rich notifications (images, actions, badges)
  */
 
-// Import Firebase SDK from CDN (pinned version for stability)
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
+// Import Firebase SDK from CDN (SOTA October 2025: v11.0.2)
+// Source: https://github.com/firebase/firebase-js-sdk/releases/tag/11.0.2
+importScripts('https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.0.2/firebase-messaging-compat.js');
 
 // Firebase config for Random app
 const firebaseConfig = {
@@ -139,4 +140,4 @@ self.addEventListener('push', (event) => {
   }
 });
 
-console.log('[firebase-messaging-sw.js] Service Worker loaded (FCM HTTP v1 API - SOTA October 2025)');
+console.log('[firebase-messaging-sw.js] Service Worker loaded (Firebase SDK 11.0.2 - FCM HTTP v1 API - SOTA October 2025)');
