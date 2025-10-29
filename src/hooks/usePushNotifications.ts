@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, isSupported } from 'firebase/messaging';
+import { getMessaging, getToken, isSupported as checkFCMSupported } from 'firebase/messaging';
 
 // Firebase config for Random app (SOTA October 2025)
 const firebaseConfig = {
@@ -19,6 +19,14 @@ const firebaseConfig = {
 // VAPID public key for Web Push (get from Firebase Console → Project Settings → Cloud Messaging)
 // TODO: Replace with your actual VAPID key from Firebase Console
 const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+
+// Initialize Firebase once
+let firebaseApp: ReturnType<typeof initializeApp> | null = null;
+try {
+  firebaseApp = initializeApp(firebaseConfig);
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
 
 // Status of push notifications
 interface PushNotificationStatus {
@@ -44,90 +52,13 @@ export const usePushNotifications = () => {
     isEnabled: false,
   });
 
-  // Initialize Firebase (only once)
-  const firebaseApp = useMemo(() => {
-    try {
-      return initializeApp(firebaseConfig);
-    } catch (error) {
-      console.error('Firebase initialization error:', error);
-      return null;
-    }
-  }, []);
-
-  // Check if FCM is supported
-  const checkFCMSupport = useCallback(async (): Promise<boolean> => {
-    try {
-      if (!('Notification' in window)) {
-        console.warn('Browser does not support Notifications API');
-        return false;
-      }
-
-      if (!('serviceWorker' in navigator)) {
-        console.warn('Browser does not support Service Workers');
-        return false;
-      }
-
-      const fcmSupported = await isSupported();
-      if (!fcmSupported) {
-        console.warn('Firebase Messaging not supported in this browser');
-        return false;
-      }
-
-      const registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
-      if (!registration) {
-        console.log('Registering Firebase Messaging Service Worker...');
-        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      }
-
-      return true;
-    } catch (error) {
-      console.error('FCM support check failed:', error);
-      return false;
-    }
-  }, []);
-
-  // Save FCM token to database
-  const saveTokenToDatabase = useCallback(async (token: string): Promise<boolean> => {
-      if (!user) {
-        console.error('No user logged in');
-        return false;
-      }
-
-      try {
-        const { error } = await supabase.from('user_push_tokens').upsert(
-          {
-            user_id: user.id,
-            token: token,
-            device_type: 'web',
-            is_active: true,
-            last_used_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'user_id,token',
-          }
-        );
-
-        if (error) {
-          console.error('Error saving FCM token to database:', error);
-          return false;
-        }
-
-        console.log('✅ FCM token saved to database');
-        return true;
-      } catch (error) {
-        console.error('Exception saving FCM token:', error);
-        return false;
-      }
-    }, [user]);
-
   // Request notification permission and get FCM token (SOTA October 2025)
   const requestPermission = useCallback(async (): Promise<void> => {
     try {
       console.log('🔔 Requesting notification permission (FCM HTTP v1 API)...');
 
-      // Step 1: Check FCM support
-      const fcmReady = await checkFCMSupport();
-      if (!fcmReady) {
+      // Step 1: Check browser support
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         toast({
           title: 'Non supporté',
           description: 'Les notifications ne sont pas supportées sur ce navigateur.',
@@ -136,7 +67,24 @@ export const usePushNotifications = () => {
         return;
       }
 
-      // Step 2: Request Notification permission
+      // Step 2: Check FCM support
+      const fcmSupported = await checkFCMSupported();
+      if (!fcmSupported) {
+        toast({
+          title: 'Non supporté',
+          description: 'Firebase Messaging n\'est pas supporté.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Step 3: Register Service Worker
+      const registration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (!registration) {
+        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      }
+
+      // Step 4: Request Notification permission
       const permission = await Notification.requestPermission();
       console.log('Permission status:', permission);
 
@@ -150,18 +98,19 @@ export const usePushNotifications = () => {
         return;
       }
 
-      // Step 3: Get Firebase Messaging instance
+      // Step 5: Get Firebase Messaging instance
       if (!firebaseApp) {
         throw new Error('Firebase app not initialized');
       }
 
       const messaging = getMessaging(firebaseApp);
 
-      // Step 4: Get FCM token using VAPID key
+      // Step 6: Get FCM token using VAPID key
       console.log('🔑 Getting FCM token with VAPID key...');
+      const swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
       const token = await getToken(messaging, {
         vapidKey: VAPID_PUBLIC_KEY,
-        serviceWorkerRegistration: await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js'),
+        serviceWorkerRegistration: swReg || undefined,
       });
 
       if (!token) {
@@ -170,13 +119,26 @@ export const usePushNotifications = () => {
 
       console.log('✅ FCM token obtained:', token.substring(0, 20) + '...');
 
-      // Step 5: Save token to database
-      const saved = await saveTokenToDatabase(token);
-      if (!saved) {
-        throw new Error('Failed to save token to database');
+      // Step 7: Save token to database
+      if (user?.id) {
+        // @ts-ignore - Avoid Supabase type recursion issue
+        const result: any = await supabase.from('user_push_tokens').upsert({
+          user_id: user.id,
+          token: token,
+          device_type: 'web',
+          is_active: true,
+          last_used_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,token',
+        });
+
+        if (result.error) {
+          console.error('Error saving FCM token:', result.error);
+          throw new Error('Failed to save token');
+        }
       }
 
-      // Step 6: Update status
+      // Step 8: Update status
       setStatus({
         isSupported: true,
         permission: 'granted',
@@ -196,53 +158,51 @@ export const usePushNotifications = () => {
         variant: 'destructive',
       });
     }
-  }, [checkFCMSupport, saveTokenToDatabase, toast, firebaseApp]);
+  }, [user?.id, toast]);
 
   // Check existing token on mount and user login
   useEffect(() => {
-    const initializePushNotifications = async () => {
-      if (!user) return;
+    const init = async () => {
+      if (!user?.id) return;
 
-      // Check if FCM is supported
-      const fcmSupported = await checkFCMSupport();
-      setStatus((prev) => ({ ...prev, isSupported: fcmSupported }));
+      // Check browser support
+      const browserSupported = 'Notification' in window && 'serviceWorker' in navigator;
+      const fcmSupported = browserSupported ? await checkFCMSupported() : false;
 
-      if (!fcmSupported) {
-        console.log('Push notifications not supported on this browser');
+      setStatus((prev) => ({
+        ...prev,
+        isSupported: fcmSupported,
+        permission: browserSupported ? Notification.permission : 'denied',
+      }));
+
+      if (!fcmSupported || Notification.permission !== 'granted') {
         return;
       }
 
-      // Check current permission
-      const currentPermission = Notification.permission;
-      setStatus((prev) => ({ ...prev, permission: currentPermission }));
+      // Check for existing token in database
+      // @ts-ignore - Avoid Supabase type recursion issue
+      const result: any = await supabase
+        .from('user_push_tokens')
+        .select('token')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .eq('device_type', 'web')
+        .maybeSingle();
 
-      // If permission granted, check for existing token in database
-      if (currentPermission === 'granted') {
-        try {
-          const { data: existingToken } = await supabase
-            .from('user_push_tokens')
-            .select('token')
-            .eq('user_id', user.id)
-            .eq('is_active', true)
-            .eq('device_type', 'web')
-            .maybeSingle();
+      const data = result.data as { token: string } | null;
 
-          if (existingToken) {
-            console.log('✅ Existing FCM token found in database');
-            setStatus((prev) => ({
-              ...prev,
-              fcmToken: existingToken.token,
-              isEnabled: true,
-            }));
-          }
-        } catch (error) {
-          console.error('Error checking existing token:', error);
-        }
+      if (data?.token) {
+        console.log('✅ Existing FCM token found');
+        setStatus((prev) => ({
+          ...prev,
+          fcmToken: data.token,
+          isEnabled: true,
+        }));
       }
     };
 
-    initializePushNotifications();
-  }, [user, checkFCMSupport]);
+    init();
+  }, [user?.id]);
 
   return {
     status,
