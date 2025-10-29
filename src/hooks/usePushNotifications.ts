@@ -16,9 +16,8 @@ const firebaseConfig = {
   measurementId: "G-BFV3N51PP1"
 };
 
-// VAPID public key for Web Push (get from Firebase Console → Project Settings → Cloud Messaging)
-// TODO: Replace with your actual VAPID key from Firebase Console
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+// VAPID public key for Web Push (from Firebase Console → Project Settings → Cloud Messaging)
+const VAPID_PUBLIC_KEY = 'BOkV_HGdsNuvLckQFeB9DOsjp47KIDdBZ1RcWckIKur5gEmKYVmCuIGOX02l-QxA7_9JLX4gNvuMsk2SAbDTLko';
 
 // Initialize Firebase once
 let firebaseApp: ReturnType<typeof initializeApp> | null = null;
