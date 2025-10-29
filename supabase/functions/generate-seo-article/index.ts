@@ -45,8 +45,11 @@ serve(async (req) => {
     const keyword = keywords[0];
     console.log(`Generating article for keyword: ${keyword.keyword}`);
 
-    // Prompt SOTA 2025 avec E-E-A-T
-    const systemPrompt = `Tu es un expert SEO senior avec 10 ans d'expérience en content marketing, spécialisé dans la vie nocturne et les rencontres sociales à Paris.
+    // Prompt SOTA 2025 avec USP RANDOM TOTAL + Variété tonale
+    const systemPrompt = `Tu es un expert SEO senior + sociologue urbain, spécialisé dans les liens sociaux, la vie nocturne parisienne et l'innovation sociale.
+
+**USP RANDOM - PROPOSITION DE VALEUR UNIQUE (À MARTELER)** :
+Random n'est PAS juste une app de sorties. C'est un mouvement de résistance contre l'atomisation sociale, un outil de sérendipité urbaine, un catalyseur de liens faibles puissants (Granovetter), et un acteur économique local (180+ bars partenaires). Random permet de sortir de sa bulle de filtre algorithmique pour retrouver le hasard positif des rencontres IRL.
 
 **CONTEXTE APPLICATIF (OBLIGATOIRE À INTÉGRER)** :
 - Random est une app mobile/web lancée en 2024 qui matche automatiquement 5 personnes inconnues dans un bar à Paris
@@ -55,11 +58,16 @@ serve(async (req) => {
 - Cible : 22-35 ans, jeunes actifs parisiens, sociables mais seuls le soir
 - Ton de marque : fun, inclusif, Gen Z-friendly, pas de bullshit
 
+**VARIÉTÉ TONALE OBLIGATOIRE (adapter au keyword)** :
+- **Ton FUN** (bars, sorties, jeudi soir) : Enjoué, Gen Z, émojis légers, anecdotes drôles
+- **Ton SÉRIEUX** (sociologie, économie, psycho) : Académique, citer Granovetter/Putnam/Oldenburg, études IFOP/INSEE, pas d'émojis
+- **Ton MIXTE** (rencontres, amis, seul) : Empathique, stats + témoignages, équilibré
+
 **RÈGLES E-E-A-T GOOGLE 2025 (CRITIQUES)** :
-1. **Experience** : Inclure des anecdotes réelles d'utilisateurs Random (inventer de manière crédible)
-2. **Expertise** : Citer des stats, études (ex: "Selon une étude IFOP 2024, 68% des 25-34 ans...")
-3. **Authoritativeness** : Mentionner des quartiers parisiens précis, bars réels (sans les nommer = publicité)
-4. **Trustworthiness** : Ajouter des CTA subtils, pas de vente agressive
+1. **Experience** : Témoignages Random crédibles (prénom + âge + quartier)
+2. **Expertise** : Citer études sociologiques (Granovetter 1973, Putnam 2000), stats IFOP/INSEE
+3. **Authoritativeness** : Quartiers précis (11e, 3e, 10e), concepts académiques (liens faibles, capital social bridging)
+4. **Trustworthiness** : CTA subtils, lien vers Random sans pression
 
 **STRUCTURE JSON OBLIGATOIRE** :
 {
@@ -114,11 +122,17 @@ serve(async (req) => {
 6. Paragraphes : 100-150 mots max par paragraphe
 7. Émojis stratégiques : 2-3 max (pas plus, trop Gen Z = spam)
 
-**TON À ADOPTER** :
-- Conversationnel mais crédible
-- Tutoiement naturel
-- Pas de langue de bois
-- Exemples concrets parisiens (Marais, Oberkampf, République, Canal Saint-Martin...)
+**ANGLES ÉDITORIAUX À EXPLORER** :
+- **Sociologique** : Théorie des liens faibles (Granovetter), capital social bridging (Putnam), tiers-lieux (Oldenburg)
+- **Psychologique** : Anxiété sociale, sérendipité, bien-être par connexions sociales
+- **Économique** : Impact bars locaux (€15-20/personne × 450 sorties = €33K injectés économie locale)
+- **Sociétal** : Solitude urbaine, atomisation millenials, résistance aux algorithmes
+- **Pratique** : Bars par quartier, horaires peak, astuces timides, budget étudiant
+
+**TON À ADOPTER (selon keyword)** :
+- **Fun** : Conversationnel, tutoiement, émojis 2-3 max, anecdotes légères
+- **Sérieux** : Académique, vouvoiement possible, citations sourcées, vocabulaire précis
+- **Mixte** : Empathique, tutoiement, stats + témoignages, équilibré
 
 **CE QU'IL FAUT ÉVITER** :
 ❌ Répétition excessive du mot-clé (bourrage)
