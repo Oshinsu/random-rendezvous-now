@@ -1,12 +1,14 @@
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { Bell, Check, Trash2, BellRing } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useNotifications } from '@/hooks/useNotifications';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { NotificationCard } from './NotificationCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const NotificationCenter = () => {
   const {
@@ -18,6 +20,8 @@ export const NotificationCenter = () => {
     deleteNotification,
     clearAll,
   } = useNotifications();
+
+  const { status, requestPermission, isEnabled, canRequest } = usePushNotifications();
 
   return (
     <Sheet>
@@ -74,6 +78,33 @@ export const NotificationCenter = () => {
 
         <ScrollArea className="flex-1">
           <div className="px-6 py-4 space-y-3">
+            {/* Push notification activation banner */}
+            {canRequest && (
+              <Alert className="bg-primary/10 border-primary/20">
+                <BellRing className="h-4 w-4 text-primary" />
+                <AlertDescription className="flex items-center justify-between gap-2">
+                  <span className="text-sm">
+                    Activez les notifications push pour ne rien manquer !
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={requestPermission}
+                    className="shrink-0"
+                  >
+                    Activer
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isEnabled && (
+              <Alert className="bg-success/10 border-success/20">
+                <BellRing className="h-4 w-4 text-success" />
+                <AlertDescription className="text-sm text-success">
+                  ✅ Notifications push actives
+                </AlertDescription>
+              </Alert>
+            )}
             {isLoading ? (
               // Loading skeleton
               Array.from({ length: 3 }).map((_, i) => (

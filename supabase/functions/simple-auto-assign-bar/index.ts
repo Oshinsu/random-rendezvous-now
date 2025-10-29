@@ -705,6 +705,44 @@ serve(async (req) => {
 
     console.log('✅ [UPDATE DB] Groupe mis à jour avec succès');
 
+    // 🔔 PHASE 1: Envoyer notification push à tous les participants
+    try {
+      const { data: participants } = await supabase
+        .from('group_participants')
+        .select('user_id')
+        .eq('group_id', group_id)
+        .eq('status', 'active');
+      
+      if (participants && participants.length > 0) {
+        const userIds = participants.map(p => p.user_id);
+        
+        console.log(`🔔 [PUSH NOTIFICATION] Envoi à ${userIds.length} participants`);
+        
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            user_ids: userIds,
+            title: '🎉 Votre groupe est confirmé !',
+            body: `Rendez-vous au ${result.bar.name} - ${formattedMeetingTime}`,
+            type: 'group_confirmed',
+            icon: '/icon-192.png',
+            url: `/groups`,
+            data: {
+              group_id,
+              bar_name: result.bar.name,
+              bar_address: result.bar.formatted_address,
+              meeting_time: formattedMeetingTime,
+            },
+            requireInteraction: true,
+          },
+        });
+        
+        console.log('✅ [PUSH NOTIFICATION] Notifications push envoyées');
+      }
+    } catch (pushError) {
+      console.error('⚠️ [PUSH NOTIFICATION] Erreur (non bloquant):', pushError);
+      // Non bloquant, on continue même si les push échouent
+    }
+
     // Message système dans le chat du groupe avec format identique à l'app
     const { error: messageError } = await supabase
       .from('group_messages')
