@@ -33,6 +33,7 @@ import { AdminSettings } from "./pages/admin/AdminSettings";
 import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import AdminCRM from "./pages/admin/AdminCRM";
 import AdminChatbot from "./pages/admin/AdminChatbot";
+import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
 import ReferralPage from "./pages/ReferralPage";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
