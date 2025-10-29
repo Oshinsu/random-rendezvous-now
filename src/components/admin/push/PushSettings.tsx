@@ -5,13 +5,17 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, Trash2, Copy, Check } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FirebaseDebugCard } from './FirebaseDebugCard';
+import { supabase } from '@/integrations/supabase/client';
+import { ExternalLink, Trash2, Copy, Check, Sparkles, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 export const PushSettings = () => {
   const { settings, isLoading, updateSetting, cleanupTokens, isUpdating, isCleaning } = usePushSettings();
   const [copied, setCopied] = useState(false);
+  const [generatingTokens, setGeneratingTokens] = useState(false);
 
   const handleCopyVapidKey = () => {
     if (settings?.vapidPublicKey) {
@@ -19,6 +23,48 @@ export const PushSettings = () => {
       setCopied(true);
       toast.success('✅ Clé VAPID copiée');
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const generateTestTokens = async () => {
+    setGeneratingTokens(true);
+    
+    try {
+      // Get 5 most recent users
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (usersError) throw usersError;
+
+      if (!users || users.length === 0) {
+        toast.error('❌ Aucun utilisateur trouvé');
+        return;
+      }
+
+      // Insert fake tokens
+      const fakeTokens = users.map((user) => ({
+        user_id: user.id,
+        token: `fake_fcm_token_${user.id.slice(0, 8)}_${Date.now()}`,
+        device_type: 'web',
+        is_active: true,
+        last_used_at: new Date().toISOString(),
+      }));
+
+      const { error: insertError } = await supabase
+        .from('user_push_tokens')
+        .insert(fakeTokens);
+
+      if (insertError) throw insertError;
+
+      toast.success(`✅ ${fakeTokens.length} tokens de test générés`);
+    } catch (error) {
+      console.error('Error generating test tokens:', error);
+      toast.error('❌ Erreur lors de la génération');
+    } finally {
+      setGeneratingTokens(false);
     }
   };
 
@@ -41,6 +87,45 @@ export const PushSettings = () => {
 
   return (
     <div className="space-y-6">
+      {/* Firebase Debug Dashboard - Phase 4 */}
+      <FirebaseDebugCard />
+
+      {/* Test Token Generator - Phase 3 */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            🧪 Simulateur de Tokens FCM (DEV)
+          </CardTitle>
+          <CardDescription>
+            Générez des tokens factices pour tester le système sans vraies inscriptions push
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Mode développement :</strong> Les tokens générés sont factices et ne recevront pas de vraies notifications FCM, 
+              mais permettent de tester le flow complet (rate limiting, quiet hours, analytics).
+            </AlertDescription>
+          </Alert>
+          
+          <Button
+            variant="default"
+            className="w-full gap-2"
+            onClick={generateTestTokens}
+            disabled={generatingTokens}
+          >
+            <Sparkles className="h-4 w-4" />
+            {generatingTokens ? 'Génération...' : 'Générer 5 tokens pour les derniers users'}
+          </Button>
+
+          <p className="text-xs text-muted-foreground">
+            💡 Les tokens seront créés pour les 5 derniers utilisateurs enregistrés dans la table <code>profiles</code>
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Rate Limiting */}
       <Card>
         <CardHeader>
