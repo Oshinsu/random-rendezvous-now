@@ -84,10 +84,13 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
       }
 
       // 3. Device Types
-      const { data: tokensData } = await supabase
+      // @ts-ignore TS2589: Supabase type inference issue - See https://github.com/supabase/supabase-js/issues/1372
+      const tokensResponse = await supabase
         .from('user_push_tokens')
         .select('device_type')
         .eq('active', true);
+      
+      const tokensData = tokensResponse.data as Array<{ device_type: string | null }> | null;
 
       const deviceCounts: Record<string, number> = {};
       tokensData?.forEach((token) => {

@@ -45,13 +45,14 @@ export const usePushSettings = () => {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
 
-      const { error } = await supabase
+      // @ts-ignore TS2589: Supabase type inference issue - See https://github.com/supabase/supabase-js/issues/1372
+      const result = await supabase
         .from('user_push_tokens')
         .delete()
         .eq('active', false)
         .lt('updated_at', cutoffDate.toISOString());
 
-      if (error) throw error;
+      if (result.error) throw result.error;
     },
     onSuccess: () => {
       toast.success('✅ Tokens inactifs nettoyés');
