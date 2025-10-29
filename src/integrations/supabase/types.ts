@@ -440,6 +440,83 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_automation_executions: {
+        Row: {
+          campaign_id: string | null
+          campaign_sent: boolean | null
+          channels: Json | null
+          delay_applied_minutes: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          rule_id: string
+          scheduled_send_id: string | null
+          send_status: string | null
+          trigger_type: string
+          triggered_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          campaign_sent?: boolean | null
+          channels?: Json | null
+          delay_applied_minutes?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          rule_id: string
+          scheduled_send_id?: string | null
+          send_status?: string | null
+          trigger_type: string
+          triggered_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          campaign_sent?: boolean | null
+          channels?: Json | null
+          delay_applied_minutes?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          rule_id?: string
+          scheduled_send_id?: string | null
+          send_status?: string | null
+          trigger_type?: string
+          triggered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_automation_executions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_executions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automation_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_executions_scheduled_send_id_fkey"
+            columns: ["scheduled_send_id"]
+            isOneToOne: false
+            referencedRelation: "crm_scheduled_sends"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_automation_executions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_automation_rules: {
         Row: {
           campaign_id: string | null
@@ -773,6 +850,67 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      crm_scheduled_sends: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          rule_id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          rule_id: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          rule_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_scheduled_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_scheduled_sends_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "crm_automation_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_scheduled_sends_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_unsubscribes: {
         Row: {

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,185 +12,273 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    console.log('📨 Lifecycle automation triggered with payload:', JSON.stringify(body));
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { 
       userId, 
       lifecycleStageId, 
-      previousStageId, 
-      triggerType = 'lifecycle_change',
-      healthScore,
+      previousStageId,
       segmentId,
-      daysInactive
-    } = await req.json();
+      healthScore,
+      threshold,
+      daysInactive,
+      daysInactiveExact,
+      neverLoggedIn,
+      totalLogins,
+      triggerType,
+      source = 'unknown'
+    } = body;
 
-    console.log(`[AUTOMATION] Triggered for user ${userId}, type: ${triggerType}`);
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Find matching active automation rules based on trigger type
-    let query = supabaseClient
-      .from('crm_automation_rules')
-      .select('*, campaign:crm_campaigns(*)')
-      .eq('is_active', true)
-      .order('priority', { ascending: false });
-
-    // Filter by trigger type if provided
-    if (triggerType) {
-      query = query.eq('trigger_type', triggerType);
+    if (!userId || !triggerType) {
+      throw new Error('Missing required parameters: userId and triggerType');
     }
 
-    const { data: rules, error: rulesError } = await query;
+    console.log(`🔍 Searching rules for trigger type: ${triggerType}, source: ${source}`);
+
+    // Find matching automation rules
+    const { data: rules, error: rulesError } = await supabase
+      .from('crm_automation_rules')
+      .select('*, campaign:crm_campaigns(id, campaign_name, content, subject, channels, template_data)')
+      .eq('is_active', true)
+      .eq('trigger_type', triggerType)
+      .order('priority', { ascending: false });
 
     if (rulesError) {
-      console.error('[ERROR] Failed to fetch automation rules:', rulesError);
+      console.error('❌ Error fetching automation rules:', rulesError);
       throw rulesError;
     }
 
-    console.log(`[INFO] Found ${rules?.length || 0} automation rules to evaluate for ${triggerType}`);
+    console.log(`📋 Found ${rules?.length || 0} active rules for trigger type: ${triggerType}`);
 
-    const triggeredRules = [];
+    const triggeredRules: any[] = [];
+    const scheduledSends: any[] = [];
 
     for (const rule of rules || []) {
+      console.log(`🔎 Evaluating rule: "${rule.rule_name}" (priority: ${rule.priority})`);
+      
       const condition = rule.trigger_condition || {};
-      let ruleMatches = false;
+      let matchesConditions = false;
 
-      // Evaluate rule based on trigger type
-      switch (rule.trigger_type) {
+      // Evaluate conditions based on trigger type
+      switch (triggerType) {
         case 'lifecycle_change':
-          ruleMatches = 
-            condition.to_stage_id === lifecycleStageId || 
-            condition.from_stage_id === previousStageId ||
-            condition.lifecycle_event; // Generic lifecycle events
+          matchesConditions = 
+            (condition.to_stage_id && condition.to_stage_id === lifecycleStageId) ||
+            (condition.from_stage_id && condition.from_stage_id === previousStageId);
+          console.log(`  Lifecycle: to_stage=${condition.to_stage_id}, from_stage=${condition.from_stage_id}, matches=${matchesConditions}`);
           break;
 
         case 'segment_entry':
-          ruleMatches = condition.segment_id === segmentId;
+          matchesConditions = condition.segment_id === segmentId;
+          console.log(`  Segment: expected=${condition.segment_id}, actual=${segmentId}, matches=${matchesConditions}`);
           break;
 
         case 'health_threshold':
-          if (healthScore !== undefined) {
-            const threshold = condition.health_score_below || 30;
-            ruleMatches = healthScore < threshold;
+          if (healthScore !== undefined && threshold !== undefined) {
+            matchesConditions = healthScore < threshold;
+            console.log(`  Health: score=${healthScore}, threshold=${threshold}, matches=${matchesConditions}`);
           }
           break;
 
         case 'inactivity':
-          if (daysInactive !== undefined) {
-            const requiredDays = condition.days_inactive || condition.hours_since_signup ? 
+          if (daysInactiveExact !== undefined) {
+            // Match exact days for specific rules
+            const expectedDays = condition.days_inactive || condition.hours_since_signup ? 
               Math.ceil((condition.hours_since_signup || 0) / 24) : 7;
-            ruleMatches = daysInactive >= requiredDays;
+            
+            // Additional checks for specific rules
+            const matchesNeverLoggedIn = condition.never_logged_in === undefined || 
+                                        condition.never_logged_in === neverLoggedIn;
+            const matchesLoginCount = condition.max_logins === undefined || 
+                                     (totalLogins !== undefined && totalLogins < condition.max_logins);
+            
+            matchesConditions = daysInactiveExact === expectedDays && 
+                              matchesNeverLoggedIn && 
+                              matchesLoginCount;
+            
+            console.log(`  Inactivity: expected=${expectedDays}d, actual=${daysInactiveExact}d, neverLoggedIn=${neverLoggedIn}, matches=${matchesConditions}`);
           }
           break;
 
         default:
-          console.log(`[WARN] Unknown trigger type: ${rule.trigger_type}`);
+          console.log(`⚠️ Unknown trigger type: ${triggerType}`);
       }
 
-      if (ruleMatches) {
-        console.log(`[MATCH] Rule "${rule.rule_name}" matched for user ${userId}`);
-
-        // Schedule the campaign send (with delay if specified)
-        const sendAt = new Date();
-        sendAt.setMinutes(sendAt.getMinutes() + (rule.delay_minutes || 0));
-
-        // Check unsubscribes
-        const { data: unsubscribes } = await supabaseClient
+      if (matchesConditions) {
+        console.log(`✅ Rule "${rule.rule_name}" matches conditions`);
+        
+        // Check if user has unsubscribed
+        const { data: unsubscribeCheck } = await supabase
           .from('crm_unsubscribes')
-          .select('channel')
+          .select('id')
           .eq('user_id', userId)
-          .in('channel', ['email', 'in_app', 'all']);
+          .maybeSingle();
 
-        if (unsubscribes && unsubscribes.length > 0) {
-          console.log(`[SKIP] User ${userId} has unsubscribed, skipping automation`);
+        if (unsubscribeCheck) {
+          console.log(`⏭️ User ${userId} has unsubscribed, skipping rule`);
+          
+          // Log execution even if skipped
+          await supabase.from('crm_automation_executions').insert({
+            rule_id: rule.id,
+            user_id: userId,
+            trigger_type: triggerType,
+            campaign_sent: false,
+            send_status: 'skipped_unsubscribed',
+            metadata: { source, unsubscribed: true }
+          });
+          
           continue;
         }
 
-        // Get action from condition (new SOTA approach)
-        const action = condition.action || 'send_lifecycle_campaign';
-        const channels = condition.channels || ['email'];
-        const template = condition.template;
+        triggeredRules.push({
+          ruleId: rule.id,
+          ruleName: rule.rule_name,
+          campaignId: rule.campaign_id,
+          delayMinutes: rule.delay_minutes
+        });
 
-        console.log(`[ACTION] Executing ${action} for user ${userId} via ${channels.join(', ')}`);
-
-        // If delay is 0, send immediately
-        if (rule.delay_minutes === 0) {
-          // If campaign_id exists, use it, otherwise generate dynamic campaign from rule
-          if (rule.campaign_id) {
-            const { error: sendError } = await supabaseClient.functions.invoke(
-              'send-lifecycle-campaign',
-              { 
-                body: { 
-                  campaignId: rule.campaign_id,
-                  targetUserIds: [userId]
-                } 
-              }
-            );
-
-            if (sendError) {
-              console.error(`[ERROR] Failed to send campaign:`, sendError);
-            } else {
-              console.log(`[SUCCESS] Campaign sent immediately to user ${userId}`);
-              triggeredRules.push({
+        if (rule.campaign_id && rule.campaign) {
+          // Schedule or send campaign
+          if (rule.delay_minutes > 0) {
+            console.log(`⏰ Scheduling campaign with ${rule.delay_minutes} minute delay`);
+            
+            const scheduledFor = new Date(Date.now() + rule.delay_minutes * 60 * 1000);
+            
+            // Insert into crm_scheduled_sends table
+            const { data: scheduledSend, error: scheduleError } = await supabase
+              .from('crm_scheduled_sends')
+              .insert({
+                user_id: userId,
                 rule_id: rule.id,
-                rule_name: rule.rule_name,
-                sent_immediately: true,
-                channels,
-                template
+                campaign_id: rule.campaign_id,
+                scheduled_for: scheduledFor.toISOString(),
+                metadata: {
+                  trigger_type: triggerType,
+                  source,
+                  original_trigger_data: body
+                }
+              })
+              .select()
+              .single();
+
+            if (scheduleError) {
+              console.error(`❌ Error scheduling send:`, scheduleError);
+              
+              // Log failed scheduling
+              await supabase.from('crm_automation_executions').insert({
+                rule_id: rule.id,
+                user_id: userId,
+                trigger_type: triggerType,
+                campaign_sent: false,
+                campaign_id: rule.campaign_id,
+                send_status: 'schedule_failed',
+                error_message: scheduleError.message,
+                metadata: { source }
+              });
+            } else {
+              console.log(`✅ Campaign scheduled for ${scheduledFor.toISOString()}`);
+              scheduledSends.push({
+                userId,
+                campaignId: rule.campaign_id,
+                sendAt: scheduledFor.toISOString(),
+                scheduledSendId: scheduledSend.id
+              });
+
+              // Log execution
+              await supabase.from('crm_automation_executions').insert({
+                rule_id: rule.id,
+                user_id: userId,
+                trigger_type: triggerType,
+                campaign_sent: false,
+                campaign_id: rule.campaign_id,
+                send_status: 'scheduled',
+                delay_applied_minutes: rule.delay_minutes,
+                scheduled_send_id: scheduledSend.id,
+                metadata: { source, scheduled_for: scheduledFor.toISOString() }
               });
             }
           } else {
-            // Create dynamic campaign from rule conditions
-            console.log(`[INFO] Creating dynamic campaign from rule ${rule.rule_name}`);
-            triggeredRules.push({
-              rule_id: rule.id,
-              rule_name: rule.rule_name,
-              action,
-              channels,
-              template,
-              status: 'dynamic_campaign_required'
+            // Send immediately
+            console.log(`📤 Triggering immediate campaign send: ${rule.campaign.campaign_name}`);
+            const { error: sendError } = await supabase.functions.invoke('send-lifecycle-campaign', {
+              body: {
+                campaignId: rule.campaign_id,
+                specificUserId: userId,
+                source: `lifecycle-automation-${source}`
+              }
             });
+
+            if (sendError) {
+              console.error(`❌ Error sending campaign:`, sendError);
+              
+              // Log failed execution
+              await supabase.from('crm_automation_executions').insert({
+                rule_id: rule.id,
+                user_id: userId,
+                trigger_type: triggerType,
+                campaign_sent: false,
+                campaign_id: rule.campaign_id,
+                send_status: 'failed',
+                channels: rule.campaign.channels || [],
+                error_message: sendError.message,
+                metadata: { source }
+              });
+            } else {
+              console.log(`✅ Campaign sent successfully`);
+              
+              // Log successful execution
+              await supabase.from('crm_automation_executions').insert({
+                rule_id: rule.id,
+                user_id: userId,
+                trigger_type: triggerType,
+                campaign_sent: true,
+                campaign_id: rule.campaign_id,
+                send_status: 'sent',
+                channels: rule.campaign.channels || [],
+                metadata: { source }
+              });
+            }
           }
         } else {
-          // Log for later processing (could use a queue or scheduled task)
-          console.log(`[SCHEDULED] Campaign will be sent in ${rule.delay_minutes} minutes`);
-          triggeredRules.push({
+          console.log(`⚠️ Rule has no campaign configured, skipping send`);
+          
+          // Log execution without campaign
+          await supabase.from('crm_automation_executions').insert({
             rule_id: rule.id,
-            rule_name: rule.rule_name,
-            scheduled_for: sendAt.toISOString(),
-            delay_minutes: rule.delay_minutes,
-            channels,
-            template,
-            campaign_id: rule.campaign_id
+            user_id: userId,
+            trigger_type: triggerType,
+            campaign_sent: false,
+            send_status: 'no_campaign',
+            metadata: { source }
           });
         }
+      } else {
+        console.log(`⏭️ Rule "${rule.rule_name}" does not match conditions`);
       }
     }
+
+    console.log(`✅ Automation complete: ${triggeredRules.length} rules triggered, ${scheduledSends.length} scheduled`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        triggered_rules: triggeredRules.length,
-        rules: triggeredRules
+        triggeredRulesCount: triggeredRules.length,
+        triggeredRules,
+        scheduledSends
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
 
   } catch (error) {
-    console.error('[FATAL ERROR]:', error);
+    console.error('❌ Error in lifecycle-automations:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
+      JSON.stringify({ error: error.message, success: false }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

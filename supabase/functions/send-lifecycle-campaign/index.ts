@@ -16,9 +16,9 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { campaignId } = await req.json();
+    const { campaignId, specificUserId, source = 'manual' } = await req.json();
 
-    console.log('Starting campaign send for campaign:', campaignId);
+    console.log(`Starting campaign send for campaign: ${campaignId}, specificUserId: ${specificUserId}, source: ${source}`);
 
     // Get campaign details
     const { data: campaign, error: campaignError } = await supabase
@@ -37,10 +37,26 @@ serve(async (req) => {
     const channels = campaign.channels || ['email'];
     console.log('Campaign channels:', channels);
 
-    // Get target users based on segment or lifecycle stage
+    // Get target users based on segment or lifecycle stage (or specific user)
     let targetUsers = [];
 
-    if (campaign.target_segment_id) {
+    if (specificUserId) {
+      // Send to a specific user only
+      const { data: specificUser } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name')
+        .eq('id', specificUserId)
+        .single();
+      
+      if (specificUser) {
+        targetUsers = [{
+          user_id: specificUser.id,
+          email: specificUser.email,
+          first_name: specificUser.first_name,
+          last_name: specificUser.last_name
+        }];
+      }
+    } else if (campaign.target_segment_id) {
       const { data: segmentMembers } = await supabase
         .from('crm_user_segment_memberships')
         .select('user_id, profiles!inner(id, email, first_name, last_name)')
