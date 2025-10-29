@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UnifiedScheduledGroupService, UnifiedScheduledGroup } from '@/services/unifiedScheduledGroupService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,9 @@ import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
 import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
 import { useTranslation } from 'react-i18next';
-import { PushPermissionModal } from '@/components/PushPermissionModal';
+
+// Lazy load modal to avoid circular import issues at boot
+const PushPermissionModal = lazy(() => import('@/components/PushPermissionModal').then(m => ({ default: m.PushPermissionModal })));
 import {
   AlertDialog,
   AlertDialogAction,
@@ -443,10 +445,12 @@ export default function UnifiedScheduledGroupsPage() {
     <AppLayout>
       {/* PHASE 5: Contextualized Permission Request */}
       {showPermissionModal && (
-        <PushPermissionModal 
-          trigger="first_group" 
-          onClose={() => setShowPermissionModal(false)}
-        />
+        <Suspense fallback={null}>
+          <PushPermissionModal 
+            trigger="first_group" 
+            onClose={() => setShowPermissionModal(false)}
+          />
+        </Suspense>
       )}
       
       <div className="container mx-auto px-4 py-8">
