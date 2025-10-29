@@ -78,25 +78,7 @@ export const NotificationCenter = () => {
 
         <ScrollArea className="flex-1">
           <div className="px-6 py-4 space-y-3">
-            {/* Push notification activation banner */}
-            {canRequest && (
-              <Alert className="bg-primary/10 border-primary/20">
-                <BellRing className="h-4 w-4 text-primary" />
-                <AlertDescription className="flex items-center justify-between gap-2">
-                  <span className="text-sm">
-                    Activez les notifications push pour ne rien manquer !
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={requestPermission}
-                    className="shrink-0"
-                  >
-                    Activer
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-
+            {/* PHASE 5: Suppression du banner générique - utiliser PushPermissionModal contextuel */}
             {isEnabled && (
               <Alert className="bg-success/10 border-success/20">
                 <BellRing className="h-4 w-4 text-success" />

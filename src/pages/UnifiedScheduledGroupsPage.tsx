@@ -14,6 +14,7 @@ import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
 import { useOptimizedDataFetching } from '@/hooks/useOptimizedDataFetching';
 import { useTranslation } from 'react-i18next';
+import { PushPermissionModal } from '@/components/PushPermissionModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,8 @@ export default function UnifiedScheduledGroupsPage() {
     type: 'joining' | 'cancelling' | 'deleting';
     id: string;
   } | null>(null);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [groupCreated, setGroupCreated] = useState(false);
 
   const fetchMyScheduledGroups = useCallback(async () => {
     if (!user) return;
@@ -438,14 +441,32 @@ export default function UnifiedScheduledGroupsPage() {
 
   return (
     <AppLayout>
+      {/* PHASE 5: Contextualized Permission Request */}
+      {showPermissionModal && (
+        <PushPermissionModal 
+          trigger="first_group" 
+          onClose={() => setShowPermissionModal(false)}
+        />
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="space-y-6 mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h1 className="text-xl font-heading font-bold gradient-text">{t('scheduled_groups.title')}</h1>
+            <div className="space-y-6 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h1 className="text-xl font-heading font-bold gradient-text">{t('scheduled_groups.title')}</h1>
+              </div>
+              <InlineScheduleGroupForm 
+                onScheduled={() => {
+                  fetchData();
+                  // Trigger permission modal after first group creation
+                  const hasCreatedBefore = localStorage.getItem('has_created_group');
+                  if (!hasCreatedBefore) {
+                    localStorage.setItem('has_created_group', 'true');
+                    setShowPermissionModal(true);
+                  }
+                }} 
+              />
             </div>
-            <InlineScheduleGroupForm onScheduled={fetchData} />
-          </div>
 
           <Tabs defaultValue="my-groups" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-neutral-100 p-1 rounded-xl">

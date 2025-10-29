@@ -84,61 +84,93 @@ export class NotificationService {
   }
 
   /**
-   * Notifier la formation d'un groupe
+   * Notifier la formation d'un groupe (PHASE 2: Gen Z Copywriting)
    */
   static async notifyGroupFormation(groupId: string, currentCount: number, maxCount: number): Promise<void> {
-    const title = '🔥 Votre groupe se remplit !';
-    const body = `${currentCount}/${maxCount} participants. Plus que ${maxCount - currentCount} place${maxCount - currentCount > 1 ? 's' : ''} !`;
+    const { NOTIFICATION_COPIES, formatNotificationCopy } = await import('@/constants/notificationCopies');
+    const remaining = maxCount - currentCount;
     
-    await this.sendNotification(title, {
-      body,
+    let copy;
+    if (remaining === 1) {
+      copy = NOTIFICATION_COPIES.GROUP_FORMING.last_spot;
+    } else if (remaining === 2) {
+      copy = NOTIFICATION_COPIES.GROUP_FORMING.two_spots;
+    } else {
+      copy = formatNotificationCopy(
+        NOTIFICATION_COPIES.GROUP_FORMING.filling_up,
+        { remaining: remaining.toString() }
+      );
+    }
+    
+    await this.sendNotification(copy.title, {
+      body: copy.body,
+      icon: '/notification-icon.png',
+      badge: '/badge-icon.png',
       tag: `group-formation-${groupId}`,
       data: { groupId, type: 'formation' }
     });
   }
 
   /**
-   * Notifier la confirmation d'un groupe avec bar assigné
+   * Notifier la confirmation d'un groupe avec bar assigné (PHASE 2: Gen Z Copywriting)
    */
   static async notifyGroupConfirmed(groupId: string, barName: string, meetingTime?: string): Promise<void> {
-    const title = '🎉 Votre groupe est confirmé !';
+    const { NOTIFICATION_COPIES, formatNotificationCopy } = await import('@/constants/notificationCopies');
     const timeText = meetingTime ? ` à ${new Date(meetingTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '';
-    const body = `Rendez-vous au ${barName}${timeText} !`;
     
-    await this.sendNotification(title, {
-      body,
+    const copy = formatNotificationCopy(
+      NOTIFICATION_COPIES.GROUP_CONFIRMED.default,
+      { bar_name: barName, time: timeText }
+    );
+    
+    await this.sendNotification(copy.title, {
+      body: copy.body,
+      icon: '/notification-icon.png',
+      badge: '/badge-icon.png',
       tag: `group-confirmed-${groupId}`,
       data: { groupId, barName, meetingTime, type: 'confirmed' },
       actions: [
-        { action: 'view', title: 'Voir les détails' },
+        { action: 'view', title: 'Voir détails' },
         { action: 'navigate', title: 'Itinéraire' }
       ]
     });
   }
 
   /**
-   * Rappel d'attente après 30 minutes
+   * Rappel d'attente après 30 minutes (PHASE 2: Gen Z Copywriting)
    */
   static async notifyWaitingReminder(groupId: string, currentCount: number): Promise<void> {
-    const title = '⏰ Votre groupe recherche encore...';
-    const body = `${currentCount}/5 participants. Restez connecté, ça peut aller vite !`;
+    const { NOTIFICATION_COPIES, formatNotificationCopy } = await import('@/constants/notificationCopies');
     
-    await this.sendNotification(title, {
-      body,
+    const copy = formatNotificationCopy(
+      NOTIFICATION_COPIES.WAITING_REMINDER.default,
+      { count: currentCount.toString() }
+    );
+    
+    await this.sendNotification(copy.title, {
+      body: copy.body,
+      icon: '/notification-icon.png',
+      badge: '/badge-icon.png',
       tag: `group-waiting-${groupId}`,
       data: { groupId, type: 'waiting' }
     });
   }
 
   /**
-   * Alerte de timeout proche (45 minutes)
+   * Alerte de timeout proche (45 minutes) (PHASE 2: Gen Z Copywriting)
    */
   static async notifyTimeoutWarning(groupId: string, remainingMinutes: number): Promise<void> {
-    const title = '⚠️ Groupe bientôt expiré';
-    const body = `Plus que ${remainingMinutes} minutes pour que votre groupe soit complet. Partagez avec vos amis !`;
+    const { NOTIFICATION_COPIES, formatNotificationCopy } = await import('@/constants/notificationCopies');
     
-    await this.sendNotification(title, {
-      body,
+    const copy = formatNotificationCopy(
+      NOTIFICATION_COPIES.TIMEOUT_WARNING.urgent,
+      { minutes: remainingMinutes.toString() }
+    );
+    
+    await this.sendNotification(copy.title, {
+      body: copy.body,
+      icon: '/notification-icon.png',
+      badge: '/badge-icon.png',
       tag: `group-timeout-${groupId}`,
       data: { groupId, type: 'timeout-warning' }
     });

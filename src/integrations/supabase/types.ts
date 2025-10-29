@@ -1444,28 +1444,46 @@ export type Database = {
       }
       notification_analytics: {
         Row: {
+          click_rate: number | null
+          clicked_count: number | null
+          conversion_rate: number | null
+          converted_count: number | null
           created_at: string | null
           device_type: string | null
           event_type: string
           id: string
           metadata: Json | null
           notification_id: string | null
+          open_rate: number | null
+          opened_count: number | null
         }
         Insert: {
+          click_rate?: number | null
+          clicked_count?: number | null
+          conversion_rate?: number | null
+          converted_count?: number | null
           created_at?: string | null
           device_type?: string | null
           event_type: string
           id?: string
           metadata?: Json | null
           notification_id?: string | null
+          open_rate?: number | null
+          opened_count?: number | null
         }
         Update: {
+          click_rate?: number | null
+          clicked_count?: number | null
+          conversion_rate?: number | null
+          converted_count?: number | null
           created_at?: string | null
           device_type?: string | null
           event_type?: string
           id?: string
           metadata?: Json | null
           notification_id?: string | null
+          open_rate?: number | null
+          opened_count?: number | null
         }
         Relationships: [
           {
@@ -1524,6 +1542,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          notification_data: Json
+          scheduled_for: string
+          sent_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notification_data: Json
+          scheduled_for: string
+          sent_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notification_data?: Json
+          scheduled_for?: string
+          sent_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -2180,6 +2236,22 @@ export type Database = {
         }[]
       }
       test_trigger_auto_bar_assignment: { Args: never; Returns: Json }
+      track_notification_click: {
+        Args: {
+          p_action?: string
+          p_notification_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      track_notification_conversion: {
+        Args: { p_notification_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      track_notification_open: {
+        Args: { p_notification_id: string; p_user_id: string }
+        Returns: undefined
+      }
       transition_groups_to_completed: { Args: never; Returns: undefined }
       update_system_setting: {
         Args: { new_value: Json; setting_name: string }

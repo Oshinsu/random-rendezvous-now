@@ -107,9 +107,9 @@ async function sendFCMNotification(
     },
     webpush: {
       notification: {
-        ...(notification.icon && { icon: notification.icon }),
+        icon: notification.icon || 'https://random.app/notification-icon.png', // Random branding
+        badge: 'https://random.app/badge-icon.png', // Random badge
         ...(actions && actions.length > 0 && { actions }),
-        badge: notification.icon || 'https://random.app/badge-icon.png',
         requireInteraction: true,
         tag: 'random-notification',
       },
@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       data = {},
       action_url,
       image,
-      icon = 'https://api.iconify.design/mdi:bell-ring.svg',
+      icon = 'https://random.app/notification-icon.png',
       actions,
     }: PushNotificationRequest = await req.json();
 
@@ -185,8 +185,8 @@ Deno.serve(async (req) => {
       type: data.type as string || 'default',
       title,
       body,
-      icon,
-      image,
+      icon: icon || 'https://random.app/notification-icon.png', // Random branding
+      image: image || 'https://random.app/notif-group-forming.png', // Default contextual image
       data,
       action_url,
     }));
