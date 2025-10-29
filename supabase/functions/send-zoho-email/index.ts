@@ -77,12 +77,10 @@ serve(async (req) => {
     // Send email via Zoho Mail API
     console.log('Sending email via Zoho Mail API...');
     const emailPayload = {
-      fromAddress: `noreply@randomapp.fr`,
+      fromAddress: emailRequest.from_name ? `${emailRequest.from_name} <noreply@randomapp.fr>` : 'noreply@randomapp.fr',
       toAddress: emailRequest.to.join(','),
       subject: emailRequest.subject,
       content: htmlContent,
-      mailFormat: 'html',
-      accountId: ZOHO_ACCOUNT_ID,
     };
 
     const sendResponse = await fetch('https://mail.zoho.eu/api/accounts/' + ZOHO_ACCOUNT_ID + '/messages', {
