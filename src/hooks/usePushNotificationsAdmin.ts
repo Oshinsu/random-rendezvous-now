@@ -62,17 +62,15 @@ export const usePushNotificationsAdmin = () => {
     mutationFn: async (params: SendTestNotificationParams) => {
       const { data, error } = await supabase.functions.invoke('send-push-notification', {
         body: {
-          userId: params.userId,
-          notification: {
-            title: params.title,
-            body: params.body,
-            icon: params.imageUrl || '/notification-icon.png',
-            badge: '/badge-icon.png',
-            data: {
-              type: params.type,
-              url: params.actionUrl || '/dashboard',
-              timestamp: new Date().toISOString(),
-            },
+          user_ids: [params.userId], // ✅ Tableau au lieu de chaîne
+          title: params.title,
+          body: params.body,
+          icon: params.imageUrl || '/notification-icon.png',
+          image: params.imageUrl,
+          action_url: params.actionUrl || '/dashboard',
+          data: {
+            type: params.type,
+            timestamp: new Date().toISOString(),
           },
         },
       });
