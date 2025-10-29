@@ -116,18 +116,23 @@ export const ChatSystemTest = () => {
         details: `${messages?.length || 0} messages lus`
       });
 
-      // Ajout réaction
+      // Ajout réactions multiples
       updateStep(4, { status: "running" });
       if (messageId) {
+        const reactions = ['👍', '❤️', '🔥'];
+        const reactionsObj: Record<string, string[]> = {};
+        
+        for (const emoji of reactions) {
+          reactionsObj[emoji] = [user.id];
+        }
+        
         const { error: reactionError } = await supabase
           .from('group_messages')
-          .update({
-            reactions: { '👍': [user.id] }
-          })
+          .update({ reactions: reactionsObj })
           .eq('id', messageId);
 
         if (reactionError) throw reactionError;
-        updateStep(4, { status: "success", details: "Réaction ajoutée" });
+        updateStep(4, { status: "success", details: `${reactions.length} réactions ajoutées` });
       } else {
         updateStep(4, { status: "error", details: "Pas de message ID" });
       }

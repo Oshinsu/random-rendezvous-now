@@ -160,15 +160,33 @@ export const GroupLifecycleTest = () => {
       updateStep(8, { status: "running" });
       const startAssign = Date.now();
       
-      await supabase.functions.invoke('simple-auto-assign-bar', {
-        body: { group_id: group.id }
-      });
+      try {
+        const { error: functionError } = await supabase.functions.invoke('simple-auto-assign-bar', {
+          body: { group_id: group.id }
+        });
+        
+        if (functionError) {
+          updateStep(8, { 
+            status: "error", 
+            duration: Date.now() - startAssign,
+            details: `Erreur function: ${functionError.message}`
+          });
+          return;
+        }
 
-      updateStep(8, { 
-        status: "success", 
-        duration: Date.now() - startAssign,
-        details: "Bar assignment déclenché"
-      });
+        updateStep(8, { 
+          status: "success", 
+          duration: Date.now() - startAssign,
+          details: "Bar assignment déclenché"
+        });
+      } catch (err: any) {
+        updateStep(8, { 
+          status: "error", 
+          duration: Date.now() - startAssign,
+          details: `Exception: ${err.message}`
+        });
+        return;
+      }
 
       // Vérif completion
       updateStep(9, { status: "running" });

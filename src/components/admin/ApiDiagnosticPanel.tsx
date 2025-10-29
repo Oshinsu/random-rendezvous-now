@@ -30,7 +30,12 @@ export const ApiDiagnosticPanel = () => {
         throw error;
       }
 
-      setLastResult(data);
+      setLastResult({
+        success: data.success,
+        message: data.message || 'Test réussi',
+        testData: data.testData,
+        apiLoggerResult: data.apiLoggerResult
+      });
       
       if (data.success) {
         toast.success('Test API logger réussi!');
@@ -94,21 +99,30 @@ export const ApiDiagnosticPanel = () => {
               </Badge>
             </div>
 
-            <div className="text-sm">
+            <div className="text-sm space-y-2">
               <p className="font-medium">{lastResult.message}</p>
               {lastResult.error && (
                 <p className="text-red-600 mt-1">Erreur: {lastResult.error}</p>
               )}
               {lastResult.details && (
-                <p className="text-gray-600 mt-1">{lastResult.details}</p>
+                <p className="text-muted-foreground mt-1">{lastResult.details}</p>
               )}
             </div>
 
             {lastResult.testData && (
               <details className="text-xs">
                 <summary className="cursor-pointer font-medium">Données de test</summary>
-                <pre className="mt-2 p-2 bg-gray-100 rounded overflow-auto">
+                <pre className="mt-2 p-2 bg-muted rounded overflow-auto">
                   {JSON.stringify(lastResult.testData, null, 2)}
+                </pre>
+              </details>
+            )}
+
+            {lastResult.apiLoggerResult && (
+              <details className="text-xs">
+                <summary className="cursor-pointer font-medium">Résultat API Logger</summary>
+                <pre className="mt-2 p-2 bg-muted rounded overflow-auto">
+                  {JSON.stringify(lastResult.apiLoggerResult, null, 2)}
                 </pre>
               </details>
             )}

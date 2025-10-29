@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Play, Radio, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface RealtimeEvent {
   timestamp: string;
@@ -33,23 +34,35 @@ export const RealtimeTest = () => {
     setEvents([]);
     let testGroupId: string | null = null;
 
+    // Timeout global pour éviter tests infinis
+    const testTimeout = setTimeout(() => {
+      if (testStatus === 'listening' || testStatus === 'testing') {
+        setTestStatus('error');
+        setIsRunning(false);
+        toast.error("Timeout: Le test a pris trop de temps (>30s)");
+      }
+    }, 30000);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      // Setup realtime listeners
+      const testStartTime = Date.now();
+
+      // Setup realtime listeners avec latence correcte
       const groupsCh = supabase
         .channel('groups-test-channel')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'groups' },
           (payload) => {
-            const eventTime = new Date();
+            const eventReceivedTime = Date.now();
+            const latency = eventReceivedTime - testStartTime;
             setEvents(prev => [...prev, {
-              timestamp: eventTime.toISOString(),
+              timestamp: new Date().toISOString(),
               table: 'groups',
               eventType: payload.eventType,
               payload: payload,
-              latency: 0
+              latency: latency
             }]);
           }
         )
@@ -60,13 +73,14 @@ export const RealtimeTest = () => {
         .on('postgres_changes',
           { event: '*', schema: 'public', table: 'group_messages' },
           (payload) => {
-            const eventTime = new Date();
+            const eventReceivedTime = Date.now();
+            const latency = eventReceivedTime - testStartTime;
             setEvents(prev => [...prev, {
-              timestamp: eventTime.toISOString(),
+              timestamp: new Date().toISOString(),
               table: 'group_messages',
               eventType: payload.eventType,
               payload: payload,
-              latency: 0
+              latency: latency
             }]);
           }
         )
@@ -142,6 +156,7 @@ export const RealtimeTest = () => {
       console.error("Realtime test error:", error);
       setTestStatus('error');
     } finally {
+      clearTimeout(testTimeout);
       setIsRunning(false);
       
       // Cleanup

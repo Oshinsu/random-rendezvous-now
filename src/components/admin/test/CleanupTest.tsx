@@ -60,17 +60,28 @@ export const CleanupTest = () => {
 
       if (cleanupError) throw cleanupError;
 
+      console.log('Cleanup function response:', cleanupData);
+
       // Check if groups were deleted
       const { data: remainingGroups } = await supabase
         .from('groups')
         .select('*')
         .in('id', oldGroups?.map(g => g.id) || []);
 
+      const cleanupDetails = cleanupData?.cleaned_groups || [];
+      const groupsCleaned = (oldGroups?.length || 0) - (remainingGroups?.length || 0);
+      
       setResults({
         success: true,
         groupsCreated: oldGroups?.length || 0,
-        groupsCleaned: (oldGroups?.length || 0) - (remainingGroups?.length || 0),
-        cleanupResponse: cleanupData
+        groupsCleaned: groupsCleaned,
+        cleanupResponse: cleanupData,
+        detailedResults: {
+          expected_cleanup: oldGroups?.length || 0,
+          actual_cleanup: groupsCleaned,
+          cleanup_efficiency: groupsCleaned === (oldGroups?.length || 0) ? '100%' : `${Math.round((groupsCleaned / (oldGroups?.length || 1)) * 100)}%`,
+          cleaned_group_ids: cleanupDetails
+        }
       });
 
     } catch (error: any) {
@@ -108,19 +119,34 @@ export const CleanupTest = () => {
                   <span className="font-semibold">Test réussi</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="p-3 bg-muted rounded-lg">
                     <div className="text-2xl font-bold">{results.groupsCreated}</div>
-                    <div className="text-sm text-gray-600">Groupes créés</div>
+                    <div className="text-sm text-muted-foreground">Groupes créés</div>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg">
                     <div className="text-2xl font-bold text-green-700">{results.groupsCleaned}</div>
-                    <div className="text-sm text-gray-600">Groupes nettoyés</div>
+                    <div className="text-sm text-muted-foreground">Groupes nettoyés</div>
                   </div>
                 </div>
-                {results.cleanupResponse && (
-                  <div className="p-3 bg-gray-50 rounded text-xs font-mono">
-                    <pre>{JSON.stringify(results.cleanupResponse, null, 2)}</pre>
+                {results.detailedResults && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                    <p className="text-xs font-semibold mb-2">Détails du cleanup:</p>
+                    <div className="text-xs space-y-1">
+                      <p>Efficacité: <span className="font-medium">{results.detailedResults.cleanup_efficiency}</span></p>
+                      <p>Expected: {results.detailedResults.expected_cleanup} | Actual: {results.detailedResults.actual_cleanup}</p>
+                      {results.detailedResults.cleaned_group_ids?.length > 0 && (
+                        <p className="text-muted-foreground">IDs nettoyés: {results.detailedResults.cleaned_group_ids.slice(0, 3).join(', ')}{results.detailedResults.cleaned_group_ids.length > 3 && '...'}</p>
+                      )}
+                    </div>
                   </div>
+                )}
+                {results.cleanupResponse && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer font-medium">Réponse brute</summary>
+                    <div className="mt-2 p-3 bg-muted rounded font-mono">
+                      <pre>{JSON.stringify(results.cleanupResponse, null, 2)}</pre>
+                    </div>
+                  </details>
                 )}
               </>
             ) : (
