@@ -34,15 +34,15 @@ export const useChatPresence = (groupId: string) => {
     channel.on('presence', { event: 'join' }, ({ newPresences }) => {
       newPresences.forEach((presence: any) => {
         if (presence.user_id !== user.id) {
-          // Notification in-app
-          toast.success(`👋 ${presence.user_name} a rejoint le groupe !`);
+          // Notification in-app (ton Random : fun, Gen Z)
+          toast.success(`👋 ${presence.user_name} vient de rejoindre !`);
           
-          // Push notification (si permissions accordées)
+          // Push notification (ton Random)
           supabase.functions.invoke('send-push-notification', {
             body: {
               user_ids: [user.id],
-              title: '👋 Nouveau membre !',
-              body: `${presence.user_name} vient de rejoindre ton groupe`,
+              title: '👋 Quelqu\'un arrive !',
+              body: `${presence.user_name} vient de rejoindre ton groupe 🔥`,
               type: 'group_member_joined',
               action_url: `/groups?group_id=${groupId}`,
               data: {
@@ -59,7 +59,7 @@ export const useChatPresence = (groupId: string) => {
     channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
       leftPresences.forEach((presence: any) => {
         if (presence.user_id !== user.id) {
-          toast.info(`${presence.user_name} a quitté le groupe`);
+          toast.info(`${presence.user_name} s'est déconnecté·e`);
         }
       });
     });

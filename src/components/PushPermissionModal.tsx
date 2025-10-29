@@ -23,23 +23,23 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
   const { requestPermission, isEnabled } = usePushNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Copy selon contexte (Random tone of voice)
+  // Copy selon contexte (Random tone of voice - Gen Z)
   const COPY = {
     first_group: {
-      title: '🔔 Reçois une notif quand ton groupe est prêt !',
-      body: 'On te préviendra dès qu\'on aura trouvé 5 personnes et un bar. Promis, pas de spam.',
+      title: '🔔 On te prévient quand c\'est prêt ?',
+      body: 'Reçois une notif dès qu\'on a trouvé 5 personnes et un bar. Promis, pas de spam 🙏',
       cta: 'Oui, me notifier',
       image: '/notif-group-forming.png',
     },
     group_confirmed: {
-      title: '🎉 Reste au courant de tes prochains groupes',
-      body: 'Reçois une notif quand ton prochain groupe est confirmé. Tu peux désactiver quand tu veux.',
-      cta: 'Activer les notifications',
+      title: '🎉 Reste au courant de tes groupes',
+      body: 'Une notif quand ton groupe est confirmé. Tu peux désactiver quand tu veux.',
+      cta: 'Let\'s go',
       image: '/notif-bar-assigned.png',
     },
     first_visit: {
-      title: '🎲 Ne rate jamais une aventure Random',
-      body: 'Sois notifié·e quand ton groupe se forme et quand un bar est trouvé. Zéro spam, que l\'essentiel.',
+      title: '🎲 Ne rate jamais une sortie Random',
+      body: 'Sois notifié·e quand ton groupe se forme et qu\'un bar est trouvé. Que l\'essentiel 🔥',
       cta: 'Activer',
       image: '/notif-welcome.png',
     },
@@ -144,9 +144,9 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
           </Button>
         </DialogFooter>
 
-        {/* Privacy note */}
+        {/* Privacy note - ton Random */}
         <p className="text-xs text-muted-foreground text-center mt-2">
-          On respecte ta vie privée. Données sécurisées et pas de spam.
+          On respecte ta vie privée. Zéro spam, promis 🙏
         </p>
       </DialogContent>
     </Dialog>

@@ -65,55 +65,55 @@ const handler = async (req: Request): Promise<Response> => {
 
     switch (type) {
       case 'member_joined':
-        subject = '👋 Quelqu\'un a rejoint ton groupe !';
+        subject = '👋 Quelqu\'un vient de rejoindre !';
         htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #10b981;">Ton groupe se remplit !</h1>
-            <p style="font-size: 16px;"><strong>${new_member_name || 'Un aventurier'}</strong> vient de rejoindre ton groupe.</p>
-            <p style="font-size: 16px;">Membres actuels : <strong>${current_count || '?'}/5</strong></p>
+            <h1 style="color: #10b981;">Ça se remplit 🔥</h1>
+            <p style="font-size: 16px;"><strong>${new_member_name || 'Un·e aventurier·e'}</strong> vient de rejoindre ton groupe.</p>
+            <p style="font-size: 16px;">Vous êtes maintenant <strong>${current_count || '?'}/5</strong> !</p>
             <a href="https://random.app/groups?group_id=${group_id}" 
                style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; 
                       text-decoration: none; border-radius: 6px; margin-top: 16px;">
-              Discuter avec le groupe →
+              💬 Discuter avec le groupe
             </a>
           </div>
         `;
         break;
 
       case 'group_full':
-        subject = '🎉 Ton groupe est complet !';
+        subject = '🎉 Groupe complet, let\'s go !';
         htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #10b981;">C'est parti ! 🚀</h1>
-            <p style="font-size: 16px;">Ton groupe de 5 aventuriers est au complet.</p>
-            <p style="font-size: 16px;">Le bar va être assigné dans quelques instants...</p>
+            <p style="font-size: 16px;">Ton groupe de 5 aventurier·e·s est au complet.</p>
+            <p style="font-size: 16px;">Le bar va être assigné dans quelques instants — patience 🙏</p>
             <a href="https://random.app/groups?group_id=${group_id}" 
                style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; 
                       text-decoration: none; border-radius: 6px; margin-top: 16px;">
-              Voir mon groupe →
+              🔍 Voir mon groupe
             </a>
           </div>
         `;
         break;
 
       case 'bar_assigned':
-        subject = `🍸 Rendez-vous au ${bar_name} !`;
+        subject = `🍸 RDV au ${bar_name} !`;
         htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #10b981;">Ton bar est prêt !</h1>
+            <h1 style="color: #10b981;">Ton bar est prêt ! 🔥</h1>
             <h2 style="color: #333;">📍 ${bar_name}</h2>
             <p style="font-size: 16px; color: #666;">${bar_address}</p>
-            <p style="font-size: 18px; margin: 20px 0;">🕐 Rendez-vous à <strong>${meeting_time}</strong></p>
+            <p style="font-size: 18px; margin: 20px 0;">🕐 RDV à <strong>${meeting_time}</strong></p>
             <div style="margin-top: 20px;">
               <a href="https://maps.google.com/?q=${encodeURIComponent(bar_address || '')}" 
                  style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; 
                         text-decoration: none; border-radius: 6px; margin-right: 10px;">
-                Ouvrir l'itinéraire →
+                🗺️ Ouvrir l'itinéraire
               </a>
               <a href="https://random.app/groups?group_id=${group_id}" 
                  style="display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; 
                         text-decoration: none; border-radius: 6px;">
-                Voir les détails →
+                💬 Voir les détails
               </a>
             </div>
           </div>

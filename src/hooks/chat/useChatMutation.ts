@@ -55,7 +55,7 @@ export const useChatMutation = (groupId: string, onSuccess: (message: ChatMessag
       logger.info('✅ Message envoyé au groupe', { groupId });
       onSuccess(newMessage);
       
-      // NOUVEAU : Notifier les autres membres du groupe
+      // NOUVEAU : Notifier les autres membres du groupe (ton Random)
       try {
         const { data: members } = await supabase
           .from('group_participants')
@@ -68,7 +68,7 @@ export const useChatMutation = (groupId: string, onSuccess: (message: ChatMessag
           await supabase.functions.invoke('send-push-notification', {
             body: {
               user_ids: members.map(m => m.user_id),
-              title: '💬 Nouveau message dans ton groupe',
+              title: '💬 Nouveau message !',
               body: newMessage.message.substring(0, 100),
               type: 'new_chat_message',
               action_url: `/groups?group_id=${groupId}`,
