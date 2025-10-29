@@ -1477,6 +1477,27 @@ export type Database = {
           },
         ]
       }
+      notification_throttle: {
+        Row: {
+          id: string
+          notification_type: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_type: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_type?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1738,6 +1759,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          channel_email: boolean
+          channel_push: boolean
+          channel_sms: boolean
+          created_at: string
+          id: string
+          notify_group_lifecycle: boolean
+          notify_group_messages: boolean
+          notify_marketing: boolean
+          notify_peak_hours: boolean
+          notify_reengagement: boolean
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          unsubscribed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_email?: boolean
+          channel_push?: boolean
+          channel_sms?: boolean
+          created_at?: string
+          id?: string
+          notify_group_lifecycle?: boolean
+          notify_group_messages?: boolean
+          notify_marketing?: boolean
+          notify_peak_hours?: boolean
+          notify_reengagement?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_email?: boolean
+          channel_push?: boolean
+          channel_sms?: boolean
+          created_at?: string
+          id?: string
+          notify_group_lifecycle?: boolean
+          notify_group_messages?: boolean
+          notify_marketing?: boolean
+          notify_peak_hours?: boolean
+          notify_reengagement?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           action_url: string | null
@@ -1930,11 +2005,20 @@ export type Database = {
         Args: { target_group_id: string }
         Returns: boolean
       }
+      check_notification_rate_limit: {
+        Args: {
+          p_max_per_day?: number
+          p_notification_type: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       check_user_participation_limit: {
         Args: { user_uuid: string }
         Returns: boolean
       }
       cleanup_expired_force_confirm_votes: { Args: never; Returns: number }
+      cleanup_notification_throttle: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
       create_group_with_participant: {
         Args: {
@@ -2082,6 +2166,10 @@ export type Database = {
         Returns: boolean
       }
       migrate_existing_users: { Args: never; Returns: number }
+      record_notification_send: {
+        Args: { p_notification_type: string; p_user_id: string }
+        Returns: undefined
+      }
       refresh_crm_cohort_analysis: { Args: never; Returns: undefined }
       repair_missing_outings_history: { Args: never; Returns: number }
       sanitize_coordinates_pg: {
