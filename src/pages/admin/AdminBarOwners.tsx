@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAdminBarOwners } from '@/hooks/useAdminBarOwners';
+import { useStripeMRR } from '@/hooks/useStripeMRR';
 import { EmptyBarOwnersState } from '@/components/admin/EmptyBarOwnersState';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,11 +26,13 @@ import {
   AlertTriangle,
   ExternalLink,
   DollarSign,
+  Loader2,
 } from 'lucide-react';
 import type { BarOwnerWithSubscription } from '@/hooks/useAdminBarOwners';
 
 export default function AdminBarOwners() {
   const { barOwners, stats, isLoading, updateApplicationStatus, toggleSuspension, deleteBarOwner } = useAdminBarOwners();
+  const { data: mrrData, isLoading: mrrLoading } = useStripeMRR();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBarOwner, setSelectedBarOwner] = useState<BarOwnerWithSubscription | null>(null);
   const [actionDialog, setActionDialog] = useState<{
@@ -199,22 +202,42 @@ export default function AdminBarOwners() {
 
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold text-green-800">Stripe</p>
-                  <p className="text-sm text-green-600">Gestion des abonnements</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <div>
+                    {mrrLoading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                        <p className="text-sm text-green-600">Chargement...</p>
+                      </div>
+                    ) : mrrData?.success ? (
+                      <>
+                        <p className="text-2xl font-bold text-green-800">
+                          {mrrData.mrr.toFixed(2)}€
+                        </p>
+                        <p className="text-sm text-green-600">
+                          MRR ({mrrData.active_subscriptions} abonnement{mrrData.active_subscriptions > 1 ? 's' : ''})
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-2xl font-bold text-green-800">N/A</p>
+                        <p className="text-sm text-green-600">MRR (Revenus mensuels)</p>
+                      </>
+                    )}
+                  </div>
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                  className="border-green-300 text-green-700 hover:bg-green-100"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Stripe
+                </Button>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
-                className="w-full border-green-300 text-green-700 hover:bg-green-100"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Ouvrir Stripe Dashboard
-              </Button>
             </CardContent>
           </Card>
         </div>

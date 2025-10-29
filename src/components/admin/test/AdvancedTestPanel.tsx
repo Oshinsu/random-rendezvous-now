@@ -44,9 +44,11 @@ export function AdvancedTestPanel() {
     setResult(null);
 
     try {
+      console.log('🧪 Invoking create-test-scenario with location:', selectedCity);
+      
       const { data, error } = await supabase.functions.invoke('create-test-scenario', {
         body: {
-          scenario_type: 'bar_assignment',
+          scenario_type: 'full_test',
           location: {
             latitude: selectedCity.lat,
             longitude: selectedCity.lng,

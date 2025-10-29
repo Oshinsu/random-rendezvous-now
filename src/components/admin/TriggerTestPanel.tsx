@@ -83,11 +83,9 @@ export const TriggerTestPanel = () => {
     setEdgeResult(null);
     
     try {
-      console.log('🧪 Démarrage test Edge Function...');
+      console.log('🧪 Invoking test-auto-bar-assignment edge function...');
       
-      const { data, error } = await supabase.functions.invoke('test-auto-bar-assignment', {
-        body: {}
-      });
+      const { data, error } = await supabase.functions.invoke('test-auto-bar-assignment');
       
       if (error) {
         console.error('Erreur test Edge Function:', error);
