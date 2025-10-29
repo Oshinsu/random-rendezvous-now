@@ -141,6 +141,10 @@ async function sendFCMNotification(
 }
 
 Deno.serve(async (req) => {
+  console.log('🚀 [ENTRY] Function invoked');
+  console.log('📝 [DEBUG] Method:', req.method);
+  console.log('📝 [DEBUG] URL:', req.url);
+  
   // CORS headers for web app requests
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -149,6 +153,7 @@ Deno.serve(async (req) => {
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ [CORS] OPTIONS request handled');
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -160,6 +165,12 @@ Deno.serve(async (req) => {
     const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON')!;
     const projectId = Deno.env.get('FIREBASE_PROJECT_ID')!;
 
+    console.log('🔑 [DEBUG] Checking environment variables...');
+    console.log('🔑 [DEBUG] SUPABASE_URL exists:', !!supabaseUrl);
+    console.log('🔑 [DEBUG] SERVICE_ROLE_KEY exists:', !!supabaseServiceKey);
+    console.log('🔑 [DEBUG] FIREBASE_SERVICE_ACCOUNT exists:', !!serviceAccountJson);
+    console.log('🔑 [DEBUG] FIREBASE_PROJECT_ID exists:', !!projectId);
+
     if (!serviceAccountJson || !projectId) {
       throw new Error('❌ Missing Firebase credentials. Please add FIREBASE_SERVICE_ACCOUNT_JSON and FIREBASE_PROJECT_ID secrets.');
     }
@@ -167,9 +178,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // SOTA 2025: Defensive validation of request body
+    console.log('📦 [DEBUG] Parsing request body...');
     let requestBody;
     try {
       requestBody = await req.json();
+      console.log('✅ [DEBUG] Body parsed successfully');
+      console.log('📊 [DEBUG] Body type:', typeof requestBody);
+      console.log('📊 [DEBUG] Body keys:', Object.keys(requestBody || {}));
     } catch (parseError) {
       console.error('❌ Request parsing failed:', parseError);
       return new Response(
@@ -181,18 +196,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log('🔍 [DEBUG] Checking user_ids field...');
+    console.log('🔍 [DEBUG] user_ids value:', requestBody.user_ids);
+    console.log('🔍 [DEBUG] user_ids type:', typeof requestBody.user_ids);
+    console.log('🔍 [DEBUG] user_ids is array:', Array.isArray(requestBody.user_ids));
+
     // Validate user_ids is a non-empty array
     if (!requestBody.user_ids || !Array.isArray(requestBody.user_ids)) {
+      console.error('❌ user_ids validation failed - not an array');
       return new Response(
         JSON.stringify({ 
           error: 'user_ids must be an array',
-          received_type: typeof requestBody.user_ids
+          received_type: typeof requestBody.user_ids,
+          received_value: requestBody.user_ids
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (requestBody.user_ids.length === 0) {
+      console.error('❌ user_ids validation failed - empty array');
       return new Response(
         JSON.stringify({ 
           error: 'user_ids array is empty',
@@ -201,6 +224,8 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log(`✅ [DEBUG] Validation passed - ${requestBody.user_ids.length} users`);
 
     const {
       user_ids,
