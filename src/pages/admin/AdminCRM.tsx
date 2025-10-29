@@ -5,7 +5,6 @@ import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
 import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
-import { CampaignDetailsModal } from '@/components/crm/CampaignDetailsModal';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
 import { TemplateSelector } from '@/components/crm/TemplateSelector';
 import { QuickCampaignModal } from '@/components/crm/QuickCampaignModal';
@@ -80,7 +79,6 @@ export default function AdminCRM() {
   const [showSequences, setShowSequences] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
-  const [showCampaignDetailsModal, setShowCampaignDetailsModal] = useState(false);
 
   const { sequences, createSequence } = useCRMSequences();
   const { data: optimization, isLoading: optimizationLoading } = useSendTimeOptimization(newCampaign.target_segment_id);
@@ -406,7 +404,8 @@ export default function AdminCRM() {
                 />
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr,350px] gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-6">
+                <div className="space-y-6">
               <Card className="p-6">
                 <h3 className="text-xl font-bold mb-4">Créer une Campagne</h3>
                 <EmailTemplateEditor
@@ -537,7 +536,6 @@ export default function AdminCRM() {
                 </Button>
               </Card>
 
-                <div className="space-y-4">
                   <CampaignCalendar 
                     campaigns={campaigns}
                     onDateClick={(date) => {
@@ -548,7 +546,6 @@ export default function AdminCRM() {
                       const campaign = campaigns.find(c => c.id === campaignId);
                       if (campaign) {
                         setSelectedCampaign(campaign);
-                        setShowCampaignDetailsModal(true);
                       }
                     }}
                     onEventDrop={async (campaignId, newDate) => {
@@ -559,9 +556,107 @@ export default function AdminCRM() {
                       });
                     }}
                   />
+
+                  {/* Campaign Details Inline Display */}
+                  {selectedCampaign && (
+                    <Card className="p-6 mt-4">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="space-y-1">
+                          <h3 className="text-xl font-bold">{selectedCampaign.campaign_name}</h3>
+                          <p className="text-sm text-muted-foreground">{selectedCampaign.subject}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge variant={
+                            selectedCampaign.status === 'active' ? 'default' : 
+                            selectedCampaign.status === 'completed' ? 'secondary' : 
+                            'outline'
+                          }>
+                            {selectedCampaign.status}
+                          </Badge>
+                          <Button size="sm" variant="ghost" onClick={() => setSelectedCampaign(null)}>✕</Button>
+                        </div>
+                      </div>
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-xs text-muted-foreground">Taux d'ouverture</p>
+                          <p className="text-2xl font-bold">
+                            {selectedCampaign.total_sends && selectedCampaign.total_opens 
+                              ? ((selectedCampaign.total_opens / selectedCampaign.total_sends) * 100).toFixed(1)
+                              : '0'}%
+                          </p>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-xs text-muted-foreground">Taux de clic</p>
+                          <p className="text-2xl font-bold">
+                            {selectedCampaign.total_sends && selectedCampaign.total_clicks
+                              ? ((selectedCampaign.total_clicks / selectedCampaign.total_sends) * 100).toFixed(1)
+                              : '0'}%
+                          </p>
+                        </div>
+                        <div className="p-3 border rounded-lg">
+                          <p className="text-xs text-muted-foreground">Conversions</p>
+                          <p className="text-2xl font-bold">
+                            {selectedCampaign.total_sends && selectedCampaign.total_conversions
+                              ? ((selectedCampaign.total_conversions / selectedCampaign.total_sends) * 100).toFixed(1)
+                              : '0'}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        {selectedCampaign.status === 'draft' && (
+                          <Button size="sm" onClick={() => sendCampaign(selectedCampaign.id, zapierWebhook)}>
+                            Envoyer maintenant
+                          </Button>
+                        )}
+                        {selectedCampaign.status === 'scheduled' && (
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            const newDate = new Date(selectedCampaign.send_at);
+                            newDate.setDate(newDate.getDate() + 1);
+                            await rescheduleCampaign(selectedCampaign.id, newDate.toISOString());
+                            toast({
+                              title: 'Campagne reprogrammée',
+                              description: 'La date d\'envoi a été mise à jour'
+                            });
+                          }}>
+                            Reprogrammer
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setNewCampaign({
+                            campaign_name: `${selectedCampaign.campaign_name} (copie)`,
+                            campaign_type: 'email',
+                            trigger_type: 'manual',
+                            subject: selectedCampaign.subject || selectedCampaign.campaign_name,
+                            content: '',
+                            target_segment_id: '',
+                            channels: ['email'],
+                            send_at: ''
+                          });
+                          setEmailTemplate({
+                            subject: selectedCampaign.subject || selectedCampaign.campaign_name,
+                            html_content: '',
+                            variables: []
+                          });
+                          setSelectedCampaign(null);
+                          toast({
+                            title: 'Campagne dupliquée',
+                            description: 'Modifiez les paramètres et créez la campagne'
+                          });
+                        }}>
+                          Dupliquer
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
                 </div>
-                
-                <CampaignStatsWidget campaigns={campaigns} />
+
+                <div className="space-y-4">
+                  <CampaignStatsWidget campaigns={campaigns} />
+                </div>
             </div>
 
             <Card className="p-6">
@@ -685,47 +780,6 @@ export default function AdminCRM() {
           segments={segments}
           campaigns={campaigns}
           onCreateCampaign={handleCreateCampaign}
-        />
-
-        <CampaignDetailsModal
-          campaign={selectedCampaign}
-          open={showCampaignDetailsModal}
-          onClose={() => {
-            setShowCampaignDetailsModal(false);
-            setSelectedCampaign(null);
-          }}
-          onReschedule={async (campaignId, newDate) => {
-            await rescheduleCampaign(campaignId, newDate);
-            toast({
-              title: 'Campagne reprogrammée',
-              description: 'La date d\'envoi a été mise à jour'
-            });
-          }}
-          onDuplicate={(campaign: any) => {
-            setNewCampaign({
-              campaign_name: `${campaign.campaign_name} (copie)`,
-              campaign_type: 'email',
-              trigger_type: 'manual',
-              subject: campaign.subject || campaign.campaign_name,
-              content: '',
-              target_segment_id: '',
-              channels: ['email'],
-              send_at: ''
-            });
-            setEmailTemplate({
-              subject: campaign.subject || campaign.campaign_name,
-              html_content: '',
-              variables: []
-            });
-            setShowCampaignDetailsModal(false);
-            toast({
-              title: 'Campagne dupliquée',
-              description: 'Modifiez les paramètres et créez la campagne'
-            });
-          }}
-          onSend={async (campaignId) => {
-            await sendCampaign(campaignId, zapierWebhook);
-          }}
         />
       </div>
     </AdminLayout>
