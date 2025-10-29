@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -47,11 +48,37 @@ export const CampaignStatsWidget = ({ campaigns }: CampaignStatsWidgetProps) => 
 
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', '#8b5cf6', '#10b981'];
 
-  // Mock line data for open rates trend (last 30 days)
-  const lineData = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    rate: Math.random() * 20 + 25
-  }));
+  // Calculate real open rate trend for last 30 days
+  const lineData = React.useMemo(() => {
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      date.setHours(0, 0, 0, 0);
+      return date;
+    });
+
+    return last30Days.map(date => {
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Filter campaigns sent on this date
+      const dayCampaigns = campaigns.filter(c => {
+        if (!c.send_at && !c.created_at) return false;
+        const campaignDate = new Date(c.send_at || c.created_at);
+        campaignDate.setHours(0, 0, 0, 0);
+        return campaignDate.toISOString().split('T')[0] === dateStr;
+      });
+
+      // Calculate open rate for this day
+      const totalSent = dayCampaigns.reduce((sum, c) => sum + (c.stats?.total_sent || 0), 0);
+      const totalOpened = dayCampaigns.reduce((sum, c) => sum + (c.stats?.opened || 0), 0);
+      const rate = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0;
+
+      return {
+        day: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+        rate
+      };
+    });
+  }, [campaigns]);
 
   return (
     <div className="space-y-4">
