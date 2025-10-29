@@ -32,7 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { HealthScoreTable } from '@/components/crm/HealthScoreTable';
+import { HealthScoreOverview } from '@/components/crm/HealthScoreOverview';
 
 export default function AdminCRM() {
   const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
@@ -264,27 +264,13 @@ export default function AdminCRM() {
                 <div>
                   <h3 className="text-2xl font-bold">Health Scores Utilisateurs</h3>
                   <p className="text-sm text-muted-foreground">
-                    Score moyen: <span className="font-semibold">{healthStats.avgHealthScore}/100</span> • 
-                    <span className="font-semibold ml-1">{totalCount}</span> utilisateurs • 
-                    <span className="ml-1">Page {currentPage}/{totalPages}</span>
+                    Vue globale de l'engagement et de la santé des utilisateurs
                   </p>
-                  <div className="flex gap-4 mt-2">
-                    <Badge variant="destructive">{healthStats.criticalRisk} critiques</Badge>
-                    <Badge variant="destructive">{healthStats.highRisk} élevés</Badge>
-                    <Badge variant="secondary">{healthStats.mediumRisk} moyens</Badge>
-                    <Badge variant="default">{healthStats.lowRisk} faibles</Badge>
-                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={exportToCSV}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
-                  <Button onClick={handleCalculateHealth} disabled={calculatingHealth}>
-                    <Activity className="mr-2 h-4 w-4" />
-                    {calculatingHealth ? 'Calcul...' : 'Recalculer Tous'}
-                  </Button>
-                </div>
+                <Button variant="outline" onClick={exportToCSV}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
 
               <CRMFilters
@@ -310,12 +296,15 @@ export default function AdminCRM() {
                 }}
               />
 
-              <HealthScoreTable
+              <HealthScoreOverview
+                stats={healthStats}
                 healthScores={healthScores}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setHealthPage}
                 loading={healthLoading}
+                onCalculateHealth={handleCalculateHealth}
+                calculating={calculatingHealth}
               />
             </Card>
           </TabsContent>
