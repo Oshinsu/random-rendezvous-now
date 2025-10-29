@@ -34,6 +34,7 @@ import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { HealthScoreOverview } from '@/components/crm/HealthScoreOverview';
 
+// CRM Dashboard - Admin interface for managing campaigns, segments, and user health
 export default function AdminCRM() {
   const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
