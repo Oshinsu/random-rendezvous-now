@@ -1,8 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useCampaignQueue } from "@/hooks/useCampaignQueue";
-import { Mail, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 export function CampaignQueueMonitor() {
   const { queues, loading } = useCampaignQueue();
@@ -92,6 +94,24 @@ export function CampaignQueueMonitor() {
                   </span>
                 )}
               </div>
+
+              {queue.failed > 0 && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Erreurs détectées</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{queue.failed} email{queue.failed > 1 ? 's ont' : ' a'} échoué</span>
+                    <Button 
+                      variant="link" 
+                      size="sm"
+                      className="h-auto p-0 text-destructive hover:text-destructive/80"
+                      onClick={() => window.open(`/admin/logs?search=campaign+${queue.campaignId}`, '_blank')}
+                    >
+                      Voir les logs →
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           );
         })}

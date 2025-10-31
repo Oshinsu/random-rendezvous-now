@@ -1,14 +1,28 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Zap, Mail, TrendingUp } from 'lucide-react';
 import { useCRMAutomation } from '@/hooks/useCRMAutomation';
 import { useCRMOverview } from '@/hooks/useCRMOverview';
+import { useCRMCampaigns } from '@/hooks/useCRMCampaigns';
 import { Progress } from '@/components/ui/progress';
 import { CampaignQueueMonitor } from './CampaignQueueMonitor';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export const CRMMonitoringDashboard = () => {
   const { rules } = useCRMAutomation();
   const { data: overviewData } = useCRMOverview();
+  const { campaigns } = useCRMCampaigns();
+
+  const statusLabels: Record<string, string> = {
+    draft: 'Brouillon',
+    scheduled: 'Planifiée',
+    sending: 'En cours',
+    sent: 'Envoyée',
+    failed: 'Échec'
+  };
+
+  const recentCampaigns = campaigns.slice(0, 5);
 
   // Calculate rules without campaign assigned
   const rulesWithoutCampaign = rules.filter(r => r.is_active && !r.campaign_id).length;
@@ -24,7 +38,51 @@ export const CRMMonitoringDashboard = () => {
 
   return (
     <div className="space-y-4 mb-6">
-      <CampaignQueueMonitor />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CampaignQueueMonitor />
+        
+        {/* Recent Campaigns Widget */}
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="h-5 w-5 text-primary" />
+            <h4 className="font-semibold">Dernières campagnes</h4>
+          </div>
+          {recentCampaigns.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune campagne créée</p>
+          ) : (
+            <div className="space-y-3">
+              {recentCampaigns.map((campaign) => (
+                <div key={campaign.id} className="flex items-start justify-between pb-3 border-b last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{campaign.campaign_name}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {campaign.stats?.total_sent || 0} envoyés
+                      </span>
+                      {campaign.stats?.opened > 0 && (
+                        <span className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          {campaign.stats.opened} ouvertures
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true, locale: fr })}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={campaign.status === 'completed' ? 'default' : 'secondary'}
+                    className="ml-2 shrink-0"
+                  >
+                    {statusLabels[campaign.status] || campaign.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Zoho API Health */}

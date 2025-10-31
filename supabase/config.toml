@@ -148,6 +148,12 @@ verify_jwt = false
 [functions.process-recurring-campaigns.schedule]
 cron = "0 2 * * *"
 
+[functions.process-campaign-queue]
+verify_jwt = false
+
+[functions.process-campaign-queue.schedule]
+cron = "* * * * *"
+
 [functions.optimize-send-time]
 verify_jwt = false
 

@@ -246,6 +246,42 @@ export const useCRMCampaigns = () => {
     }
   };
 
+  const deleteCampaign = async (campaignId: string) => {
+    try {
+      // Delete from queue first if present
+      const { error: queueError } = await supabase
+        .from('campaign_email_queue')
+        .delete()
+        .eq('campaign_id', campaignId);
+
+      if (queueError) {
+        console.error('Error deleting from queue:', queueError);
+      }
+
+      // Delete the campaign
+      const { error } = await supabase
+        .from('crm_campaigns')
+        .delete()
+        .eq('id', campaignId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Campagne supprimée",
+        description: "La campagne a été supprimée avec succès",
+      });
+
+      await fetchCampaigns();
+    } catch (err) {
+      console.error('Error deleting campaign:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la campagne",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchCampaigns();
   }, []);
@@ -258,6 +294,7 @@ export const useCRMCampaigns = () => {
     createCampaign,
     sendCampaign,
     updateCampaignStatus,
-    rescheduleCampaign
+    rescheduleCampaign,
+    deleteCampaign
   };
 };

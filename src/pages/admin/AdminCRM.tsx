@@ -1,7 +1,7 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus, Sparkles, InfoIcon } from 'lucide-react';
+import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus, Sparkles, InfoIcon, Send, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { CRMFilters } from '@/components/crm/CRMFilters';
@@ -68,7 +68,7 @@ export default function AdminCRM() {
     healthPage,
     healthPageSize
   );
-  const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign, rescheduleCampaign } = useCRMCampaigns();
+  const { campaigns, loading: campaignsLoading, createCampaign, sendCampaign, rescheduleCampaign, deleteCampaign } = useCRMCampaigns();
 
   const [newCampaign, setNewCampaign] = useState({
     campaign_name: '',
@@ -760,39 +760,63 @@ export default function AdminCRM() {
                           <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
                             {campaign.status}
                           </Badge>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => sendCampaign(campaign.id, zapierWebhook)}
-                                    disabled={campaign.status !== 'draft' || (() => {
-                                      const segment = segments.find(s => s.id === campaign.target_segment_id);
-                                      return !segment || (segment.user_count ?? 0) === 0;
-                                    })()}
-                                  >
-                                    {(() => {
-                                      const segment = segments.find(s => s.id === campaign.target_segment_id);
-                                      return segment && segment.user_count === 0 && <InfoIcon className="h-4 w-4 mr-2" />;
-                                    })()}
-                                    📧 Envoyer
-                                  </Button>
-                                </div>
-                              </TooltipTrigger>
-                              {(() => {
-                                const segment = segments.find(s => s.id === campaign.target_segment_id);
-                                if (segment && segment.user_count === 0) {
-                                  return (
-                                    <TooltipContent>
-                                      Ce segment est vide ({segment.user_count || 0} utilisateurs). Recalculez les segments ou vérifiez les critères.
-                                    </TooltipContent>
-                                  );
+                          <div className="flex gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => sendCampaign(campaign.id, zapierWebhook)}
+                                      disabled={campaign.status !== 'draft' || (() => {
+                                        const segment = segments.find(s => s.id === campaign.target_segment_id);
+                                        return !segment || (segment.user_count ?? 0) === 0;
+                                      })()}
+                                    >
+                                      {(() => {
+                                        const segment = segments.find(s => s.id === campaign.target_segment_id);
+                                        return segment && segment.user_count === 0 && <InfoIcon className="h-4 w-4 mr-2" />;
+                                      })()}
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Envoyer
+                                    </Button>
+                                  </div>
+                                </TooltipTrigger>
+                                {(() => {
+                                  const segment = segments.find(s => s.id === campaign.target_segment_id);
+                                  if (segment && segment.user_count === 0) {
+                                    return (
+                                      <TooltipContent>
+                                        Ce segment est vide ({segment.user_count || 0} utilisateurs). Recalculez les segments ou vérifiez les critères.
+                                      </TooltipContent>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedCampaign(campaign)}
+                            >
+                              <BarChart3 className="h-4 w-4 mr-2" />
+                              Détails
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={async () => {
+                                if (confirm(`Supprimer la campagne "${campaign.campaign_name}" ?`)) {
+                                  await deleteCampaign(campaign.id);
                                 }
-                                return null;
-                              })()}
-                            </Tooltip>
-                          </TooltipProvider>
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       {campaign.stats && (
