@@ -150,18 +150,37 @@ export const useCRMCampaigns = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Campagne envoyée',
-        description: `${data.sent} emails envoyés avec succès`
-      });
+      // ✅ PHASE 3: Message spécifique si 0 envois (SOTA Oct 2025)
+      if (data?.sent === 0) {
+        if (data?.message?.includes('No target users')) {
+          toast({
+            title: '⚠️ Segment vide',
+            description: '🔍 Aucun utilisateur trouvé dans ce segment. Vérifiez les critères du segment ou recalculez les segments.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: '⚠️ Aucun envoi',
+            description: 'Aucun utilisateur n\'a pu recevoir la campagne. Vérifiez les logs pour plus de détails.',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: 'Campagne envoyée',
+          description: `${data.sent || 0} emails envoyés avec succès`
+        });
+      }
 
       await fetchCampaigns();
       return data;
     } catch (err) {
       console.error('Error sending campaign:', err);
+      
+      // Message d'erreur générique si pas de data
       toast({
         title: 'Erreur',
-        description: "Impossible d'envoyer la campagne",
+        description: "Impossible d'envoyer la campagne. Vérifiez les logs serveur.",
         variant: 'destructive'
       });
       throw err;

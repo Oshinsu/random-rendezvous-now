@@ -57,10 +57,20 @@ serve(async (req) => {
         }];
       }
     } else if (campaign.target_segment_id) {
-      const { data: segmentMembers } = await supabase
+      console.log(`🔍 Fetching segment members for segment: ${campaign.target_segment_id}`);
+      
+      const { data: segmentMembers, error: segmentError } = await supabase
         .from('crm_user_segment_memberships')
         .select('user_id, profiles!inner(id, email, first_name, last_name)')
         .eq('segment_id', campaign.target_segment_id);
+      
+      // ✅ PHASE 2: Log explicite pour debugging RLS (SOTA Oct 2025)
+      if (segmentError) {
+        console.error('❌ Error fetching segment members:', segmentError);
+        console.error('❌ Segment ID:', campaign.target_segment_id);
+        console.error('❌ Error details:', JSON.stringify(segmentError));
+      }
+      console.log(`✅ Segment query returned ${segmentMembers?.length || 0} members`);
       
       targetUsers = (segmentMembers || []).map(m => ({
         user_id: m.user_id,
