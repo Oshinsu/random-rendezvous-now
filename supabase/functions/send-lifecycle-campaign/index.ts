@@ -41,7 +41,6 @@ serve(async (req) => {
     let targetUsers = [];
 
     if (specificUserId) {
-      // Send to a specific user only
       const { data: specificUser } = await supabase
         .from('profiles')
         .select('id, email, first_name, last_name')
@@ -57,42 +56,10 @@ serve(async (req) => {
         }];
       }
     } else if (campaign.target_segment_id) {
-      console.log(`🔍 Fetching segment members for segment: ${campaign.target_segment_id}`);
-      
-      // ✅ PHASE 4: Compter d'abord les membres attendus (SOTA Oct 2025)
-      const { count: expectedCount } = await supabase
-        .from('crm_user_segment_memberships')
-        .select('*', { count: 'exact', head: true })
-        .eq('segment_id', campaign.target_segment_id);
-      
-      console.log(`📊 Segment has ${expectedCount || 0} total members in memberships table`);
-      
-      const { data: segmentMembers, error: segmentError } = await supabase
+      const { data: segmentMembers } = await supabase
         .from('crm_user_segment_memberships')
         .select('user_id, profiles!inner(id, email, first_name, last_name)')
         .eq('segment_id', campaign.target_segment_id);
-      
-      // ✅ PHASE 4: Logs détaillés avec diagnostic FK (SOTA Oct 2025)
-      if (segmentError) {
-        console.error('❌ Error fetching segment members:', segmentError);
-        console.error('❌ Segment ID:', campaign.target_segment_id);
-        console.error('❌ Error code:', segmentError.code);
-        console.error('❌ Error details:', JSON.stringify(segmentError));
-        
-        if (segmentError.code === 'PGRST200') {
-          console.error('💡 PGRST200 means PostgREST cannot find relationship between tables');
-          console.error('💡 This likely means the FK constraint crm_user_segment_memberships.user_id -> profiles.id is missing');
-          console.error('💡 Run migration to add FK: ALTER TABLE crm_user_segment_memberships ADD CONSTRAINT ... FOREIGN KEY (user_id) REFERENCES profiles(id)');
-        }
-      }
-      
-      console.log(`✅ JOIN returned ${segmentMembers?.length || 0} members with valid profiles`);
-      
-      // ✅ Diagnostic de différence si count != length
-      if (expectedCount && segmentMembers && expectedCount !== segmentMembers.length) {
-        console.warn(`⚠️ Mismatch detected: ${expectedCount} members in segment but only ${segmentMembers.length} have valid profiles`);
-        console.warn(`⚠️ ${expectedCount - segmentMembers.length} users may have been deleted or have no profile entry`);
-      }
       
       targetUsers = (segmentMembers || []).map(m => ({
         user_id: m.user_id,
@@ -116,16 +83,53 @@ serve(async (req) => {
     }
 
     if (targetUsers.length === 0) {
-      console.log('No target users found for campaign');
       return new Response(
         JSON.stringify({ message: 'No target users found', sent: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Sending to ${targetUsers.length} users via ${channels.join(', ')}`);
+    console.log(`Found ${targetUsers.length} target users`);
 
-    // Send to all target users (multi-channel)
+    // NEW: Use queue system for large campaigns (>10 users)
+    if (targetUsers.length > 10) {
+      console.log('📥 Large campaign detected, using queue system');
+      
+      const { error: queueError } = await supabase.functions.invoke('enqueue-campaign-emails', {
+        body: {
+          campaignId: campaign.id,
+          users: targetUsers.map(u => ({
+            userId: u.user_id,
+            email: u.email,
+            firstName: u.first_name
+          })),
+          campaignData: {
+            subject: campaign.subject || campaign.campaign_name,
+            content: campaign.content,
+            channels: channels
+          }
+        }
+      });
+
+      if (queueError) {
+        throw new Error(`Failed to queue emails: ${queueError.message}`);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          campaign_id: campaign.id,
+          total: targetUsers.length,
+          queued: true,
+          message: `${targetUsers.length} emails mis en queue (5 emails/min)`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // OLD: Direct send for small campaigns (<=10 users)
+    console.log('📤 Small campaign, sending directly');
+    
     let sentCount = 0;
     let emailsSent = 0;
     let notificationsSent = 0;
@@ -133,7 +137,6 @@ serve(async (req) => {
 
     for (const user of targetUsers) {
       try {
-        // Replace template variables
         let content = campaign.content;
         let subject = campaign.subject || '';
         
@@ -145,58 +148,27 @@ serve(async (req) => {
           .replace(/\{\{first_name\}\}/g, user.first_name || 'utilisateur')
           .replace(/\{\{last_name\}\}/g, user.last_name || '');
 
-        // ============================================================================
-        // EMAIL RATE LIMIT CHECK WITH WARMUP (SOTA Oct 2025)
-        // Source: Email Deliverability Best Practices 2025
-        // ============================================================================
         if (channels.includes('email')) {
-          // Vérifier le rate limit avec warmup
-          const { data: rateLimitCheck, error: rateLimitError } = await supabase
-            .rpc('check_email_rate_limit_with_warmup')
-            .single();
-
-          if (rateLimitError) {
-            console.error('❌ Error checking email rate limit:', rateLimitError);
-            errors.push({
-              user_id: user.user_id,
-              error: 'Rate limit check failed',
-              channel: 'email'
-            });
-          } else if (!rateLimitCheck?.can_send) {
-            console.log(`⏸️ Email rate limit reached. Remaining today: ${rateLimitCheck?.remaining_today || 0}, Remaining this hour: ${rateLimitCheck?.remaining_hour || 0}`);
-            errors.push({
-              user_id: user.user_id,
-              error: 'Email rate limit reached',
-              channel: 'email'
-            });
-            continue; // Skip cet utilisateur pour préserver le warmup
-          } else {
-            // Rate limit OK, send email
-            const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
-              body: {
-                to: [user.email],
-                subject: subject,
-                html_content: content,
-                campaign_id: campaign.id,
-                user_id: user.user_id,
-                track_opens: true,
-                track_clicks: true
-              }
-            });
-
-            if (sendError) {
-              console.error('Error sending email to user:', user.user_id, sendError);
-              errors.push({ user_id: user.user_id, channel: 'email', error: sendError.message });
-            } else {
-              emailsSent++;
-              console.log(`✅ Email sent to ${user.email} (${rateLimitCheck.remaining_today} remaining today)`);
+          const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
+            body: {
+              to: user.email,
+              subject: subject,
+              htmlContent: content,
+              trackOpens: true,
+              trackClicks: true,
+              campaignId: campaign.id,
+              userId: user.user_id
             }
+          });
+
+          if (sendError) {
+            errors.push({ user_id: user.user_id, channel: 'email', error: sendError.message });
+          } else {
+            emailsSent++;
           }
         }
 
-        // Send via IN-APP channel
         if (channels.includes('in_app')) {
-          // Strip HTML tags for in-app notification body
           const plainTextBody = content.replace(/<[^>]*>/g, '').substring(0, 200);
           
           const { error: notifError } = await supabase.rpc('create_in_app_notification', {
@@ -212,7 +184,6 @@ serve(async (req) => {
           });
 
           if (notifError) {
-            console.error('Error sending in-app notification to user:', user.user_id, notifError);
             errors.push({ user_id: user.user_id, channel: 'in_app', error: notifError.message });
           } else {
             notificationsSent++;
@@ -220,20 +191,16 @@ serve(async (req) => {
         }
 
         sentCount++;
+        await new Promise(r => setTimeout(r, 300));
       } catch (error) {
-        console.error('Error processing user:', user.user_id, error);
         errors.push({ user_id: user.user_id, error: error.message });
       }
     }
 
-    // Update campaign status
     await supabase
       .from('crm_campaigns')
-      .update({ status: 'sent' })
+      .update({ status: 'sent', sent_at: new Date().toISOString() })
       .eq('id', campaignId);
-
-    console.log(`Campaign sent: ${sentCount}/${targetUsers.length} users reached`);
-    console.log(`Emails sent: ${emailsSent}, In-app notifications: ${notificationsSent}`);
 
     return new Response(
       JSON.stringify({ 

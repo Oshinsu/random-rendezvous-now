@@ -14,6 +14,29 @@ const corsHeaders = {
 let cachedTokenData: { token: string; expiresAt: number } | null = null;
 const TOKEN_TTL_MS = 3540000; // 59 minutes with safety margin
 
+// Retry helper with exponential backoff for Zoho rate limit handling
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit, 
+  maxRetries = 3
+): Promise<Response> {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+    
+    // Return immediately if not rate limited
+    if (response.status !== 429) {
+      return response;
+    }
+    
+    // Rate limit detected - implement exponential backoff
+    const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+    console.log(`⏳ Zoho rate limit (429) detected, retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+    await new Promise(r => setTimeout(r, delay));
+  }
+  
+  throw new Error('Zoho rate limit exceeded after max retries');
+}
+
 interface EmailRequest {
   to: string[];
   subject: string;
@@ -55,7 +78,7 @@ serve(async (req) => {
       access_token = cachedTokenData.token;
     } else {
       console.log('🔄 Fetching new Zoho access token...');
-      const tokenResponse = await fetch('https://accounts.zoho.eu/oauth/v2/token', {
+      const tokenResponse = await fetchWithRetry('https://accounts.zoho.eu/oauth/v2/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -100,7 +123,7 @@ serve(async (req) => {
       });
     }
 
-    // Send email via Zoho Mail API
+    // Send email via Zoho Mail API with retry
     console.log('Sending email via Zoho Mail API...');
     const emailPayload = {
       fromAddress: emailRequest.from_name ? `${emailRequest.from_name} <noreply@randomapp.fr>` : 'noreply@randomapp.fr',
@@ -109,7 +132,7 @@ serve(async (req) => {
       content: htmlContent,
     };
 
-    const sendResponse = await fetch('https://mail.zoho.eu/api/accounts/' + ZOHO_ACCOUNT_ID + '/messages', {
+    const sendResponse = await fetchWithRetry('https://mail.zoho.eu/api/accounts/' + ZOHO_ACCOUNT_ID + '/messages', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${access_token}`,

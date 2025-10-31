@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { useCRMAutomation } from '@/hooks/useCRMAutomation';
 import { useCRMOverview } from '@/hooks/useCRMOverview';
 import { Progress } from '@/components/ui/progress';
+import { CampaignQueueMonitor } from './CampaignQueueMonitor';
 
 export const CRMMonitoringDashboard = () => {
   const { rules } = useCRMAutomation();
@@ -22,7 +23,10 @@ export const CRMMonitoringDashboard = () => {
   const isHealthWarning = avgHealthScore >= 35 && avgHealthScore < 50;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="space-y-4 mb-6">
+      <CampaignQueueMonitor />
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Zoho API Health */}
       <Card className="p-4 border-green-500/20 bg-green-500/5">
         <div className="flex items-start justify-between mb-2">
@@ -39,10 +43,10 @@ export const CRMMonitoringDashboard = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Rate limit:</span>
-            <span className="font-medium">10 calls/min</span>
+            <span className="font-medium">5 emails/min via queue</span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            ✅ Optimisation: 99% des appels OAuth évités via cache
+            ✅ Queue system: Envoi automatique respectant les limites Zoho
           </p>
         </div>
       </Card>
@@ -136,6 +140,7 @@ export const CRMMonitoringDashboard = () => {
           </p>
         </div>
       </Card>
+      </div>
     </div>
   );
 };
