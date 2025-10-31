@@ -2,6 +2,8 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, BarChart3, MessageSquare, TestTube, Calendar, UserCheck, Activity, Download, Plus, Sparkles } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { CRMFilters } from '@/components/crm/CRMFilters';
 import { CohortAnalysis } from '@/components/crm/CohortAnalysis';
 import { CampaignCalendar } from '@/components/crm/CampaignCalendar';
@@ -36,6 +38,9 @@ import { HealthScoreOverview } from '@/components/crm/HealthScoreOverview';
 
 // CRM Dashboard - Admin interface for managing campaigns, segments, and user health
 export default function AdminCRM() {
+  // ✅ PHASE 2: Auth guard
+  const { isAdmin, loading: authLoading } = useAdminAuth();
+  
   const [churnRiskFilter, setChurnRiskFilter] = useState<string | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,6 +163,30 @@ export default function AdminCRM() {
     a.download = `crm-export-${new Date().toISOString()}.csv`;
     a.click();
   };
+
+  // ✅ PHASE 2: Guard #1 - Wait for auth initialization
+  if (authLoading) {
+    return (
+      <AdminLayout>
+        <div className="p-8 space-y-8">
+          <Skeleton className="h-12 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </AdminLayout>
+    );
+  }
+  
+  // ✅ PHASE 2: Guard #2 - Redirect if not admin
+  if (!isAdmin) {
+    console.log('🔒 Not admin, redirecting to auth');
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <AdminLayout>

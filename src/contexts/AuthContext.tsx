@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  isInitialized: boolean;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
@@ -23,17 +24,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     let isMounted = true;
 
-    // PLAN D'URGENCE: Navigation uniquement sur vrais sign-out
+    // ✅ PHASE 1: Initialize session FIRST before setting up listeners
+    const initAuth = async () => {
+      try {
+        console.log('🔐 Initializing auth session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('❌ Auth initialization error:', error);
+          setIsInitialized(true);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('✅ Auth initialized:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          timestamp: new Date().toISOString()
+        });
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsInitialized(true);
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Auth initialization failed:', error);
+        if (isMounted) {
+          setIsInitialized(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    // Initialize auth
+    initAuth();
+
+    // THEN set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
         
-        // ✅ OPTIMISATION: Detailed logging for SIGNED_OUT events
         console.log('🔐 Auth state change:', {
           event,
           hasSession: !!session,
@@ -44,7 +82,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // PLAN D'URGENCE: Navigation seulement sur SIGNED_OUT explicite
+        // Navigation only on explicit SIGNED_OUT
         if (event === 'SIGNED_OUT' && !session) {
           console.log('🚪 SIGNED_OUT detected, navigating to home');
           setTimeout(() => navigate('/'), 100);
@@ -53,32 +91,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(false);
       }
     );
-
-    // THEN check for existing session with debouncing
-    const checkSession = async () => {
-      if (!isMounted) return;
-      
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (!isMounted) return;
-        
-        if (error) {
-          setLoading(false);
-          return;
-        }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      } catch (error) {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    checkSession();
 
     return () => {
       isMounted = false;
@@ -167,7 +179,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const value = {
     session,
     user,
-    loading,
+    loading: !isInitialized || loading,
+    isInitialized,
     signOut,
     signInWithGoogle,
     refreshSession,

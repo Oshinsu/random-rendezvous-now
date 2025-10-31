@@ -102,12 +102,12 @@ export const useCRMCampaigns = () => {
     } catch (err) {
       console.error('Error creating campaign:', err);
       
-      // ✅ Message spécifique selon le type d'erreur
+      // ✅ PHASE 3: Message spécifique selon le type d'erreur
       let errorMessage = 'Impossible de créer la campagne';
       
       if (err instanceof Error) {
         if (err.message?.includes('policy') || err.message?.includes('permission')) {
-          errorMessage = 'Accès refusé: vous n\'avez pas les permissions nécessaires';
+          errorMessage = '🔒 Session expirée ou permissions insuffisantes. Veuillez vous reconnecter.';
         } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
           errorMessage = 'Erreur réseau: vérifiez votre connexion';
         }
@@ -117,7 +117,7 @@ export const useCRMCampaigns = () => {
       if ((err as any).code === '23505') {
         errorMessage = 'Une campagne avec ce nom existe déjà';
       } else if ((err as any).code === '42501') {
-        errorMessage = 'Accès refusé: permissions insuffisantes';
+        errorMessage = '🔒 Accès refusé: veuillez vous reconnecter';
       }
       
       toast({
