@@ -59,18 +59,40 @@ serve(async (req) => {
     } else if (campaign.target_segment_id) {
       console.log(`🔍 Fetching segment members for segment: ${campaign.target_segment_id}`);
       
+      // ✅ PHASE 4: Compter d'abord les membres attendus (SOTA Oct 2025)
+      const { count: expectedCount } = await supabase
+        .from('crm_user_segment_memberships')
+        .select('*', { count: 'exact', head: true })
+        .eq('segment_id', campaign.target_segment_id);
+      
+      console.log(`📊 Segment has ${expectedCount || 0} total members in memberships table`);
+      
       const { data: segmentMembers, error: segmentError } = await supabase
         .from('crm_user_segment_memberships')
         .select('user_id, profiles!inner(id, email, first_name, last_name)')
         .eq('segment_id', campaign.target_segment_id);
       
-      // ✅ PHASE 2: Log explicite pour debugging RLS (SOTA Oct 2025)
+      // ✅ PHASE 4: Logs détaillés avec diagnostic FK (SOTA Oct 2025)
       if (segmentError) {
         console.error('❌ Error fetching segment members:', segmentError);
         console.error('❌ Segment ID:', campaign.target_segment_id);
+        console.error('❌ Error code:', segmentError.code);
         console.error('❌ Error details:', JSON.stringify(segmentError));
+        
+        if (segmentError.code === 'PGRST200') {
+          console.error('💡 PGRST200 means PostgREST cannot find relationship between tables');
+          console.error('💡 This likely means the FK constraint crm_user_segment_memberships.user_id -> profiles.id is missing');
+          console.error('💡 Run migration to add FK: ALTER TABLE crm_user_segment_memberships ADD CONSTRAINT ... FOREIGN KEY (user_id) REFERENCES profiles(id)');
+        }
       }
-      console.log(`✅ Segment query returned ${segmentMembers?.length || 0} members`);
+      
+      console.log(`✅ JOIN returned ${segmentMembers?.length || 0} members with valid profiles`);
+      
+      // ✅ Diagnostic de différence si count != length
+      if (expectedCount && segmentMembers && expectedCount !== segmentMembers.length) {
+        console.warn(`⚠️ Mismatch detected: ${expectedCount} members in segment but only ${segmentMembers.length} have valid profiles`);
+        console.warn(`⚠️ ${expectedCount - segmentMembers.length} users may have been deleted or have no profile entry`);
+      }
       
       targetUsers = (segmentMembers || []).map(m => ({
         user_id: m.user_id,

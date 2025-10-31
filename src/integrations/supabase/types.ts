@@ -1114,6 +1114,13 @@ export type Database = {
             referencedRelation: "crm_user_segments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "crm_user_segment_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       crm_user_segments: {
