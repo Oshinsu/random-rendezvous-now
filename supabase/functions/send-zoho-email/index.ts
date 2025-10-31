@@ -6,13 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ============================================================================
-// ZOHO ACCESS TOKEN CACHE (SOTA Oct 2025)
-// Source: Zoho OAuth Rate Limit 2025 = 10 req/min
-// Strategy: Cache token at module level with 59min TTL (3540s)
-// ============================================================================
-let cachedTokenData: { token: string; expiresAt: number } | null = null;
-const TOKEN_TTL_MS = 3540000; // 59 minutes with safety margin
+// Circuit breaker constants
+const MAX_CONSECUTIVE_FAILURES = 3;
+const CIRCUIT_BREAKER_DURATION = 5 * 60 * 1000; // 5 minutes in ms
+const ADVISORY_LOCK_ID = 123456789; // For distributed lock
 
 // Retry helper with exponential backoff for Zoho rate limit handling
 async function fetchWithRetry(
@@ -35,6 +32,144 @@ async function fetchWithRetry(
   }
   
   throw new Error('Zoho rate limit exceeded after max retries');
+}
+
+async function getZohoAccessToken(supabaseClient: any, credentials: any): Promise<string> {
+  // Step 1: Check circuit breaker status
+  const { data: circuitCheck } = await supabaseClient
+    .from('zoho_oauth_tokens')
+    .select('id, access_token, expires_at, circuit_breaker_until, consecutive_failures')
+    .maybeSingle();
+
+  if (circuitCheck?.circuit_breaker_until) {
+    const breakerUntil = new Date(circuitCheck.circuit_breaker_until).getTime();
+    if (breakerUntil > Date.now()) {
+      const waitMinutes = Math.ceil((breakerUntil - Date.now()) / 60000);
+      throw new Error(`⏸️ Circuit breaker active. Wait ${waitMinutes} minutes before retrying.`);
+    }
+  }
+
+  // Step 2: Try to get cached token from PostgreSQL
+  if (circuitCheck?.access_token && circuitCheck?.expires_at) {
+    const expiresAt = new Date(circuitCheck.expires_at).getTime();
+    if (expiresAt > Date.now()) {
+      console.log('✅ Using cached Zoho token from PostgreSQL');
+      return circuitCheck.access_token;
+    }
+  }
+
+  // Step 3: Acquire distributed lock to prevent simultaneous refreshes
+  const { data: lockAcquired } = await supabaseClient.rpc('pg_try_advisory_lock', { 
+    key: BigInt(ADVISORY_LOCK_ID) 
+  }).single();
+
+  if (!lockAcquired) {
+    console.log('⏳ Another instance is refreshing token, waiting...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Retry getting cached token after wait
+    const { data: retryToken } = await supabaseClient
+      .from('zoho_oauth_tokens')
+      .select('access_token, expires_at')
+      .maybeSingle();
+    
+    if (retryToken?.access_token && new Date(retryToken.expires_at).getTime() > Date.now()) {
+      console.log('✅ Using refreshed token from another instance');
+      return retryToken.access_token;
+    }
+  }
+
+  try {
+    console.log('🔄 Fetching new Zoho access token...');
+    
+    const response = await fetchWithRetry('https://accounts.zoho.eu/oauth/v2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        refresh_token: credentials.ZOHO_REFRESH_TOKEN,
+        client_id: credentials.ZOHO_CLIENT_ID,
+        client_secret: credentials.ZOHO_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      console.error('❌ Zoho OAuth error:', data);
+      
+      // Increment failure counter
+      const newFailures = (circuitCheck?.consecutive_failures || 0) + 1;
+      
+      // Activate circuit breaker if max failures reached
+      if (newFailures >= MAX_CONSECUTIVE_FAILURES) {
+        const breakerUntil = new Date(Date.now() + CIRCUIT_BREAKER_DURATION);
+        
+        if (circuitCheck?.id) {
+          await supabaseClient
+            .from('zoho_oauth_tokens')
+            .update({
+              circuit_breaker_until: breakerUntil.toISOString(),
+              consecutive_failures: newFailures,
+            })
+            .eq('id', circuitCheck.id);
+        } else {
+          await supabaseClient
+            .from('zoho_oauth_tokens')
+            .insert({
+              access_token: 'CIRCUIT_BREAKER_ACTIVE',
+              expires_at: new Date().toISOString(),
+              circuit_breaker_until: breakerUntil.toISOString(),
+              consecutive_failures: newFailures,
+            });
+        }
+        
+        console.error(`🛑 Circuit breaker activated until ${breakerUntil.toISOString()}`);
+      } else if (circuitCheck?.id) {
+        await supabaseClient
+          .from('zoho_oauth_tokens')
+          .update({ consecutive_failures: newFailures })
+          .eq('id', circuitCheck.id);
+      }
+      
+      throw new Error(`Failed to get Zoho access token: ${JSON.stringify(data)}`);
+    }
+
+    // Success: Reset failure counter and save new token
+    const expiresAt = new Date(Date.now() + (59 * 60 * 1000)); // 59 minutes
+    
+    if (circuitCheck?.id) {
+      await supabaseClient
+        .from('zoho_oauth_tokens')
+        .update({
+          access_token: data.access_token,
+          expires_at: expiresAt.toISOString(),
+          circuit_breaker_until: null,
+          consecutive_failures: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', circuitCheck.id);
+    } else {
+      await supabaseClient
+        .from('zoho_oauth_tokens')
+        .insert({
+          access_token: data.access_token,
+          expires_at: expiresAt.toISOString(),
+          circuit_breaker_until: null,
+          consecutive_failures: 0,
+        });
+    }
+
+    console.log('✅ New Zoho token obtained and cached in PostgreSQL');
+    return data.access_token;
+  } finally {
+    // Always release the lock
+    if (lockAcquired) {
+      await supabaseClient.rpc('pg_advisory_unlock', { key: BigInt(ADVISORY_LOCK_ID) });
+    }
+  }
 }
 
 interface EmailRequest {
@@ -68,43 +203,12 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const emailRequest: EmailRequest = await req.json();
 
-    // ============================================================================
-    // CACHED TOKEN RETRIEVAL (prevents 99% of OAuth calls)
-    // ============================================================================
-    let access_token: string;
-    
-    if (cachedTokenData && cachedTokenData.expiresAt > Date.now()) {
-      console.log('✅ Using cached Zoho access token (rate limit optimization)');
-      access_token = cachedTokenData.token;
-    } else {
-      console.log('🔄 Fetching new Zoho access token...');
-      const tokenResponse = await fetchWithRetry('https://accounts.zoho.eu/oauth/v2/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          refresh_token: ZOHO_REFRESH_TOKEN,
-          client_id: ZOHO_CLIENT_ID,
-          client_secret: ZOHO_CLIENT_SECRET,
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('❌ Zoho OAuth error:', errorText);
-        throw new Error(`Failed to get Zoho access token: ${errorText}`);
-      }
-
-      const tokenData = await tokenResponse.json();
-      access_token = tokenData.access_token;
-      
-      // Cache token with TTL
-      cachedTokenData = { 
-        token: access_token, 
-        expiresAt: Date.now() + TOKEN_TTL_MS 
-      };
-      console.log('✅ New token cached until:', new Date(cachedTokenData.expiresAt).toISOString());
-    }
+    // Get Zoho access token with PostgreSQL cache + circuit breaker
+    const access_token = await getZohoAccessToken(supabase, {
+      ZOHO_CLIENT_ID,
+      ZOHO_CLIENT_SECRET,
+      ZOHO_REFRESH_TOKEN,
+    });
 
     // Add tracking pixels if enabled
     let htmlContent = emailRequest.html_content;
@@ -124,7 +228,7 @@ serve(async (req) => {
     }
 
     // Send email via Zoho Mail API with retry
-    console.log('Sending email via Zoho Mail API...');
+    console.log('📧 Sending email via Zoho Mail API...');
     const emailPayload = {
       fromAddress: emailRequest.from_name ? `${emailRequest.from_name} <noreply@randomapp.fr>` : 'noreply@randomapp.fr',
       toAddress: emailRequest.to.join(','),
@@ -143,12 +247,12 @@ serve(async (req) => {
 
     if (!sendResponse.ok) {
       const errorText = await sendResponse.text();
-      console.error('Zoho API error:', errorText);
+      console.error('❌ Zoho Mail API error:', errorText);
       throw new Error(`Failed to send email: ${errorText}`);
     }
 
     const sendResult = await sendResponse.json();
-    console.log('Email sent successfully:', sendResult);
+    console.log('✅ Email sent successfully');
 
     // Record in campaign_sends if campaign_id provided
     if (emailRequest.campaign_id && emailRequest.user_id) {
@@ -159,10 +263,7 @@ serve(async (req) => {
       });
     }
 
-    // ============================================================================
-    // EMAIL WARMUP TRACKING (SOTA Oct 2025)
-    // Source: SendGrid Domain Warmup Guide 2025, Postmark ESP Standards
-    // ============================================================================
+    // Track email send for warmup monitoring
     try {
       await supabase.from('email_send_tracking').insert({
         sent_at: new Date().toISOString(),
@@ -170,10 +271,8 @@ serve(async (req) => {
         recipient_email: emailRequest.to[0],
         status: 'sent'
       });
-      console.log('✅ Email send tracked for warmup monitoring');
     } catch (trackError) {
       console.error('⚠️ Failed to track email send (non-blocking):', trackError);
-      // Ne pas bloquer l'envoi si le tracking échoue
     }
 
     return new Response(

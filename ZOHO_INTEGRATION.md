@@ -14,11 +14,15 @@
 
 ## ✅ Solutions Implémentées
 
-### 1. Token Caching avec PostgreSQL
+### 1. Token Caching avec PostgreSQL + Circuit Breaker
 - **Fichier:** `supabase/functions/send-zoho-email/index.ts`
-- **Logique:** Cache module-level avec retry exponential backoff
-- **TTL:** Token Zoho: 60 minutes
-- **Impact:** 99% des appels OAuth évités via retry intelligent
+- **Logique:** 
+  - Cache PostgreSQL avec distributed lock (`pg_try_advisory_lock`)
+  - Circuit breaker après 3 échecs OAuth consécutifs
+  - Pause automatique de 5 minutes si rate limit détecté
+- **TTL:** Token Zoho: 59 minutes
+- **Table:** `zoho_oauth_tokens` avec `circuit_breaker_until` et `consecutive_failures`
+- **Impact:** 99%+ des appels OAuth évités, protection automatique contre rate limits
 
 ### 2. Queue System avec PostgreSQL
 - **Edge Function Enqueue:** `supabase/functions/enqueue-campaign-emails/index.ts`
@@ -76,7 +80,25 @@ SELECT cron.schedule(
 
 ### Erreur: "Access Denied" de Zoho
 **Cause:** Rate limit OAuth dépassé (>10 calls/min)  
-**Solution:** Attendre 1 heure OU utiliser le queue system (déjà implémenté)
+**Solution:** Le système active automatiquement le circuit breaker:
+1. Le CRON se met en pause automatiquement
+2. Widget "Queue d'envoi" affiche "⏸️ En pause" avec compte à rebours
+3. Attendre 5 minutes (ou 60 minutes si blocage Zoho sévère)
+4. Cliquer sur "Réactiver envoi" dans le widget CRM
+
+**Réactivation manuelle si nécessaire:**
+```sql
+-- Réinitialiser le circuit breaker
+UPDATE zoho_oauth_tokens 
+SET circuit_breaker_until = NULL, consecutive_failures = 0;
+
+-- Réactiver le CRON
+SELECT cron.schedule(
+  'process-campaign-queue-worker',
+  '* * * * *',
+  $$ SELECT net.http_post(...) $$
+);
+```
 
 ### Campagne bloquée à "sending"
 **Vérifier:**

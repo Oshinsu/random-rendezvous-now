@@ -2151,6 +2151,36 @@ export type Database = {
         }
         Relationships: []
       }
+      zoho_oauth_tokens: {
+        Row: {
+          access_token: string
+          circuit_breaker_until: string | null
+          consecutive_failures: number | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          circuit_breaker_until?: string | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          circuit_breaker_until?: string | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       crm_cohort_analysis: {
