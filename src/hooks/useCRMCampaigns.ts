@@ -141,6 +141,8 @@ export const useCRMCampaigns = () => {
 
   const sendCampaign = async (campaignId: string, zapierWebhookUrl?: string) => {
     try {
+      console.log('🚀 [sendCampaign] Starting campaign send:', { campaignId, zapierWebhookUrl });
+      
       const { data, error } = await supabase.functions.invoke('send-lifecycle-campaign', {
         body: { 
           campaignId: campaignId,
@@ -148,7 +150,12 @@ export const useCRMCampaigns = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('📦 [sendCampaign] Edge function response:', { data, error });
+
+      if (error) {
+        console.error('❌ [sendCampaign] Edge function error:', error);
+        throw error;
+      }
 
       // ✅ PHASE 3: Message spécifique si 0 envois (SOTA Oct 2025)
       if (data?.sent === 0) {

@@ -637,7 +637,7 @@ export default function AdminCRM() {
                                     onClick={() => sendCampaign(selectedCampaign.id, zapierWebhook)}
                                     disabled={(() => {
                                       const segment = segments.find(s => s.id === selectedCampaign.target_segment_id);
-                                      return segment && segment.user_count === 0;
+                                      return !segment || (segment.user_count ?? 0) === 0;
                                     })()}
                                   >
                                     {(() => {
@@ -765,7 +765,7 @@ export default function AdminCRM() {
                                     onClick={() => sendCampaign(campaign.id, zapierWebhook)}
                                     disabled={campaign.status !== 'draft' || (() => {
                                       const segment = segments.find(s => s.id === campaign.target_segment_id);
-                                      return segment && segment.user_count === 0;
+                                      return !segment || (segment.user_count ?? 0) === 0;
                                     })()}
                                   >
                                     {(() => {
@@ -836,7 +836,7 @@ export default function AdminCRM() {
                                   size="sm"
                                   disabled={(() => {
                                     const segment = segments.find(s => s.id === campaign.target_segment_id);
-                                    return segment && segment.user_count === 0;
+                                    return !segment || (segment.user_count ?? 0) === 0;
                                   })()}
                                 >
                                   {(() => {
