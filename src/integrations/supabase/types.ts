@@ -1149,6 +1149,68 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_tracking: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          id: string
+          recipient_email: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          recipient_email: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          id?: string
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_send_tracking_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "crm_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_warmup_schedule: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_emails_per_day: number
+          max_emails_per_hour: number
+          warmup_day: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_emails_per_day: number
+          max_emails_per_hour: number
+          warmup_day: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_emails_per_day?: number
+          max_emails_per_hour?: number
+          warmup_day?: number
+        }
+        Relationships: []
+      }
       group_force_confirm_votes: {
         Row: {
           group_id: string
@@ -2081,6 +2143,14 @@ export type Database = {
         Returns: number
       }
       can_view_group: { Args: { group_uuid: string }; Returns: boolean }
+      check_email_rate_limit_with_warmup: {
+        Args: never
+        Returns: {
+          can_send: boolean
+          remaining_hour: number
+          remaining_today: number
+        }[]
+      }
       check_group_payment_completion: {
         Args: { target_group_id: string }
         Returns: boolean

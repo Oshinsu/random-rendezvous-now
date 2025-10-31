@@ -264,12 +264,75 @@ serve(async (req) => {
 
     console.log(`✅ Automation complete: ${triggeredRules.length} rules triggered, ${scheduledSends.length} scheduled`);
 
+    // ============================================================================
+    // AUTO-TRIGGER SEQUENCES (SOTA Oct 2025 - Priority 2)
+    // Source: HubSpot Workflows Automation Guide 2025
+    // Reference: Marketo Engagement Programs Best Practices
+    // ============================================================================
+    const triggeredSequences = [];
+    
+    // Vérifier si l'utilisateur doit entrer dans une séquence automatique
+    const { data: autoSequences, error: seqError } = await supabase
+      .from('crm_campaign_sequences')
+      .select('*, crm_sequence_steps(*)')
+      .eq('is_active', true)
+      .eq('trigger_type', triggerType);
+
+    if (!seqError && autoSequences && autoSequences.length > 0) {
+      console.log(`🔄 Found ${autoSequences.length} sequences to auto-trigger for ${triggerType}`);
+      
+      for (const sequence of autoSequences) {
+        try {
+          // Vérifier si l'utilisateur correspond au segment
+          if (sequence.target_segment_id) {
+            const { data: inSegment } = await supabase
+              .from('crm_user_segment_memberships')
+              .select('user_id')
+              .eq('segment_id', sequence.target_segment_id)
+              .eq('user_id', userId)
+              .maybeSingle();
+
+            if (!inSegment) {
+              console.log(`⏭️ User ${userId} not in target segment ${sequence.target_segment_id}`);
+              continue;
+            }
+          }
+
+          // Exécuter la séquence
+          console.log(`🚀 Auto-triggering sequence: ${sequence.sequence_name}`);
+          const { data: executeResult, error: executeError } = await supabase.functions.invoke(
+            'execute-sequence',
+            {
+              body: { sequenceId: sequence.id, userId }
+            }
+          );
+
+          if (executeError) {
+            console.error(`❌ Failed to trigger sequence ${sequence.id}:`, executeError);
+            continue;
+          }
+
+          triggeredSequences.push({
+            sequence_id: sequence.id,
+            sequence_name: sequence.sequence_name,
+            steps_scheduled: sequence.crm_sequence_steps?.length || 0
+          });
+
+          console.log(`✅ Auto-triggered sequence ${sequence.sequence_name} for user ${userId}`);
+        } catch (error) {
+          console.error(`❌ Error triggering sequence ${sequence.id}:`, error);
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         triggeredRulesCount: triggeredRules.length,
         triggeredRules,
-        scheduledSends
+        scheduledSends,
+        sequencesTriggered: triggeredSequences.length,
+        triggeredSequences
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );

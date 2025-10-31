@@ -113,25 +113,52 @@ serve(async (req) => {
           .replace(/\{\{first_name\}\}/g, user.first_name || 'utilisateur')
           .replace(/\{\{last_name\}\}/g, user.last_name || '');
 
-        // Send via EMAIL channel
+        // ============================================================================
+        // EMAIL RATE LIMIT CHECK WITH WARMUP (SOTA Oct 2025)
+        // Source: Email Deliverability Best Practices 2025
+        // ============================================================================
         if (channels.includes('email')) {
-          const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
-            body: {
-              to: [user.email],
-              subject: subject,
-              html_content: content,
-              campaign_id: campaign.id,
-              user_id: user.user_id,
-              track_opens: true,
-              track_clicks: true
-            }
-          });
+          // Vérifier le rate limit avec warmup
+          const { data: rateLimitCheck, error: rateLimitError } = await supabase
+            .rpc('check_email_rate_limit_with_warmup')
+            .single();
 
-          if (sendError) {
-            console.error('Error sending email to user:', user.user_id, sendError);
-            errors.push({ user_id: user.user_id, channel: 'email', error: sendError.message });
+          if (rateLimitError) {
+            console.error('❌ Error checking email rate limit:', rateLimitError);
+            errors.push({
+              user_id: user.user_id,
+              error: 'Rate limit check failed',
+              channel: 'email'
+            });
+          } else if (!rateLimitCheck?.can_send) {
+            console.log(`⏸️ Email rate limit reached. Remaining today: ${rateLimitCheck?.remaining_today || 0}, Remaining this hour: ${rateLimitCheck?.remaining_hour || 0}`);
+            errors.push({
+              user_id: user.user_id,
+              error: 'Email rate limit reached',
+              channel: 'email'
+            });
+            continue; // Skip cet utilisateur pour préserver le warmup
           } else {
-            emailsSent++;
+            // Rate limit OK, send email
+            const { error: sendError } = await supabase.functions.invoke('send-zoho-email', {
+              body: {
+                to: [user.email],
+                subject: subject,
+                html_content: content,
+                campaign_id: campaign.id,
+                user_id: user.user_id,
+                track_opens: true,
+                track_clicks: true
+              }
+            });
+
+            if (sendError) {
+              console.error('Error sending email to user:', user.user_id, sendError);
+              errors.push({ user_id: user.user_id, channel: 'email', error: sendError.message });
+            } else {
+              emailsSent++;
+              console.log(`✅ Email sent to ${user.email} (${rateLimitCheck.remaining_today} remaining today)`);
+            }
           }
         }
 

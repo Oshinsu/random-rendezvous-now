@@ -110,6 +110,23 @@ serve(async (req) => {
       });
     }
 
+    // ============================================================================
+    // EMAIL WARMUP TRACKING (SOTA Oct 2025)
+    // Source: SendGrid Domain Warmup Guide 2025, Postmark ESP Standards
+    // ============================================================================
+    try {
+      await supabase.from('email_send_tracking').insert({
+        sent_at: new Date().toISOString(),
+        campaign_id: emailRequest.campaign_id || null,
+        recipient_email: emailRequest.to[0],
+        status: 'sent'
+      });
+      console.log('✅ Email send tracked for warmup monitoring');
+    } catch (trackError) {
+      console.error('⚠️ Failed to track email send (non-blocking):', trackError);
+      // Ne pas bloquer l'envoi si le tracking échoue
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
