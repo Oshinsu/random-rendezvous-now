@@ -76,7 +76,7 @@ export default function AdminCRM() {
     content: '',
     target_segment_id: '',
     channels: ['email'] as string[],
-    send_at: ''
+    send_at: null as string | null  // ✅ PHASE 2: null au lieu de ''
   });
   const [zapierWebhook, setZapierWebhook] = useState('');
   const [showQuickModal, setShowQuickModal] = useState(false);
@@ -130,7 +130,7 @@ export default function AdminCRM() {
         content: '',
         target_segment_id: '',
         channels: ['email'],
-        send_at: ''
+        send_at: null  // ✅ PHASE 2: null au lieu de ''
       });
       setEmailTemplate({
         subject: '',

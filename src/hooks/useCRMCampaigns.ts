@@ -84,9 +84,17 @@ export const useCRMCampaigns = () => {
 
   const createCampaign = async (campaignData: Partial<Campaign>) => {
     try {
+      // ✅ PHASE 1: Normalisation - Convertir chaîne vide → null
+      const normalizedData = {
+        ...campaignData,
+        send_at: campaignData.send_at?.trim() === '' 
+          ? null 
+          : campaignData.send_at
+      };
+
       const { data, error: createError } = await supabase
         .from('crm_campaigns')
-        .insert([campaignData as any])
+        .insert([normalizedData as any])
         .select()
         .single();
 
@@ -114,7 +122,9 @@ export const useCRMCampaigns = () => {
       }
       
       // Check for PostgreSQL error codes
-      if ((err as any).code === '23505') {
+      if ((err as any).code === '22007') {
+        errorMessage = '📅 Format de date invalide. Veuillez sélectionner une date valide ou laisser vide pour envoi immédiat.';
+      } else if ((err as any).code === '23505') {
         errorMessage = 'Une campagne avec ce nom existe déjà';
       } else if ((err as any).code === '42501') {
         errorMessage = '🔒 Accès refusé: veuillez vous reconnecter';
