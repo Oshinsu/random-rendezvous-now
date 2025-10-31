@@ -440,6 +440,48 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_email_queue: {
+        Row: {
+          campaign_data: Json
+          campaign_id: string
+          created_at: string | null
+          expires_at: string | null
+          failed: number | null
+          id: string
+          processed: number | null
+          status: string | null
+          total: number
+          updated_at: string | null
+          users: Json
+        }
+        Insert: {
+          campaign_data: Json
+          campaign_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          failed?: number | null
+          id?: string
+          processed?: number | null
+          status?: string | null
+          total: number
+          updated_at?: string | null
+          users: Json
+        }
+        Update: {
+          campaign_data?: Json
+          campaign_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          failed?: number | null
+          id?: string
+          processed?: number | null
+          status?: string | null
+          total?: number
+          updated_at?: string | null
+          users?: Json
+        }
+        Relationships: []
+      }
       crm_automation_executions: {
         Row: {
           campaign_id: string | null

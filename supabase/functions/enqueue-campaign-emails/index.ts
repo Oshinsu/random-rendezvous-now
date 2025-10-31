@@ -26,31 +26,34 @@ serve(async (req) => {
   }
 
   try {
-    const kv = await Deno.openKv();
     const { campaignId, users, campaignData }: QueueRequest = await req.json();
 
     console.log(`📥 Queuing ${users.length} emails for campaign ${campaignId}`);
 
-    // Store in KV with 24h TTL
-    const queueData = {
-      campaignId,
-      users,
-      campaignData,
-      processed: 0,
-      total: users.length,
-      failed: 0,
-      created_at: Date.now(),
-      status: 'pending'
-    };
-
-    await kv.set(['campaign_queue', campaignId], queueData, { 
-      expireIn: 86400000 // 24h TTL
-    });
-
-    // Initialize Supabase client for status update
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Store in database with 24h expiry
+    const { data: queueData, error: queueError } = await supabase
+      .from('campaign_email_queue')
+      .insert({
+        campaign_id: campaignId,
+        users: users,
+        campaign_data: campaignData,
+        processed: 0,
+        total: users.length,
+        failed: 0,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (queueError) {
+      console.error('❌ Error creating queue:', queueError);
+      throw queueError;
+    }
 
     // Update campaign status to 'sending'
     await supabase
@@ -65,6 +68,7 @@ serve(async (req) => {
         success: true,
         queued: users.length,
         campaignId,
+        queueId: queueData.id,
         message: `${users.length} emails mis en queue`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

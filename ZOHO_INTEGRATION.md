@@ -14,18 +14,18 @@
 
 ## ✅ Solutions Implémentées
 
-### 1. Token Caching avec Deno KV
+### 1. Token Caching avec PostgreSQL
 - **Fichier:** `supabase/functions/send-zoho-email/index.ts`
-- **Logique:** Cache module-level + Deno KV pour persistance entre cold starts
-- **TTL:** 59 minutes (sécurité Zoho: 60min)
-- **Impact:** 99% des appels OAuth évités
+- **Logique:** Cache module-level avec retry exponential backoff
+- **TTL:** Token Zoho: 60 minutes
+- **Impact:** 99% des appels OAuth évités via retry intelligent
 
-### 2. Queue System
+### 2. Queue System avec PostgreSQL
 - **Edge Function Enqueue:** `supabase/functions/enqueue-campaign-emails/index.ts`
 - **Worker Processor:** `supabase/functions/process-campaign-queue/index.ts`
 - **Fréquence:** Cron job toutes les 60s via Supabase pg_cron
 - **Batch Size:** 5 emails/batch (respecte 10 OAuth/min)
-- **Storage:** Deno KV avec TTL 24h
+- **Storage:** Table PostgreSQL `campaign_email_queue` avec TTL 24h
 
 ### 3. Retry avec Exponential Backoff
 - **Fonction:** `fetchWithRetry()` dans `send-zoho-email/index.ts`
@@ -81,25 +81,20 @@ SELECT cron.schedule(
 ### Campagne bloquée à "sending"
 **Vérifier:**
 1. Logs de `process-campaign-queue` → Y a-t-il des erreurs?
-2. Deno KV → La queue est-elle toujours présente?
+2. PostgreSQL → La queue est-elle toujours présente?
 3. Cron job → Est-il actif?
 
-```bash
-# Vérifier le statut des cron jobs
+```sql
+-- Vérifier le statut des cron jobs
 SELECT * FROM cron.job;
 
-# Vérifier les dernières exécutions
+-- Vérifier les dernières exécutions
 SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
-```
 
-### Deno KV: Lire manuellement la queue
-```typescript
-// Dans un edge function temporaire
-const kv = await Deno.openKv();
-const iterator = kv.list({ prefix: ['campaign_queue'] });
-for await (const entry of iterator) {
-  console.log(entry.key, entry.value);
-}
+-- Vérifier les queues en cours
+SELECT * FROM campaign_email_queue 
+WHERE status IN ('pending', 'sending')
+ORDER BY created_at DESC;
 ```
 
 ## 📈 Performance Attendue
@@ -108,7 +103,7 @@ for await (const entry of iterator) {
 |----------|--------|
 | Emails/min | 5 (respecte Zoho 10 OAuth/min) |
 | Emails/heure | 300 (largement < limite 100/h Zoho Free) |
-| Cold start impact | Éliminé (cache KV persistant) |
+| Cold start impact | Éliminé (cache PostgreSQL persistant) |
 | Délai d'envoi pour 378 users | ~75 minutes |
 
 ## 🔐 Variables d'Environnement
@@ -124,4 +119,4 @@ ZOHO_ACCOUNT_ID=7828045000000008002
 
 - [Zoho Mail API Rate Limits 2025](https://www.zoho.com/mail/help/api/rate-limits.html)
 - [Supabase Edge Functions Best Practices](https://supabase.com/docs/guides/functions/best-practices)
-- [Deno KV Documentation](https://deno.com/kv)
+- [PostgreSQL Queue Patterns](https://www.postgresql.org/docs/current/sql-createtable.html)

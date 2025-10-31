@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,26 +12,34 @@ serve(async (req) => {
   }
 
   try {
-    const kv = await Deno.openKv();
-    const queues: any[] = [];
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Read all campaign queues
-    const iterator = kv.list({ prefix: ['campaign_queue'] });
-    
-    for await (const entry of iterator) {
-      const queueData = entry.value as any;
-      queues.push({
-        campaignId: queueData.campaignId,
-        processed: queueData.processed,
-        total: queueData.total,
-        failed: queueData.failed,
-        status: queueData.status,
-        created_at: queueData.created_at
-      });
+    // Read all campaign queues (not expired)
+    const { data: queues, error } = await supabase
+      .from('campaign_email_queue')
+      .select('id, campaign_id, processed, total, failed, status, created_at')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error fetching queues:', error);
+      throw error;
     }
 
+    // Format response to match hook expectations
+    const formattedQueues = (queues || []).map(q => ({
+      campaignId: q.campaign_id,
+      processed: q.processed,
+      total: q.total,
+      failed: q.failed,
+      status: q.status,
+      created_at: new Date(q.created_at).getTime()
+    }));
+
     return new Response(
-      JSON.stringify({ queues }),
+      JSON.stringify({ queues: formattedQueues }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

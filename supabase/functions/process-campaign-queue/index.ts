@@ -15,28 +15,54 @@ serve(async (req) => {
   }
 
   try {
-    const kv = await Deno.openKv();
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('🔄 Starting queue processor...');
 
-    // Get all pending campaigns from queue
-    const iterator = kv.list({ prefix: ['campaign_queue'] });
+    // Get all pending/sending campaigns from database
+    const { data: queues, error: fetchError } = await supabase
+      .from('campaign_email_queue')
+      .select('*')
+      .in('status', ['pending', 'sending'])
+      .order('created_at', { ascending: true });
+
+    if (fetchError) {
+      console.error('❌ Error fetching queues:', fetchError);
+      throw fetchError;
+    }
+
+    if (!queues || queues.length === 0) {
+      console.log('✅ No campaigns to process');
+      return new Response(
+        JSON.stringify({ success: true, processed: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let totalProcessed = 0;
 
-    for await (const entry of iterator) {
-      const campaign = entry.value as any;
-      
+    for (const campaign of queues) {
       // Skip if already completed
       if (campaign.processed >= campaign.total) {
-        console.log(`✅ Campaign ${campaign.campaignId} already completed`);
-        await kv.delete(entry.key);
+        console.log(`✅ Campaign ${campaign.campaign_id} already completed`);
+        await supabase
+          .from('campaign_email_queue')
+          .update({ status: 'completed' })
+          .eq('id', campaign.id);
         continue;
       }
 
-      console.log(`📧 Processing campaign ${campaign.campaignId}: ${campaign.processed}/${campaign.total}`);
+      console.log(`📧 Processing campaign ${campaign.campaign_id}: ${campaign.processed}/${campaign.total}`);
+
+      // Update status to 'sending'
+      if (campaign.status === 'pending') {
+        await supabase
+          .from('campaign_email_queue')
+          .update({ status: 'sending' })
+          .eq('id', campaign.id);
+      }
 
       // Get next batch of users to send
       const usersToSend = campaign.users.slice(
@@ -51,10 +77,10 @@ serve(async (req) => {
       for (const user of usersToSend) {
         try {
           // Replace template variables
-          const subject = campaign.campaignData.subject
+          const subject = campaign.campaign_data.subject
             .replace(/{{first_name}}/g, user.firstName || 'là');
           
-          const content = campaign.campaignData.content
+          const content = campaign.campaign_data.content
             .replace(/{{first_name}}/g, user.firstName || 'là');
 
           // Invoke send-zoho-email
@@ -65,7 +91,7 @@ serve(async (req) => {
               htmlContent: content,
               trackOpens: true,
               trackClicks: true,
-              campaignId: campaign.campaignId,
+              campaignId: campaign.campaign_id,
               userId: user.userId
             }
           });
@@ -87,30 +113,36 @@ serve(async (req) => {
         }
       }
 
-      // Update campaign progress in KV
-      campaign.processed += usersToSend.length;
-      campaign.failed += batchFailed;
-      campaign.status = campaign.processed >= campaign.total ? 'completed' : 'sending';
+      // Update campaign progress in database
+      const newProcessed = campaign.processed + usersToSend.length;
+      const newFailed = campaign.failed + batchFailed;
+      const finalStatus = newProcessed >= campaign.total ? 'completed' : 'sending';
       
-      await kv.set(entry.key, campaign);
+      await supabase
+        .from('campaign_email_queue')
+        .update({
+          processed: newProcessed,
+          failed: newFailed,
+          status: finalStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', campaign.id);
+
       totalProcessed += usersToSend.length;
 
       console.log(`📊 Batch complete: ${batchSuccess} success, ${batchFailed} failed`);
 
-      // If campaign completed, update DB and clean up
-      if (campaign.processed >= campaign.total) {
+      // If campaign completed, update campaign status
+      if (finalStatus === 'completed') {
         await supabase
           .from('crm_campaigns')
           .update({ 
             status: 'sent',
             sent_at: new Date().toISOString()
           })
-          .eq('id', campaign.campaignId);
+          .eq('id', campaign.campaign_id);
 
-        console.log(`🎉 Campaign ${campaign.campaignId} completed!`);
-        
-        // Keep in KV for 1 hour for monitoring, then auto-delete
-        await kv.set(entry.key, campaign, { expireIn: 3600000 });
+        console.log(`🎉 Campaign ${campaign.campaign_id} completed!`);
       }
     }
 
