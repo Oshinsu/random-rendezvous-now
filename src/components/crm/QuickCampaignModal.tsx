@@ -58,6 +58,15 @@ export const QuickCampaignModal = ({
     onOpenChange(false);
   };
 
+  // ✅ Validation complète du formulaire
+  const isFormValid = 
+    formData.campaign_name.trim() !== '' && 
+    formData.subject.trim() !== '' && 
+    formData.content.trim() !== '' &&
+    formData.target_segment_id !== '' &&  // ✅ Segment obligatoire
+    formData.send_at !== '' &&  // ✅ Date obligatoire
+    new Date(formData.send_at) > new Date();  // ✅ Date dans le futur
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -145,7 +154,8 @@ export const QuickCampaignModal = ({
               <Button 
                 onClick={handleSubmit} 
                 className="w-full"
-                disabled={!formData.campaign_name || !formData.subject || !formData.content}
+                disabled={!isFormValid}
+                title={!isFormValid ? 'Veuillez remplir tous les champs et choisir une date future' : ''}
               >
                 Créer la campagne
               </Button>

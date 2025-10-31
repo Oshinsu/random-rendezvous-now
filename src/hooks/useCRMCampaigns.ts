@@ -101,9 +101,28 @@ export const useCRMCampaigns = () => {
       return data;
     } catch (err) {
       console.error('Error creating campaign:', err);
+      
+      // ✅ Message spécifique selon le type d'erreur
+      let errorMessage = 'Impossible de créer la campagne';
+      
+      if (err instanceof Error) {
+        if (err.message?.includes('policy') || err.message?.includes('permission')) {
+          errorMessage = 'Accès refusé: vous n\'avez pas les permissions nécessaires';
+        } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+          errorMessage = 'Erreur réseau: vérifiez votre connexion';
+        }
+      }
+      
+      // Check for PostgreSQL error codes
+      if ((err as any).code === '23505') {
+        errorMessage = 'Une campagne avec ce nom existe déjà';
+      } else if ((err as any).code === '42501') {
+        errorMessage = 'Accès refusé: permissions insuffisantes';
+      }
+      
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer la campagne',
+        description: errorMessage,
         variant: 'destructive'
       });
       throw err;
