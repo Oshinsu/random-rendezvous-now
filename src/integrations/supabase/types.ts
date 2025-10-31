@@ -2412,6 +2412,7 @@ export type Database = {
           sanitized_lng: number
         }[]
       }
+      schedule_campaign_queue_cron: { Args: never; Returns: undefined }
       test_trigger_auto_bar_assignment: { Args: never; Returns: Json }
       track_notification_click: {
         Args: {
@@ -2430,6 +2431,7 @@ export type Database = {
         Returns: undefined
       }
       transition_groups_to_completed: { Args: never; Returns: undefined }
+      unschedule_campaign_queue_cron: { Args: never; Returns: undefined }
       update_system_setting: {
         Args: { new_value: Json; setting_name: string }
         Returns: undefined
