@@ -193,7 +193,7 @@ export const AutomationRulesPanel = () => {
                       checked={rule.is_active}
                       onCheckedChange={(checked) => toggleRuleStatus(rule.id, checked)}
                     />
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-semibold flex items-center gap-2">
                         {rule.rule_name}
                         {rule.is_active ? (
@@ -201,9 +201,18 @@ export const AutomationRulesPanel = () => {
                         ) : (
                           <Badge variant="secondary">Inactif</Badge>
                         )}
+                        {rule.is_active && !rule.campaign_id && (
+                          <Badge variant="destructive" className="animate-pulse">
+                            ⚠️ Pas de campagne
+                          </Badge>
+                        )}
                       </h4>
                       <p className="text-sm text-muted-foreground">
-                        {rule.campaign?.campaign_name || 'Campagne non définie'}
+                        {rule.campaign?.campaign_name || (
+                          <span className="text-orange-500 font-medium">
+                            ⚠️ Aucune campagne assignée - Cette règle ne peut pas s'exécuter
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

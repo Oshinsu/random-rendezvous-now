@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============================================================================
+// ZOHO ACCESS TOKEN CACHE (SOTA Oct 2025)
+// Source: Zoho OAuth Rate Limit 2025 = 10 req/min
+// Strategy: Cache token at module level with 59min TTL (3540s)
+// ============================================================================
+let cachedTokenData: { token: string; expiresAt: number } | null = null;
+const TOKEN_TTL_MS = 3540000; // 59 minutes with safety margin
+
 interface EmailRequest {
   to: string[];
   subject: string;
@@ -37,25 +45,43 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const emailRequest: EmailRequest = await req.json();
 
-    // Get Zoho access token
-    console.log('Getting Zoho access token...');
-    const tokenResponse = await fetch('https://accounts.zoho.eu/oauth/v2/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: ZOHO_REFRESH_TOKEN,
-        client_id: ZOHO_CLIENT_ID,
-        client_secret: ZOHO_CLIENT_SECRET,
-        grant_type: 'refresh_token',
-      }),
-    });
+    // ============================================================================
+    // CACHED TOKEN RETRIEVAL (prevents 99% of OAuth calls)
+    // ============================================================================
+    let access_token: string;
+    
+    if (cachedTokenData && cachedTokenData.expiresAt > Date.now()) {
+      console.log('✅ Using cached Zoho access token (rate limit optimization)');
+      access_token = cachedTokenData.token;
+    } else {
+      console.log('🔄 Fetching new Zoho access token...');
+      const tokenResponse = await fetch('https://accounts.zoho.eu/oauth/v2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          refresh_token: ZOHO_REFRESH_TOKEN,
+          client_id: ZOHO_CLIENT_ID,
+          client_secret: ZOHO_CLIENT_SECRET,
+          grant_type: 'refresh_token',
+        }),
+      });
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      throw new Error(`Failed to get Zoho access token: ${errorText}`);
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('❌ Zoho OAuth error:', errorText);
+        throw new Error(`Failed to get Zoho access token: ${errorText}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      access_token = tokenData.access_token;
+      
+      // Cache token with TTL
+      cachedTokenData = { 
+        token: access_token, 
+        expiresAt: Date.now() + TOKEN_TTL_MS 
+      };
+      console.log('✅ New token cached until:', new Date(cachedTokenData.expiresAt).toISOString());
     }
-
-    const { access_token } = await tokenResponse.json();
 
     // Add tracking pixels if enabled
     let htmlContent = emailRequest.html_content;

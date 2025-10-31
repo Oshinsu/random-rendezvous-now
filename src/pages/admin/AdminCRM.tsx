@@ -19,6 +19,7 @@ import { getTemplateById } from '@/data/campaignTemplateLibrary';
 import { CRMOverview } from '@/components/crm/CRMOverview';
 import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
 import { AutomationRulesPanel } from '@/components/crm/AutomationRulesPanel';
+import { CRMMonitoringDashboard } from '@/components/crm/CRMMonitoringDashboard';
 import { useCRMAnalytics } from '@/hooks/useCRMAnalytics';
 import { useCRMOverview } from '@/hooks/useCRMOverview';
 import { useCRMSegments } from '@/hooks/useCRMSegments';
@@ -209,6 +210,9 @@ export default function AdminCRM() {
           conversionRate={overviewData.conversionRate}
           loading={overviewLoading}
         />
+
+        {/* Monitoring Dashboard (SOTA Oct 2025) */}
+        <CRMMonitoringDashboard />
 
         <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="grid w-full grid-cols-6 gap-1">
