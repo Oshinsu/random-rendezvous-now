@@ -1,6 +1,13 @@
 
 project_id = "xhrievvdnajvylyrowwu"
 
+# New diagnostic and bootstrap functions
+[functions.bootstrap-zoho-token]
+verify_jwt = false
+
+[functions.diagnose-system]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321
