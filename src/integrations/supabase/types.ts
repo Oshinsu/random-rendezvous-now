@@ -482,6 +482,80 @@ export type Database = {
         }
         Relationships: []
       }
+      community_stories: {
+        Row: {
+          city: string | null
+          content: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          likes_count: number
+          media_thumbnail_url: string | null
+          media_url: string | null
+          metadata: Json | null
+          moderated_at: string | null
+          moderated_by: string | null
+          rejection_reason: string | null
+          sentiment_score: number | null
+          shares_count: number
+          status: string
+          story_type: string
+          updated_at: string
+          user_id: string
+          vibe: string | null
+        }
+        Insert: {
+          city?: string | null
+          content?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          likes_count?: number
+          media_thumbnail_url?: string | null
+          media_url?: string | null
+          metadata?: Json | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          rejection_reason?: string | null
+          sentiment_score?: number | null
+          shares_count?: number
+          status?: string
+          story_type: string
+          updated_at?: string
+          user_id: string
+          vibe?: string | null
+        }
+        Update: {
+          city?: string | null
+          content?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          likes_count?: number
+          media_thumbnail_url?: string | null
+          media_url?: string | null
+          metadata?: Json | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          rejection_reason?: string | null
+          sentiment_score?: number | null
+          shares_count?: number
+          status?: string
+          story_type?: string
+          updated_at?: string
+          user_id?: string
+          vibe?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_stories_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_automation_executions: {
         Row: {
           campaign_id: string | null
@@ -1802,6 +1876,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      story_likes: {
+        Row: {
+          created_at: string
+          id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_likes_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "community_stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {

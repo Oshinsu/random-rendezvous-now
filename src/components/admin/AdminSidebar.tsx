@@ -41,6 +41,7 @@ const adminItems = [
   { title: "Gérants de Bar", url: "/admin/bar-owners", icon: Building },
   { title: "Messages", url: "/admin/messages", icon: MessageSquare },
   { title: "Contenu Site", url: "/admin/content", icon: Edit3 },
+  { title: "Community Stories", url: "/admin/community-stories", icon: MessageSquare },
   { title: "Audit", url: "/admin/audit", icon: Shield },
   { title: "Activité", url: "/admin/activity", icon: Activity },
   { title: "Logs", url: "/admin/logs", icon: FileText },

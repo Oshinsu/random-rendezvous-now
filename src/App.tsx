@@ -34,12 +34,14 @@ import AdminBarOwners from "./pages/admin/AdminBarOwners";
 import AdminCRM from "./pages/admin/AdminCRM";
 import AdminChatbot from "./pages/admin/AdminChatbot";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
-import ReferralPage from "./pages/ReferralPage";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import AdminBlogSEO from "./pages/admin/AdminBlogSEO";
+import AdminCommunityStories from "./pages/admin/AdminCommunityStories";
 // Lazy import to prevent circular dependency issues
 import React from 'react';
+const ReferralPage = React.lazy(() => import('./pages/ReferralPage'));
+const CommunityPage = React.lazy(() => import('./pages/CommunityPage'));
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -92,7 +94,18 @@ const AppRoutes = () => (
     <Route path="/scheduled-groups" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/explore-by-city" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-    <Route path="/referral" element={<ProtectedRoute><ReferralPage /></ProtectedRoute>} />
+    <Route path="/referral" element={
+      <ProtectedRoute>
+        <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+          <ReferralPage />
+        </React.Suspense>
+      </ProtectedRoute>
+    } />
+    <Route path="/community" element={
+      <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+        <CommunityPage />
+      </React.Suspense>
+    } />
     <Route path="/terms" element={<TermsPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
     <Route path="/contact" element={<ContactPage />} />
@@ -203,6 +216,15 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminBarOwners />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/community-stories" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminCommunityStories />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
