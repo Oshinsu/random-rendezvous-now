@@ -48,8 +48,10 @@ export const useScheduledGroupEnhancement = (groupId: string) => {
   useEffect(() => {
     if (!groupId) return;
 
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `group-${groupId}-participants-${Date.now()}`;
     const channel = supabase
-      .channel(`group-${groupId}-participants`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

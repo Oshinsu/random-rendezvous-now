@@ -83,8 +83,10 @@ export const useAdminAudit = () => {
   useEffect(() => {
     fetchAuditLogs();
 
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `audit-logs-changes-${Date.now()}`;
     const channel = supabase
-      .channel('audit-logs-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

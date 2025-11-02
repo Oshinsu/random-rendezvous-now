@@ -19,9 +19,10 @@ export const useAdminNotifications = () => {
   useEffect(() => {
     fetchNotifications();
     
-    // Subscribe to real-time notifications
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `admin-notifications-${Date.now()}`;
     const channel = supabase
-      .channel('admin-notifications')
+      .channel(channelName)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -34,7 +35,7 @@ export const useAdminNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, []); // No dependencies to avoid re-subscriptions
 
   const fetchNotifications = async () => {
     // Generate mock notifications based on system state

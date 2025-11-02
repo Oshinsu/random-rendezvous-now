@@ -68,9 +68,10 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
 
     console.log('🗳️ [REALTIME] Souscription aux votes pour groupe:', groupId);
 
-    // Realtime pour détecter les nouveaux votes immédiatement
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `votes-${groupId}-${Date.now()}`;
     const channel = supabase
-      .channel(`votes-${groupId}`)
+      .channel(channelName)
       .on(
         'postgres_changes' as any,
         {
@@ -97,7 +98,7 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
-  }, [groupId, fetchVotes]);
+  }, [groupId, currentParticipants]); // Only depend on groupId and currentParticipants, not fetchVotes
 
   return { ...data, refetch: fetchVotes };
 };

@@ -94,8 +94,10 @@ export const useCommunityStories = (options: UseStoriesOptions = {}) => {
 
   // Subscribe to realtime updates
   useEffect(() => {
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `community-stories-changes-${Date.now()}`;
     const channel = supabase
-      .channel('community-stories-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -113,7 +115,7 @@ export const useCommunityStories = (options: UseStoriesOptions = {}) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetch]);
+  }, []); // No dependencies to avoid re-subscriptions
 
   return {
     stories: data || [],

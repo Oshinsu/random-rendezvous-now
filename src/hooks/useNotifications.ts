@@ -171,8 +171,10 @@ export const useNotifications = () => {
 
     fetchNotifications();
 
+    // Unique channel name to prevent duplicate subscriptions
+    const channelName = `notifications-${user.id}-${Date.now()}`;
     const channel = supabase
-      .channel(`notifications:${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -233,7 +235,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications, playNotificationSound, vibrate]);
+  }, [user?.id]); // Only depend on user.id, not callback functions
 
   return {
     notifications,
