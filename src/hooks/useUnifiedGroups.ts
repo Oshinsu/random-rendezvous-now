@@ -194,19 +194,15 @@ export const useUnifiedGroups = () => {
         (payload) => {
           console.log('🔄 [REALTIME] Participant modifié:', payload);
           
-          // ✅ PHASE 2: Correction de la race condition avec cancelQueries
+          // ✅ PHASE 3: Suppression de l'update optimiste redondant de current_participants
+          // Le trigger PostgreSQL + Realtime vont gérer l'incrémentation automatiquement
           if (payload.eventType === 'INSERT') {
             // ✅ Annuler les requêtes en cours AVANT update optimiste
             queryClient.cancelQueries({ queryKey: ['unifiedUserGroups', user.id] });
             
-            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
-              if (!oldData) return oldData;
-              return oldData.map(group => 
-                group.id === activeGroupId 
-                  ? { ...group, current_participants: group.current_participants + 1 }
-                  : group
-              );
-            });
+            // ❌ SUPPRIMÉ: Incrémentation manuelle de current_participants
+            // Le canal Realtime écoute déjà les changements sur 'groups' (lignes 137-183)
+            // Quand le trigger UPDATE groups.current_participants, Realtime propagera automatiquement
             
             // 🎯 OPTIMISTIC UI: Ajouter immédiatement un membre temporaire avec ID unique
             const optimisticId = `temp-${Date.now()}-${Math.random()}`;
