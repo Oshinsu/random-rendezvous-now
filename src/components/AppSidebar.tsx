@@ -4,6 +4,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useBarOwnerAuth } from '@/hooks/useBarOwnerAuth';
+import LanguageToggle from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Sidebar,
   SidebarContent,
@@ -130,18 +132,24 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-6 border-t border-neutral-200/50">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-12 w-12 ring-2 ring-brand-200 shadow-medium">
-            <AvatarFallback className="bg-gradient-to-br from-brand-500 to-brand-600 text-white font-heading font-bold">
-              {getInitials(userName)}
-            </AvatarFallback>
-          </Avatar>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="font-heading font-semibold text-neutral-800 truncate">{userName}</p>
-              <p className="text-sm font-body text-neutral-600 truncate">{user?.email}</p>
-            </div>
-          )}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-12 w-12 ring-2 ring-brand-200 shadow-medium">
+              <AvatarFallback className="bg-gradient-to-br from-brand-500 to-brand-600 text-white font-heading font-bold">
+                {getInitials(userName)}
+              </AvatarFallback>
+            </Avatar>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="font-heading font-semibold text-neutral-800 truncate">{userName}</p>
+                <p className="text-sm font-body text-neutral-600 truncate">{user?.email}</p>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-3 px-3 py-2">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
