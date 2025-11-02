@@ -1,0 +1,96 @@
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+
+export const useBatchActions = () => {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
+  };
+
+  const selectAll = (ids: string[]) => {
+    setSelectedIds(ids);
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const exportSelected = async () => {
+    setIsProcessing(true);
+    try {
+      // Fetch selected users data
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', selectedIds);
+
+      if (error) throw error;
+
+      // Convert to CSV
+      const headers = Object.keys(data[0] || {}).join(',');
+      const rows = data.map(row => Object.values(row).join(',')).join('\n');
+      const csv = `${headers}\n${rows}`;
+
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString()}.csv`;
+      a.click();
+
+      toast({
+        title: 'Export successful',
+        description: `Exported ${selectedIds.length} users`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export failed',
+        description: 'Could not export users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const suspendSelected = async () => {
+    setIsProcessing(true);
+    try {
+      // TODO: Implement suspension logic with admin action
+      toast({
+        title: 'Feature coming soon',
+        description: 'User suspension will be available soon',
+      });
+      clearSelection();
+    } catch (error) {
+      console.error('Suspend error:', error);
+      toast({
+        title: 'Suspend failed',
+        description: 'Could not suspend users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return {
+    selectedIds,
+    isProcessing,
+    toggleSelection,
+    selectAll,
+    clearSelection,
+    exportSelected,
+    suspendSelected,
+  };
+};
