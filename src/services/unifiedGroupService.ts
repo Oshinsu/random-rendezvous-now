@@ -368,6 +368,18 @@ export class UnifiedGroupService {
 
       if (joinError) {
         console.error('❌ Erreur adhésion:', joinError);
+        
+        // ✅ PHASE 5: Gérer spécifiquement l'erreur de duplicate (code PostgreSQL 23505)
+        if (joinError.code === '23505') {
+          toast({
+            title: 'Déjà membre',
+            description: 'Vous êtes déjà membre de ce groupe (détecté par la base de données).',
+            variant: 'default' // Pas "destructive" car ce n'est pas grave
+          });
+          return true; // Considérer comme succès (user est déjà dans le groupe)
+        }
+        
+        // Autres erreurs
         if (joinError.message.includes('User is already in an active group')) {
           toast({
             title: 'Participation limitée',

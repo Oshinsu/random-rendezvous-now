@@ -33,46 +33,32 @@ export const useChatRealtime = (
     // Marquer comme actif
     isActiveRef.current = true;
 
-    // 🔧 CHECK: Supprimer le canal existant s'il existe déjà
-    const existingChannels = supabase.getChannels();
-    const duplicateChannel = existingChannels.find(ch => 
-      ch.topic.includes(`strict-group-${groupId}-${user.id}`)
-    );
-    
-    if (duplicateChannel) {
-      logger.warn('Canal déjà enregistré, suppression', { groupId });
-      try {
-        supabase.removeChannel(duplicateChannel);
-      } catch (error) {
-        logger.error('Erreur suppression canal dupliqué', error);
-      }
+    // ✅ PHASE 3: Réutiliser le canal existant s'il est pour le bon groupe
+    const existingChannel = channelRef.current;
+    if (existingChannel && currentGroupIdRef.current === groupId) {
+      console.log('✅ [PHASE 3] Réutilisation du canal existant', groupId);
+      return; // Ne rien faire, le canal est déjà configuré
     }
 
-    // Nettoyage de l'ancienne souscription
-    if (channelRef.current) {
-      logger.debug('Suppression ancienne souscription');
+    // ✅ Nettoyer l'ancien canal UNIQUEMENT si changement de groupe
+    if (existingChannel && currentGroupIdRef.current !== groupId) {
+      console.log('🔄 [PHASE 3] Changement de groupe, nettoyage ancien canal');
       try {
-        supabase.removeChannel(channelRef.current);
+        supabase.removeChannel(existingChannel);
       } catch (error) {
         logger.warn('Erreur lors de la suppression du canal', error);
       }
       channelRef.current = null;
-    }
-
-    // Détecter changement de groupe et nettoyer
-    if (currentGroupIdRef.current && currentGroupIdRef.current !== groupId) {
-      logger.debug('Changement de groupe détecté', { 
-        old: currentGroupIdRef.current, 
-        new: groupId 
-      });
+      
+      // Invalider les messages de l'ancien groupe
       invalidateMessagesRef.current();
     }
 
     logger.realtime('Configuration realtime pour groupe', groupId);
     currentGroupIdRef.current = groupId;
 
-    // Canal avec timestamp pour garantir l'unicité
-    const channelName = `strict-group-${groupId}-${user.id}-${Date.now()}`;
+    // ✅ PHASE 3: Canal SANS timestamp pour permettre la réutilisation
+    const channelName = `group-messages-${groupId}`;
     
     const channel = supabase
       .channel(channelName)

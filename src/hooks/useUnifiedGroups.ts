@@ -194,8 +194,11 @@ export const useUnifiedGroups = () => {
         (payload) => {
           console.log('🔄 [REALTIME] Participant modifié:', payload);
           
-          // ✅ Mise à jour INSTANTANÉE du compteur (synchrone)
+          // ✅ PHASE 2: Correction de la race condition avec cancelQueries
           if (payload.eventType === 'INSERT') {
+            // ✅ Annuler les requêtes en cours AVANT update optimiste
+            queryClient.cancelQueries({ queryKey: ['unifiedUserGroups', user.id] });
+            
             queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
               if (!oldData) return oldData;
               return oldData.map(group => 
@@ -205,11 +208,12 @@ export const useUnifiedGroups = () => {
               );
             });
             
-            // 🎯 OPTIMISTIC UI: Ajouter immédiatement un membre temporaire
+            // 🎯 OPTIMISTIC UI: Ajouter immédiatement un membre temporaire avec ID unique
+            const optimisticId = `temp-${Date.now()}-${Math.random()}`;
             setGroupMembers(prevMembers => {
               const nextMemberNumber = prevMembers.length + 1;
               const tempMember: GroupMember = {
-                id: `temp-${Date.now()}`,
+                id: optimisticId,
                 name: `Aventurier ${nextMemberNumber}`,
                 isConnected: true,
                 joinedAt: new Date().toISOString(),
@@ -222,7 +226,22 @@ export const useUnifiedGroups = () => {
             
             window.dispatchEvent(new CustomEvent('group:member-joined'));
             showUniqueToast('Un nouveau membre a rejoint le groupe !', '✨ Nouveau membre');
+            
+            // ✅ Refetch avec délai pour laisser PostgreSQL se propager (1 seconde)
+            setTimeout(() => {
+              UnifiedGroupService.getGroupMembers(activeGroupId)
+                .then(members => {
+                  console.log('✅ [REALTIME] Membres réels récupérés après délai PostgreSQL');
+                  setGroupMembers(members);
+                })
+                .catch(error => {
+                  console.error('Erreur refetch membres:', error);
+                });
+            }, 1000);
           } else if (payload.eventType === 'DELETE') {
+            // ✅ Annuler les requêtes en cours
+            queryClient.cancelQueries({ queryKey: ['unifiedUserGroups', user.id] });
+            
             queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
               if (!oldData) return oldData;
               return oldData.map(group => 
@@ -231,17 +250,18 @@ export const useUnifiedGroups = () => {
                   : group
               );
             });
+            
+            // ✅ Refetch membres après délai
+            setTimeout(() => {
+              UnifiedGroupService.getGroupMembers(activeGroupId)
+                .then(members => {
+                  setGroupMembers(members);
+                })
+                .catch(error => {
+                  console.error('Erreur refetch membres après départ:', error);
+                });
+            }, 1000);
           }
-          
-          // ✅ Refetch membres en ARRIÈRE-PLAN (mettra à jour avec vraies données)
-          UnifiedGroupService.getGroupMembers(activeGroupId)
-            .then(members => {
-              console.log('✅ [REALTIME] Membres réels récupérés, remplacement de l\'optimistic UI');
-              setGroupMembers(members);
-            })
-            .catch(error => {
-              console.error('Erreur refetch membres:', error);
-            });
         }
       )
       .subscribe();
