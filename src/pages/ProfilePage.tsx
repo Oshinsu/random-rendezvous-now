@@ -136,8 +136,13 @@ const ProfilePage = () => {
                   <span className="text-green-700 font-bold text-lg">{averageGroupSize || '-'}</span>
                 </div>
                 {totalAdventures > 0 && (
-                  <p className="text-xs text-center text-neutral-600 pt-2">
-                    🎉 Tu as participé à {totalAdventures} {totalAdventures === 1 ? 'aventure' : 'aventures'} !
+                  <p className="text-xs text-center text-neutral-600 dark:text-neutral-400 pt-2">
+                    {t('profile.adventures_context', { 
+                      count: totalAdventures,
+                      defaultValue: totalAdventures > 1 
+                        ? t('profile.adventures_context_plural', { count: totalAdventures })
+                        : undefined
+                    })}
                   </p>
                 )}
               </CardContent>
@@ -204,8 +209,8 @@ const ProfilePage = () => {
                     disabled
                     className="bg-neutral-100 text-sm"
                   />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    ℹ️ L'email ne peut pas être modifié pour des raisons de sécurité
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    {t('profile.email_note')}
                   </p>
                 </div>
               </CardContent>

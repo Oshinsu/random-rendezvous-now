@@ -285,6 +285,15 @@
     "members_online": "✅ Connectés",
     "members_offline": "💤 Hors ligne",
     "members_free_spots": "⏳ Places libres",
+    "waiting_participant": "En attente d'un participant...",
+    "online_badge": "En ligne",
+    "offline_badge": "Hors ligne",
+    "loading_map": "Chargement de la carte…",
+    "refresh": "Actualiser",
+    "members_title": "👥 Membres du Groupe",
+    "members_online": "✅ Connectés",
+    "members_offline": "💤 Hors ligne",
+    "members_free_spots": "⏳ Places libres",
     "progress_waiting": "⏳ En attente de membres...",
     "progress_forming": "👥 Groupe en formation",
     "progress_complete": "✅ Groupe complet !",
@@ -322,6 +331,17 @@
     "light": "Clair",
     "dark": "Sombre",
     "system": "Système"
+  },
+  "navigation": {
+    "search_group": "Chercher un groupe",
+    "my_group": "Mon groupe",
+    "scheduled_groups": "Groupes planifiés",
+    "profile": "Profil",
+    "referral": "Parrainage",
+    "home_page": "Page d'accueil",
+    "bar_owner_space": "Espace Gérant",
+    "admin_panel": "Admin Panel",
+    "logout": "Se déconnecter"
   },
   "scheduled_groups": {
     "title": "Groupes planifiés",

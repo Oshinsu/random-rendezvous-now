@@ -281,6 +281,15 @@
     "members_online": "✅ Online",
     "members_offline": "💤 Offline",
     "members_free_spots": "⏳ Free Spots",
+    "waiting_participant": "Waiting for a participant...",
+    "online_badge": "Online",
+    "offline_badge": "Offline",
+    "loading_map": "Loading map...",
+    "refresh": "Refresh",
+    "members_title": "👥 Group Members",
+    "members_online": "✅ Online",
+    "members_offline": "💤 Offline",
+    "members_free_spots": "⏳ Free Spots",
     "progress_waiting": "⏳ Waiting for members...",
     "progress_forming": "👥 Group forming",
     "progress_complete": "✅ Group complete!",
@@ -318,6 +327,17 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "navigation": {
+    "search_group": "Search Group",
+    "my_group": "My Group",
+    "scheduled_groups": "Scheduled Groups",
+    "profile": "Profile",
+    "referral": "Referral",
+    "home_page": "Home Page",
+    "bar_owner_space": "Bar Owner Space",
+    "admin_panel": "Admin Panel",
+    "logout": "Logout"
   },
   "scheduled_groups": {
     "title": "Scheduled Groups",
