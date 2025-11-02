@@ -203,8 +203,7 @@ export default function AdminCRMNew() {
                       <Label>Contenu HTML</Label>
                       <EmailTemplateEditor
                         template={{ subject: campaignSubject, html_content: campaignContent, variables: [] }}
-                        onSave={(template) => setCampaignContent(template.html_content)}
-                        availableVariables={['{{first_name}}', '{{last_name}}']}
+                        onChange={(template) => setCampaignContent(template.html_content)}
                       />
                     </div>
                   </CardContent>

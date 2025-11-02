@@ -17,7 +17,7 @@ export const useChatPresence = (groupId: string) => {
   useEffect(() => {
     if (!groupId || !user) return;
 
-    const channelName = `presence:${groupId}`;
+    const channelName = `presence:${groupId}-${Date.now()}-${Math.random()}`;
     const channel = supabase.channel(channelName, {
       config: {
         presence: { key: user.id }

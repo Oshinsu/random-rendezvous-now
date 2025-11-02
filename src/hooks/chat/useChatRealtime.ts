@@ -57,8 +57,8 @@ export const useChatRealtime = (
     logger.realtime('Configuration realtime pour groupe', groupId);
     currentGroupIdRef.current = groupId;
 
-    // ✅ PHASE 3: Canal SANS timestamp pour permettre la réutilisation
-    const channelName = `group-messages-${groupId}`;
+    // ✅ PHASE 3: Canal avec timestamp unique pour éviter les doublons
+    const channelName = `group-messages-${groupId}-${Date.now()}-${Math.random()}`;
     
     const channel = supabase
       .channel(channelName)
