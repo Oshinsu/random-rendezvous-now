@@ -113,6 +113,8 @@ export const useCommunityStories = (options: UseStoriesOptions = {}) => {
       .subscribe();
 
     return () => {
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, []); // No dependencies to avoid re-subscriptions

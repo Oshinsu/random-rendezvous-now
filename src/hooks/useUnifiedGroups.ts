@@ -256,6 +256,8 @@ export const useUnifiedGroups = () => {
 
     return () => {
       console.log('🔄 [REALTIME] Désinscription du groupe:', activeGroupId);
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [activeGroupId, user?.id]); // ✅ CORRECTION #4 : Dépendances correctes (sans queryClient)

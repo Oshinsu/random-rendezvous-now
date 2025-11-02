@@ -100,6 +100,8 @@ export default function AdminGroupsNew() {
       .subscribe();
       
     return () => {
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, []);

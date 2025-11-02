@@ -67,6 +67,8 @@ export const useScheduledGroupEnhancement = (groupId: string) => {
       .subscribe();
 
     return () => {
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [groupId]);

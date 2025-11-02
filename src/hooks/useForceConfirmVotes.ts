@@ -95,6 +95,8 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
 
     return () => {
       console.log('🗳️ [REALTIME] Désinscription des votes pour groupe:', groupId);
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };

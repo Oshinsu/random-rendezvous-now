@@ -233,6 +233,8 @@ export const useNotifications = () => {
       .subscribe();
 
     return () => {
+      // ✅ SOTA 2025: unsubscribe avant removeChannel
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [user?.id]); // Only depend on user.id, not callback functions

@@ -97,11 +97,11 @@ export const useChatPresence = (groupId: string) => {
     });
 
     return () => {
-      if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-      }
-      channel.untrack();
-      supabase.removeChannel(channel);
+      // ✅ SOTA 2025: Cleanup dans le bon ordre
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      channel.untrack(); // 1. Untrack presence
+      channel.unsubscribe(); // 2. Unsubscribe
+      supabase.removeChannel(channel); // 3. Remove channel
       logger.debug('Nettoyage presence', groupId);
     };
   }, [groupId, user?.id, user?.email]);
