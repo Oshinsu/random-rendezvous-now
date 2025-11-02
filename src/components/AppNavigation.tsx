@@ -57,7 +57,7 @@ const AppNavigation = () => {
           {/* Nouveau logo Random */}
           <div className="flex items-center">
             <NavLink to="/dashboard" className="flex items-center space-x-2">
-              <RandomLogo size={38} withTitle={true} animated className="drop-shadow-lg" />
+              <RandomLogo size={38} withTitle={true} animated={false} className="drop-shadow-lg" />
             </NavLink>
           </div>
 

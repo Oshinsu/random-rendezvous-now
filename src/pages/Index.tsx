@@ -55,7 +55,7 @@ const Index = () => {
       <header className="p-3 sm:p-4 glass-enhanced sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center max-w-7xl">
           <div className="flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
-            <RandomLogo size={36} className="sm:w-12 sm:h-12 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" withAura />
+            <RandomLogo size={36} className="sm:w-12 sm:h-12" withAura animated={false} />
             <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight drop-shadow-glow-gold">
               Random
             </span>
