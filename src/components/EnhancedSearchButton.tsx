@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Users, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import RandomLogo from '@/components/RandomLogo'
 
 type ButtonState = 'idle' | 'loading' | 'success'
 
@@ -85,16 +86,13 @@ export function EnhancedSearchButton({
           : {}
       }
     >
-      {/* Rotating gradient border (loading only) */}
+      {/* Orbital ring (loading only) */}
       <AnimatePresence>
         {state === 'loading' && (
           <motion.div
-            className="absolute inset-0 rounded-full opacity-50"
-            style={{
-              background: 'conic-gradient(from 0deg, transparent, hsl(var(--brand-500)), transparent)',
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-0 rounded-full border-2 border-dashed border-brand-400/50 dark:border-brand-500/50"
+            animate={{ rotate: -180 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
           />
         )}
       </AnimatePresence>
@@ -103,17 +101,31 @@ export function EnhancedSearchButton({
       <div className="absolute inset-2 rounded-full bg-white/10 dark:bg-black/20 backdrop-blur-sm 
         flex items-center justify-center flex-col">
         
-        {/* Icon with state */}
+        {/* Logo with state animations */}
         <AnimatePresence mode="wait">
           {state === 'idle' && (
             <motion.div
               key="idle"
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1,
+              }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3 }}
             >
-              <Sparkles className="w-12 h-12 text-white" />
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.02, 1],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <RandomLogo size={64} rounded={true} animated={false} />
+              </motion.div>
             </motion.div>
           )}
           
@@ -125,11 +137,26 @@ export function EnhancedSearchButton({
               exit={{ scale: 0, opacity: 0 }}
               className="text-center"
             >
-              <Users className="w-12 h-12 text-white mb-2 animate-pulse" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+                className="mb-3"
+              >
+                <RandomLogo size={72} rounded={true} animated={false} />
+              </motion.div>
+              
               {currentParticipants > 0 && (
-                <span className="text-xs text-white font-semibold">
+                <motion.span 
+                  className="text-sm text-white font-bold bg-black/20 px-3 py-1 rounded-full backdrop-blur-sm"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
                   {currentParticipants}/5
-                </span>
+                </motion.span>
               )}
             </motion.div>
           )}
@@ -141,11 +168,21 @@ export function EnhancedSearchButton({
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ 
-                duration: 0.5,
+                duration: 0.6,
                 ease: [0.68, -0.55, 0.265, 1.55]
               }}
             >
-              <Check className="w-12 h-12 text-emerald-400" strokeWidth={3} />
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.3, 1.1, 1],
+                }}
+                transition={{
+                  duration: 0.8,
+                  ease: [0.68, -0.55, 0.265, 1.55]
+                }}
+              >
+                <RandomLogo size={80} rounded={true} animated={false} withAura />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -188,30 +225,27 @@ export function EnhancedSearchButton({
         )} />
       </motion.div>
       
-      {/* Confetti on success */}
+      {/* Gold/White confetti on success */}
       <AnimatePresence>
         {state === 'success' && (
           <>
-            {[...Array(5)].map((_, i) => (
+            {[...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-2 h-2 bg-emerald-400 rounded-full"
-                initial={{ 
-                  x: 0, 
-                  y: 0, 
-                  scale: 1,
-                  opacity: 1 
+                className="absolute w-3 h-3 rounded-full"
+                style={{
+                  background: i % 2 === 0 
+                    ? 'linear-gradient(135deg, #f1c232, #f9d56e)'
+                    : 'linear-gradient(135deg, #ffffff, #f5f5f5)',
                 }}
+                initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
                 animate={{
-                  x: Math.cos((i * 72) * Math.PI / 180) * 100,
-                  y: Math.sin((i * 72) * Math.PI / 180) * 100,
+                  x: Math.cos((i * 45) * Math.PI / 180) * 120,
+                  y: Math.sin((i * 45) * Math.PI / 180) * 120,
                   scale: 0,
                   opacity: 0,
                 }}
-                transition={{ 
-                  duration: 0.6,
-                  ease: "easeOut" 
-                }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
               />
             ))}
           </>

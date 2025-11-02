@@ -58,7 +58,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="p-6 border-b border-neutral-200/50 dark:border-neutral-700/50">
         <div className="flex items-center space-x-4">
-          <RandomLogo size={48} withAura animated className="shadow-lg" />
+          <RandomLogo size={48} withAura={false} animated={false} className="shadow-lg" />
           {!isCollapsed && (
             <div>
               <span className="font-display text-2xl font-bold gradient-text">Random</span>

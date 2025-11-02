@@ -1,7 +1,7 @@
-
 import { useEffect, lazy, Suspense } from 'react';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 import { toast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 // Nettoyage géré automatiquement par cleanup-groups edge function
 import AppLayout from '@/components/AppLayout';
@@ -22,6 +22,7 @@ import GroupProgressIndicator from '@/components/groups/GroupProgressIndicator';
 const LazyGroupMap = lazy(() => import('@/components/GroupMap'));
 
 const GroupsPage = () => {
+  const { t } = useTranslation();
   const { 
     userGroups, 
     groupMembers, 
@@ -141,8 +142,8 @@ const GroupsPage = () => {
                     {canShowMap && (
                       <Suspense
                         fallback={
-                          <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-800 text-center">
-                            Chargement de la carte…
+                          <div className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 p-6 text-emerald-800 dark:text-emerald-200 text-center">
+                            {t('groups.loading_map')}
                           </div>
                         }
                       >
