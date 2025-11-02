@@ -235,17 +235,9 @@ export const useUnifiedGroups = () => {
                 });
             }, 1000);
           } else if (payload.eventType === 'DELETE') {
-            // ✅ Annuler les requêtes en cours
-            queryClient.cancelQueries({ queryKey: ['unifiedUserGroups', user.id] });
-            
-            queryClient.setQueryData(['unifiedUserGroups', user.id], (oldData: Group[] | undefined) => {
-              if (!oldData) return oldData;
-              return oldData.map(group => 
-                group.id === activeGroupId 
-                  ? { ...group, current_participants: Math.max(0, group.current_participants - 1) }
-                  : group
-              );
-            });
+            // ✅ Le trigger PostgreSQL met à jour current_participants automatiquement
+            // ✅ Realtime propage le changement via le canal groups
+            // ❌ SUPPRIMÉ: Update optimiste redondant (cause double décrémentation)
             
             // ✅ Refetch membres après délai
             setTimeout(() => {
