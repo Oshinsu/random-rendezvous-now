@@ -89,6 +89,7 @@ export const useBarOwner = () => {
       bar_name: string;
       bar_address: string;
       bar_place_id?: string;
+      why_join?: string;
     }) => {
       if (!user) throw new Error('User not authenticated');
       
