@@ -16,7 +16,7 @@ import GroupDetails from '@/components/groups/GroupDetails';
 import GroupMudra from '@/components/groups/GroupMudra';
 import LoadingState from '@/components/groups/LoadingState';
 import { BarSearchLoadingCard } from '@/components/groups/BarSearchLoadingCard';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import GroupProgressIndicator from '@/components/groups/GroupProgressIndicator';
 
 // Lazy-load heavy map component to improve initial load
 const LazyGroupMap = lazy(() => import('@/components/GroupMap'));
@@ -128,6 +128,14 @@ const GroupsPage = () => {
                   </div>
 
                   <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+                    {/* Progress Indicator - Always visible */}
+                    <GroupProgressIndicator
+                      currentParticipants={currentGroup.current_participants}
+                      maxParticipants={currentGroup.max_participants}
+                      hasBar={!!currentGroup.bar_name}
+                      groupStatus={currentGroup.status}
+                    />
+
                     {needsBarAssignment && <BarSearchLoadingCard />}
 
                     {canShowMap && (

@@ -121,20 +121,25 @@ const ProfilePage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 pt-0">
-                <div className="flex items-center justify-between bg-amber-50 rounded-lg p-2.5">
-                  <div className="flex items-center space-x-1.5">
-                    <Star className="h-4 w-4 text-amber-600" />
-                    <span className="text-xs font-medium text-amber-800">{t('profile.adventures')}</span>
+                <div className="flex items-center justify-between bg-brand-50 rounded-xl p-3 border border-brand-200 transition-all hover:scale-102 hover:shadow-soft">
+                  <div className="flex items-center space-x-2">
+                    <Star className="h-5 w-5 text-brand-600 animate-pulse" />
+                    <span className="text-sm font-heading font-semibold text-brand-800">{t('profile.adventures')}</span>
                   </div>
-                  <span className="text-amber-700 font-bold text-sm">{totalAdventures}</span>
+                  <span className="text-brand-700 font-bold text-lg">{totalAdventures}</span>
                 </div>
-                <div className="flex items-center justify-between bg-green-50 rounded-lg p-2.5">
-                  <div className="flex items-center space-x-1.5">
-                    <Trophy className="h-4 w-4 text-green-600" />
-                    <span className="text-xs font-medium text-green-800">{t('profile.average_group')}</span>
+                <div className="flex items-center justify-between bg-green-50 rounded-xl p-3 border border-green-200 transition-all hover:scale-102 hover:shadow-soft">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="h-5 w-5 text-green-600" />
+                    <span className="text-sm font-heading font-semibold text-green-800">{t('profile.average_group')}</span>
                   </div>
-                  <span className="text-green-700 font-bold text-sm">{averageGroupSize || '-'}</span>
+                  <span className="text-green-700 font-bold text-lg">{averageGroupSize || '-'}</span>
                 </div>
+                {totalAdventures > 0 && (
+                  <p className="text-xs text-center text-neutral-600 pt-2">
+                    🎉 Tu as participé à {totalAdventures} {totalAdventures === 1 ? 'aventure' : 'aventures'} !
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -171,34 +176,37 @@ const ProfilePage = () => {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="firstName" className="text-xs">{t('profile.first_name')}</Label>
+                    <Label htmlFor="firstName" className="text-xs font-heading font-semibold">{t('profile.first_name')}</Label>
                     <Input
                       id="firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       disabled={!isEditing || isUpdating}
-                      className="bg-white/50 text-sm"
+                      className={`text-sm transition-all ${isEditing ? 'bg-brand-50 border-brand-300 ring-2 ring-brand-200' : 'bg-white/50'}`}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="lastName" className="text-xs">{t('profile.last_name')}</Label>
+                    <Label htmlFor="lastName" className="text-xs font-heading font-semibold">{t('profile.last_name')}</Label>
                     <Input
                       id="lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       disabled={!isEditing || isUpdating}
-                      className="bg-white/50 text-sm"
+                      className={`text-sm transition-all ${isEditing ? 'bg-brand-50 border-brand-300 ring-2 ring-brand-200' : 'bg-white/50'}`}
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="email" className="text-xs">{t('profile.email')}</Label>
+                  <Label htmlFor="email" className="text-xs font-heading font-semibold">{t('profile.email')}</Label>
                   <Input
                     id="email"
                     value={user?.email || ''}
                     disabled
-                    className="bg-gray-50 text-sm"
+                    className="bg-neutral-100 text-sm"
                   />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    ℹ️ L'email ne peut pas être modifié pour des raisons de sécurité
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -215,18 +223,18 @@ const ProfilePage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between bg-red-50 rounded-lg p-3">
-                  <div>
-                    <h4 className="font-medium text-red-800 text-xs">{t('profile.logout')}</h4>
-                    <p className="text-xs text-red-600">
+                <div className="flex items-center justify-between bg-red-50 rounded-xl p-3 border border-red-200">
+                  <div className="flex-1">
+                    <h4 className="font-heading font-semibold text-red-800 text-sm">{t('profile.logout')}</h4>
+                    <p className="text-xs text-red-600 mt-1">
                       {t('profile.logout_desc')}
                     </p>
                   </div>
                   <Button
                     onClick={handleSignOut}
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    className="py-1 px-3 h-8 text-xs"
+                    className="py-1 px-3 h-8 text-xs border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 ml-3"
                   >
                     {t('profile.logout')}
                   </Button>
