@@ -15,7 +15,7 @@ const GroupHeader = ({ onBack, onRefresh: _onRefresh, loading: _loading }: Group
         <Button
           variant="ghost"
           size="sm"
-          className="text-neutral-600 hover:text-neutral-800 p-2"
+          className="text-neutral-600 hover:text-neutral-800 hover:bg-brand-50 rounded-xl p-2 transition-colors"
           onClick={onBack}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
@@ -23,10 +23,10 @@ const GroupHeader = ({ onBack, onRefresh: _onRefresh, loading: _loading }: Group
         </Button>
         <div>
           <h1 className="text-xl font-heading font-bold text-neutral-800">
-            Votre Aventure
+            🎲 Ton Aventure
           </h1>
           <p className="text-sm text-neutral-600 font-body">
-            Suivez l'évolution en temps réel
+            Tout se passe ici, en temps réel
           </p>
         </div>
       </div>

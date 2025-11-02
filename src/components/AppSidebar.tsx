@@ -48,7 +48,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r border-neutral-200/50 glass-morphism"
+      className="border-r border-neutral-200/50 glass-morphism transition-all duration-300 ease-in-out"
       collapsible="icon"
     >
       <SidebarHeader className="p-6 border-b border-neutral-200/50">
@@ -77,12 +77,15 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)}
-                    className="mx-0 rounded-2xl hover:bg-brand-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-brand-500 data-[active=true]:to-brand-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12"
+                    className="mx-0 rounded-2xl hover:bg-brand-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-brand-500 data-[active=true]:to-brand-600 data-[active=true]:text-white data-[active=true]:shadow-medium transition-all duration-300 group h-12 focus-visible:ring-4 focus-visible:ring-brand-500/30"
                     tooltip={isCollapsed ? item.title : undefined}
                   >
-                    <NavLink to={item.url} className="flex items-center space-x-4 py-3 px-4 w-full">
+                    <NavLink to={item.url} className="flex items-center space-x-4 py-3 px-4 w-full relative">
                       <item.icon className="h-5 w-5 flex-shrink-0 group-data-[active=true]:text-white" />
                       {!isCollapsed && <span className="font-heading font-semibold">{item.title}</span>}
+                      {isActive(item.url) && !isCollapsed && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

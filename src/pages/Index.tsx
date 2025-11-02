@@ -65,36 +65,24 @@ const Index = () => {
               <p className="text-amber-700 font-medium text-sm hidden xs:block">Chargement...</p>
             </div> : user ? <div className="flex items-center gap-1 sm:gap-3">
               <LanguageToggle />
-              <div className="hidden md:flex items-center space-x-2 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
-                <Star className="h-4 w-4 text-amber-500" />
-                <span className="text-sm text-amber-700 font-medium">
-                  {user.user_metadata?.first_name || user.email}
-                </span>
-              </div>
-              <Button onClick={handleGoToDashboard} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4" size="sm">
+              <Button onClick={handleGoToDashboard} className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-5" size="sm">
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Chercher un </span>Groupe
+                Mon groupe
               </Button>
-              <Button onClick={handleSignOut} variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-4" size="sm">
-                <span className="hidden xs:inline">Déconnexion</span>
-                <span className="xs:hidden">✕</span>
+              <Button onClick={handleSignOut} variant="outline" className="border-neutral-300 text-neutral-700 hover:bg-neutral-50 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3 hidden sm:flex" size="sm">
+                Déconnexion
               </Button>
             </div> : <div className="flex items-center gap-1 sm:gap-2">
               <LanguageToggle />
-              <Button asChild variant="ghost" className="text-amber-700 hover:bg-amber-50 text-xs sm:text-sm px-2 sm:px-3" size="sm">
-                
-              </Button>
-              <Button asChild variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50 transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
+              <Button asChild variant="outline" className="border-brand-300 text-brand-700 hover:bg-brand-50 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" size="sm">
                 <Link to="/auth?tab=signin">
-                  <span className="hidden sm:inline">Connexion</span>
-                  <span className="sm:hidden">👤</span>
+                  Connexion
                 </Link>
               </Button>
-              <Button asChild className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg transform hover:scale-105 transition-all duration-300 text-xs sm:text-sm px-2 sm:px-3" size="sm">
+              <Button asChild className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" size="sm">
                 <Link to="/auth?tab=signup">
-                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1" />
-                  <span className="hidden sm:inline">Inscription</span>
-                  <span className="sm:hidden">⚡</span>
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  Commencer
                 </Link>
               </Button>
             </div>}

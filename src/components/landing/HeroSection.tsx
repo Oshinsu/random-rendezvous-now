@@ -35,17 +35,17 @@ const HeroSection = () => {
         <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 sm:mb-8 tracking-tight leading-tight">
           {i18n.language === 'en' ? <>
               <span className="font-signature text-5xl sm:text-6xl md:text-8xl block mb-2 animate-scale-in drop-shadow-glow-gold">Random</span>
-              <span className="gradient-text-animated text-shadow font-display block animate-slide-in-up" style={{
+              <span className="gradient-text-animated text-shadow font-display block animate-slide-in-up text-2xl sm:text-4xl md:text-6xl" style={{
             animationDelay: '0.2s'
           }}>
-                One click. 5 strangers. 1 bar.
+                1 click. 5 people. 1 bar.
               </span>
             </> : <>
               <span className="font-signature text-5xl sm:text-6xl md:text-8xl block mb-2 animate-scale-in drop-shadow-glow-gold">Random</span>
-              <span className="gradient-text-animated text-shadow font-display block animate-slide-in-up" style={{
+              <span className="gradient-text-animated text-shadow font-display block animate-slide-in-up text-2xl sm:text-4xl md:text-6xl" style={{
             animationDelay: '0.2s'
           }}>
-                1 clic. 5 inconnus. 1 bar.
+                1 clic. 1 groupe. 1 bar.
               </span>
             </>}
         </h1>

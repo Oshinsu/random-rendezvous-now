@@ -100,8 +100,8 @@ export const useUnifiedGroups = () => {
     queryKey: ['unifiedUserGroups', user?.id],
     queryFn: fetchUserGroups,
     enabled: !!user,
-    refetchInterval: 10 * 60 * 1000, // ✅ REALTIME: Polling 10 min (fallback sécurité)
-    staleTime: 5 * 60 * 1000, // ✅ REALTIME: Cache 5 min (évite refetchs inutiles)
+    refetchInterval: 30 * 60 * 1000, // ✅ REALTIME: Polling 30 min (fallback léger, Realtime gère le reste)
+    staleTime: 10 * 60 * 1000, // ✅ REALTIME: Cache 10 min (évite refetchs inutiles)
     refetchOnMount: 'always',
     refetchOnWindowFocus: false, // ✅ REALTIME: Pas de refetch brutal (Realtime gère)
   });
@@ -288,8 +288,8 @@ export const useUnifiedGroups = () => {
       const location = await getUserLocation(true);
       if (!location) {
         toast({ 
-          title: 'Géolocalisation requise', 
-          description: 'Votre position est nécessaire pour créer un groupe.', 
+          title: '📍 Position requise', 
+          description: 'Active ta géolocalisation pour trouver un groupe près de toi', 
           variant: 'destructive' 
         });
         return false;
@@ -302,9 +302,9 @@ export const useUnifiedGroups = () => {
       if (allParticipations.length > 0) {
         console.log('⚠️ Participation active détectée avec nouveau système');
         toast({ 
-          title: 'Déjà dans un groupe', 
-          description: 'Vous êtes déjà dans un groupe actif.', 
-          variant: 'destructive' 
+          title: '✋ Tu es déjà dans un groupe', 
+          description: 'Pas besoin de chercher, ton groupe t\'attend !', 
+          variant: 'default' 
         });
         return false;
       }

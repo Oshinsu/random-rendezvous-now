@@ -81,16 +81,16 @@
   }
 
   p {
-    @apply font-body text-base md:text-lg leading-7 text-neutral-700;
+    @apply font-body text-base leading-7 text-neutral-700;
   }
 }
 
 @layer components {
   .glass-morphism {
-    background: rgba(255,255,255,0.93);
+    background: rgba(255,255,255,0.90);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(241, 194, 50, 0.07);
-    box-shadow: 0 8px 32px rgba(245, 208, 73, 0.07), 0 1px 2px rgba(241, 194, 50, 0.04) inset;
+    border: 1px solid rgba(241, 194, 50, 0.10);
+    box-shadow: 0 8px 32px rgba(245, 208, 73, 0.10), 0 1px 2px rgba(241, 194, 50, 0.06) inset;
   }
 
   .glass-card {
@@ -102,7 +102,7 @@
 
   .glass-card:hover {
     box-shadow:0 6px 36px rgba(241,194,50,0.16);
-    transform: translateY(-1px) scale(1.015);
+    transform: translateY(-1px) scale(1.02);
   }
 
   .gradient-brand {
@@ -121,8 +121,8 @@
     @apply bg-gradient-to-r from-brand-500 to-brand-600 text-white;
     @apply shadow-medium hover:shadow-glow;
     @apply transition-all duration-300 ease-out transform-gpu;
-    @apply hover:scale-105 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
-    @apply border-0 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+    @apply hover:scale-102 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
+    @apply border-0 focus:outline-none focus:ring-4 focus:ring-brand-500/20 focus:ring-offset-2;
   }
 
   .btn-secondary {
@@ -130,9 +130,9 @@
     @apply bg-white/80 backdrop-blur-sm text-neutral-700 border border-neutral-200;
     @apply shadow-soft hover:shadow-medium;
     @apply transition-all duration-300 ease-out transform-gpu;
-    @apply hover:scale-105 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
+    @apply hover:scale-102 hover:-translate-y-0.5 active:scale-95 active:translate-y-0;
     @apply hover:bg-white hover:border-brand-300;
-    @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-4 focus:ring-brand-500/20 focus:ring-offset-2;
   }
 
   .btn-gold {

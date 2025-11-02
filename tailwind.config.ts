@@ -30,6 +30,9 @@ export default {
 			}
 		},
 		extend: {
+      scale: {
+        '102': '1.02',
+      },
       fontFamily: {
         signature: ['Spicy Rice', 'serif'],
         heading: ['Marcellus', 'serif'],
