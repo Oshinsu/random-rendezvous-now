@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,8 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatsCard } from '@/components/ui/stats-card';
 import { BarAnalyticsChart } from '@/components/bar/BarAnalyticsChart';
+import { KPIDetailModal } from '@/components/bar/KPIDetailModal';
+import { DynamicRecommendations } from '@/components/bar/DynamicRecommendations';
 import { 
   Users, 
   TrendingUp, 
@@ -30,7 +33,10 @@ import {
   ChevronRight,
   Building,
   ArrowUpRight,
-  TrendingDown
+  TrendingDown,
+  LayoutDashboard,
+  LineChart,
+  Cog
 } from 'lucide-react';
 
 export default function BarDashboard() {
@@ -50,6 +56,24 @@ export default function BarDashboard() {
     createCheckout, 
     manageSubscription 
   } = useBarSubscription();
+
+  const [kpiModalOpen, setKpiModalOpen] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState<{
+    title: string;
+    icon: React.ReactNode;
+    value: number | string;
+    type: 'customers' | 'groups' | 'revenue' | 'roi' | 'costPerCustomer' | 'groupSize' | 'totalCustomers' | 'avgCustomers';
+  } | null>(null);
+
+  const openKPIModal = (
+    title: string, 
+    icon: React.ReactNode, 
+    value: number | string, 
+    type: 'customers' | 'groups' | 'revenue' | 'roi' | 'costPerCustomer' | 'groupSize' | 'totalCustomers' | 'avgCustomers'
+  ) => {
+    setSelectedKPI({ title, icon, value, type });
+    setKpiModalOpen(true);
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -216,171 +240,265 @@ export default function BarDashboard() {
           </Card>
         )}
 
-        {/* KPI Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Clients ce mois"
-            value={isLoadingAnalytics ? "..." : (currentMonth?.total_customers || 0)}
-            icon={<Users className="h-6 w-6" />}
-            description="Nouveaux clients Random"
-            trend={previousMonth && currentMonth ? {
-              value: Math.abs(customerGrowth),
-              isPositive: customerGrowth > 0
-            } : undefined}
-          />
+        {/* Tabs Navigation */}
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="dashboard">
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <LineChart className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <Cog className="h-4 w-4 mr-2" />
+              Paramètres
+            </TabsTrigger>
+          </TabsList>
 
-          <StatsCard
-            title="Groupes reçus"
-            value={isLoadingAnalytics ? "..." : (currentMonth?.total_groups || 0)}
-            icon={<BarChart3 className="h-6 w-6" />}
-            description="Ce mois-ci"
-          />
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* KPI Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Clients ce mois', 
+                  <Users className="h-6 w-6" />, 
+                  currentMonth?.total_customers || 0, 
+                  'customers'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Clients ce mois"
+                  value={isLoadingAnalytics ? "..." : (currentMonth?.total_customers || 0)}
+                  icon={<Users className="h-6 w-6" />}
+                  description="Nouveaux clients Random"
+                  trend={previousMonth && currentMonth ? {
+                    value: Math.abs(customerGrowth),
+                    isPositive: customerGrowth > 0
+                  } : undefined}
+                />
+              </div>
 
-          <StatsCard
-            title="CA généré"
-            value={isLoadingAnalytics ? "..." : formatCurrency(currentMonth?.estimated_revenue_eur || 0)}
-            icon={<Euro className="h-6 w-6" />}
-            description="Chiffre d'affaires estimé"
-            trend={previousMonth && currentMonth ? {
-              value: Math.abs(revenueGrowth),
-              isPositive: revenueGrowth > 0
-            } : undefined}
-          />
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Groupes reçus', 
+                  <BarChart3 className="h-6 w-6" />, 
+                  currentMonth?.total_groups || 0, 
+                  'groups'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Groupes reçus"
+                  value={isLoadingAnalytics ? "..." : (currentMonth?.total_groups || 0)}
+                  icon={<BarChart3 className="h-6 w-6" />}
+                  description="Ce mois-ci"
+                />
+              </div>
 
-          <StatsCard
-            title="ROI mensuel"
-            value={isLoadingAnalytics ? "..." : `${roi.toFixed(1)}x`}
-            icon={<TrendingUp className="h-6 w-6" />}
-            description="Retour sur investissement"
-          />
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'CA généré', 
+                  <Euro className="h-6 w-6" />, 
+                  formatCurrency(currentMonth?.estimated_revenue_eur || 0), 
+                  'revenue'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="CA généré"
+                  value={isLoadingAnalytics ? "..." : formatCurrency(currentMonth?.estimated_revenue_eur || 0)}
+                  icon={<Euro className="h-6 w-6" />}
+                  description="Chiffre d'affaires estimé"
+                  trend={previousMonth && currentMonth ? {
+                    value: Math.abs(revenueGrowth),
+                    isPositive: revenueGrowth > 0
+                  } : undefined}
+                />
+              </div>
 
-          <StatsCard
-            title="Coût par client"
-            value={isLoadingAnalytics ? "..." : `${costPerCustomer.toFixed(2)}€`}
-            icon={<Target className="h-6 w-6" />}
-            description="Coût d'acquisition"
-          />
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'ROI mensuel', 
+                  <TrendingUp className="h-6 w-6" />, 
+                  `${roi.toFixed(1)}x`, 
+                  'roi'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="ROI mensuel"
+                  value={isLoadingAnalytics ? "..." : `${roi.toFixed(1)}x`}
+                  icon={<TrendingUp className="h-6 w-6" />}
+                  description="Retour sur investissement"
+                />
+              </div>
 
-          <StatsCard
-            title="Taille moyenne"
-            value={isLoadingAnalytics ? "..." : `${avgGroupSize} pers.`}
-            icon={<Activity className="h-6 w-6" />}
-            description="Par groupe"
-          />
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Coût par client', 
+                  <Target className="h-6 w-6" />, 
+                  `${costPerCustomer.toFixed(2)}€`, 
+                  'costPerCustomer'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Coût par client"
+                  value={isLoadingAnalytics ? "..." : `${costPerCustomer.toFixed(2)}€`}
+                  icon={<Target className="h-6 w-6" />}
+                  description="Coût d'acquisition"
+                />
+              </div>
 
-          <StatsCard
-            title="Total 6 mois"
-            value={isLoadingAnalytics ? "..." : totalCustomers}
-            icon={<Award className="h-6 w-6" />}
-            description="Clients amenés"
-          />
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Taille moyenne', 
+                  <Activity className="h-6 w-6" />, 
+                  `${avgGroupSize} pers.`, 
+                  'groupSize'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Taille moyenne"
+                  value={isLoadingAnalytics ? "..." : `${avgGroupSize} pers.`}
+                  icon={<Activity className="h-6 w-6" />}
+                  description="Par groupe"
+                />
+              </div>
 
-          <StatsCard
-            title="Moyenne mensuelle"
-            value={isLoadingAnalytics ? "..." : Math.round(avgCustomersPerMonth)}
-            icon={<Calendar className="h-6 w-6" />}
-            description="Clients par mois"
-          />
-        </div>
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Total 6 mois', 
+                  <Award className="h-6 w-6" />, 
+                  totalCustomers, 
+                  'totalCustomers'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Total 6 mois"
+                  value={isLoadingAnalytics ? "..." : totalCustomers}
+                  icon={<Award className="h-6 w-6" />}
+                  description="Clients amenés"
+                />
+              </div>
 
-        {/* Analytics Chart */}
-        {analytics && analytics.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
+              <div 
+                onClick={() => !isLoadingAnalytics && openKPIModal(
+                  'Moyenne mensuelle', 
+                  <Calendar className="h-6 w-6" />, 
+                  Math.round(avgCustomersPerMonth), 
+                  'avgCustomers'
+                )}
+                className="cursor-pointer transition-transform hover:scale-105"
+              >
+                <StatsCard
+                  title="Moyenne mensuelle"
+                  value={isLoadingAnalytics ? "..." : Math.round(avgCustomersPerMonth)}
+                  icon={<Calendar className="h-6 w-6" />}
+                  description="Clients par mois"
+                />
+              </div>
+            </div>
+
+            {/* ROI & Business Impact */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Impact business
+                  </CardTitle>
+                  <CardDescription>
+                    L'effet Random sur votre établissement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Nouveaux clients ce mois</span>
+                      <span className="font-semibold">{currentMonth?.total_customers || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Revenus générés</span>
+                      <span className="font-semibold">{formatCurrency(currentMonth?.estimated_revenue_eur || 0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Coût d'acquisition moyen</span>
+                      <span className="font-semibold">{costPerCustomer.toFixed(2)}€</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center text-primary">
+                      <span className="font-medium">ROI mensuel</span>
+                      <span className="font-bold text-lg">{roi.toFixed(1)}x</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {analytics && analytics.length > 0 && (
+                <DynamicRecommendations
+                  analytics={analytics}
+                  avgGroupSize={avgGroupSize}
+                  roi={roi}
+                  customerGrowth={customerGrowth}
+                />
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+
+            {/* Analytics Chart */}
+            {analytics && analytics.length > 0 && (
+              <Card>
+                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
                     Évolution mensuelle
                   </CardTitle>
                   <CardDescription>
-                    Clients Random amenés dans votre établissement
+                    Analyse complète de vos métriques
                   </CardDescription>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Exporter
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <BarAnalyticsChart data={analytics} />
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent>
+                  <BarAnalyticsChart data={analytics} />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Paramètres du bar</CardTitle>
+                <CardDescription>
+                  Configuration de votre établissement
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Paramètres à venir...</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* KPI Detail Modal */}
+        {selectedKPI && analytics && (
+          <KPIDetailModal
+            open={kpiModalOpen}
+            onOpenChange={setKpiModalOpen}
+            title={selectedKPI.title}
+            icon={selectedKPI.icon}
+            currentValue={selectedKPI.value}
+            analytics={analytics}
+            metricType={selectedKPI.type}
+          />
         )}
-
-        {/* ROI & Business Impact */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Impact business
-              </CardTitle>
-              <CardDescription>
-                L'effet Random sur votre établissement
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Nouveaux clients ce mois</span>
-                  <span className="font-semibold">{currentMonth?.total_customers || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Revenus générés</span>
-                  <span className="font-semibold">{formatCurrency(currentMonth?.estimated_revenue_eur || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Coût d'acquisition moyen</span>
-                  <span className="font-semibold">{costPerCustomer.toFixed(2)}€</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center text-primary">
-                  <span className="font-medium">ROI mensuel</span>
-                  <span className="font-bold text-lg">{roi.toFixed(1)}x</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
-                Recommandations
-              </CardTitle>
-              <CardDescription>
-                Maximisez vos revenus Random
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                  <div className="text-sm">
-                    <p className="font-medium">Optimisez vos horaires</p>
-                    <p className="text-muted-foreground">Les groupes arrivent surtout entre 19h-21h</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                  <div className="text-sm">
-                    <p className="font-medium">Préparez l'accueil</p>
-                    <p className="text-muted-foreground">Groupes de {avgGroupSize} personnes en moyenne</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                  <div className="text-sm">
-                    <p className="font-medium">Fidélisez vos clients</p>
-                    <p className="text-muted-foreground">Offrez une expérience mémorable</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
