@@ -6,6 +6,7 @@ import { AuthenticationTest } from "@/components/admin/test/AuthenticationTest";
 import { ChatSystemTest } from "@/components/admin/test/ChatSystemTest";
 import { AdvancedTestPanel } from "@/components/admin/test/AdvancedTestPanel";
 import { ApiDiagnosticPanel } from "@/components/admin/ApiDiagnosticPanel";
+import { PerformanceBenchmark } from "@/components/admin/test/PerformanceBenchmark";
 import { TestTube } from "lucide-react";
 
 export const AdminTest = () => {
@@ -22,7 +23,7 @@ export const AdminTest = () => {
       </div>
 
       <Tabs defaultValue="advanced" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7 gap-1">
+        <TabsList className="grid w-full grid-cols-8 gap-1">
           <TabsTrigger value="advanced">Test Avancé</TabsTrigger>
           <TabsTrigger value="lifecycle">Lifecycle</TabsTrigger>
           <TabsTrigger value="realtime">Realtime</TabsTrigger>
@@ -30,6 +31,7 @@ export const AdminTest = () => {
           <TabsTrigger value="auth">Auth</TabsTrigger>
           <TabsTrigger value="cleanup">Cleanup</TabsTrigger>
           <TabsTrigger value="api">API</TabsTrigger>
+          <TabsTrigger value="perf">Performance</TabsTrigger>
         </TabsList>
 
         <TabsContent value="advanced" className="space-y-4">
@@ -58,6 +60,10 @@ export const AdminTest = () => {
 
         <TabsContent value="api" className="space-y-4">
           <ApiDiagnosticPanel />
+        </TabsContent>
+
+        <TabsContent value="perf" className="space-y-4">
+          <PerformanceBenchmark />
         </TabsContent>
       </Tabs>
     </div>
