@@ -7,6 +7,7 @@ import { PushNotificationsTable } from '@/components/admin/push/PushNotification
 import { PushAnalyticsCharts } from '@/components/admin/push/PushAnalyticsCharts';
 import { PushSettings } from '@/components/admin/push/PushSettings';
 import { PushTestPanel } from '@/components/admin/push/PushTestPanel';
+import { NotificationCopyEditor } from '@/components/admin/push/NotificationCopyEditor';
 import { usePushNotificationsAdmin } from '@/hooks/usePushNotificationsAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell, Zap } from 'lucide-react';
@@ -57,10 +58,11 @@ export default function AdminPushNotifications() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">📊 Overview</TabsTrigger>
             <TabsTrigger value="notifications">🔔 Notifications</TabsTrigger>
             <TabsTrigger value="analytics">📈 Analytics</TabsTrigger>
+            <TabsTrigger value="copies">✨ Copies</TabsTrigger>
             <TabsTrigger value="settings">⚙️ Settings</TabsTrigger>
           </TabsList>
 
@@ -75,6 +77,10 @@ export default function AdminPushNotifications() {
 
           <TabsContent value="analytics" className="space-y-6">
             <PushAnalyticsCharts />
+          </TabsContent>
+
+          <TabsContent value="copies" className="space-y-6">
+            <NotificationCopyEditor />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
