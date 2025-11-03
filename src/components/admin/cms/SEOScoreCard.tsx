@@ -1,10 +1,14 @@
-import { Eye, Target, Type, MousePointer } from 'lucide-react';
+import { Eye, Target, Type, MousePointer, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useCMSSEOScores, useRecalculateSEO } from '@/hooks/useCMSSEOScores';
+import { useToast } from '@/hooks/use-toast';
 
 interface SEOScoreCardProps {
   text: string;
+  contentId?: string;
 }
 
 interface SEOMetrics {
@@ -76,31 +80,85 @@ const ScoreItem = ({
   );
 };
 
-export const SEOScoreCard = ({ text }: SEOScoreCardProps) => {
-  const metrics = calculateSEO(text);
-  
-  // Calcul du score total
-  const scores = [
-    metrics.readabilityScore,
-    metrics.keywordDensity,
-    metrics.lengthOptimal ? 100 : 50,
-    metrics.ctaPresence ? 100 : 0,
-    metrics.emojiCount >= 1 && metrics.emojiCount <= 3 ? 100 : 50
-  ];
-  const totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+export const SEOScoreCard = ({ text, contentId }: SEOScoreCardProps) => {
+  const { toast } = useToast();
+  const { data: seoData } = useCMSSEOScores();
+  const recalculateMutation = useRecalculateSEO();
+
+  // Try to get stored score first, fallback to real-time calculation
+  const storedScore = contentId 
+    ? seoData?.scoresBySection.find(s => s.content_id === contentId)
+    : null;
+
+  const metrics = storedScore 
+    ? {
+        readabilityScore: storedScore.readability_score,
+        keywordDensity: storedScore.keyword_density,
+        lengthOptimal: storedScore.length_score >= 80,
+        ctaPresence: storedScore.cta_score >= 80,
+        emojiCount: storedScore.emoji_score >= 80 ? 2 : 0,
+        wordCount: text.split(/\s+/).length,
+      }
+    : calculateSEO(text);
+
+  const totalScore = storedScore?.total_score || Math.round(
+    (metrics.readabilityScore * 0.25) +
+    (metrics.keywordDensity * 0.25) +
+    ((metrics.lengthOptimal ? 100 : 50) * 0.2) +
+    ((metrics.ctaPresence ? 100 : 0) * 0.15) +
+    ((metrics.emojiCount >= 1 && metrics.emojiCount <= 3 ? 100 : 50) * 0.15)
+  );
+
+  const handleRecalculate = async () => {
+    if (!contentId) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de recalculer le score sans ID de contenu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await recalculateMutation.mutateAsync(contentId);
+      toast({
+        title: "Score recalculé",
+        description: "Le score SEO a été mis à jour avec succès",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de recalculer le score",
+        variant: "destructive",
+      });
+    }
+  };
   
   const scoreColor = totalScore >= 80 ? 'text-green-600' : totalScore >= 60 ? 'text-orange-600' : 'text-red-600';
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">📊 Email Health Score</CardTitle>
-        <div className={`text-4xl font-bold ${scoreColor}`}>
-          {totalScore}/100
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base">📊 SEO Health Score</CardTitle>
+          <div className={`text-4xl font-bold ${scoreColor} mt-2`}>
+            {totalScore}/100
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {metrics.wordCount} mots • {metrics.emojiCount} emoji{metrics.emojiCount > 1 ? 's' : ''}
+          </p>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {metrics.wordCount} mots • {metrics.emojiCount} emoji{metrics.emojiCount > 1 ? 's' : ''}
-        </p>
+        {contentId && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRecalculate}
+            disabled={recalculateMutation.isPending}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${recalculateMutation.isPending ? 'animate-spin' : ''}`} />
+            Recalculer
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <ScoreItem
@@ -149,6 +207,16 @@ export const SEOScoreCard = ({ text }: SEOScoreCardProps) => {
             <Badge variant="outline" className="text-xs">
               ⚠️ Trop d'emojis ({metrics.emojiCount}), viser 1-3 max
             </Badge>
+          )}
+          {storedScore?.suggestions && storedScore.suggestions.length > 0 && (
+            <div className="pt-2 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Suggestions AI :</p>
+              {storedScore.suggestions.map((suggestion, i) => (
+                <Badge key={i} variant="secondary" className="text-xs block">
+                  💡 {suggestion}
+                </Badge>
+              ))}
+            </div>
           )}
         </div>
       </CardContent>

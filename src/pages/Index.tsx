@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { trackSectionView, trackBounce } from "@/utils/cmsTracking";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import Footer from "@/components/landing/Footer";
@@ -17,12 +18,54 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ScrollProgressBar from "@/components/ScrollProgressBar";
 import { Helmet } from "react-helmet-async";
 const Index = () => {
-  const {
-    user,
-    signOut,
-    loading
-  } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Track section views
+  const heroRef = useRef<HTMLDivElement>(null);
+  const benefitsRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const sectionTimers = new Map<string, number>();
+    
+    const trackSectionTime = (section: string, startTime: number) => {
+      const timeSpent = Date.now() - startTime;
+      trackBounce(section, timeSpent);
+    };
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const section = entry.target.getAttribute('data-section');
+          if (!section) return;
+          
+          if (entry.isIntersecting) {
+            trackSectionView(section);
+            sectionTimers.set(section, Date.now());
+          } else {
+            const startTime = sectionTimers.get(section);
+            if (startTime) {
+              trackSectionTime(section, startTime);
+              sectionTimers.delete(section);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+    
+    if (heroRef.current) observer.observe(heroRef.current);
+    if (benefitsRef.current) observer.observe(benefitsRef.current);
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    
+    return () => {
+      observer.disconnect();
+      sectionTimers.forEach((startTime, section) => {
+        trackSectionTime(section, startTime);
+      });
+    };
+  }, []);
   const handleSignOut = async () => {
     await signOut();
   };
@@ -89,7 +132,9 @@ const Index = () => {
         </div>
       </header>
       <main className="flex-grow">
-        <HeroSection />
+        <div ref={heroRef} data-section="hero">
+          <HeroSection />
+        </div>
         <HowItWorksSection />
         
         <Suspense fallback={
@@ -104,10 +149,14 @@ const Index = () => {
             </div>
           </div>
         }>
-          <WhyRandomSection />
+          <div ref={benefitsRef} data-section="benefits">
+            <WhyRandomSection />
+          </div>
           <NoMoreSection />
           <FaqSection />
-          <CtaSection />
+          <div ref={ctaRef} data-section="cta">
+            <CtaSection />
+          </div>
         </Suspense>
       </main>
       <Footer />

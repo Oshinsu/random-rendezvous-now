@@ -1,13 +1,17 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+import { useCMSPageAnalytics } from '@/hooks/useCMSPageAnalytics';
+
 export const SectionEngagementChart = () => {
-  // Données simulées d'engagement par section
-  const engagementData = [
-    { section: 'Hero', clicks: 1243, conversions: 89, bounce: 23 },
-    { section: 'Benefits', clicks: 892, conversions: 156, bounce: 18 },
-    { section: 'How It Works', clicks: 734, conversions: 98, bounce: 31 },
-    { section: 'CTA', clicks: 2103, conversions: 423, bounce: 12 },
-  ];
+  const { data: analytics } = useCMSPageAnalytics();
+  
+  // Map real data to chart format
+  const engagementData = analytics?.engagementBySection.map(section => ({
+    section: section.section,
+    clicks: section.clicks,
+    conversions: section.conversions,
+    bounce: section.bounces,
+  })) || [];
 
   return (
     <ResponsiveContainer width="100%" height={300}>

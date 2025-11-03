@@ -1,30 +1,38 @@
 import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
+import { useCMSAnalytics } from '@/hooks/useCMSAnalytics';
 
 export const InteractionHeatmap = () => {
-  // Générer des données simulées pour les 90 derniers jours
+  const { data: analytics } = useCMSAnalytics();
+  
+  // Generate heatmap data from real modifications
   const heatmapData = useMemo(() => {
+    if (!analytics?.modificationsByDay) {
+      return [];
+    }
+
+    // Create map of all 90 days with counts
+    const dataMap = new Map(
+      analytics.modificationsByDay.map(d => [d.date, d.count])
+    );
+
+    // Fill in missing days with 0
     const data = [];
     const today = new Date();
     
     for (let i = 89; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      
-      // Simulation: plus d'activité en semaine, moins le weekend
-      const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const baseActivity = isWeekend ? 1 : 3;
-      const randomActivity = Math.floor(Math.random() * 5);
+      const dateStr = date.toISOString().split('T')[0];
       
       data.push({
-        date: date.toISOString().split('T')[0],
-        count: baseActivity + randomActivity
+        date: dateStr,
+        count: dataMap.get(dateStr) || 0
       });
     }
     
     return data;
-  }, []);
+  }, [analytics]);
 
   // Organiser en semaines
   const weeks = useMemo(() => {

@@ -527,6 +527,89 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_page_analytics: {
+        Row: {
+          created_at: string | null
+          event_metadata: Json | null
+          event_type: string
+          id: string
+          page_section: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_metadata?: Json | null
+          event_type: string
+          id?: string
+          page_section: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_metadata?: Json | null
+          event_type?: string
+          id?: string
+          page_section?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cms_seo_scores: {
+        Row: {
+          calculated_at: string | null
+          content_id: string
+          created_at: string | null
+          cta_score: number
+          emoji_score: number
+          id: string
+          keyword_density: number
+          length_score: number
+          metadata: Json | null
+          readability_score: number
+          suggestions: Json | null
+          total_score: number
+        }
+        Insert: {
+          calculated_at?: string | null
+          content_id: string
+          created_at?: string | null
+          cta_score: number
+          emoji_score: number
+          id?: string
+          keyword_density: number
+          length_score: number
+          metadata?: Json | null
+          readability_score: number
+          suggestions?: Json | null
+          total_score: number
+        }
+        Update: {
+          calculated_at?: string | null
+          content_id?: string
+          created_at?: string | null
+          cta_score?: number
+          emoji_score?: number
+          id?: string
+          keyword_density?: number
+          length_score?: number
+          metadata?: Json | null
+          readability_score?: number
+          suggestions?: Json | null
+          total_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_seo_scores_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "site_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_stories: {
         Row: {
           city: string | null
@@ -2560,6 +2643,17 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_engagement_summary: {
+        Row: {
+          event_count: number | null
+          event_date: string | null
+          event_type: string | null
+          page_section: string | null
+          unique_sessions: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
       crm_cohort_analysis: {
         Row: {
           activated_users: number | null
@@ -2848,6 +2942,7 @@ export type Database = {
         Returns: undefined
       }
       refresh_admin_groups_analytics: { Args: never; Returns: undefined }
+      refresh_cms_engagement: { Args: never; Returns: undefined }
       refresh_crm_cohort_analysis: { Args: never; Returns: undefined }
       repair_missing_outings_history: { Args: never; Returns: number }
       sanitize_coordinates_pg: {
