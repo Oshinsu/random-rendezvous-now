@@ -50,6 +50,7 @@ const adminSections = [
       { title: "CRM Campaigns", url: "/admin/crm", icon: Target },
       { title: "Push Notifications", url: "/admin/push-notifications", icon: Bell },
       { title: "Blog SEO", url: "/admin/blog-seo", icon: Newspaper },
+      { title: "Blog Editor", url: "/admin/blog-editor", icon: Edit3 },
     ]
   },
   {

@@ -191,3 +191,6 @@ verify_jwt = false
 [functions.detect-user-gender]
 verify_jwt = true
 
+[functions.trigger-blog-generation]
+verify_jwt = false
+

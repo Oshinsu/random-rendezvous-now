@@ -1,15 +1,36 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useBlogArticles } from '@/hooks/useBlogArticles';
-import { Calendar, Eye, TrendingUp } from 'lucide-react';
+import { Calendar, Eye, TrendingUp, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Helmet } from 'react-helmet-async';
 
 export default function Blog() {
   const { articles, isLoading } = useBlogArticles('published');
+  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'seo'>('recent');
+  const [page, setPage] = useState(1);
+  const articlesPerPage = 9;
+
+  // Sorting logic
+  const sortedArticles = articles?.sort((a, b) => {
+    if (sortBy === 'popular') return (b.views_count || 0) - (a.views_count || 0);
+    if (sortBy === 'seo') return (b.seo_score || 0) - (a.seo_score || 0);
+    return new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime();
+  });
+
+  // Pagination
+  const paginatedArticles = sortedArticles?.slice(
+    (page - 1) * articlesPerPage,
+    page * articlesPerPage
+  );
+
+  const totalPages = Math.ceil((sortedArticles?.length || 0) / articlesPerPage);
 
   return (
     <AppLayout>
@@ -30,6 +51,25 @@ export default function Blog() {
             </p>
           </div>
 
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <SelectTrigger className="w-full md:w-[220px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Plus récents</SelectItem>
+                <SelectItem value="popular">Plus populaires</SelectItem>
+                <SelectItem value="seo">Meilleur SEO</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <p className="text-sm text-muted-foreground">
+              {sortedArticles?.length || 0} article{(sortedArticles?.length || 0) > 1 ? 's' : ''}
+            </p>
+          </div>
+
           {/* Articles Grid */}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -44,8 +84,9 @@ export default function Blog() {
               ))}
             </div>
           ) : articles && articles.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {articles.map((article) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {paginatedArticles?.map((article) => (
                 <Link key={article.id} to={`/blog/${article.slug}`}>
                   <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full">
                     {article.featured_image_url && (
@@ -93,8 +134,32 @@ export default function Blog() {
                     </CardContent>
                   </Card>
                 </Link>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  <Button
+                    variant="outline"
+                    disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                  >
+                    Précédent
+                  </Button>
+                  <span className="px-4 py-2 text-sm">
+                    Page {page} sur {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-lg">

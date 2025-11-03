@@ -185,6 +185,55 @@ Important:
 
     console.log('AI generated content successfully');
 
+    // Générer une image avec Lovable AI (Phase 4)
+    console.log('🎨 Generating featured image...');
+    const imagePrompt = `Create a vibrant, modern illustration showing young Parisians (diverse, ages 25-35) socializing at a trendy bar in Paris. Warm colors (reds, oranges), friendly atmosphere, flat design style. 16:9 aspect ratio for blog header.`;
+
+    let featuredImageUrl = null;
+    
+    try {
+      const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-image',
+          messages: [{ role: 'user', content: imagePrompt }]
+        }),
+      });
+
+      if (imageResponse.ok) {
+        const imageData = await imageResponse.json();
+        const base64Image = imageData.choices?.[0]?.message?.content;
+        
+        if (base64Image && base64Image.includes('base64,')) {
+          const base64Data = base64Image.split('base64,')[1];
+          const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+          const fileName = `${keyword.keyword.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('blog-images')
+            .upload(fileName, imageBuffer, {
+              contentType: 'image/png',
+              cacheControl: '31536000'
+            });
+          
+          if (!uploadError && uploadData) {
+            const { data: publicUrl } = supabase.storage
+              .from('blog-images')
+              .getPublicUrl(fileName);
+            
+            featuredImageUrl = publicUrl.publicUrl;
+            console.log('✅ Image uploaded:', featuredImageUrl);
+          }
+        }
+      }
+    } catch (imageError) {
+      console.error('Image generation failed (non-blocking):', imageError);
+    }
+
     // Parser la réponse JSON
     let articleData;
     try {
@@ -295,6 +344,7 @@ Important:
         meta_description: articleData.meta_description,
         content: articleData.content,
         excerpt: articleData.excerpt,
+        featured_image_url: featuredImageUrl,
         seo_score: Math.min(100, seoScore),
         status: 'published',
         published_at: new Date().toISOString(),

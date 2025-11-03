@@ -37,6 +37,7 @@ import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import AdminBlogSEO from "./pages/admin/AdminBlogSEO";
+import AdminBlogEditor from "./pages/admin/AdminBlogEditor";
 import AdminCommunityStories from "./pages/admin/AdminCommunityStories";
 // Lazy import to prevent circular dependency issues
 import React from 'react';
@@ -299,6 +300,15 @@ const AppRoutes = () => (
         <AdminRoute>
           <AdminLayout>
             <AdminBlogSEO />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
+    <Route path="/admin/blog-editor" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminBlogEditor />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

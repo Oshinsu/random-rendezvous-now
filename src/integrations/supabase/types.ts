@@ -2875,6 +2875,7 @@ export type Database = {
         Returns: undefined
       }
       transition_groups_to_completed: { Args: never; Returns: undefined }
+      trigger_blog_generation: { Args: never; Returns: undefined }
       unschedule_campaign_queue_cron: { Args: never; Returns: undefined }
       update_system_setting: {
         Args: { new_value: Json; setting_name: string }

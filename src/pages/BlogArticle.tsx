@@ -3,12 +3,65 @@ import { useParams, Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBlogArticles, BlogArticle as BlogArticleType } from '@/hooks/useBlogArticles';
 import { Calendar, Eye, ArrowLeft, TrendingUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
+
+// Table of Contents component
+function TableOfContents({ content }: { content: string }) {
+  const [headings, setHeadings] = useState<Array<{ id: string; text: string; level: number }>>([]);
+
+  useEffect(() => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const h2s = Array.from(doc.querySelectorAll('h2'));
+    
+    setHeadings(
+      h2s.map((h, i) => ({
+        id: `heading-${i}`,
+        text: h.textContent || '',
+        level: 2
+      }))
+    );
+
+    // Add IDs to actual h2 elements in the DOM after render
+    setTimeout(() => {
+      document.querySelectorAll('article h2').forEach((h, i) => {
+        h.id = `heading-${i}`;
+      });
+    }, 100);
+  }, [content]);
+
+  if (headings.length === 0) return null;
+
+  return (
+    <Card className="sticky top-24">
+      <CardHeader>
+        <CardTitle className="text-lg">Table des matières</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <nav>
+          <ul className="space-y-2">
+            {headings.map((h) => (
+              <li key={h.id}>
+                <a
+                  href={`#${h.id}`}
+                  className="text-sm text-muted-foreground hover:text-red-600 transition block"
+                >
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
@@ -95,7 +148,7 @@ export default function BlogArticle() {
         itemScope 
         itemType="http://schema.org/BlogPosting"
       >
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-7xl">
           {/* Back button */}
           <Link to="/blog" className="inline-block mb-8">
             <Button variant="ghost" size="sm">
@@ -104,8 +157,11 @@ export default function BlogArticle() {
             </Button>
           </Link>
 
-          {/* Header */}
-          <header className="mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main content */}
+            <div className="lg:col-span-3">
+              {/* Header */}
+              <header className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               {article.seo_score && article.seo_score >= 80 && (
                 <Badge variant="default" className="gap-1">
@@ -154,28 +210,35 @@ export default function BlogArticle() {
                 />
               </div>
             )}
-          </header>
+              </header>
 
-          {/* Content */}
-          <div 
-            className="prose prose-lg max-w-none prose-headings:font-display prose-h2:text-red-800 prose-h3:text-red-700 prose-a:text-red-600 hover:prose-a:text-red-700"
-            itemProp="articleBody"
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
+              {/* Content */}
+              <div 
+                className="prose prose-lg max-w-none prose-headings:font-display prose-h2:text-red-800 prose-h3:text-red-700 prose-a:text-red-600 hover:prose-a:text-red-700 prose-h2:scroll-mt-24"
+                itemProp="articleBody"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
 
-          {/* CTA */}
-          <div className="mt-16 p-8 bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl text-center">
-            <h3 className="text-2xl font-display font-bold text-red-800 mb-4">
-              Prêt à vivre l'expérience Random ?
-            </h3>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Rejoignez des milliers de Parisiens qui ont déjà fait de nouvelles rencontres grâce à Random.
-            </p>
-            <Link to="/">
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
-                Commencer maintenant
-              </Button>
-            </Link>
+              {/* CTA */}
+              <div className="mt-16 p-8 bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl text-center">
+                <h3 className="text-2xl font-display font-bold text-red-800 mb-4">
+                  Prêt à vivre l'expérience Random ?
+                </h3>
+                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  Rejoignez des milliers de Parisiens qui ont déjà fait de nouvelles rencontres grâce à Random.
+                </p>
+                <Link to="/">
+                  <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                    Commencer maintenant
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Sidebar ToC */}
+            <aside className="hidden lg:block">
+              <TableOfContents content={article.content} />
+            </aside>
           </div>
         </div>
       </article>
