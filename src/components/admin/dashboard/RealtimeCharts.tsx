@@ -1,15 +1,39 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 
-interface RealtimeChartsProps {
-  userGrowthData: any[];
-  groupStatusData: any[];
-  apiUsageData: any[];
+interface UserGrowthData {
+  date: string;
+  total_users: number;
+  new_users: number;
 }
 
-const COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6'];
+interface GroupStatusData {
+  name: string;
+  value: number;
+  fill?: string;
+}
+
+interface ApiUsageData {
+  date: string;
+  requests: number;
+  cost: number;
+  errors?: number;
+}
+
+interface RealtimeChartsProps {
+  userGrowthData: UserGrowthData[];
+  groupStatusData: GroupStatusData[];
+  apiUsageData: ApiUsageData[];
+}
 
 export const RealtimeCharts = ({ userGrowthData, groupStatusData, apiUsageData }: RealtimeChartsProps) => {
+  // Use semantic colors from design system
+  const COLORS = [
+    'hsl(var(--warning))',
+    'hsl(var(--info))', 
+    'hsl(var(--success))',
+    'hsl(var(--muted))'
+  ];
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       {/* User Growth Chart */}
@@ -31,8 +55,8 @@ export const RealtimeCharts = ({ userGrowthData, groupStatusData, apiUsageData }
                 }}
               />
               <Legend />
-              <Line type="monotone" dataKey="total_users" stroke="#ef4444" name="Total Users" strokeWidth={2} />
-              <Line type="monotone" dataKey="active_users" stroke="#22c55e" name="Active Users" strokeWidth={2} />
+              <Line type="monotone" dataKey="total_users" stroke="hsl(var(--primary))" name="Total Users" strokeWidth={2} />
+              <Line type="monotone" dataKey="new_users" stroke="hsl(var(--success))" name="New Users" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
@@ -85,8 +109,8 @@ export const RealtimeCharts = ({ userGrowthData, groupStatusData, apiUsageData }
                 }}
               />
               <Legend />
-              <Area type="monotone" dataKey="requests" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} name="Requests" />
-              <Area type="monotone" dataKey="costs" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} name="Cost ($)" />
+              <Area type="monotone" dataKey="requests" stroke="hsl(var(--info))" fill="hsl(var(--info))" fillOpacity={0.3} name="Requests" />
+              <Area type="monotone" dataKey="cost" stroke="hsl(var(--error))" fill="hsl(var(--error))" fillOpacity={0.3} name="Cost ($)" />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>
