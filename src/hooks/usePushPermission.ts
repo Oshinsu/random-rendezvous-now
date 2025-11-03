@@ -26,8 +26,8 @@ const firebaseConfig = {
   measurementId: "G-BFV3N51PP1"
 };
 
-// VAPID public key
-const VAPID_PUBLIC_KEY = 'BOkV_HGdsNuvLckQFeB9DOsjp47KIDdBZ1RcWckIKur5gEmKYVmCuIGOX02l-QxA7_9JLX4gNvuMsk2SAbDTLko';
+// VAPID public key from environment variable
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_FIREBASE_VAPID_PUBLIC_KEY;
 
 // Initialize Firebase app (singleton)
 let firebaseApp: ReturnType<typeof initializeApp> | null = null;
