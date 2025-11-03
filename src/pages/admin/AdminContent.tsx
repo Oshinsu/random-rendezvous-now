@@ -6,6 +6,7 @@ import { CMSNavigation } from '@/components/admin/cms/CMSNavigation';
 import { CMSHeader } from '@/components/admin/cms/CMSHeader';
 import { CMSStats } from '@/components/admin/cms/CMSStats';
 import { ImageGallery } from '@/components/admin/cms/ImageGallery';
+import { BlockEditor } from '@/components/admin/cms/BlockEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,8 @@ export default function AdminContent() {
     ? 'texts'
     : location.pathname.includes('/templates')
     ? 'templates'
+    : location.pathname.includes('/builder')
+    ? 'builder'
     : 'all';
 
   const sections = Array.from(new Set(contents.map(c => c.page_section)));
@@ -225,7 +228,21 @@ export default function AdminContent() {
       <CMSNavigation />
 
       {/* Contenu selon la route */}
-      {currentView === 'images' ? (
+      {currentView === 'builder' ? (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Layout className="h-5 w-5 text-red-600" />
+                Visual Page Builder SOTA 2025
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BlockEditor />
+            </CardContent>
+          </Card>
+        </div>
+      ) : currentView === 'images' ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">

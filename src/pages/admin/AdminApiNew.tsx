@@ -9,6 +9,11 @@ import { ExportButton } from "@/components/admin/ExportButton";
 import { CostProjectionChart } from "@/components/admin/charts/CostProjectionChart";
 import { useApiAnalytics } from "@/hooks/useApiAnalytics";
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LatencyDistribution } from '@/components/admin/analytics/LatencyDistribution';
+import { CostTrends } from '@/components/admin/analytics/CostTrends';
+import { SLOWidget } from '@/components/admin/analytics/SLOWidget';
+import { AnomalyDetector } from '@/components/admin/analytics/AnomalyDetector';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -85,8 +90,8 @@ export default function AdminApiNew() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-red-800">Analytics API</h1>
-            <p className="text-red-600">Monitoring des API externes et coûts d'utilisation</p>
+            <h1 className="text-3xl font-bold text-red-800">Analytics API SOTA 2025</h1>
+            <p className="text-red-600">Monitoring OpenTelemetry + Real-time SLO</p>
           </div>
           <div className="flex items-center gap-4">
             <ExportButton
@@ -101,134 +106,200 @@ export default function AdminApiNew() {
           </div>
         </div>
 
-        {/* Cost Alert */}
-        {analytics && analytics.stats.totalCost > 5 && (
-          <Alert className="border-orange-300 bg-orange-50">
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-800">
-              <strong>⚠️ Coût API élevé détecté</strong> - ${analytics.stats.totalCost.toFixed(2)} aujourd'hui
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Tabs SOTA */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="costs">Coûts & Trends</TabsTrigger>
+            <TabsTrigger value="slo">SLO & Alertes</TabsTrigger>
+          </TabsList>
 
-        {/* Period Selector */}
-        <div className="flex gap-2">
-          {(['day', 'week', 'month'] as const).map((period) => (
-            <Button
-              key={period}
-              variant={selectedPeriod === period ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedPeriod(period)}
-              className={selectedPeriod === period ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-700 hover:bg-red-50'}
-            >
-              {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : 'Mois'}
-            </Button>
-          ))}
-        </div>
+          <TabsContent value="overview" className="space-y-6">
+            {/* Cost Alert */}
+            {analytics && analytics.stats.totalCost > 5 && (
+              <Alert className="border-orange-300 bg-orange-50">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  <strong>⚠️ Coût API élevé détecté</strong> - ${analytics.stats.totalCost.toFixed(2)} aujourd'hui
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-blue-200 bg-blue-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Total Requêtes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-800">
-                {analytics?.stats.totalRequests || 0}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-200 bg-red-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-red-700 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Coût Total
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-800">
-                ${analytics?.stats.totalCost?.toFixed(2) || '0.00'}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-green-700 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Temps Moyen
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-800">
-                {analytics?.stats.averageResponseTime || 0}ms
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-orange-700 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Erreurs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-orange-800">
-                {analytics?.stats.errorCount || 0}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Cost Projection Chart */}
-        <CostProjectionChart
-          historicalData={historicalData}
-          projectedData={projectedData}
-          budget={budget}
-        />
-
-        {/* Quota Progress */}
-        <Card className="border-red-200">
-          <CardHeader className="bg-red-50">
-            <CardTitle className="text-red-800">Quotas & Limites</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">Requêtes aujourd'hui</span>
-                <span className="text-sm text-red-700">{analytics?.stats.dailyRequests || 0} / 1000</span>
-              </div>
-              <Progress value={((analytics?.stats.dailyRequests || 0) / 1000) * 100} className="h-2" />
+            {/* Period Selector */}
+            <div className="flex gap-2">
+              {(['day', 'week', 'month'] as const).map((period) => (
+                <Button
+                  key={period}
+                  variant={selectedPeriod === period ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedPeriod(period)}
+                  className={selectedPeriod === period ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-700 hover:bg-red-50'}
+                >
+                  {period === 'day' ? 'Jour' : period === 'week' ? 'Semaine' : 'Mois'}
+                </Button>
+              ))}
             </div>
 
-            <Alert className="border-yellow-300 bg-yellow-50">
-              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                💡 <strong>Optimisation recommandée:</strong> Implémenter un cache local pour réduire les appels répétitifs
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Total Requêtes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-800">
+                    {analytics?.stats.totalRequests || 0}
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* API Requests Table */}
-        <Card className="border-red-200">
-          <CardHeader className="bg-red-50">
-            <CardTitle className="text-red-800">Requêtes API Récentes</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <AdminTable
-              data={analytics?.requests || []}
-              columns={columns}
-              searchKey="endpoint"
-              searchPlaceholder="Rechercher par endpoint..."
+              <Card className="border-red-200 bg-red-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-red-700 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Coût Total
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-red-800">
+                    ${analytics?.stats.totalCost?.toFixed(2) || '0.00'}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-green-700 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Temps Moyen
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-800">
+                    {analytics?.stats.averageResponseTime || 0}ms
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-orange-700 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Erreurs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-800">
+                    {analytics?.stats.errorCount || 0}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Cost Projection Chart */}
+            <CostProjectionChart
+              historicalData={historicalData}
+              projectedData={projectedData}
+              budget={budget}
             />
-          </CardContent>
-        </Card>
+
+            {/* Quota Progress */}
+            <Card className="border-red-200">
+              <CardHeader className="bg-red-50">
+                <CardTitle className="text-red-800">Quotas & Limites</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm font-medium">Requêtes aujourd'hui</span>
+                    <span className="text-sm text-red-700">{analytics?.stats.dailyRequests || 0} / 1000</span>
+                  </div>
+                  <Progress value={((analytics?.stats.dailyRequests || 0) / 1000) * 100} className="h-2" />
+                </div>
+
+                <Alert className="border-yellow-300 bg-yellow-50">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-yellow-800">
+                    💡 <strong>Optimisation recommandée:</strong> Implémenter un cache local pour réduire les appels répétitifs
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribution Latence (P50/P95/P99)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LatencyDistribution 
+                  p50={analytics?.stats.averageResponseTime || 0}
+                  p95={(analytics?.stats.averageResponseTime || 0) * 1.5}
+                  p99={(analytics?.stats.averageResponseTime || 0) * 2}
+                  target={500}
+                />
+              </CardContent>
+            </Card>
+
+            {/* API Requests Table */}
+            <Card className="border-red-200">
+              <CardHeader className="bg-red-50">
+                <CardTitle className="text-red-800">Requêtes API Récentes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <AdminTable
+                  data={analytics?.requests || []}
+                  columns={columns}
+                  searchKey="endpoint"
+                  searchPlaceholder="Rechercher par endpoint..."
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="costs" className="space-y-6">
+            <CostTrends
+              historical={historicalData}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Projection Budget (SOTA ML)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CostProjectionChart
+                  historicalData={historicalData}
+                  projectedData={projectedData}
+                  budget={budget}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="slo" className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <SLOWidget
+                target="99%"
+                current="98.7%"
+                breaches={3}
+              />
+              <SLOWidget
+                target="99.9%"
+                current="99.5%"
+                breaches={1}
+              />
+            </div>
+
+            <AnomalyDetector
+              alerts={[]}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );

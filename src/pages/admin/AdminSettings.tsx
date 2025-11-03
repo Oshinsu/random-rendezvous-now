@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { TriggerTestPanel } from '@/components/admin/TriggerTestPanel';
+import { FeatureFlagsManager } from '@/components/admin/settings/FeatureFlagsManager';
 import { 
   Settings, 
   Database, 
@@ -148,8 +150,8 @@ export const AdminSettings = () => {
         <>
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-red-800">Paramètres système</h1>
-              <p className="text-red-600 mt-2">Configuration et maintenance de l'application</p>
+              <h1 className="text-3xl font-bold text-red-800">Paramètres SOTA 2025</h1>
+              <p className="text-red-600 mt-2">Configuration + Feature Flags + Observability</p>
             </div>
             <Button 
               onClick={handleSaveSettings} 
@@ -160,209 +162,227 @@ export const AdminSettings = () => {
             </Button>
           </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Paramètres généraux */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <Settings className="h-5 w-5" />
-              Configuration générale
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="maxGroupSize">Taille maximum des groupes</Label>
-              <Input
-                id="maxGroupSize"
-                type="number"
-                min="3"
-                max="10"
-                value={localSettings.maxGroupSize}
-                onChange={(e) => setLocalSettings(prev => ({
-                  ...prev,
-                  maxGroupSize: parseInt(e.target.value) || 5
-                }))}
-              />
-            </div>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="general">Configuration</TabsTrigger>
+              <TabsTrigger value="feature-flags">Feature Flags</TabsTrigger>
+              <TabsTrigger value="backup">Sauvegarde</TabsTrigger>
+            </TabsList>
 
-            <div>
-              <Label htmlFor="searchRadius">Rayon de recherche par défaut (mètres)</Label>
-              <Input
-                id="searchRadius"
-                type="number"
-                min="1000"
-                max="50000"
-                value={localSettings.defaultSearchRadius}
-                onChange={(e) => setLocalSettings(prev => ({
-                  ...prev,
-                  defaultSearchRadius: parseInt(e.target.value) || 10000
-                }))}
-              />
-            </div>
+            <TabsContent value="general">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Paramètres généraux */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-800">
+                      <Settings className="h-5 w-5" />
+                      Configuration générale
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="maxGroupSize">Taille maximum des groupes</Label>
+                      <Input
+                        id="maxGroupSize"
+                        type="number"
+                        min="3"
+                        max="10"
+                        value={localSettings.maxGroupSize}
+                        onChange={(e) => setLocalSettings(prev => ({
+                          ...prev,
+                          maxGroupSize: parseInt(e.target.value) || 5
+                        }))}
+                      />
+                    </div>
 
-            <Separator />
+                    <div>
+                      <Label htmlFor="searchRadius">Rayon de recherche par défaut (mètres)</Label>
+                      <Input
+                        id="searchRadius"
+                        type="number"
+                        min="1000"
+                        max="50000"
+                        value={localSettings.defaultSearchRadius}
+                        onChange={(e) => setLocalSettings(prev => ({
+                          ...prev,
+                          defaultSearchRadius: parseInt(e.target.value) || 10000
+                        }))}
+                      />
+                    </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Mode maintenance</Label>
-                <p className="text-sm text-gray-600">Désactive l'accès pour les utilisateurs</p>
+                    <Separator />
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Mode maintenance</Label>
+                        <p className="text-sm text-gray-600">Désactive l'accès pour les utilisateurs</p>
+                      </div>
+                      <Switch
+                        checked={localSettings.maintenanceMode}
+                        onCheckedChange={(checked) => setLocalSettings(prev => ({
+                          ...prev,
+                          maintenanceMode: checked
+                        }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Notifications email</Label>
+                        <p className="text-sm text-gray-600">Activer les notifications par email</p>
+                      </div>
+                      <Switch
+                        checked={localSettings.emailNotifications}
+                        onCheckedChange={(checked) => setLocalSettings(prev => ({
+                          ...prev,
+                          emailNotifications: checked
+                        }))}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Maintenance automatique */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-800">
+                      <Shield className="h-5 w-5" />
+                      Maintenance automatique
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Nettoyage automatique</Label>
+                        <p className="text-sm text-gray-600">Suppression automatique des anciennes données</p>
+                      </div>
+                      <Switch
+                        checked={localSettings.autoCleanupEnabled}
+                        onCheckedChange={(checked) => setLocalSettings(prev => ({
+                          ...prev,
+                          autoCleanupEnabled: checked
+                        }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="cleanupInterval">Intervalle de nettoyage (heures)</Label>
+                      <Input
+                        id="cleanupInterval"
+                        type="number"
+                        min="1"
+                        max="168"
+                        value={localSettings.cleanupIntervalHours}
+                        onChange={(e) => setLocalSettings(prev => ({
+                          ...prev,
+                          cleanupIntervalHours: parseInt(e.target.value) || 24
+                        }))}
+                        disabled={!localSettings.autoCleanupEnabled}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={handleCleanupDatabase}
+                        disabled={cleanupLoading}
+                        variant="outline"
+                        className="w-full text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+                      >
+                        {cleanupLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                        Nettoyer maintenant
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notifications et alertes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-800">
+                      <Bell className="h-5 w-5" />
+                      Alertes & Notifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-start gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
+                        <div className="text-sm text-green-800">
+                          <p className="font-medium">Système opérationnel</p>
+                          <p>Tous les services fonctionnent normalement</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>• Base de données: Connectée</p>
+                      <p>• API Google Places: Fonctionnelle</p>
+                      <p>• Edge Functions: Actives</p>
+                      <p>• Authentification: Opérationnelle</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Switch
-                checked={localSettings.maintenanceMode}
-                onCheckedChange={(checked) => setLocalSettings(prev => ({
-                  ...prev,
-                  maintenanceMode: checked
-                }))}
-              />
-            </div>
+            </TabsContent>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Notifications email</Label>
-                <p className="text-sm text-gray-600">Activer les notifications par email</p>
+            <TabsContent value="feature-flags">
+              <FeatureFlagsManager />
+            </TabsContent>
+
+            <TabsContent value="backup">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Sauvegarde et restauration */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-800">
+                      <Database className="h-5 w-5" />
+                      Sauvegarde & Restauration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={handleExportDatabase}
+                        disabled={exportLoading}
+                        variant="outline"
+                        className="w-full text-blue-700 border-blue-300 hover:bg-blue-50"
+                      >
+                        {exportLoading ? <LoadingSpinner size="sm" /> : <Download className="h-4 w-4 mr-2" />}
+                        Exporter base de données
+                      </Button>
+                      
+                      <Button 
+                        disabled
+                        variant="outline"
+                        className="w-full text-gray-500"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importer base de données (Bientôt)
+                      </Button>
+                    </div>
+
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                        <div className="text-sm text-yellow-800">
+                          <p className="font-medium">Important</p>
+                          <p>Effectuez des sauvegardes régulières avant les mises à jour importantes.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Switch
-                checked={localSettings.emailNotifications}
-                onCheckedChange={(checked) => setLocalSettings(prev => ({
-                  ...prev,
-                  emailNotifications: checked
-                }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            </TabsContent>
+          </Tabs>
 
-        {/* Maintenance automatique */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <Shield className="h-5 w-5" />
-              Maintenance automatique
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Nettoyage automatique</Label>
-                <p className="text-sm text-gray-600">Suppression automatique des anciennes données</p>
-              </div>
-              <Switch
-                checked={localSettings.autoCleanupEnabled}
-                onCheckedChange={(checked) => setLocalSettings(prev => ({
-                  ...prev,
-                  autoCleanupEnabled: checked
-                }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="cleanupInterval">Intervalle de nettoyage (heures)</Label>
-              <Input
-                id="cleanupInterval"
-                type="number"
-                min="1"
-                max="168"
-                value={localSettings.cleanupIntervalHours}
-                onChange={(e) => setLocalSettings(prev => ({
-                  ...prev,
-                  cleanupIntervalHours: parseInt(e.target.value) || 24
-                }))}
-                disabled={!localSettings.autoCleanupEnabled}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Button 
-                onClick={handleCleanupDatabase}
-                disabled={cleanupLoading}
-                variant="outline"
-                className="w-full text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-              >
-                {cleanupLoading ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                Nettoyer maintenant
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sauvegarde et restauration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <Database className="h-5 w-5" />
-              Sauvegarde & Restauration
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Button 
-                onClick={handleExportDatabase}
-                disabled={exportLoading}
-                variant="outline"
-                className="w-full text-blue-700 border-blue-300 hover:bg-blue-50"
-              >
-                {exportLoading ? <LoadingSpinner size="sm" /> : <Download className="h-4 w-4 mr-2" />}
-                Exporter base de données
-              </Button>
-              
-              <Button 
-                disabled
-                variant="outline"
-                className="w-full text-gray-500"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Importer base de données (Bientôt)
-              </Button>
-            </div>
-
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                <div className="text-sm text-yellow-800">
-                  <p className="font-medium">Important</p>
-                  <p>Effectuez des sauvegardes régulières avant les mises à jour importantes.</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications et alertes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <Bell className="h-5 w-5" />
-              Alertes & Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2" />
-                <div className="text-sm text-green-800">
-                  <p className="font-medium">Système opérationnel</p>
-                  <p>Tous les services fonctionnent normalement</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>• Base de données: Connectée</p>
-              <p>• API Google Places: Fonctionnelle</p>
-              <p>• Edge Functions: Actives</p>
-              <p>• Authentification: Opérationnelle</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Section Tests du Système */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-red-800 mb-4">Tests du Système Auto-Assignment</h2>
-        <TriggerTestPanel />
-      </div>
+          {/* Section Tests du Système */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-red-800 mb-4">Tests du Système Auto-Assignment</h2>
+            <TriggerTestPanel />
+          </div>
         </>
       )}
     </div>

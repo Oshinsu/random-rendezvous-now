@@ -4,8 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Send, Bot, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ChatbotAnalyticsDashboard } from '@/components/admin/chatbot/ChatbotAnalyticsDashboard';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
@@ -23,13 +26,25 @@ const AdminChatbot = () => {
   }, [messages]);
 
   const streamChat = async (userMessage: Message) => {
-    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-chat`;
+    // Récupérer le session token de l'utilisateur connecté
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      toast({
+        title: "Erreur d'authentification",
+        description: "Vous devez être connecté pour utiliser le chatbot.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const CHAT_URL = `https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/admin-chat`;
     
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${session.access_token}`, // ✅ TOKEN UTILISATEUR
       },
       body: JSON.stringify({ messages: [...messages, userMessage] }),
     });
@@ -153,97 +168,110 @@ const AdminChatbot = () => {
       <div className="p-4 md:p-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-            💬 Chatbot Analytics
+            💬 Chatbot IA SOTA 2025
           </h1>
           <p className="text-muted-foreground mt-2">
-            Discutez avec l'IA pour analyser vos données en temps réel
+            Analytics + Prompt Engineering + RAG-ready
           </p>
         </div>
 
-        <Card className="border-red-200/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-red-600" />
-              Assistant IA Random
-            </CardTitle>
-            <CardDescription>
-              Posez vos questions sur les statistiques, tendances et insights de votre application
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ScrollArea ref={scrollRef} className="h-[500px] pr-4">
-              <div className="space-y-4">
-                {messages.length === 0 && (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Commencez une conversation avec l'assistant IA</p>
-                    <p className="text-sm mt-2">
-                      Exemple: "Combien d'utilisateurs actifs aujourd'hui ?"
-                    </p>
-                  </div>
-                )}
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <Bot className="h-4 w-4 text-red-600" />
-                      </div>
-                    )}
-                    <div
-                      className={`rounded-2xl px-4 py-2 max-w-[80%] ${
-                        msg.role === 'user'
-                          ? 'bg-red-600 text-white'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
-                    </div>
-                    {msg.role === 'user' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading && messages[messages.length - 1]?.role === 'user' && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                      <Bot className="h-4 w-4 text-red-600 animate-pulse" />
-                    </div>
-                    <div className="rounded-2xl px-4 py-2 bg-muted">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce [animation-delay:0.2s]" />
-                        <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce [animation-delay:0.4s]" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+        <Tabs defaultValue="chat" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="chat">Chat en direct</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics & Monitoring</TabsTrigger>
+          </TabsList>
 
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Posez votre question..."
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="chat">
+            <Card className="border-red-200/50 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-red-600" />
+                  Assistant IA Random
+                </CardTitle>
+                <CardDescription>
+                  Posez vos questions sur les statistiques, tendances et insights de votre application
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ScrollArea ref={scrollRef} className="h-[500px] pr-4">
+                  <div className="space-y-4">
+                    {messages.length === 0 && (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Commencez une conversation avec l'assistant IA</p>
+                        <p className="text-sm mt-2">
+                          Exemple: "Combien d'utilisateurs actifs aujourd'hui ?"
+                        </p>
+                      </div>
+                    )}
+                    {messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {msg.role === 'assistant' && (
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                            <Bot className="h-4 w-4 text-red-600" />
+                          </div>
+                        )}
+                        <div
+                          className={`rounded-2xl px-4 py-2 max-w-[80%] ${
+                            msg.role === 'user'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-muted text-foreground'
+                          }`}
+                        >
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                        {msg.role === 'user' && (
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
+                            <User className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {isLoading && messages[messages.length - 1]?.role === 'user' && (
+                      <div className="flex gap-3 justify-start">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-red-600 animate-pulse" />
+                        </div>
+                        <div className="rounded-2xl px-4 py-2 bg-muted">
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce [animation-delay:0.2s]" />
+                            <div className="w-2 h-2 bg-red-600/50 rounded-full animate-bounce [animation-delay:0.4s]" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                <div className="flex gap-2">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder="Posez votre question..."
+                    disabled={isLoading}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <ChatbotAnalyticsDashboard />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
