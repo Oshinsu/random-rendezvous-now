@@ -123,6 +123,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
       
+      // Validate server-side if Google OAuth is allowed
+      console.log('🔍 [Google OAuth] Validating OAuth status...');
+      const { data: validation, error: validationError } = await supabase.functions.invoke('validate-oauth-request');
+      
+      if (validationError) {
+        console.error('❌ [Google OAuth] Validation error:', validationError);
+        throw new Error('Impossible de valider le statut OAuth');
+      }
+      
+      if (!validation?.allowed) {
+        console.warn('🚫 [Google OAuth] Blocked by server');
+        throw new Error('La connexion Google est temporairement désactivée par les administrateurs');
+      }
+      
+      console.log('✅ [Google OAuth] Validation passed');
+      
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('🔐 [Google OAuth] Starting flow');
       console.log('🔐 [Google OAuth] Origin:', window.location.origin);

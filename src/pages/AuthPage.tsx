@@ -13,7 +13,8 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useTranslation } from 'react-i18next';
 import { useReferralProgram } from '@/hooks/useReferralProgram';
 import { useAuth } from '@/contexts/AuthContext';
-import { Chrome } from 'lucide-react';
+import { useGoogleOAuthStatus } from '@/hooks/useGoogleOAuthStatus';
+import { Chrome, AlertTriangle } from 'lucide-react';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const AuthPage = () => {
   const { t } = useTranslation();
   const { applyReferralCode } = useReferralProgram();
   const { signInWithGoogle } = useAuth();
+  const { isEnabled: googleOAuthEnabled, loading: googleOAuthLoading } = useGoogleOAuthStatus();
 
   // Handle URL parameters to set the active tab
   useEffect(() => {
@@ -164,27 +166,42 @@ const AuthPage = () => {
                   <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      {t('auth.or_continue_with')}
-                    </span>
-                  </div>
-                </div>
+                {googleOAuthEnabled && !googleOAuthLoading && (
+                  <>
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          {t('auth.or_continue_with')}
+                        </span>
+                      </div>
+                    </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full rounded-2xl"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  <Chrome className="mr-2 h-4 w-4" />
-                  {t('auth.google_signin')}
-                </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                    >
+                      <Chrome className="mr-2 h-4 w-4" />
+                      {t('auth.google_signin')}
+                    </Button>
+                  </>
+                )}
+
+                {!googleOAuthEnabled && !googleOAuthLoading && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ La connexion Google est temporairement désactivée. Veuillez utiliser email/mot de passe.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signin')}
@@ -267,27 +284,42 @@ const AuthPage = () => {
                   </p>
                 </div>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      {t('auth.or_continue_with')}
-                    </span>
-                  </div>
-                </div>
+                {googleOAuthEnabled && !googleOAuthLoading && (
+                  <>
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          {t('auth.or_continue_with')}
+                        </span>
+                      </div>
+                    </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full rounded-2xl"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                >
-                  <Chrome className="mr-2 h-4 w-4" />
-                  {t('auth.google_signin')}
-                </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl"
+                      onClick={handleGoogleSignIn}
+                      disabled={loading}
+                    >
+                      <Chrome className="mr-2 h-4 w-4" />
+                      {t('auth.google_signin')}
+                    </Button>
+                  </>
+                )}
+
+                {!googleOAuthEnabled && !googleOAuthLoading && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ La connexion Google est temporairement désactivée. Veuillez utiliser email/mot de passe.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signup')}

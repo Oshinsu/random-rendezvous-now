@@ -2828,6 +2828,7 @@ export type Database = {
       }
       is_admin_user: { Args: never; Returns: boolean }
       is_bar_owner: { Args: never; Returns: boolean }
+      is_google_oauth_enabled: { Args: never; Returns: boolean }
       is_group_member: {
         Args: { group_uuid: string; user_uuid: string }
         Returns: boolean

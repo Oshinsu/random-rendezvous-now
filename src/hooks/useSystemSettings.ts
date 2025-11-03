@@ -8,6 +8,7 @@ interface SystemSettings {
   emailNotifications: boolean;
   autoCleanupEnabled: boolean;
   cleanupIntervalHours: number;
+  googleOAuthEnabled: boolean;
 }
 
 export const useSystemSettings = () => {
@@ -17,7 +18,8 @@ export const useSystemSettings = () => {
     maintenanceMode: false,
     emailNotifications: true,
     autoCleanupEnabled: true,
-    cleanupIntervalHours: 24
+    cleanupIntervalHours: 24,
+    googleOAuthEnabled: true
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,7 +48,8 @@ export const useSystemSettings = () => {
           maintenanceMode: settingsMap.maintenance_mode === true,
           emailNotifications: settingsMap.email_notifications === true,
           autoCleanupEnabled: settingsMap.auto_cleanup_enabled === true,
-          cleanupIntervalHours: parseInt(settingsMap.cleanup_interval_hours) || 24
+          cleanupIntervalHours: parseInt(settingsMap.cleanup_interval_hours) || 24,
+          googleOAuthEnabled: settingsMap.google_oauth_enabled === 'true' || settingsMap.google_oauth_enabled === true
         });
       }
     } catch (err) {
@@ -69,7 +72,8 @@ export const useSystemSettings = () => {
         { key: 'maintenance_mode', value: newSettings.maintenanceMode },
         { key: 'email_notifications', value: newSettings.emailNotifications },
         { key: 'auto_cleanup_enabled', value: newSettings.autoCleanupEnabled },
-        { key: 'cleanup_interval_hours', value: newSettings.cleanupIntervalHours.toString() }
+        { key: 'cleanup_interval_hours', value: newSettings.cleanupIntervalHours.toString() },
+        { key: 'google_oauth_enabled', value: newSettings.googleOAuthEnabled.toString() }
       ];
 
       for (const update of updates) {
