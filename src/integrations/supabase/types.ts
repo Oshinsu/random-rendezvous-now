@@ -2493,6 +2493,52 @@ export type Database = {
       }
     }
     Views: {
+      admin_groups_funnel_analysis: {
+        Row: {
+          avg_hours_in_stage: number | null
+          count: number | null
+          drop_off_rate: number | null
+          previous_count: number | null
+          stage: string | null
+          stage_order: number | null
+        }
+        Relationships: []
+      }
+      admin_groups_geographic_distribution: {
+        Row: {
+          avg_latitude: number | null
+          avg_longitude: number | null
+          avg_participants: number | null
+          group_count: number | null
+          location_name: string | null
+          success_count: number | null
+          success_rate: number | null
+          unique_bars: number | null
+        }
+        Relationships: []
+      }
+      admin_groups_temporal_patterns: {
+        Row: {
+          avg_participants: number | null
+          confirmed_count: number | null
+          conversion_rate: number | null
+          day_of_week: number | null
+          group_count: number | null
+          hour_of_day: number | null
+        }
+        Relationships: []
+      }
+      admin_groups_timeline: {
+        Row: {
+          avg_hours_to_confirm: number | null
+          avg_participants: number | null
+          groups_completed: number | null
+          groups_confirmed: number | null
+          groups_created: number | null
+          time_bucket: string | null
+        }
+        Relationships: []
+      }
       crm_cohort_analysis: {
         Row: {
           activated_users: number | null
@@ -2644,6 +2690,52 @@ export type Database = {
         Args: { target_bar_place_id: string; target_month: string }
         Returns: Json
       }
+      get_admin_groups_funnel: {
+        Args: never
+        Returns: {
+          avg_hours_in_stage: number
+          count: number
+          drop_off_rate: number
+          previous_count: number
+          stage: string
+          stage_order: number
+        }[]
+      }
+      get_admin_groups_geographic: {
+        Args: { top_limit?: number }
+        Returns: {
+          avg_latitude: number
+          avg_longitude: number
+          avg_participants: number
+          group_count: number
+          location_name: string
+          success_count: number
+          success_rate: number
+          unique_bars: number
+        }[]
+      }
+      get_admin_groups_heatmap: {
+        Args: never
+        Returns: {
+          avg_participants: number
+          confirmed_count: number
+          conversion_rate: number
+          day_of_week: number
+          group_count: number
+          hour_of_day: number
+        }[]
+      }
+      get_admin_groups_timeline: {
+        Args: { days_back?: number }
+        Returns: {
+          avg_hours_to_confirm: number
+          avg_participants: number
+          groups_completed: number
+          groups_confirmed: number
+          groups_created: number
+          time_bucket: string
+        }[]
+      }
       get_admin_stats: { Args: never; Returns: Json }
       get_all_users_admin: {
         Args: never
@@ -2733,6 +2825,7 @@ export type Database = {
         Args: { p_notification_type: string; p_user_id: string }
         Returns: undefined
       }
+      refresh_admin_groups_analytics: { Args: never; Returns: undefined }
       refresh_crm_cohort_analysis: { Args: never; Returns: undefined }
       repair_missing_outings_history: { Args: never; Returns: number }
       sanitize_coordinates_pg: {
