@@ -192,16 +192,6 @@ const AuthPage = () => {
                   </>
                 )}
 
-                {!googleOAuthEnabled && !googleOAuthLoading && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-yellow-800">
-                        ⚠️ La connexion Google est temporairement désactivée. Veuillez utiliser email/mot de passe.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signin')}
@@ -310,16 +300,6 @@ const AuthPage = () => {
                   </>
                 )}
 
-                {!googleOAuthEnabled && !googleOAuthLoading && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
-                      <p className="text-sm text-yellow-800">
-                        ⚠️ La connexion Google est temporairement désactivée. Veuillez utiliser email/mot de passe.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signup')}
