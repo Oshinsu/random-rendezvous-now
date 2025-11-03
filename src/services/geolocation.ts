@@ -42,15 +42,27 @@ export class GeolocationService {
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log('✅ Position obtenue (brute):', { latitude, longitude, accuracy: position.coords.accuracy });
+          const { latitude, longitude, accuracy } = position.coords;
+          console.log('✅ Position obtenue:', { 
+            latitude, 
+            longitude, 
+            accuracy: `${Math.round(accuracy)}m`,
+            source: highAccuracy ? 'GPS' : 'WiFi/Cell',
+            timestamp: new Date(position.timestamp).toISOString()
+          });
           resolve({ latitude, longitude });
         },
         (error) => {
-          console.error(`❌ Erreur géolocalisation (${highAccuracy ? 'haute' : 'basse'} précision):`, {
+          const errorDetails = {
             code: error.code,
-            message: error.message
-          });
+            message: error.message,
+            codeExplanation: 
+              error.code === 1 ? 'Permission refusée' :
+              error.code === 2 ? 'Position indisponible (GPS/WiFi désactivé)' :
+              error.code === 3 ? 'Timeout expiré' :
+              'Erreur inconnue'
+          };
+          console.error(`❌ Erreur géolocalisation (${highAccuracy ? 'haute' : 'basse'} précision):`, errorDetails);
           reject(error);
         },
         {
@@ -60,6 +72,47 @@ export class GeolocationService {
         }
       );
     });
+  }
+
+  /**
+   * Fallback IP-based geolocation (dernier recours)
+   * Utilise ipapi.co (gratuit, 1000 req/jour, pas besoin d'API key)
+   */
+  private static async getIPBasedLocation(): Promise<{ latitude: number; longitude: number }> {
+    console.log('🌐 Tentative géolocalisation IP...');
+    
+    try {
+      const response = await fetch('https://ipapi.co/json/', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('IP Geolocation API failed');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.latitude || !data.longitude) {
+        throw new Error('Invalid IP geolocation response');
+      }
+      
+      console.log('✅ Position IP détectée:', { 
+        city: data.city, 
+        country: data.country_name,
+        latitude: data.latitude, 
+        longitude: data.longitude,
+        accuracy: '~5-50km (IP-based)'
+      });
+      
+      return {
+        latitude: parseFloat(data.latitude),
+        longitude: parseFloat(data.longitude)
+      };
+    } catch (error) {
+      console.error('❌ Erreur IP Geolocation:', error);
+      throw error;
+    }
   }
 
   static async getCurrentLocation(): Promise<LocationData> {
@@ -113,22 +166,30 @@ export class GeolocationService {
         console.log('📍 Demande de permission géolocalisation en cours...');
       }
 
-      // Tentative 1: Haute précision (30s)
+      // Tentative 1: Haute précision (60s pour GPS froid)
       let coords: { latitude: number; longitude: number };
       try {
-        coords = await this.attemptGeolocation(true, 30000);
+        coords = await this.attemptGeolocation(true, 60000);
         console.log('✅ Géolocalisation haute précision réussie');
       } catch (error) {
         console.warn('⚠️ Tentative haute précision échouée, fallback basse précision');
         
-        // Tentative 2: Basse précision (15s)
+        // Tentative 2: Basse précision (30s pour WiFi/Cell towers)
         try {
-          coords = await this.attemptGeolocation(false, 15000);
+          coords = await this.attemptGeolocation(false, 30000);
           console.log('✅ Géolocalisation basse précision réussie (fallback)');
         } catch (fallbackError) {
-          console.error('❌ Géolocalisation totalement échouée');
-          reject(fallbackError);
-          return;
+          console.warn('❌ Géolocalisation navigateur échouée, tentative IP Geolocation');
+          
+          // Tentative 3: IP Geolocation (dernier recours)
+          try {
+            coords = await this.getIPBasedLocation();
+            console.log('✅ Géolocalisation IP réussie (fallback ultime)');
+          } catch (ipError) {
+            console.error('❌ Tous les fallbacks ont échoué');
+            reject(new Error('GEOLOCATION_FAILED: Impossible de déterminer votre position. Active le GPS de ton appareil ou vérifie ta connexion.'));
+            return;
+          }
         }
       }
 

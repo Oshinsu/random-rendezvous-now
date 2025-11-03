@@ -110,7 +110,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             className={`text-white ${isRolling ? 'animate-spin' : isDisabled ? '' : 'group-hover:rotate-12'} transition-transform duration-500`} 
           />
           <span className="text-white whitespace-nowrap text-xs md:text-base">
-            {isRolling ? 'Création...' : loading ? 'Chargement...' : 'GROUPE FRAIS'}
+            {isRolling ? 'Recherche position GPS...' : loading ? 'Chargement...' : 'GROUPE FRAIS'}
           </span>
           <Sparkles size={iconSize - 4} className={`text-white ${isRolling ? 'animate-pulse' : ''}`} />
         </div>
@@ -164,7 +164,21 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
         </div>
       </div>
 
-      {isDisabled && (
+      {isRolling && (
+        <div className={isCompact
+          ? "text-center space-y-1 p-2 bg-blue-50 rounded-xl border border-blue-200"
+          : "text-center space-y-2 p-4 bg-blue-50 rounded-2xl border border-blue-200"
+        }>
+          <p className={isCompact ? "text-xs font-semibold text-blue-700" : "text-sm font-semibold text-blue-700"}>
+            🔍 Recherche de ta position...
+          </p>
+          <p className={isCompact ? "text-xs text-blue-600" : "text-sm text-blue-600"}>
+            Cela peut prendre jusqu'à 60 secondes si ton GPS est en veille. Merci de patienter.
+          </p>
+        </div>
+      )}
+      
+      {isDisabled && !isRolling && (
         <div className={isCompact
           ? "flex items-center space-x-2 text-brand-700 glass-card px-3 py-2 rounded-xl border border-brand-200 shadow"
           : "flex items-center space-x-4 text-brand-700 glass-card px-8 py-4 rounded-3xl border border-brand-200 shadow-medium"
@@ -174,7 +188,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             : "w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"
           }></div>
           <span className={isCompact ? "font-heading font-semibold text-xs" : "font-heading font-semibold text-lg"}>
-            {isRolling ? 'Création groupe frais...' : 'Traitement...'}
+            Traitement...
           </span>
         </div>
       )}

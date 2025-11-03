@@ -304,23 +304,24 @@ export const useUnifiedGroups = () => {
           if (permissionState === 'denied') {
             toast({ 
               title: '🚫 Géolocalisation bloquée', 
-              description: 'Va dans les paramètres de ton navigateur (icône 🔒 à gauche de l\'URL) pour autoriser www.random-app.fr à accéder à ta position. Plus d\'infos: support.google.com/chrome/answer/142065', 
+              description: 'Va dans les paramètres de ton navigateur (icône 🔒 à gauche de l\'URL) pour autoriser www.random-app.fr à accéder à ta position, puis reclique sur le bouton pour réessayer.', 
               variant: 'destructive',
-              duration: 8000
+              duration: 10000
             });
           } else {
             toast({ 
-              title: '⏱️ Géolocalisation lente', 
-              description: 'Réessaye dans quelques secondes, active le GPS de ton appareil, ou vérifie ta connexion Internet', 
+              title: '⏱️ GPS trop lent ou désactivé', 
+              description: 'Active le GPS de ton appareil dans les paramètres système (cela peut prendre jusqu\'à 60 secondes si le GPS est en veille), puis reclique sur le bouton pour réessayer.', 
               variant: 'destructive',
-              duration: 6000
+              duration: 10000
             });
           }
         } catch (error) {
           toast({ 
             title: '📍 Position requise', 
-            description: 'Active ta géolocalisation pour trouver un groupe près de toi', 
-            variant: 'destructive' 
+            description: 'Active ta géolocalisation pour trouver un groupe près de toi, puis reclique sur le bouton.', 
+            variant: 'destructive',
+            duration: 8000
           });
         }
         return false;
