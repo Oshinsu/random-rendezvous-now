@@ -2512,6 +2512,16 @@ export type Database = {
     }
     Functions: {
       activate_ready_scheduled_groups: { Args: never; Returns: number }
+      add_participant_as_service: {
+        Args: {
+          p_group_id: string
+          p_latitude: number
+          p_location_name: string
+          p_longitude: number
+          p_user_id: string
+        }
+        Returns: string
+      }
       add_user_credits: {
         Args: {
           amount: number

@@ -72,24 +72,23 @@ serve(async (req) => {
     }
     console.log('✅ Groupe créé:', group.id);
 
-    // ✅ ÉTAPE 3: Ajouter 5 participants
+    // ✅ ÉTAPE 3: Ajouter 5 participants (via RPC SECURITY DEFINER)
     console.log('👥 Ajout des 5 participants...');
     for (const user of testUsers) {
-      const { error: partError } = await supabaseAdmin
-        .from('group_participants')
-        .insert({
-          group_id: group.id,
-          user_id: user.id,
-          status: 'confirmed',
-          latitude: location.latitude,
-          longitude: location.longitude,
-          location_name: location.city_name
+      const { data, error: partError } = await supabaseAdmin
+        .rpc('add_participant_as_service', {
+          p_group_id: group.id,
+          p_user_id: user.id,
+          p_latitude: location.latitude,
+          p_longitude: location.longitude,
+          p_location_name: location.city_name
         });
       
       if (partError) {
         console.error('❌ Erreur ajout participant:', partError);
         throw partError;
       }
+      console.log(`✅ Participant ${user.id} ajouté via RPC`);
     }
     console.log('✅ 5 participants ajoutés');
 
