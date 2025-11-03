@@ -43,6 +43,17 @@ export default function UnifiedScheduledGroupsPage() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [groupCreated, setGroupCreated] = useState(false);
 
+  // Show push permission modal when group is confirmed
+  useEffect(() => {
+    const confirmedGroup = myScheduledGroups.find(g => g.status === 'confirmed');
+    if (confirmedGroup) {
+      const hasSeenModal = localStorage.getItem('push_permission_modal_shown');
+      if (!hasSeenModal) {
+        setShowPermissionModal(true);
+      }
+    }
+  }, [myScheduledGroups]);
+
   const fetchMyScheduledGroups = useCallback(async () => {
     if (!user) return;
     

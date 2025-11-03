@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { trackSectionView, trackBounce, trackCTAClick } from "@/utils/cmsTracking";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
@@ -9,6 +9,7 @@ const WhyRandomSection = lazy(() => import("@/components/landing/WhyRandomSectio
 const NoMoreSection = lazy(() => import("@/components/landing/NoMoreSection"));
 const FaqSection = lazy(() => import("@/components/landing/FaqSection"));
 const CtaSection = lazy(() => import("@/components/landing/CtaSection"));
+const PushPermissionModal = lazy(() => import("@/components/PushPermissionModal").then(m => ({ default: m.PushPermissionModal })));
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,11 +21,25 @@ import { Helmet } from "react-helmet-async";
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   
   // Track section views
   const heroRef = useRef<HTMLDivElement>(null);
   const benefitsRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  // Show push permission modal after user lands (first visit only)
+  useEffect(() => {
+    if (user) {
+      const hasVisited = localStorage.getItem('has_visited_homepage');
+      if (!hasVisited) {
+        setTimeout(() => {
+          setShowPermissionModal(true);
+          localStorage.setItem('has_visited_homepage', 'true');
+        }, 5000); // 5s après chargement
+      }
+    }
+  }, [user]);
   
   useEffect(() => {
     const sectionTimers = new Map<string, number>();
@@ -75,6 +90,14 @@ const Index = () => {
   };
   return <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
       <ScrollProgressBar />
+      {user && showPermissionModal && (
+        <Suspense fallback={null}>
+          <PushPermissionModal 
+            trigger="first_visit" 
+            onClose={() => setShowPermissionModal(false)}
+          />
+        </Suspense>
+      )}
       <Helmet>
         <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
         <meta name="description" content="Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies. Beta gratuite à Paris." />

@@ -6,6 +6,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useBarOwnerAuth } from '@/hooks/useBarOwnerAuth';
 import LanguageToggle from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { useTranslation } from 'react-i18next';
 import {
   Sidebar,
@@ -149,9 +150,12 @@ export function AppSidebar() {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-center gap-3 px-3 py-2">
-            <LanguageToggle />
-            <ThemeToggle />
+          <div className="space-y-3">
+            <NotificationToggle />
+            <div className="flex items-center justify-center gap-3 px-3 py-2">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </SidebarFooter>

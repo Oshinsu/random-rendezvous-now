@@ -7,16 +7,27 @@ import './i18n';
 // 🧹 NETTOYAGE UNIFIÉ
 // Le nettoyage est maintenant géré uniquement par cleanup-groups Edge Function
 
-// Register Service Worker for image caching (both dev and prod)
+// Register Service Workers (both caching and push notifications)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Image caching service worker
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('SW registered:', registration.scope);
+        console.log('✅ SW registered:', registration.scope);
       })
       .catch((error) => {
-        console.error('SW registration failed:', error);
+        console.error('❌ SW registration failed:', error);
+      });
+    
+    // Firebase messaging service worker for push notifications
+    navigator.serviceWorker
+      .register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log('✅ Firebase SW registered:', registration.scope);
+      })
+      .catch((error) => {
+        console.error('❌ Firebase SW registration failed:', error);
       });
   });
 }

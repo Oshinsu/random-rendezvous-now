@@ -90,6 +90,11 @@ const AuthPage = () => {
           });
         }
         
+        // Send welcome notification
+        supabase.functions.invoke('send-welcome-fun', {
+          body: { user_id: data.user.id }
+        }).catch(err => console.error('Failed to send welcome notification:', err));
+        
         // Apply referral code if present
         if (referralCode.trim()) {
           try {
