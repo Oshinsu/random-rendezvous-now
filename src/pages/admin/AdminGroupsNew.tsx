@@ -273,7 +273,6 @@ export default function AdminGroupsNew() {
               <AdminTable
                 data={filteredGroups}
                 columns={columns}
-                loading={loading}
               />
             </Card>
           </TabsContent>
