@@ -139,12 +139,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         },
       });
       
+      // Detailed logging for debugging
+      if (data?.url) {
+        console.log('🔐 [Google OAuth] Redirect URL:', data.url);
+        console.log('🔐 [Google OAuth] State parameter:', data.url.includes('state='));
+        console.log('🔐 [Google OAuth] Callback path:', redirectUrl);
+      }
+      
       if (error) {
-        console.error('🚨 [Google OAuth] Error:', error);
+        console.error('🚨 [Google OAuth] Error:', {
+          name: error.name,
+          message: error.message,
+          status: error.status,
+          timestamp: new Date().toISOString()
+        });
         throw error;
       }
       
-      console.log('✅ [Google OAuth] Redirect initiated:', data);
+      console.log('✅ [Google OAuth] Redirect initiated');
     } catch (error) {
       console.error('🚨 [Google OAuth] Exception:', error);
       throw error;
