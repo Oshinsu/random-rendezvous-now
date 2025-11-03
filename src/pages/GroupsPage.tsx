@@ -1,4 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
 import { toast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +24,7 @@ const LazyGroupMap = lazy(() => import('@/components/GroupMap'));
 
 const GroupsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { 
     userGroups, 
     groupMembers, 
@@ -73,7 +75,7 @@ const GroupsPage = () => {
   };
 
   const handleBack = () => {
-    window.history.back();
+    navigate('/dashboard');
   };
 
   const currentGroup = activeGroups[0];
