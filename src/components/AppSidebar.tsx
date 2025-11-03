@@ -154,7 +154,6 @@ export function AppSidebar() {
             <NotificationToggle />
             <div className="flex items-center justify-center gap-3 px-3 py-2">
               <LanguageToggle />
-              <ThemeToggle />
             </div>
           </div>
         </div>
