@@ -596,6 +596,13 @@ export type Database = {
             foreignKeyName: "community_stories_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_stories_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
@@ -1439,6 +1446,13 @@ export type Database = {
             foreignKeyName: "group_force_confirm_votes_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_force_confirm_votes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
@@ -1480,6 +1494,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "group_messages_group_id_fkey"
             columns: ["group_id"]
@@ -1528,6 +1549,13 @@ export type Database = {
             foreignKeyName: "group_participants_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
@@ -1571,6 +1599,13 @@ export type Database = {
           total_amount_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_group_payments_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_group_payments_group"
             columns: ["group_id"]
@@ -2053,6 +2088,13 @@ export type Database = {
             foreignKeyName: "structured_logs_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "structured_logs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
           },
@@ -2120,6 +2162,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_credit_transactions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "group_sync_health"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_credit_transactions_group_id_fkey"
             columns: ["group_id"]
@@ -2447,6 +2496,16 @@ export type Database = {
           regular_users: number | null
           retention_rate: number | null
           total_signups: number | null
+        }
+        Relationships: []
+      }
+      group_sync_health: {
+        Row: {
+          actual_count: number | null
+          drift: number | null
+          id: string | null
+          reported_count: number | null
+          status: string | null
         }
         Relationships: []
       }
