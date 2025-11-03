@@ -212,6 +212,15 @@ const AppRoutes = () => (
         </AdminRoute>
       </ProtectedRoute>
     } />
+    <Route path="/admin/content/builder" element={
+      <ProtectedRoute>
+        <AdminRoute>
+          <AdminLayout>
+            <AdminContent />
+          </AdminLayout>
+        </AdminRoute>
+      </ProtectedRoute>
+    } />
     <Route path="/admin/bar-owners" element={
       <ProtectedRoute>
         <AdminRoute>

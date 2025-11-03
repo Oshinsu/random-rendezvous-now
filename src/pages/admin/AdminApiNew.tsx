@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,16 +26,41 @@ export default function AdminApiNew() {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   const { analytics, loading, refetch } = useApiAnalytics(selectedPeriod);
 
-  // Mock projection data
-  const historicalData = Array.from({ length: 7 }, (_, i) => ({
-    date: `J-${7-i}`,
-    cost: Math.random() * 2 + 3
-  }));
+  // Calcul des données historiques RÉELLES depuis analytics
+  const historicalData = useMemo(() => {
+    if (!analytics?.requests || analytics.requests.length === 0) {
+      return [];
+    }
 
-  const projectedData = Array.from({ length: 23 }, (_, i) => ({
-    date: `J+${i+1}`,
-    cost: Math.random() * 2 + 4
-  }));
+    // Grouper par jour
+    const costByDay = analytics.requests.reduce((acc: Record<string, number>, req: any) => {
+      const date = new Date(req.created_at).toISOString().split('T')[0];
+      acc[date] = (acc[date] || 0) + parseFloat(req.cost_usd || '0');
+      return acc;
+    }, {});
+
+    return Object.entries(costByDay)
+      .map(([date, cost]) => ({
+        date: new Date(date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+        cost: Number(cost)
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(-7); // Last 7 days
+  }, [analytics]);
+
+  // Projection ML simple (trendline linéaire)
+  const projectedData = useMemo(() => {
+    if (historicalData.length < 2) return [];
+
+    const avgCost = historicalData.reduce((sum, d) => sum + d.cost, 0) / historicalData.length;
+    const trend = historicalData[historicalData.length - 1].cost - historicalData[0].cost;
+    const dailyGrowth = trend / (historicalData.length - 1);
+
+    return Array.from({ length: 23 }, (_, i) => ({
+      date: `J+${i + 1}`,
+      cost: avgCost + (dailyGrowth * (i + 1))
+    }));
+  }, [historicalData]);
 
   const projectedMonthlyCost = projectedData.reduce((sum, d) => sum + d.cost, 0);
   const budget = 150;
