@@ -10,12 +10,8 @@ export const FirebaseDebugCard = () => {
   const { data: debugInfo, isLoading } = useQuery({
     queryKey: ['firebase-debug'],
     queryFn: async () => {
-      // Check VAPID key from system_settings
-      const { data: vapidData } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'push_vapid_public_key')
-        .maybeSingle();
+      // Check VAPID key from .env
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_PUBLIC_KEY;
 
       // Check Service Account status (we assume valid if VAPID key is set)
       // Note: We cannot test the edge function without a valid user_id
@@ -47,8 +43,8 @@ export const FirebaseDebugCard = () => {
       const projectId = 'random-app'; // From your Firebase project
 
       return {
-        vapidConfigured: !!vapidData?.setting_value,
-        vapidKey: vapidData?.setting_value || 'Not configured',
+        vapidConfigured: !!vapidKey,
+        vapidKey: vapidKey || 'Not configured',
         serviceAccountStatus,
         projectId,
         recentActivity: recentNotifs || [],

@@ -58,7 +58,7 @@ export const usePushSettings = () => {
         autoCleanupDays: typeof cleanupData?.setting_value === 'object' && Array.isArray(cleanupData.setting_value)
           ? (cleanupData.setting_value[0] as number)
           : 30,
-        vapidPublicKey: 'BJzU_iwlBkf3bUOvpwBxhXyEA-G4bUGVr9kIwxHXnHJDG0VXrkLXjHNOvOXwPvLHyh4z0bQgT2pFxvJkqWqsm7s',
+        vapidPublicKey: import.meta.env.VITE_FIREBASE_VAPID_PUBLIC_KEY || '',
       };
     },
     staleTime: Infinity, // Config rarely changes
