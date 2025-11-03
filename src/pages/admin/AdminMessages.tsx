@@ -8,12 +8,11 @@ import { useAdminMessages } from "@/hooks/useAdminMessages";
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MessageSquare, User, Bot, Search, Trash2, Edit } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const AdminMessages = () => {
   const { messages, loading, error, fetchMessages, deleteMessage, updateMessage } = useAdminMessages();
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSystem, setFilterSystem] = useState<boolean | undefined>(undefined);
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
@@ -34,15 +33,12 @@ export const AdminMessages = () => {
   const handleDelete = async (messageId: string) => {
     const success = await deleteMessage(messageId);
     if (success) {
-      toast({
-        title: "Message supprimé",
-        description: "Le message a été supprimé avec succès",
+      toast.success("Message supprimé", {
+        description: "Le message a été supprimé avec succès"
       });
     } else {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la suppression du message",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Erreur lors de la suppression du message"
       });
     }
   };
@@ -52,17 +48,14 @@ export const AdminMessages = () => {
     
     const success = await updateMessage(messageId, editText);
     if (success) {
-      toast({
-        title: "Message modifié",
-        description: "Le message a été modifié avec succès",
+      toast.success("Message modifié", {
+        description: "Le message a été modifié avec succès"
       });
       setEditingMessage(null);
       setEditText('');
     } else {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors de la modification du message",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Erreur lors de la modification du message"
       });
     }
   };

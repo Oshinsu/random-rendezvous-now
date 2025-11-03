@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
 import { TriggerTestPanel } from '@/components/admin/TriggerTestPanel';
 import { FeatureFlagsManager } from '@/components/admin/settings/FeatureFlagsManager';
@@ -44,7 +44,6 @@ import {
 export const AdminSettings = () => {
   const { settings, loading, saving, error, saveSettings } = useSystemSettings();
   const [localSettings, setLocalSettings] = useState(settings);
-  const { toast } = useToast();
 
   // Sync local settings with fetched settings
   React.useEffect(() => {
@@ -55,15 +54,12 @@ export const AdminSettings = () => {
     const success = await saveSettings(localSettings);
     
     if (success) {
-      toast({
-        title: "Paramètres sauvegardés",
-        description: "La configuration a été mise à jour avec succès",
+      toast.success("Paramètres sauvegardés", {
+        description: "La configuration a été mise à jour avec succès"
       });
     } else {
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les paramètres",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de sauvegarder les paramètres"
       });
     }
   };
@@ -106,16 +102,13 @@ export const AdminSettings = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast({
-        title: "Export réussi",
-        description: "Base de données exportée avec succès",
+      toast.success("Export réussi", {
+        description: "Base de données exportée avec succès"
       });
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: "Erreur d'export",
-        description: "Impossible d'exporter la base de données",
-        variant: "destructive",
+      toast.error("Erreur d'export", {
+        description: "Impossible d'exporter la base de données"
       });
     } finally {
       setExportLoading(false);
@@ -132,16 +125,13 @@ export const AdminSettings = () => {
       const { error } = await supabase.rpc('dissolve_old_groups');
       if (error) throw error;
       
-      toast({
-        title: "Nettoyage effectué",
-        description: "La base de données a été nettoyée avec succès",
+      toast.success("Nettoyage effectué", {
+        description: "La base de données a été nettoyée avec succès"
       });
     } catch (error) {
       console.error('Cleanup error:', error);
-      toast({
-        title: "Erreur de nettoyage",
-        description: "Impossible de nettoyer la base de données",
-        variant: "destructive",
+      toast.error("Erreur de nettoyage", {
+        description: "Impossible de nettoyer la base de données"
       });
     } finally {
       setCleanupLoading(false);

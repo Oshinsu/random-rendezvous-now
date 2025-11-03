@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GeolocationService, LocationData } from './geolocation';
 import { ErrorHandler } from '@/utils/errorHandling';
 import { SystemMessagingService } from './systemMessaging';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { getGroupLocation } from '@/utils/parisRedirection';
 import type { Group, GroupParticipant } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
@@ -176,10 +176,8 @@ export class UnifiedGroupService {
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        toast({
-          title: 'Erreur d\'authentification',
-          description: 'Vous devez être connecté pour créer un groupe.',
-          variant: 'destructive'
+        toast.error('Erreur d\'authentification', {
+          description: 'Vous devez être connecté pour créer un groupe.'
         });
         return null;
       }
@@ -190,10 +188,8 @@ export class UnifiedGroupService {
       
       if (!validation.isValid || !validation.sanitized) {
         console.error('❌ Coordonnées invalides pour création de groupe');
-        toast({
-          title: 'Coordonnées invalides',
-          description: 'Les coordonnées de géolocalisation sont invalides.',
-          variant: 'destructive'
+        toast.error('Coordonnées invalides', {
+          description: 'Les coordonnées de géolocalisation sont invalides.'
         });
         return null;
       }
@@ -226,16 +222,12 @@ export class UnifiedGroupService {
         console.error('❌ Erreur transaction atomique:', transactionError);
         
         if (transactionError.message.includes('User is already in an active group')) {
-          toast({
-            title: 'Participation limitée',
-            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.',
-            variant: 'destructive'
+          toast.error('Participation limitée', {
+            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.'
           });
         } else if (transactionError.message.includes('Invalid coordinates')) {
-          toast({
-            title: 'Coordonnées invalides',
-            description: 'Les coordonnées de géolocalisation sont invalides.',
-            variant: 'destructive'
+          toast.error('Coordonnées invalides', {
+            description: 'Les coordonnées de géolocalisation sont invalides.'
           });
         } else {
           const appError = ErrorHandler.handleSupabaseError(transactionError);
@@ -246,10 +238,8 @@ export class UnifiedGroupService {
 
       if (!result || result.length === 0) {
         console.error('❌ Aucun résultat de la transaction atomique');
-        toast({
-          title: 'Erreur de création',
-          description: 'Impossible de créer le groupe pour le moment.',
-          variant: 'destructive'
+        toast.error('Erreur de création', {
+          description: 'Impossible de créer le groupe pour le moment.'
         });
         return null;
       }
@@ -280,10 +270,8 @@ export class UnifiedGroupService {
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        toast({
-          title: 'Erreur d\'authentification',
-          description: 'Vous devez être connecté pour rejoindre un groupe.',
-          variant: 'destructive'
+        toast.error('Erreur d\'authentification', {
+          description: 'Vous devez être connecté pour rejoindre un groupe.'
         });
         return false;
       }
@@ -297,19 +285,15 @@ export class UnifiedGroupService {
 
       if (checkGroupError || !groupExists) {
         console.error('❌ Groupe inexistant ou inaccessible:', groupId);
-        toast({
-          title: 'Groupe introuvable',
-          description: 'Ce groupe n\'existe plus ou n\'est plus accessible.',
-          variant: 'destructive'
+        toast.error('Groupe introuvable', {
+          description: 'Ce groupe n\'existe plus ou n\'est plus accessible.'
         });
         return false;
       }
 
       if (groupExists.current_participants >= groupExists.max_participants) {
-        toast({
-          title: 'Groupe complet',
-          description: 'Ce groupe a atteint sa capacité maximale.',
-          variant: 'destructive'
+        toast.error('Groupe complet', {
+          description: 'Ce groupe a atteint sa capacité maximale.'
         });
         return false;
       }
@@ -330,10 +314,8 @@ export class UnifiedGroupService {
       }
 
       if (existingParticipation) {
-        toast({
-          title: 'Déjà membre',
-          description: 'Vous êtes déjà membre de ce groupe',
-          variant: 'destructive'
+        toast.error('Déjà membre', {
+          description: 'Vous êtes déjà membre de ce groupe'
         });
         return false;
       }
@@ -344,10 +326,8 @@ export class UnifiedGroupService {
       
       if (!validation.isValid || !validation.sanitized) {
         console.error('❌ Coordonnées invalides pour insertion participant');
-        toast({
-          title: 'Coordonnées invalides',
-          description: 'Les coordonnées de géolocalisation sont invalides.',
-          variant: 'destructive'
+        toast.error('Coordonnées invalides', {
+          description: 'Les coordonnées de géolocalisation sont invalides.'
         });
         return false;
       }
@@ -374,20 +354,16 @@ export class UnifiedGroupService {
         
         // ✅ PHASE 5: Gérer spécifiquement l'erreur de duplicate (code PostgreSQL 23505)
         if (joinError.code === '23505') {
-          toast({
-            title: 'Déjà membre',
-            description: 'Vous êtes déjà membre de ce groupe (détecté par la base de données).',
-            variant: 'default' // Pas "destructive" car ce n'est pas grave
+          toast('Déjà membre', {
+            description: 'Vous êtes déjà membre de ce groupe (détecté par la base de données).'
           });
           return true; // Considérer comme succès (user est déjà dans le groupe)
         }
         
         // Autres erreurs
         if (joinError.message.includes('User is already in an active group')) {
-          toast({
-            title: 'Participation limitée',
-            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.',
-            variant: 'destructive'
+          toast.error('Participation limitée', {
+            description: 'Vous ne pouvez être que dans un seul groupe actif à la fois.'
           });
         } else {
           const appError = ErrorHandler.handleSupabaseError(joinError);
@@ -406,9 +382,8 @@ export class UnifiedGroupService {
         console.error('⚠️ Erreur envoi message join:', error);
       });
 
-      toast({
-        title: '✅ Groupe rejoint',
-        description: 'Vous avez rejoint le groupe avec succès !',
+      toast.success('✅ Groupe rejoint', {
+        description: 'Vous avez rejoint le groupe avec succès !'
       });
       
       return true;
@@ -426,10 +401,8 @@ export class UnifiedGroupService {
       
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        toast({
-          title: 'Erreur d\'authentification',
-          description: 'Vous devez être connecté.',
-          variant: 'destructive'
+        toast.error('Erreur d\'authentification', {
+          description: 'Vous devez être connecté.'
         });
         return false;
       }
@@ -454,9 +427,8 @@ export class UnifiedGroupService {
         console.error('⚠️ Erreur envoi message leave:', error);
       });
       
-      toast({
-        title: '👋 Groupe quitté',
-        description: 'Vous avez quitté le groupe.',
+      toast.success('👋 Groupe quitté', {
+        description: 'Vous avez quitté le groupe.'
       });
       
       return true;

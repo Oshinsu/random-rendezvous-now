@@ -6,13 +6,12 @@ import { Users, MapPin, CheckCircle, Clock, TrendingUp, UserPlus, Activity, BarC
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const AdminDashboard = () => {
   const { stats, loading, error, refetch } = useComprehensiveAdminStats();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
@@ -21,9 +20,8 @@ export const AdminDashboard = () => {
     setIsRefreshing(true);
     await refetch();
     setIsRefreshing(false);
-    toast({
-      title: "Données actualisées",
-      description: "Les statistiques ont été mises à jour",
+    toast.success("Données actualisées", {
+      description: "Les statistiques ont été mises à jour"
     });
   };
 
@@ -32,18 +30,15 @@ export const AdminDashboard = () => {
       const { error } = await supabase.rpc('dissolve_old_groups');
       if (error) throw error;
       
-      toast({
-        title: "Nettoyage effectué",
-        description: "Les anciens groupes ont été nettoyés",
+      toast.success("Nettoyage effectué", {
+        description: "Les anciens groupes ont été nettoyés"
       });
       
       await refetch();
     } catch (error) {
       console.error('Cleanup error:', error);
-      toast({
-        title: "Erreur",
-        description: "Erreur lors du nettoyage",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Erreur lors du nettoyage"
       });
     }
   };

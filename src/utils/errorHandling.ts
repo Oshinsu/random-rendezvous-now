@@ -1,6 +1,6 @@
 
 import { PostgrestError } from '@supabase/supabase-js';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface AppError {
   code: string;
@@ -66,10 +66,8 @@ export class ErrorHandler {
   }
 
   static showErrorToast(error: AppError): void {
-    toast({
-      title: 'Erreur',
-      description: error.message,
-      variant: 'destructive'
+    toast.error('Erreur', {
+      description: error.message
     });
   }
 

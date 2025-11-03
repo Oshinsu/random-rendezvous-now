@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Send, Bot, User } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatbotAnalyticsDashboard } from '@/components/admin/chatbot/ChatbotAnalyticsDashboard';
 
@@ -17,7 +17,6 @@ const AdminChatbot = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -30,10 +29,8 @@ const AdminChatbot = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.access_token) {
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour utiliser le chatbot.",
-        variant: "destructive",
+      toast.error("Erreur d'authentification", {
+        description: "Vous devez être connecté pour utiliser le chatbot."
       });
       return;
     }
@@ -50,19 +47,15 @@ const AdminChatbot = () => {
     });
 
     if (resp.status === 429) {
-      toast({
-        title: "Rate limit dépassé",
-        description: "Trop de requêtes, réessayez dans quelques instants.",
-        variant: "destructive",
+      toast.error("Rate limit dépassé", {
+        description: "Trop de requêtes, réessayez dans quelques instants."
       });
       return;
     }
 
     if (resp.status === 402) {
-      toast({
-        title: "Paiement requis",
-        description: "Crédits Lovable AI insuffisants.",
-        variant: "destructive",
+      toast.error("Paiement requis", {
+        description: "Crédits Lovable AI insuffisants."
       });
       return;
     }
@@ -152,10 +145,8 @@ const AdminChatbot = () => {
       await streamChat(userMsg);
     } catch (e) {
       console.error(e);
-      toast({
-        title: "Erreur",
-        description: "Impossible de communiquer avec l'IA.",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de communiquer avec l'IA."
       });
       setMessages(prev => prev.slice(0, -1));
     } finally {

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -73,11 +73,11 @@ const AuthPage = () => {
 
       if (error) {
         // Signup error
-        toast({ title: t('auth.signup_error'), description: error.message, variant: 'destructive' });
+        toast.error(t('auth.signup_error'), { description: error.message });
       } else if (data.user && data.user.identities?.length === 0) {
         // This case might indicate email confirmation is required and user isn't auto-confirmed.
         // Signup successful
-        toast({ title: t('auth.signup_success'), description: t('auth.signup_confirm') });
+        toast.success(t('auth.signup_success'), { description: t('auth.signup_confirm') });
       } else if (data.user) {
         trackSignUp();
         
@@ -99,9 +99,8 @@ const AuthPage = () => {
         if (referralCode.trim()) {
           try {
             await applyReferralCode(referralCode.trim());
-            toast({ 
-              title: t('auth.referral_applied'), 
-              description: t('auth.referral_helper'),
+            toast.success(t('auth.referral_applied'), {
+              description: t('auth.referral_helper')
             });
           } catch (error) {
             // Don't block signup if code is invalid
@@ -110,11 +109,11 @@ const AuthPage = () => {
         }
         
         // Signup auto-confirmed
-        toast({ title: t('auth.signup_success'), description: t('auth.signup_auto_confirm') });
+        toast.success(t('auth.signup_success'), { description: t('auth.signup_auto_confirm') });
         navigate('/');
       } else {
         // Signup initiated
-        toast({ title: t('auth.signup_initiated'), description: t('auth.signup_confirm') });
+        toast.success(t('auth.signup_initiated'), { description: t('auth.signup_confirm') });
       }
     } else {
       // Sign In
@@ -126,11 +125,11 @@ const AuthPage = () => {
 
       if (error) {
         // Signin error
-        toast({ title: t('auth.signin_error'), description: error.message, variant: 'destructive' });
+        toast.error(t('auth.signin_error'), { description: error.message });
       } else {
         trackLogin();
         // Signin successful
-        toast({ title: t('auth.signin_success'), description: t('auth.signin_welcome') });
+        toast.success(t('auth.signin_success'), { description: t('auth.signin_welcome') });
         navigate('/');
       }
     }
@@ -141,15 +140,12 @@ const AuthPage = () => {
     setLoading(true);
     try {
       await signInWithGoogle();
-      toast({ 
-        title: t('auth.google_signin_initiated'), 
-        description: t('auth.google_redirect') 
+      toast.success(t('auth.google_signin_initiated'), {
+        description: t('auth.google_redirect')
       });
     } catch (error: any) {
-      toast({ 
-        title: t('auth.google_signin_error'), 
-        description: error.message, 
-        variant: 'destructive' 
+      toast.error(t('auth.google_signin_error'), {
+        description: error.message
       });
     } finally {
       setLoading(false);

@@ -10,10 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useActivityHeartbeat } from '@/hooks/useActivityHeartbeat';
 import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { ErrorHandler } from '@/utils/errorHandling';
-import { showUniqueToast } from '@/utils/toastUtils';
+import { toast } from 'sonner';
 
 import { CoordinateValidator } from '@/utils/coordinateValidation';
-import { toast } from '@/hooks/use-toast';
 import type { Group } from '@/types/database';
 import type { GroupMember } from '@/types/groups';
 
@@ -47,18 +46,16 @@ export const useUnifiedGroups = () => {
       .then((location) => {
         setUserLocation(location);
         lastLocationTime.current = now;
-        showUniqueToast(
-          `Position détectée: ${location.locationName}`,
-          "📍 Position actualisée"
-        );
+        toast.success("📍 Position actualisée", {
+          description: `Position détectée: ${location.locationName}`
+        });
         return location;
       })
       .catch((error) => {
         ErrorHandler.logError('GEOLOCATION', error);
-        showUniqueToast(
-          'Géolocalisation indisponible - mode universel activé.',
-          "📍 Géolocalisation indisponible"
-        );
+        toast.error("📍 Géolocalisation indisponible", {
+          description: 'Géolocalisation indisponible - mode universel activé.'
+        });
         return null;
       })
       .finally(() => {
@@ -221,7 +218,9 @@ export const useUnifiedGroups = () => {
             });
             
             window.dispatchEvent(new CustomEvent('group:member-joined'));
-            showUniqueToast('Un nouveau membre a rejoint le groupe !', '✨ Nouveau membre');
+            toast.success('✨ Nouveau membre', {
+              description: 'Un nouveau membre a rejoint le groupe !'
+            });
             
             // ✅ Refetch avec délai pour laisser PostgreSQL se propager (1 seconde)
             setTimeout(() => {
@@ -265,10 +264,8 @@ export const useUnifiedGroups = () => {
   // Fonction de création de groupe avec rate limiting
   const joinRandomGroup = async (): Promise<boolean> => {
     if (!user) {
-      toast({ 
-        title: 'Erreur', 
-        description: 'Vous devez être connecté pour rejoindre un groupe.', 
-        variant: 'destructive' 
+      toast.error('Erreur', {
+        description: 'Vous devez être connecté pour rejoindre un groupe.'
       });
       return false;
     }
@@ -280,10 +277,8 @@ export const useUnifiedGroups = () => {
 
     const isAuthenticated = await UnifiedGroupService.verifyUserAuthentication();
     if (!isAuthenticated) {
-      toast({ 
-        title: 'Session expirée', 
-        description: 'Veuillez vous reconnecter.', 
-        variant: 'destructive' 
+      toast.error('Session expirée', {
+        description: 'Veuillez vous reconnecter.'
       });
       return false;
     }
@@ -302,25 +297,19 @@ export const useUnifiedGroups = () => {
           const permissionState = await GeolocationService.checkPermissionState();
           
           if (permissionState === 'denied') {
-            toast({ 
-              title: 'Position introuvable', 
-              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.', 
-              variant: 'destructive',
+            toast.error('Position introuvable', {
+              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.',
               duration: 5000
             });
           } else {
-            toast({ 
-              title: 'Position introuvable', 
-              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.', 
-              variant: 'destructive',
+            toast.error('Position introuvable', {
+              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.',
               duration: 5000
             });
           }
         } catch (error) {
-          toast({ 
-            title: '📍 Position requise', 
-            description: 'Active ta géolocalisation pour trouver un groupe près de toi, puis reclique sur le bouton.', 
-            variant: 'destructive',
+          toast.error('📍 Position requise', {
+            description: 'Active ta géolocalisation pour trouver un groupe près de toi, puis reclique sur le bouton.',
             duration: 8000
           });
         }
@@ -333,10 +322,8 @@ export const useUnifiedGroups = () => {
       
       if (allParticipations.length > 0) {
         console.log('⚠️ Participation active détectée avec nouveau système');
-        toast({ 
-          title: '✋ Tu es déjà dans un groupe', 
-          description: 'Pas besoin de chercher, ton groupe t\'attend !', 
-          variant: 'default' 
+        toast('✋ Tu es déjà dans un groupe', {
+          description: 'Pas besoin de chercher, ton groupe t\'attend !'
         });
         return false;
       }
@@ -355,9 +342,8 @@ export const useUnifiedGroups = () => {
           queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
-          toast({ 
-            title: '🎉 Nouveau groupe créé', 
-            description: `Groupe créé à ${location.locationName}. Vous pouvez maintenant fermer l'app !`, 
+          toast.success('🎉 Nouveau groupe créé', {
+            description: `Groupe créé à ${location.locationName}. Vous pouvez maintenant fermer l'app !`
           });
           return true;
         }
@@ -372,9 +358,8 @@ export const useUnifiedGroups = () => {
           queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
           setTimeout(() => refetchGroups(), 500);
           
-          toast({ 
-            title: '✅ Groupe rejoint', 
-            description: `Vous avez rejoint un groupe à ${location.locationName}. Vous pouvez fermer l'app !`, 
+          toast.success('✅ Groupe rejoint', {
+            description: `Vous avez rejoint un groupe à ${location.locationName}. Vous pouvez fermer l'app !`
           });
         }
         return success;
@@ -411,9 +396,8 @@ export const useUnifiedGroups = () => {
         // 3. Invalidation contrôlée du cache
         queryClient.invalidateQueries({ queryKey: ['unifiedUserGroups'] });
         
-        toast({ 
-          title: '✅ Groupe quitté', 
-          description: 'Vous avez quitté le groupe avec succès.' 
+        toast.success('✅ Groupe quitté', {
+          description: 'Vous avez quitté le groupe avec succès.'
         });
         
         // 4. Refetch après délai

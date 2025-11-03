@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { EnhancedSearchButton } from '@/components/EnhancedSearchButton';
 import RandomLogo from '@/components/RandomLogo';
 import AppLayout from '@/components/AppLayout';
-import { clearActiveToasts } from '@/utils/toastUtils';
 
 const Dashboard = () => {
   const { user, session, refreshSession } = useAuth();
@@ -17,18 +16,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const hasInitialized = useRef(false);
 
-  // Nettoyer les toasts au montage du composant - UNE SEULE FOIS
-  useEffect(() => {
-    if (!hasInitialized.current) {
-      clearActiveToasts();
-      hasInitialized.current = true;
-    }
-  }, []);
   const handleButtonClick = async () => {
     if (isSearching) {
       setIsSearching(false);
       setRedirectCountdown(0);
-      clearActiveToasts();
       console.log('🛑 Recherche annulée');
       return;
     }
@@ -58,7 +49,6 @@ const Dashboard = () => {
         setRedirectCountdown(prev => {
           if (prev <= 1) {
             console.log('🔄 Redirection automatique vers /groups');
-            clearActiveToasts();
             navigate('/groups');
             setIsSearching(false);
             return 0;
@@ -113,7 +103,6 @@ const Dashboard = () => {
             <button 
               onClick={() => {
                 console.log('🔄 Redirection manuelle vers /groups');
-                clearActiveToasts();
                 navigate('/groups');
                 setIsSearching(false);
                 setRedirectCountdown(0);

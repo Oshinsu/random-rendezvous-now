@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { User, Eye, Users, TrendingUp, Activity, Filter } from 'lucide-react';
 import { UserDetailModal } from "@/components/admin/UserDetailModal";
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { BatchActions } from '@/components/admin/users/BatchActions';
 import { UserFilters } from '@/components/admin/users/UserFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,7 +35,6 @@ export const AdminUsers = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const { toast } = useToast();
   
   // ✅ SOTA 2025: Batch Actions & CRM Filters
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -272,24 +271,20 @@ export const AdminUsers = () => {
             }}
             onExport={() => {
               console.log('Exporting users:', selectedUsers);
-              toast({
-                title: "Export en cours",
-                description: `Export de ${selectedUsers.length} utilisateurs`,
+              toast.success("Export en cours", {
+                description: `Export de ${selectedUsers.length} utilisateurs`
               });
             }}
             onAddToSegment={() => {
               console.log('Adding to segment:', selectedUsers);
-              toast({
-                title: "Ajout au segment",
-                description: `${selectedUsers.length} utilisateurs ajoutés`,
+              toast.success("Ajout au segment", {
+                description: `${selectedUsers.length} utilisateurs ajoutés`
               });
             }}
             onSuspend={() => {
               console.log('Suspending users:', selectedUsers);
-              toast({
-                title: "Suspension",
-                description: `${selectedUsers.length} utilisateurs suspendus`,
-                variant: "destructive"
+              toast.error("Suspension", {
+                description: `${selectedUsers.length} utilisateurs suspendus`
               });
             }}
             isProcessing={false}

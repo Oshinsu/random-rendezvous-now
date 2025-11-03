@@ -34,7 +34,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { HealthScoreOverview } from '@/components/crm/HealthScoreOverview';
 
@@ -101,15 +101,12 @@ export default function AdminCRM() {
     setCalculatingHealth(true);
     try {
       await calculateAllScores();
-      toast({
-        title: 'Calcul terminé',
+      toast.success('Calcul terminé', {
         description: 'Les health scores ont été mis à jour'
       });
     } catch (error) {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de calculer les health scores',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de calculer les health scores'
       });
     } finally {
       setCalculatingHealth(false);
@@ -385,8 +382,7 @@ export default function AdminCRM() {
                       variables: []
                     });
                     setShowTemplates(false);
-                    toast({
-                      title: 'Template appliqué',
+                    toast.success('Template appliqué', {
                       description: 'Vous pouvez maintenant personnaliser le contenu'
                     });
                   }}
@@ -420,8 +416,7 @@ export default function AdminCRM() {
                       variables: []
                     });
                     setShowAISuggestions(false);
-                    toast({
-                      title: 'Suggestion appliquée',
+                    toast.success('Suggestion appliquée', {
                       description: 'Vous pouvez maintenant personnaliser le contenu'
                     });
                   }}
@@ -574,8 +569,7 @@ export default function AdminCRM() {
                     }}
                     onEventDrop={async (campaignId, newDate) => {
                       await rescheduleCampaign(campaignId, newDate);
-                      toast({
-                        title: 'Campagne déplacée',
+                      toast.success('Campagne déplacée', {
                         description: 'La date d\'envoi a été mise à jour'
                       });
                     }}
@@ -671,8 +665,7 @@ export default function AdminCRM() {
                             const newDate = new Date(selectedCampaign.send_at);
                             newDate.setDate(newDate.getDate() + 1);
                             await rescheduleCampaign(selectedCampaign.id, newDate.toISOString());
-                            toast({
-                              title: 'Campagne reprogrammée',
+                            toast.success('Campagne reprogrammée', {
                               description: 'La date d\'envoi a été mise à jour'
                             });
                           }}>
@@ -696,8 +689,7 @@ export default function AdminCRM() {
                             variables: []
                           });
                           setSelectedCampaign(null);
-                          toast({
-                            title: 'Campagne dupliquée',
+                          toast.success('Campagne dupliquée', {
                             description: 'Modifiez les paramètres et créez la campagne'
                           });
                         }}>
