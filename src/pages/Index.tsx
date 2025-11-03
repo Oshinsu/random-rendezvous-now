@@ -31,12 +31,11 @@ const Index = () => {
   // Show push permission modal after user lands (first visit only)
   useEffect(() => {
     if (user) {
-      const hasVisited = localStorage.getItem('has_visited_homepage');
-      if (!hasVisited) {
+      const permissionAsked = localStorage.getItem('push_permission_asked');
+      if (!permissionAsked) {
         setTimeout(() => {
           setShowPermissionModal(true);
-          localStorage.setItem('has_visited_homepage', 'true');
-        }, 5000); // 5s après chargement
+        }, 8000); // 8s après chargement - moins intrusif
       }
     }
   }, [user]);
