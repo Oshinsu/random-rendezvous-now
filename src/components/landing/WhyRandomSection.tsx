@@ -1,33 +1,39 @@
-import { useTranslation } from 'react-i18next';
 import { useDynamicContent } from '@/hooks/useDynamicContent';
 import { OptimizedImage } from '@/components/OptimizedImage';
 
+import defaultBenefit1 from '@/assets/new-benefit-1.jpg';
+import defaultBenefit2 from '@/assets/new-benefit-2.jpg';
+import defaultBenefit3 from '@/assets/new-benefit-3.jpg';
+import defaultBenefit4 from '@/assets/new-benefit-4.jpg';
+
 const WhyRandomSection = () => {
-  const { t } = useTranslation();
   const { getContent } = useDynamicContent();
 
   const benefits = [
     {
-      image: getContent('benefit_1_image_url', '/src/assets/new-benefit-1.jpg'),
-      title: t('why_random.benefit1_title'),
-      description: t('why_random.benefit1_desc'),
+      image: getContent('benefit_1_image_url', defaultBenefit1),
+      title: getContent('benefit_1_title', 'Des rencontres authentiques'),
+      description: getContent('benefit_1_description', 'Finis les swipes infinis et les conversations qui mènent nulle part.'),
     },
     {
-      image: getContent('benefit_2_image_url', '/src/assets/new-benefit-2.jpg'),
-      title: t('why_random.benefit2_title'),
-      description: t('why_random.benefit2_desc'),
+      image: getContent('benefit_2_image_url', defaultBenefit2),
+      title: getContent('benefit_2_title', 'Zéro prise de tête'),
+      description: getContent('benefit_2_description', "Plus besoin d'organiser, de choisir le lieu ou de coordonner les agendas."),
     },
     {
-      image: getContent('benefit_3_image_url', '/src/assets/new-benefit-3.jpg'),
-      title: t('why_random.benefit3_title'),
-      description: t('why_random.benefit3_desc'),
+      image: getContent('benefit_3_image_url', defaultBenefit3),
+      title: getContent('benefit_3_title', 'Sors de ta bulle'),
+      description: getContent('benefit_3_description', 'Élargis ton cercle social sans effort.'),
     },
     {
-      image: getContent('benefit_4_image_url', '/src/assets/new-benefit-4.jpg'),
-      title: t('why_random.benefit4_title'),
-      description: t('why_random.benefit4_desc'),
+      image: getContent('benefit_4_image_url', defaultBenefit4),
+      title: getContent('benefit_4_title', 'Des soirées spontanées'),
+      description: getContent('benefit_4_description', 'Un clic suffit pour transformer ta soirée.'),
     },
   ];
+
+  const sectionTitle = getContent('benefits_section_title', 'Pourquoi Random ?');
+  
   return (
     <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-white via-brand-50/10 to-white relative overflow-hidden">
       {/* Decorative elements */}
@@ -36,7 +42,7 @@ const WhyRandomSection = () => {
       
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-center mb-4 sm:mb-6 animate-slide-in-up">
-          {t('why_random.title').split('Random').map((part, index, array) => (
+          {sectionTitle.split('Random').map((part, index, array) => (
             index < array.length - 1 ? (
               <span key={index}>{part}<span className="font-signature text-4xl sm:text-5xl md:text-6xl gradient-text-animated">Random</span></span>
             ) : (
@@ -45,7 +51,7 @@ const WhyRandomSection = () => {
           ))}
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
-          {t('why_random.subtitle')}
+          {getContent('benefits_section_subtitle', 'Découvre pourquoi Random transforme tes sorties')}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
           {benefits.map((benefit, index) => (

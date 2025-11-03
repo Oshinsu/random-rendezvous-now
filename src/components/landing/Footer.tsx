@@ -5,7 +5,7 @@ import { useDynamicContent } from "@/hooks/useDynamicContent";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { getContent } = useDynamicContent();
   
   return (
@@ -41,18 +41,18 @@ const Footer = () => {
               {i18n.language === 'en' ? 'Community' : 'Communauté'}
             </Link>
             <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-              {i18n.language === 'en' ? t('footer.terms') : 'Conditions d\'utilisation'}
+              {i18n.language === 'en' ? 'Terms' : 'Conditions d\'utilisation'}
             </Link>
             <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-              {i18n.language === 'en' ? t('footer.privacy') : 'Politique de confidentialité'}
+              {i18n.language === 'en' ? 'Privacy' : 'Politique de confidentialité'}
             </Link>
             <Link to="/contact" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-              {i18n.language === 'en' ? t('footer.contact') : 'Contact'}
+              Contact
             </Link>
           </div>
           
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-2">
-            <span>Fait avec</span>
+            <span>{getContent('footer_tagline', 'Fait avec ❤️ à Paris').replace('❤️', '')}</span>
             <Heart className="h-3 w-3 text-red-500 fill-current" />
             <span>à Paris</span>
           </div>
@@ -61,4 +61,5 @@ const Footer = () => {
     </footer>
   );
 };
+
 export default Footer;

@@ -1,33 +1,35 @@
-
 import React from "react";
 import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
-import { useTranslation } from 'react-i18next';
+import { useDynamicContent } from '@/hooks/useDynamicContent';
 
 const HowItWorksSection = () => {
-  const { t } = useTranslation();
+  const { getContent } = useDynamicContent();
 
   const steps = [
     {
       icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
-      title: t('how_it_works.step1_title'),
-      description: t('how_it_works.step1_desc'),
+      title: getContent('how_it_works_step1_title', 'Tu cliques'),
+      description: getContent('how_it_works_step1_desc', "Un simple clic et Random s'occupe de tout."),
     },
     {
       icon: <Users className="w-10 h-10 text-primary mb-4" />,
-      title: t('how_it_works.step2_title'),
-      description: t('how_it_works.step2_desc'),
+      title: getContent('how_it_works_step2_title', 'On matche un groupe'),
+      description: getContent('how_it_works_step2_desc', 'Notre algorithme crée un groupe équilibré de 4-5 personnes.'),
     },
     {
       icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
-      title: t('how_it_works.step3_title'),
-      description: t('how_it_works.step3_desc'),
+      title: getContent('how_it_works_step3_title', 'On trouve le bar parfait'),
+      description: getContent('how_it_works_step3_desc', 'Random sélectionne un bar cool, équidistant de tous.'),
     },
     {
       icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
-      title: t('how_it_works.step4_title'),
-      description: t('how_it_works.step4_desc'),
+      title: getContent('how_it_works_step4_title', 'Tu profites'),
+      description: getContent('how_it_works_step4_desc', 'Rendez-vous au bar et vis une soirée authentique.'),
     },
   ];
+
+  const sectionTitle = getContent('how_it_works_title', 'Comment ça marche avec Random ?');
+
   return (
     <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-secondary via-white to-brand-50/20 relative overflow-hidden">
       {/* Decorative elements */}
@@ -36,7 +38,7 @@ const HowItWorksSection = () => {
       
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-center mb-4 sm:mb-6 animate-slide-in-up">
-          {t('how_it_works.title').split('Random').map((part, index, array) => (
+          {sectionTitle.split('Random').map((part, index, array) => (
             index < array.length - 1 ? (
               <span key={index}>{part}<span className="font-signature text-4xl sm:text-5xl md:text-6xl gradient-text-animated">Random</span></span>
             ) : (
@@ -45,7 +47,7 @@ const HowItWorksSection = () => {
           ))}
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
-          {t('how_it_works.subtitle')}
+          {getContent('how_it_works_subtitle', 'Quatre étapes pour une soirée inoubliable')}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {steps.map((step, index) => (
