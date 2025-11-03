@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePushAnalytics } from '@/hooks/usePushAnalytics';
 import { TrendingUp, TrendingDown, Bell, Eye, Send, Users } from 'lucide-react';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
+import { NotificationControlCenter } from './NotificationControlCenter';
 
 export const PushOverviewStats = () => {
   const { data, isLoading } = usePushAnalytics('month');
@@ -60,54 +61,60 @@ export const PushOverviewStats = () => {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <Icon className={`h-4 w-4 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-muted-foreground">
-                  {stat.description}
-                </p>
-                {stat.change !== undefined && (
-                  <span className={`text-xs flex items-center ${stat.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(stat.change)}%
-                  </span>
-                )}
-              </div>
-              {stat.sparkline && stat.sparkline.length > 0 && (
-                <div className="h-12 mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={stat.sparkline.map((value, index) => ({ value, index }))}>
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+    <div className="space-y-6">
+      {/* Section 1: KPIs Globaux */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </CardTitle>
+                <Icon className={`h-4 w-4 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    {stat.description}
+                  </p>
+                  {stat.change !== undefined && (
+                    <span className={`text-xs flex items-center ${stat.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {stat.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                      {Math.abs(stat.change)}%
+                    </span>
+                  )}
                 </div>
-              )}
-              {stat.target && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Target: {stat.target}%
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                {stat.sparkline && stat.sparkline.length > 0 && (
+                  <div className="h-12 mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={stat.sparkline.map((value, index) => ({ value, index }))}>
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                {stat.target && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Target: {stat.target}%
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Section 2: Notification Control Center */}
+      <NotificationControlCenter />
     </div>
   );
 };

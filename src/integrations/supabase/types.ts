@@ -1921,6 +1921,54 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_types_config: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string | null
+          default_copy: Json
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          send_rules: Json | null
+          tags: string[] | null
+          type_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          default_copy?: Json
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          send_rules?: Json | null
+          tags?: string[] | null
+          type_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          default_copy?: Json
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          send_rules?: Json | null
+          tags?: string[] | null
+          type_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       performance_metrics: {
         Row: {
           created_at: string
