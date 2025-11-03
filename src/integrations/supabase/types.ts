@@ -2786,7 +2786,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      gender_type: "male" | "female" | "non_binary" | "prefer_not_to_say"
+      gender_type: "male" | "female"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2915,7 +2915,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      gender_type: ["male", "female", "non_binary", "prefer_not_to_say"],
+      gender_type: ["male", "female"],
     },
   },
 } as const

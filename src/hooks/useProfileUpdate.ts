@@ -41,7 +41,7 @@ export const useProfileUpdate = () => {
         .update({
           first_name: firstName,
           last_name: lastName,
-          gender: gender as 'male' | 'female' | 'non_binary' | 'prefer_not_to_say' | undefined,
+          gender: gender as 'male' | 'female' | undefined,
           city: city,
           updated_at: new Date().toISOString()
         })

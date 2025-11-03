@@ -229,14 +229,6 @@ const AuthPage = () => {
                       <RadioGroupItem value="female" id="female" />
                       <Label htmlFor="female" className="font-normal">{t('auth.female')}</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="non_binary" id="non_binary" />
-                      <Label htmlFor="non_binary" className="font-normal">{t('auth.non_binary')}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="prefer_not_to_say" id="prefer_not_to_say" />
-                      <Label htmlFor="prefer_not_to_say" className="font-normal">{t('auth.prefer_not_to_say')}</Label>
-                    </div>
                   </RadioGroup>
                 </div>
 

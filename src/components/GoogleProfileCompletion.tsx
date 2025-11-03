@@ -59,7 +59,7 @@ export const GoogleProfileCompletion = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          gender: gender as 'male' | 'female' | 'non_binary' | 'prefer_not_to_say',
+          gender: gender as 'male' | 'female',
           city 
         })
         .eq('id', user!.id);
@@ -104,14 +104,6 @@ export const GoogleProfileCompletion = () => {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="female" id="modal-female" />
                 <Label htmlFor="modal-female" className="font-normal">{t('auth.female')}</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="non_binary" id="modal-non_binary" />
-                <Label htmlFor="modal-non_binary" className="font-normal">{t('auth.non_binary')}</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="prefer_not_to_say" id="modal-prefer" />
-                <Label htmlFor="modal-prefer" className="font-normal">{t('auth.prefer_not_to_say')}</Label>
               </div>
             </RadioGroup>
           </div>
