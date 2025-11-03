@@ -48,7 +48,7 @@ serve(async (req) => {
     // Check cache first
     const userIds = users.map(u => u.user_id);
     const { data: cachedResults } = await supabase
-      .from('user_gender_cache')
+      .from('gender_detection_cache')
       .select('*')
       .in('user_id', userIds)
       .gte('detected_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // 30 days cache
@@ -143,39 +143,60 @@ serve(async (req) => {
           reasoning: 'AI detection failed'
         }));
       } else {
-        const aiData = await aiResponse.json();
-        const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-
-        if (toolCall?.function?.arguments) {
-          const parsed = JSON.parse(toolCall.function.arguments);
-          newResults = parsed.results.map((r: any) => ({
-            user_id: r.user_id,
-            gender: r.confidence < 0.6 ? 'doute' : r.gender,
-            confidence: r.confidence,
-            reasoning: r.reasoning || 'No reasoning provided'
-          }));
-
-          // Cache results in database
-          const cacheData = newResults.map(r => ({
-            user_id: r.user_id,
-            gender: r.gender,
-            confidence: r.confidence,
-            detected_at: new Date().toISOString()
-          }));
-
-          await supabase
-            .from('user_gender_cache')
-            .upsert(cacheData, { onConflict: 'user_id' });
-
-          console.log(`Cached ${cacheData.length} gender detection results`);
-        } else {
-          // Fallback if tool calling failed
+        // Vérifier si la réponse contient du JSON valide
+        const responseText = await aiResponse.text();
+        
+        if (!responseText || responseText.trim() === '') {
+          console.error('Empty response from Lovable AI');
           newResults = usersToDetect.map(u => ({
             user_id: u.user_id,
             gender: 'doute',
             confidence: 0,
-            reasoning: 'Tool call parsing failed'
+            reasoning: 'Empty AI response'
           }));
+        } else {
+          try {
+            const aiData = JSON.parse(responseText);
+            const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+
+            if (toolCall?.function?.arguments) {
+              const parsed = JSON.parse(toolCall.function.arguments);
+              newResults = parsed.results.map((r: any) => ({
+                user_id: r.user_id,
+                gender: r.confidence < 0.6 ? 'doute' : r.gender,
+                confidence: r.confidence,
+                reasoning: r.reasoning || 'No reasoning provided'
+              }));
+
+              // Cache results in database (only for valid results)
+              const cacheData = newResults.map(r => ({
+                user_id: r.user_id,
+                gender: r.gender,
+                confidence: r.confidence,
+                detected_at: new Date().toISOString()
+              }));
+
+              await supabase
+                .from('gender_detection_cache')
+                .upsert(cacheData, { onConflict: 'user_id' });
+            } else {
+              console.error('No tool call in AI response');
+              newResults = usersToDetect.map(u => ({
+                user_id: u.user_id,
+                gender: 'doute',
+                confidence: 0,
+                reasoning: 'No tool call in response'
+              }));
+            }
+          } catch (parseError) {
+            console.error('Failed to parse AI response:', parseError, 'Response:', responseText.substring(0, 200));
+            newResults = usersToDetect.map(u => ({
+              user_id: u.user_id,
+              gender: 'doute',
+              confidence: 0,
+              reasoning: 'Failed to parse AI response'
+            }));
+          }
         }
       }
     }
