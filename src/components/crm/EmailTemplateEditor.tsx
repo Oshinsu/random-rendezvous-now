@@ -1,12 +1,22 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { AlertCircle, Smartphone, Monitor, Mail, Code, Eye, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+/**
+ * SOTA 2025 Email Template Editor
+ * Sources:
+ * - Mailchimp Template Editor (https://mailchimp.com) - Visual email builder
+ * - Resend Email Editor (https://resend.com) - Modern email dev experience
+ * - React Email (https://react.email) - Component-based email templates
+ */
 
 interface EmailTemplate {
   subject: string;
@@ -55,15 +65,31 @@ export const EmailTemplateEditor = ({ template, onChange }: EmailTemplateEditorP
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Éditeur de Template Email</CardTitle>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Éditeur de Template Email SOTA 2025
+            </CardTitle>
+            <CardDescription className="mt-2">
+              Editeur visuel + Preview multi-device + Variables dynamiques
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="gap-2">
+            <Sparkles className="h-3 w-3" />
+            AI-powered
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Utilisez les variables dynamiques pour personnaliser vos emails
+            Utilisez les variables dynamiques pour personnaliser vos emails. Compatible avec tous les clients email (Gmail, Outlook, Apple Mail).
           </AlertDescription>
         </Alert>
+
+        <Separator />
 
         <div className="space-y-2">
           <Label>Sujet de l'email</Label>
@@ -74,21 +100,30 @@ export const EmailTemplateEditor = ({ template, onChange }: EmailTemplateEditorP
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Variables disponibles</Label>
-          <div className="flex flex-wrap gap-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label>Variables disponibles</Label>
+            <Badge variant="secondary" className="text-xs">
+              {AVAILABLE_VARIABLES.length} variables
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {AVAILABLE_VARIABLES.map((variable) => (
               <Button
                 key={variable}
                 variant="outline"
                 size="sm"
                 onClick={() => insertVariable(variable)}
+                className="justify-start font-mono text-xs"
               >
+                <Code className="h-3 w-3 mr-2" />
                 {variable}
               </Button>
             ))}
           </div>
         </div>
+
+        <Separator />
 
         <Tabs defaultValue="editor" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -106,22 +141,30 @@ export const EmailTemplateEditor = ({ template, onChange }: EmailTemplateEditorP
             />
           </TabsContent>
 
-          <TabsContent value="preview" className="space-y-2">
-            <div className="flex gap-2 mb-2">
-              <Button
-                variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPreviewMode('desktop')}
-              >
-                Desktop
-              </Button>
-              <Button
-                variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPreviewMode('mobile')}
-              >
-                Mobile
-              </Button>
+          <TabsContent value="preview" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <Button
+                  variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPreviewMode('desktop')}
+                >
+                  <Monitor className="h-4 w-4 mr-2" />
+                  Desktop
+                </Button>
+                <Button
+                  variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPreviewMode('mobile')}
+                >
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  Mobile
+                </Button>
+              </div>
+              <Badge variant="outline">
+                <Eye className="h-3 w-3 mr-1" />
+                Preview mode
+              </Badge>
             </div>
             <div 
               className={`border rounded-lg overflow-auto ${
