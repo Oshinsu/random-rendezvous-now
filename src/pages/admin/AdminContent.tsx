@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Search, 
   FileText, 
@@ -201,6 +203,41 @@ export default function AdminContent() {
     return success;
   };
 
+  const handleAIAnalyze = async () => {
+    toast.info('Lancement de l\'analyse AI de tous les contenus texte...');
+    
+    try {
+      const textContents = contents.filter(c => c.content_type === 'text');
+      
+      for (const content of textContents) {
+        await supabase.functions.invoke('calculate-cms-seo', {
+          body: { content_id: content.id }
+        });
+      }
+      
+      toast.success(`Analyse SEO complétée pour ${textContents.length} contenus !`);
+      await refresh();
+    } catch (error) {
+      toast.error('Erreur lors de l\'analyse AI');
+      console.error(error);
+    }
+  };
+
+  const handlePublish = async () => {
+    toast.info('Publication des modifications en cours...');
+    
+    try {
+      // Refresh materialized view to update analytics
+      await supabase.rpc('refresh_cms_engagement');
+      
+      toast.success('Contenus publiés avec succès !');
+      await refresh();
+    } catch (error) {
+      toast.error('Erreur lors de la publication');
+      console.error(error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -212,7 +249,11 @@ export default function AdminContent() {
   return (
     <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* En-tête */}
-      <CMSHeader onRefresh={refresh} />
+      <CMSHeader 
+        onRefresh={refresh}
+        onAIAnalyze={handleAIAnalyze}
+        onPublish={handlePublish}
+      />
 
       {/* Dashboard Global de Performance */}
       <CMSPerformanceDashboard 

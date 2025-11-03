@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { trackSectionView, trackBounce } from "@/utils/cmsTracking";
+import { trackSectionView, trackBounce, trackCTAClick } from "@/utils/cmsTracking";
 import HeroSection from "@/components/landing/HeroSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import Footer from "@/components/landing/Footer";
@@ -70,6 +70,7 @@ const Index = () => {
     await signOut();
   };
   const handleGoToDashboard = () => {
+    trackCTAClick('header', 'go_to_dashboard');
     navigate('/dashboard');
   };
   return <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
@@ -117,12 +118,23 @@ const Index = () => {
               </Button>
             </div> : <div className="flex items-center gap-1 sm:gap-2">
               <LanguageToggle />
-              <Button asChild variant="outline" className="border-brand-300 text-brand-700 hover:bg-brand-50 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" size="sm">
+              <Button 
+                asChild 
+                variant="outline" 
+                className="border-brand-300 text-brand-700 hover:bg-brand-50 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
+                size="sm"
+                onClick={() => trackCTAClick('header', 'signin')}
+              >
                 <Link to="/auth?tab=signin">
                   Connexion
                 </Link>
               </Button>
-              <Button asChild className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" size="sm">
+              <Button 
+                asChild 
+                className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
+                size="sm"
+                onClick={() => trackCTAClick('header', 'signup')}
+              >
                 <Link to="/auth?tab=signup">
                   <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Commencer

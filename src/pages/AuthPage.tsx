@@ -81,6 +81,15 @@ const AuthPage = () => {
       } else if (data.user) {
         trackSignUp();
         
+        // Track conversion from landing page
+        const referrer = document.referrer;
+        if (referrer.includes(window.location.origin)) {
+          // Import dynamically to avoid circular deps
+          import('@/utils/cmsTracking').then(({ trackConversion }) => {
+            trackConversion('signup_flow');
+          });
+        }
+        
         // Apply referral code if present
         if (referralCode.trim()) {
           try {

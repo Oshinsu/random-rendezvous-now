@@ -3,6 +3,7 @@ import { Rocket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { trackCTAClick, trackConversion } from "@/utils/cmsTracking";
 const CtaSection = () => {
   const {
     user
@@ -13,7 +14,9 @@ const CtaSection = () => {
     i18n
   } = useTranslation();
   const handleMainAction = () => {
+    trackCTAClick('cta', user ? 'go_to_dashboard' : 'launch_random');
     if (user) {
+      trackConversion('cta');
       navigate('/dashboard');
     } else {
       navigate('/auth');

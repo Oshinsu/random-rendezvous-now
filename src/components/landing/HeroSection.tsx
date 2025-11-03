@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-banner.png";
+import { trackCTAClick } from "@/utils/cmsTracking";
 const HeroSection = () => {
   const {
     user
@@ -14,6 +15,7 @@ const HeroSection = () => {
     i18n
   } = useTranslation();
   const handleMainAction = () => {
+    trackCTAClick('hero', user ? 'go_to_dashboard' : 'signup');
     if (user) {
       navigate('/dashboard');
     } else {

@@ -179,6 +179,7 @@ export const AdvancedContentEditor = ({ content, onUpdate, onClose }: AdvancedCo
               <AICopywriterPanel
                 currentText={typeof value === 'string' ? value : ''}
                 sectionContext={sectionContext}
+                contentId={content.id}
                 onApplySuggestion={(text) => setValue(text)}
               />
             </div>

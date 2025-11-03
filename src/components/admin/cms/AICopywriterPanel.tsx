@@ -12,12 +12,14 @@ import { toast } from 'sonner';
 interface AICopywriterPanelProps {
   currentText: string;
   sectionContext: 'hero' | 'benefits' | 'how_it_works' | 'footer' | 'meta';
+  contentId?: string;
   onApplySuggestion: (text: string) => void;
 }
 
 export const AICopywriterPanel = ({ 
   currentText, 
-  sectionContext, 
+  sectionContext,
+  contentId, 
   onApplySuggestion 
 }: AICopywriterPanelProps) => {
   const { improveText, generateABVariants, loading, result } = useCMSAICopywriter();
@@ -186,7 +188,7 @@ export const AICopywriterPanel = ({
 
           {/* Tab SEO Score */}
           <TabsContent value="seo">
-            <SEOScoreCard text={currentText} />
+            <SEOScoreCard text={currentText} contentId={contentId} />
           </TabsContent>
 
           {/* Tab Tone Check */}
