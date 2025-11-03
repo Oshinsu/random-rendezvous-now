@@ -337,13 +337,13 @@ const App = () => (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <GoogleProfileCompletion />
           <AnalyticsProvider>
             <HelmetProvider>
               <TooltipProvider>
                 <div className="min-h-screen bg-background font-sans antialiased">
                   <Toaster />
                   <Sonner />
+                  <GoogleProfileCompletion />
                   <AppRoutes />
                 </div>
               </TooltipProvider>
