@@ -45,6 +45,7 @@ const ReferralPage = React.lazy(() => import('./pages/ReferralPage'));
 const CommunityPage = React.lazy(() => import('./pages/CommunityPage'));
 const BarDashboard = React.lazy(() => import('./pages/BarDashboard'));
 const BarApplicationPage = React.lazy(() => import('./pages/BarApplicationPage'));
+const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'));
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeProvider";
 import AnalyticsProvider from "./components/AnalyticsProvider";
@@ -97,6 +98,13 @@ const AppRoutes = () => (
     <Route path="/scheduled-groups" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/explore-by-city" element={<ProtectedRoute><UnifiedScheduledGroupsPage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+    <Route path="/notifications" element={
+      <ProtectedRoute>
+        <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+          <NotificationsPage />
+        </React.Suspense>
+      </ProtectedRoute>
+    } />
     <Route path="/referral" element={
       <ProtectedRoute>
         <React.Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>

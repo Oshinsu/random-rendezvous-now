@@ -2363,55 +2363,88 @@ export type Database = {
       }
       user_notification_preferences: {
         Row: {
+          bars_notifications: boolean | null
           channel_email: boolean
           channel_push: boolean
           channel_sms: boolean
           created_at: string
+          custom_copies: Json | null
+          custom_images: Json | null
+          enabled: boolean | null
+          groups_notifications: boolean | null
           id: string
+          lifecycle_notifications: boolean | null
+          max_per_day: number | null
+          messages_notifications: boolean | null
           notify_group_lifecycle: boolean
           notify_group_messages: boolean
           notify_marketing: boolean
           notify_peak_hours: boolean
           notify_reengagement: boolean
+          promotions_notifications: boolean | null
           quiet_hours_end: string | null
           quiet_hours_start: string | null
+          sound_enabled: boolean | null
           unsubscribed_at: string | null
           updated_at: string
           user_id: string
+          vibration_enabled: boolean | null
         }
         Insert: {
+          bars_notifications?: boolean | null
           channel_email?: boolean
           channel_push?: boolean
           channel_sms?: boolean
           created_at?: string
+          custom_copies?: Json | null
+          custom_images?: Json | null
+          enabled?: boolean | null
+          groups_notifications?: boolean | null
           id?: string
+          lifecycle_notifications?: boolean | null
+          max_per_day?: number | null
+          messages_notifications?: boolean | null
           notify_group_lifecycle?: boolean
           notify_group_messages?: boolean
           notify_marketing?: boolean
           notify_peak_hours?: boolean
           notify_reengagement?: boolean
+          promotions_notifications?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
+          sound_enabled?: boolean | null
           unsubscribed_at?: string | null
           updated_at?: string
           user_id: string
+          vibration_enabled?: boolean | null
         }
         Update: {
+          bars_notifications?: boolean | null
           channel_email?: boolean
           channel_push?: boolean
           channel_sms?: boolean
           created_at?: string
+          custom_copies?: Json | null
+          custom_images?: Json | null
+          enabled?: boolean | null
+          groups_notifications?: boolean | null
           id?: string
+          lifecycle_notifications?: boolean | null
+          max_per_day?: number | null
+          messages_notifications?: boolean | null
           notify_group_lifecycle?: boolean
           notify_group_messages?: boolean
           notify_marketing?: boolean
           notify_peak_hours?: boolean
           notify_reengagement?: boolean
+          promotions_notifications?: boolean | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
+          sound_enabled?: boolean | null
           unsubscribed_at?: string | null
           updated_at?: string
           user_id?: string
+          vibration_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -2953,6 +2986,10 @@ export type Database = {
         }[]
       }
       schedule_campaign_queue_cron: { Args: never; Returns: undefined }
+      should_send_notification: {
+        Args: { p_notification_type: string; p_user_id: string }
+        Returns: boolean
+      }
       test_trigger_auto_bar_assignment: { Args: never; Returns: Json }
       track_notification_click: {
         Args: {

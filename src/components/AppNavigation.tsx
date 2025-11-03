@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe } from 'lucide-react';
+import { Home, Users, User, LogOut, Menu, ExternalLink, Clock, Globe, Bell } from 'lucide-react';
 import RandomLogo from './RandomLogo';
 import LanguageToggle from './LanguageToggle';
 import { NotificationCenter } from './NotificationCenter';
@@ -181,6 +181,12 @@ const AppNavigation = () => {
                   <NavLink to="/profile" className="flex items-center font-heading">
                     <User className="mr-2 h-4 w-4" />
                     <span>{t('navigation.profile')}</span>
+                  </NavLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <NavLink to="/notifications" className="flex items-center font-heading">
+                    <Bell className="mr-2 h-4 w-4" />
+                    <span>Notifications</span>
                   </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
