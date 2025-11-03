@@ -3,6 +3,7 @@ import { SiteContent } from '@/hooks/useSiteContent';
 import { RichTextEditor } from './RichTextEditor';
 import { ImageManager } from './ImageManager';
 import { ContentPreview } from './ContentPreview';
+import { AICopywriterPanel } from './AICopywriterPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { 
   Save, 
   RotateCcw, 
@@ -149,23 +151,44 @@ export const AdvancedContentEditor = ({ content, onUpdate, onClose }: AdvancedCo
       label: content.content_key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     };
 
+    // Déterminer le contexte de section pour l'AI
+    const sectionContext = ['hero', 'benefits', 'how_it_works', 'footer', 'meta'].includes(content.page_section) 
+      ? content.page_section as 'hero' | 'benefits' | 'how_it_works' | 'footer' | 'meta'
+      : 'hero';
+
+    // Pour les contenus texte, afficher l'éditeur avec le panneau AI en split-screen
+    if (content.content_type === 'text' || content.content_type === 'html') {
+      return (
+        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
+          {/* Zone Édition */}
+          <ResizablePanel defaultSize={60} minSize={40}>
+            <div className="h-full p-4">
+              <RichTextEditor
+                {...commonProps}
+                contentType={content.content_type}
+                placeholder={content.content_type === 'html' ? '<p>Entrez votre code HTML ici...</p>' : 'Entrez votre texte ici...'}
+              />
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* Zone AI + Preview */}
+          <ResizablePanel defaultSize={40} minSize={30}>
+            <div className="h-full p-4 overflow-y-auto">
+              <AICopywriterPanel
+                currentText={typeof value === 'string' ? value : ''}
+                sectionContext={sectionContext}
+                onApplySuggestion={(text) => setValue(text)}
+              />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      );
+    }
+
+    // Pour les autres types de contenu, affichage classique
     switch (content.content_type) {
-      case 'text':
-        return (
-          <RichTextEditor
-            {...commonProps}
-            contentType="text"
-            placeholder="Entrez votre texte ici..."
-          />
-        );
-      case 'html':
-        return (
-          <RichTextEditor
-            {...commonProps}
-            contentType="html"
-            placeholder="<p>Entrez votre code HTML ici...</p>"
-          />
-        );
       case 'image':
         return (
           <ImageManager

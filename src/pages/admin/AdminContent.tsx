@@ -4,7 +4,7 @@ import { useSiteContent } from '@/hooks/useSiteContent';
 import { AdvancedContentEditor } from '@/components/admin/cms/AdvancedContentEditor';
 import { CMSNavigation } from '@/components/admin/cms/CMSNavigation';
 import { CMSHeader } from '@/components/admin/cms/CMSHeader';
-import { CMSStats } from '@/components/admin/cms/CMSStats';
+import { CMSPerformanceDashboard } from '@/components/admin/cms/CMSPerformanceDashboard';
 import { ImageGallery } from '@/components/admin/cms/ImageGallery';
 import { BlockEditor } from '@/components/admin/cms/BlockEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,15 +143,15 @@ export default function AdminContent() {
   const getSectionTitle = (section: string) => {
     switch (section) {
       case 'hero':
-        return 'Section Hero';
+        return '🎯 Message d\'Accueil';
       case 'benefits':
-        return 'Section Avantages';
+        return '✨ Pourquoi Random Cartonne';
       case 'how_it_works':
-        return 'Comment ça marche';
+        return '⚡ Le Process en 3 Clics';
       case 'footer':
-        return 'Footer';
+        return '🌍 Infos Légales & Liens';
       case 'meta':
-        return 'Méta-données';
+        return '🔍 SEO & Référencement';
       default:
         return section.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
@@ -214,12 +214,13 @@ export default function AdminContent() {
       {/* En-tête */}
       <CMSHeader onRefresh={refresh} />
 
-      {/* Statistiques */}
-      <CMSStats
-        total={stats.total}
-        sections={stats.sections}
-        recentlyUpdated={stats.recentlyUpdated}
-        byType={stats.byType}
+      {/* Dashboard Global de Performance */}
+      <CMSPerformanceDashboard 
+        stats={{
+          total: stats.total,
+          sections: stats.sections,
+          recentlyUpdated: stats.recentlyUpdated
+        }}
       />
 
       <Separator />

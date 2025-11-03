@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Code, Type, Bold, Italic, Link, List, ListOrdered, Image as ImageIcon, Save, Undo, Redo } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -29,6 +30,7 @@ export const RichTextEditor = ({
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [history, setHistory] = useState<string[]>([value]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const addToHistory = useCallback((newValue: string) => {
@@ -76,13 +78,25 @@ export const RichTextEditor = ({
     }, 0);
   };
 
+  const insertImageAtCursor = (imageUrl: string) => {
+    const imgTag = `<img src="${imageUrl}" alt="Random image" class="rounded-lg my-4" />`;
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newValue = value.slice(0, start) + imgTag + value.slice(end);
+    handleChange(newValue);
+    setImagePickerOpen(false);
+  };
+
   const formatButtons = [
     { icon: Bold, label: 'Gras', onClick: () => insertText('**', '**'), shortcut: 'Ctrl+B' },
     { icon: Italic, label: 'Italique', onClick: () => insertText('*', '*'), shortcut: 'Ctrl+I' },
     { icon: Link, label: 'Lien', onClick: () => insertText('[', '](url)'), shortcut: 'Ctrl+K' },
     { icon: List, label: 'Liste', onClick: () => insertText('- '), shortcut: 'Ctrl+L' },
     { icon: ListOrdered, label: 'Liste ordonnée', onClick: () => insertText('1. '), shortcut: 'Ctrl+Shift+L' },
-    { icon: ImageIcon, label: 'Image', onClick: () => insertText('![alt](', ')'), shortcut: 'Ctrl+M' },
+    { icon: ImageIcon, label: 'Image', onClick: () => setImagePickerOpen(true), shortcut: 'Ctrl+M' },
   ];
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -225,6 +239,22 @@ export const RichTextEditor = ({
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      {/* Image Picker Dialog */}
+      <Dialog open={imagePickerOpen} onOpenChange={setImagePickerOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sélectionner une image</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            Fonctionnalité complète de galerie d'images à venir. Pour l'instant, vous pouvez insérer manuellement l'URL d'une image avec le format : 
+            <code className="block mt-2 p-2 bg-muted rounded text-xs">
+              {'<img src="URL" alt="description" class="rounded-lg my-4" />'}
+            </code>
+          </div>
+          <Button onClick={() => setImagePickerOpen(false)}>Fermer</Button>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
