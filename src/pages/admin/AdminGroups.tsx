@@ -65,8 +65,10 @@ export const AdminGroups = () => {
   useEffect(() => {
     fetchGroups();
 
+    // Create a unique channel instance to prevent duplicate subscriptions
+    const channelName = `admin-groups-changes-${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('admin-groups-changes')
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, () => {
         fetchGroups();
         toast.info('Nouveau groupe créé', { duration: 2000 });
@@ -74,6 +76,7 @@ export const AdminGroups = () => {
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, []);
