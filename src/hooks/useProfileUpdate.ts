@@ -8,7 +8,7 @@ export const useProfileUpdate = () => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateProfile = async (firstName: string, lastName: string, onSuccess?: () => void) => {
+  const updateProfile = async (firstName: string, lastName: string, gender?: string, city?: string, onSuccess?: () => void) => {
     if (!user) {
       toast({
         title: 'Erreur',
@@ -25,7 +25,9 @@ export const useProfileUpdate = () => {
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           first_name: firstName,
-          last_name: lastName
+          last_name: lastName,
+          gender: gender,
+          city: city
         }
       });
 
@@ -36,13 +38,14 @@ export const useProfileUpdate = () => {
       // 2. Mise à jour du profil dans la base de données
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
+        .update({
           first_name: firstName,
           last_name: lastName,
-          email: user.email,
+          gender: gender as 'male' | 'female' | 'non_binary' | 'prefer_not_to_say' | undefined,
+          city: city,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', user.id);
 
       if (profileError) {
         throw profileError;

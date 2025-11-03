@@ -7,9 +7,13 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useTranslation } from 'react-i18next';
 import { useReferralProgram } from '@/hooks/useReferralProgram';
+import { useAuth } from '@/contexts/AuthContext';
+import { Chrome } from 'lucide-react';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -21,9 +25,12 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin'); // Controlled tab state
   const [referralCode, setReferralCode] = useState('');
+  const [gender, setGender] = useState<string>('');
+  const [city, setCity] = useState<string>('');
   const { trackSignUp, trackLogin } = useAnalytics();
   const { t } = useTranslation();
   const { applyReferralCode } = useReferralProgram();
+  const { signInWithGoogle } = useAuth();
 
   // Handle URL parameters to set the active tab
   useEffect(() => {
@@ -55,6 +62,8 @@ const AuthPage = () => {
           data: { // This goes into raw_user_meta_data
             first_name: firstName,
             last_name: lastName,
+            gender: gender,
+            city: city,
           },
           emailRedirectTo: `${window.location.origin}/`, // Important for email confirmation
         },
@@ -112,6 +121,24 @@ const AuthPage = () => {
     setLoading(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      toast({ 
+        title: t('auth.google_signin_initiated'), 
+        description: t('auth.google_redirect') 
+      });
+    } catch (error: any) {
+      toast({ 
+        title: t('auth.google_signin_error'), 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-brand-50 p-4">
@@ -136,6 +163,29 @@ const AuthPage = () => {
                   <Label htmlFor="password-signin">{t('auth.password')}</Label>
                   <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      {t('auth.or_continue_with')}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-2xl"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                >
+                  <Chrome className="mr-2 h-4 w-4" />
+                  {t('auth.google_signin')}
+                </Button>
+
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signin')}
                 </Button>
@@ -167,6 +217,50 @@ const AuthPage = () => {
                   <Label htmlFor="password-signup">{t('auth.password')}</Label>
                   <Input id="password-signup" type="password" placeholder={t('auth.password_placeholder')} value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender-signup">{t('auth.gender')}</Label>
+                  <RadioGroup value={gender} onValueChange={setGender} required>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="male" id="male" />
+                      <Label htmlFor="male" className="font-normal">{t('auth.male')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="female" id="female" />
+                      <Label htmlFor="female" className="font-normal">{t('auth.female')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="non_binary" id="non_binary" />
+                      <Label htmlFor="non_binary" className="font-normal">{t('auth.non_binary')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="prefer_not_to_say" id="prefer_not_to_say" />
+                      <Label htmlFor="prefer_not_to_say" className="font-normal">{t('auth.prefer_not_to_say')}</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city-signup">{t('auth.city')}</Label>
+                  <Select value={city} onValueChange={setCity} required>
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue placeholder={t('auth.city_placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Paris">Paris</SelectItem>
+                      <SelectItem value="Lyon">Lyon</SelectItem>
+                      <SelectItem value="Marseille">Marseille</SelectItem>
+                      <SelectItem value="Toulouse">Toulouse</SelectItem>
+                      <SelectItem value="Nice">Nice</SelectItem>
+                      <SelectItem value="Nantes">Nantes</SelectItem>
+                      <SelectItem value="Strasbourg">Strasbourg</SelectItem>
+                      <SelectItem value="Montpellier">Montpellier</SelectItem>
+                      <SelectItem value="Bordeaux">Bordeaux</SelectItem>
+                      <SelectItem value="Lille">Lille</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="referral-code">
                     {t('auth.referral_code')} <span className="text-xs text-muted-foreground">({t('common.optional', 'optionnel')})</span>
@@ -184,6 +278,29 @@ const AuthPage = () => {
                     {t('auth.referral_helper')}
                   </p>
                 </div>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      {t('auth.or_continue_with')}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-2xl"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                >
+                  <Chrome className="mr-2 h-4 w-4" />
+                  {t('auth.google_signin')}
+                </Button>
+
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.loading') : t('auth.signup')}
                 </Button>

@@ -1867,25 +1867,31 @@ export type Database = {
       }
       profiles: {
         Row: {
+          city: string | null
           created_at: string
           email: string | null
           first_name: string | null
+          gender: Database["public"]["Enums"]["gender_type"] | null
           id: string
           last_name: string | null
           updated_at: string
         }
         Insert: {
+          city?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           id: string
           last_name?: string | null
           updated_at?: string
         }
         Update: {
+          city?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["gender_type"] | null
           id?: string
           last_name?: string | null
           updated_at?: string
@@ -2780,6 +2786,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      gender_type: "male" | "female" | "non_binary" | "prefer_not_to_say"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2908,6 +2915,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      gender_type: ["male", "female", "non_binary", "prefer_not_to_say"],
     },
   },
 } as const

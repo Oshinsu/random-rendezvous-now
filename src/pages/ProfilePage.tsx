@@ -43,7 +43,7 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async () => {
-    const success = await updateProfile(firstName, lastName, () => {
+    const success = await updateProfile(firstName, lastName, undefined, undefined, () => {
       refreshProfile();
     });
     if (success) {

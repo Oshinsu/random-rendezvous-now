@@ -49,6 +49,7 @@ import { ThemeProvider } from "./contexts/ThemeProvider";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 import { HelmetProvider } from "react-helmet-async";
 import { SiteContentProvider } from "./contexts/SiteContentContext";
+import { GoogleProfileCompletion } from "./components/GoogleProfileCompletion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -326,6 +327,7 @@ const App = () => (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
+          <GoogleProfileCompletion />
           <AnalyticsProvider>
             <HelmetProvider>
               <TooltipProvider>
