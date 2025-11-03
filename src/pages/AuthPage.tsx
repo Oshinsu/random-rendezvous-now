@@ -234,23 +234,19 @@ const AuthPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="city-signup">{t('auth.city')}</Label>
-                  <Select value={city} onValueChange={setCity} required>
-                    <SelectTrigger className="rounded-2xl">
-                      <SelectValue placeholder={t('auth.city_placeholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Paris">Paris</SelectItem>
-                      <SelectItem value="Lyon">Lyon</SelectItem>
-                      <SelectItem value="Marseille">Marseille</SelectItem>
-                      <SelectItem value="Toulouse">Toulouse</SelectItem>
-                      <SelectItem value="Nice">Nice</SelectItem>
-                      <SelectItem value="Nantes">Nantes</SelectItem>
-                      <SelectItem value="Strasbourg">Strasbourg</SelectItem>
-                      <SelectItem value="Montpellier">Montpellier</SelectItem>
-                      <SelectItem value="Bordeaux">Bordeaux</SelectItem>
-                      <SelectItem value="Lille">Lille</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input 
+                    id="city-signup" 
+                    type="text" 
+                    placeholder="Ex: Paris, Lyon, Bordeaux..." 
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)} 
+                    required 
+                    className="rounded-2xl"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Saisissez le nom de votre ville
+                  </p>
                 </div>
 
                 <div className="space-y-2">

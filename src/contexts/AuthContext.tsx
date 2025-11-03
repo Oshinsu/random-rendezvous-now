@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('🔐 [Google OAuth] Starting flow');
       console.log('🔐 [Google OAuth] Origin:', window.location.origin);
       console.log('🔐 [Google OAuth] Redirect To:', redirectUrl);
