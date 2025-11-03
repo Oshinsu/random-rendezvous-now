@@ -404,8 +404,7 @@ serve(async (req) => {
       )
     }
 
-    // ✅ Accepter les groupes 'waiting' (nouveau) et 'confirmed' (avec 3+ participants)
-    // Rejeter uniquement si bar déjà assigné
+    // ✅ Vérifier si bar déjà assigné
     if (group.bar_name) {
       console.log('⚠️ [AUTO-ASSIGN] Bar déjà assigné:', group.bar_name);
       return new Response(
@@ -414,14 +413,31 @@ serve(async (req) => {
       )
     }
 
-    // Accepter 'waiting' (nouveau groupe) ou 'confirmed' (trigger 3+ participants)
-    if (group.status !== 'waiting' && group.status !== 'confirmed') {
-      console.log('⚠️ [AUTO-ASSIGN] Statut non éligible:', group.status);
+    // ✅ VALIDATION STRICTE : Accepter UNIQUEMENT les groupes 'confirmed'
+    if (group.status !== 'confirmed') {
+      console.log('⚠️ [AUTO-ASSIGN] Groupe non confirmé:', group.status);
       return new Response(
-        JSON.stringify({ success: false, error: 'Groupe non éligible' }),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Groupe doit être confirmé (5 participants)' 
+        }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // ✅ Double validation : Vérifier le nombre de participants (Defense in Depth)
+    if (group.current_participants < 5) {
+      console.log('⚠️ [AUTO-ASSIGN] Groupe incomplet:', group.current_participants, '/5');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Groupe incomplet (minimum 5 participants requis)' 
+        }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('✅ [AUTO-ASSIGN] Validation réussie: status=confirmed, participants=', group.current_participants);
 
     // ✅ Utiliser les coordonnées du groupe (fallback sur Fort-de-France si aucune coordonnée)
     const searchLatitude = latitude || group.latitude || 14.633945;

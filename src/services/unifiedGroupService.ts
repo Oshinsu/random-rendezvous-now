@@ -256,23 +256,9 @@ export class UnifiedGroupService {
 
     const newGroup = result[0];
     console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
-
-    // Assignment de bar immédiat en background (non bloquant)
-    supabase.functions.invoke('simple-auto-assign-bar', {
-      body: {
-        group_id: newGroup.id,
-        latitude: newGroup.latitude,
-        longitude: newGroup.longitude
-      }
-    }).then(({ data, error }) => {
-      if (error) {
-        console.error('⚠️ Erreur assignment bar en background:', error);
-      } else {
-        console.log('✅ Bar assigné en background:', data);
-      }
-    }).catch(err => {
-      console.error('❌ Erreur invocation assignment bar:', err);
-    });
+    console.log('⏳ En attente de 4 autres participants avant assignment de bar');
+    console.log('📊 Statut actuel: waiting (1/5 participants)');
+    console.log('🎯 Le trigger SQL assignera automatiquement un bar quand le groupe sera complet');
 
     const typedGroup: Group = {
       ...newGroup,
