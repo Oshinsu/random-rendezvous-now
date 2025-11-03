@@ -91,7 +91,7 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md overflow-hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999]">
+      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden">
         {/* Image contextuelle */}
         <div className="relative w-full h-40 -mx-6 -mt-6 mb-4 overflow-hidden">
           <img 

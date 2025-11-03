@@ -58,6 +58,15 @@
     --sidebar-border: 0 0% 89.8%;
     --sidebar-ring: 0 72% 51%;
 
+    /* Z-Index Scale (SOTA 2025 - Radix UI) */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+
     --radius: 12px;
   }
 
