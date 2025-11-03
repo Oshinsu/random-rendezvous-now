@@ -130,7 +130,6 @@ const AppRoutes = () => (
       </ProtectedRoute>
     } />
     <Route path="/auth" element={<AuthPage />} />
-    <Route path="/auth/v1/callback" element={<AuthCallbackPage />} />
     
     {/* Admin Routes */}
     <Route path="/admin" element={
