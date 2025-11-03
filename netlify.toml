@@ -1,0 +1,8 @@
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  # Whitelist Google Maps API Key - public key secured by HTTP Referrer restrictions
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyCV-s1LQkLIYHcLJpJ7aGhKQ5Jy6ItJOHc"
