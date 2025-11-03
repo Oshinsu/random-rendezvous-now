@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 // Removed RefreshCw icon import to avoid "relaunch" icon
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { GooglePlacesService } from '@/services/googlePlaces';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
@@ -96,19 +96,12 @@ const BarAssignmentButton = ({ groupId, onBarAssigned, userLocation }: BarAssign
         } : null
       });
 
-      toast({
-        title: '🍺 Bar assigné !',
-        description: `Rendez-vous au ${selectedBar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-      });
+      toast.success(`🍺 Bar assigné ! Rendez-vous au ${selectedBar.name} à ${meetingTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`);
 
       onBarAssigned();
     } catch (error) {
       console.error('❌ Erreur assignation:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'assigner un bar. Réessayez.',
-        variant: 'destructive',
-      });
+      toast.error('Impossible d\'assigner un bar. Réessayez.');
     } finally {
       setLoading(false);
     }

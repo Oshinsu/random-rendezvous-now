@@ -8,7 +8,7 @@ import { useUserDetails } from "@/hooks/useUserDetails";
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { User, MapPin, MessageSquare, Star, Edit, Save, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -20,7 +20,6 @@ interface UserDetailModalProps {
 
 export const UserDetailModal = ({ userId, isOpen, onClose }: UserDetailModalProps) => {
   const { fetchUserDetails, updateProfile, loading, error } = useUserDetails();
-  const { toast } = useToast();
   const [userDetails, setUserDetails] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -46,10 +45,7 @@ export const UserDetailModal = ({ userId, isOpen, onClose }: UserDetailModalProp
   const handleSave = async () => {
     const success = await updateProfile(userId, editForm);
     if (success) {
-      toast({
-        title: "Profil mis à jour",
-        description: "Les informations utilisateur ont été modifiées",
-      });
+      toast.success("Les informations utilisateur ont été modifiées");
       setEditing(false);
       loadUserDetails();
     }

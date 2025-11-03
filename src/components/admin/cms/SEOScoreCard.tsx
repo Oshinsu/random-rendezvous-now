@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCMSSEOScores, useRecalculateSEO } from '@/hooks/useCMSSEOScores';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface SEOScoreCardProps {
   text: string;
@@ -81,7 +81,6 @@ const ScoreItem = ({
 };
 
 export const SEOScoreCard = ({ text, contentId }: SEOScoreCardProps) => {
-  const { toast } = useToast();
   const { data: seoData } = useCMSSEOScores();
   const recalculateMutation = useRecalculateSEO();
 
@@ -111,26 +110,15 @@ export const SEOScoreCard = ({ text, contentId }: SEOScoreCardProps) => {
 
   const handleRecalculate = async () => {
     if (!contentId) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de recalculer le score sans ID de contenu",
-        variant: "destructive",
-      });
+      toast.error("Impossible de recalculer le score sans ID de contenu");
       return;
     }
 
     try {
       await recalculateMutation.mutateAsync(contentId);
-      toast({
-        title: "Score recalculé",
-        description: "Le score SEO a été mis à jour avec succès",
-      });
+      toast.success("Le score SEO a été mis à jour avec succès");
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de recalculer le score",
-        variant: "destructive",
-      });
+      toast.error("Impossible de recalculer le score");
     }
   };
   

@@ -3,7 +3,7 @@ import { MessageCircle, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ChatHeaderProps {
   messageCount: number;
@@ -17,9 +17,9 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
       if (typeof window === 'undefined' || !('Notification' in window)) return;
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
-        toast({ title: 'Notifications activées', description: 'Vous recevrez des alertes pour vos groupes.' });
+        toast.success('Vous recevrez des alertes pour vos groupes.');
       } else {
-        toast({ title: 'Notifications bloquées', description: 'Activez-les dans les paramètres du navigateur.', variant: 'destructive' });
+        toast.error('Activez-les dans les paramètres du navigateur.');
       }
     } catch {}
   };

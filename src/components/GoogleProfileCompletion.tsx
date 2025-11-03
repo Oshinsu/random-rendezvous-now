@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 export const GoogleProfileCompletion = () => {
@@ -44,11 +44,7 @@ export const GoogleProfileCompletion = () => {
 
   const handleSubmit = async () => {
     if (!gender || !city) {
-      toast({
-        title: t('auth.complete_profile_error'),
-        description: t('auth.complete_profile_desc'),
-        variant: 'destructive'
-      });
+      toast.error(t('auth.complete_profile_desc'));
       return;
     }
 
@@ -66,18 +62,11 @@ export const GoogleProfileCompletion = () => {
 
       if (error) throw error;
 
-      toast({
-        title: t('auth.profile_completed'),
-        description: t('auth.welcome_to_random')
-      });
+      toast.success(t('auth.welcome_to_random'));
 
       setIsOpen(false);
     } catch (error: any) {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }

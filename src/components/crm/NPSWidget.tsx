@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, Meh } from 'lucide-react';
 
 interface NPSWidgetProps {
@@ -19,11 +19,7 @@ export const NPSWidget = ({ groupId, barName, onComplete }: NPSWidgetProps) => {
 
   const handleSubmit = async () => {
     if (score === null) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner une note",
-        variant: "destructive"
-      });
+      toast.error("Veuillez sélectionner une note");
       return;
     }
 
@@ -43,19 +39,12 @@ export const NPSWidget = ({ groupId, barName, onComplete }: NPSWidgetProps) => {
         context: { bar_name: barName }
       });
 
-      toast({
-        title: "Merci !",
-        description: "Votre avis nous aide à améliorer Random"
-      });
+      toast.success("Votre avis nous aide à améliorer Random");
 
       onComplete?.();
     } catch (error) {
       console.error('Error submitting NPS:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'envoyer votre avis",
-        variant: "destructive"
-      });
+      toast.error("Impossible d'envoyer votre avis");
     } finally {
       setIsSubmitting(false);
     }

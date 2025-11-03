@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Download } from "lucide-react";
 
 interface ExportButtonProps {
@@ -17,7 +17,6 @@ export const ExportButton = ({
   className = "" 
 }: ExportButtonProps) => {
   const [isExporting, setIsExporting] = useState(false);
-  const { toast } = useToast();
 
   const exportToCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -61,11 +60,7 @@ export const ExportButton = ({
 
   const handleExport = async () => {
     if (data.length === 0) {
-      toast({
-        title: "Aucune donnée",
-        description: "Il n'y a aucune donnée à exporter",
-        variant: "destructive",
-      });
+      toast.error("Il n'y a aucune donnée à exporter");
       return;
     }
 
@@ -80,17 +75,10 @@ export const ExportButton = ({
         exportToJSON(data, filename);
       }
 
-      toast({
-        title: "Export réussi",
-        description: `${data.length} enregistrement(s) exporté(s) en ${format.toUpperCase()}`,
-      });
+      toast.success(`${data.length} enregistrement(s) exporté(s) en ${format.toUpperCase()}`);
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: "Erreur d'export",
-        description: "Impossible d'exporter les données",
-        variant: "destructive",
-      });
+      toast.error("Impossible d'exporter les données");
     } finally {
       setIsExporting(false);
     }

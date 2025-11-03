@@ -5,13 +5,12 @@ import { Building, Mail, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export const EmptyBarOwnersState = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const { toast } = useToast();
 
   const handleInvite = () => {
     // Generate mailto link
@@ -34,10 +33,7 @@ L'équipe Random`;
     const body = encodeURIComponent(message || defaultMessage);
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     
-    toast({
-      title: "Email généré",
-      description: "Votre client email va s'ouvrir avec le message pré-rempli",
-    });
+    toast.success("Votre client email va s'ouvrir avec le message pré-rempli");
     
     setShowInviteModal(false);
     setEmail('');

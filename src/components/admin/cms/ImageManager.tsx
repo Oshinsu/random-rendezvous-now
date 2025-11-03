@@ -19,7 +19,7 @@ import {
   Download,
   Settings
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ImageManagerProps {
@@ -38,7 +38,6 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
   const [copied, setCopied] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   // Images actuellement utilisées dans le projet
   const galleryImages = [
@@ -63,20 +62,12 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
 
     // Validation
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un fichier image valide",
-        variant: "destructive",
-      });
+      toast.error("Veuillez sélectionner un fichier image valide");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB (limite du bucket)
-      toast({
-        title: "Erreur", 
-        description: "L'image doit faire moins de 5MB",
-        variant: "destructive",
-      });
+      toast.error("L'image doit faire moins de 5MB");
       return;
     }
 
@@ -128,10 +119,7 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
         setUploadProgress(0);
       }, 500);
 
-      toast({
-        title: "✅ Succès",
-        description: "Image uploadée vers Supabase Storage",
-      });
+      toast.success("Image uploadée vers Supabase Storage");
 
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -139,11 +127,7 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
       setUploadProgress(0);
       setImagePreview(null);
       
-      toast({
-        title: "❌ Erreur d'upload",
-        description: error.message || "Impossible d'uploader l'image",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Impossible d'uploader l'image");
     }
   }, [onChange, toast]);
 
@@ -152,16 +136,9 @@ export const ImageManager = ({ value, onChange, onSave, isSaving = false, label 
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: "Copié",
-        description: "URL copiée dans le presse-papiers",
-      });
+      toast.success("URL copiée dans le presse-papiers");
     } catch (err) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de copier l'URL",
-        variant: "destructive",
-      });
+      toast.error("Impossible de copier l'URL");
     }
   };
 

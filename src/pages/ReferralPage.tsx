@@ -5,13 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useReferralProgram } from '@/hooks/useReferralProgram';
 import { Gift, Users, Share2, Copy, Check } from 'lucide-react';
 
 export default function ReferralPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const {
     myReferralCode,
     referrals,
@@ -27,20 +26,14 @@ export default function ReferralPage() {
       navigator.clipboard.writeText(myReferralCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: 'Code copié !',
-        description: 'Votre code de parrainage a été copié dans le presse-papier.',
-      });
+      toast.success('Votre code de parrainage a été copié dans le presse-papier.');
     }
   };
 
   const handleShare = () => {
     const link = shareReferralLink();
     if (link) {
-      toast({
-        title: 'Lien copié !',
-        description: 'Le lien de parrainage a été copié dans le presse-papier.',
-      });
+      toast.success('Le lien de parrainage a été copié dans le presse-papier.');
     }
   };
 

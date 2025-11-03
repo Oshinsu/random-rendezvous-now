@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -22,11 +21,7 @@ const AuthCallbackPage = () => {
         // Handle OAuth errors
         if (error_code) {
           console.error('OAuth error:', error_code, error_description);
-          toast({
-            title: "Erreur d'authentification",
-            description: error_description || 'Échec de la connexion OAuth',
-            variant: "destructive",
-          });
+          toast.error(error_description || 'Échec de la connexion OAuth');
           navigate('/auth');
           return;
         }
@@ -38,21 +33,14 @@ const AuthCallbackPage = () => {
           
           if (error) {
             console.error('Code exchange error:', error);
-            toast({
-              title: "Erreur d'authentification",
-              description: error.message,
-              variant: "destructive",
-            });
+            toast.error(error.message);
             navigate('/auth');
             return;
           }
           
           if (data.session) {
             console.log('✅ Session created successfully');
-            toast({
-              title: "Bienvenue !",
-              description: "Connexion Google réussie.",
-            });
+            toast.success("Connexion Google réussie.");
             navigate('/dashboard');
             return;
           }
@@ -63,10 +51,7 @@ const AuthCallbackPage = () => {
         const { data, error } = await supabase.auth.getSession();
         
         if (data.session) {
-          toast({
-            title: "Bienvenue !",
-            description: "Connexion réussie.",
-          });
+          toast.success("Connexion réussie.");
           navigate('/dashboard');
         } else {
           console.log('❌ No session found, redirecting to auth');
@@ -74,11 +59,7 @@ const AuthCallbackPage = () => {
         }
       } catch (error) {
         console.error('Unexpected error during auth callback:', error);
-        toast({
-          title: "Erreur",
-          description: "Une erreur inattendue s'est produite.",
-          variant: "destructive",
-        });
+        toast.error("Une erreur inattendue s'est produite.");
         navigate('/auth');
       }
     };

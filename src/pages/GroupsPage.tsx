@@ -1,7 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedGroups } from '@/hooks/useUnifiedGroups';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 // Nettoyage géré automatiquement par cleanup-groups edge function
@@ -49,9 +49,7 @@ const GroupsPage = () => {
       console.log('🍺 Bar assigné détecté dans GroupsPage');
       
       // ✅ Toast notification
-      toast({
-        title: "🎉 Bar assigné !",
-        description: `Rendez-vous au ${event.detail.barName}`,
+      toast.success(`Rendez-vous au ${event.detail.barName}`, {
         duration: 5000,
       });
       

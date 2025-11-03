@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, MapPin, Users, X, UserPlus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import InlineScheduleGroupForm from '@/components/InlineScheduleGroupForm';
 import AppLayout from '@/components/AppLayout';
 import FullGroupDisplay from '@/components/FullGroupDisplay';
@@ -99,24 +99,13 @@ export default function UnifiedScheduledGroupsPage() {
       const result = await UnifiedScheduledGroupService.joinScheduledGroup(groupId, user.id);
 
       if (result.success) {
-        toast({
-          title: t('scheduled_groups.success_join'),
-          description: t('scheduled_groups.success_join')
-        });
+        toast.success(t('scheduled_groups.success_join'));
         await fetchData();
       } else {
-        toast({
-          title: t('common.error'),
-          description: result.error || t('scheduled_groups.error_join'),
-          variant: "destructive"
-        });
+        toast.error(result.error || t('scheduled_groups.error_join'));
       }
     } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: t('scheduled_groups.error_occurred'),
-        variant: "destructive"
-      });
+      toast.error(t('scheduled_groups.error_occurred'));
     } finally {
       setActionInProgress(null);
     }
@@ -130,24 +119,13 @@ export default function UnifiedScheduledGroupsPage() {
       const result = await UnifiedScheduledGroupService.cancelScheduledGroup(groupId, user.id);
       
       if (result.success) {
-        toast({
-          title: t('scheduled_groups.success_cancel'),
-          description: t('scheduled_groups.success_cancel')
-        });
+        toast.success(t('scheduled_groups.success_cancel'));
         await fetchData();
       } else {
-        toast({
-          title: t('common.error'),
-          description: result.error || t('scheduled_groups.error_cancel'),
-          variant: "destructive"
-        });
+        toast.error(result.error || t('scheduled_groups.error_cancel'));
       }
     } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: t('scheduled_groups.error_occurred'),
-        variant: "destructive"
-      });
+      toast.error(t('scheduled_groups.error_occurred'));
     } finally {
       setActionInProgress(null);
     }
@@ -161,24 +139,13 @@ export default function UnifiedScheduledGroupsPage() {
       const result = await UnifiedScheduledGroupService.deleteScheduledGroup(groupId, user.id);
 
       if (result.success) {
-        toast({
-          title: t('scheduled_groups.success_delete'),
-          description: t('scheduled_groups.success_delete')
-        });
+        toast.success(t('scheduled_groups.success_delete'));
         await fetchData();
       } else {
-        toast({
-          title: t('common.error'),
-          description: result.error || t('scheduled_groups.error_delete'),
-          variant: "destructive"
-        });
+        toast.error(result.error || t('scheduled_groups.error_delete'));
       }
     } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: t('scheduled_groups.error_occurred'),
-        variant: "destructive"
-      });
+      toast.error(t('scheduled_groups.error_occurred'));
     } finally {
       setActionInProgress(null);
     }

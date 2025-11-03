@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, MapPin, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { UnifiedScheduledGroupService, CreateScheduledGroupData } from '@/services/unifiedScheduledGroupService';
 
@@ -128,28 +128,17 @@ const InlineScheduleGroupForm: React.FC<InlineScheduleGroupFormProps> = ({ onSch
       const result = await UnifiedScheduledGroupService.createScheduledGroup(createData, user.id);
 
       if (result.success) {
-        toast({
-          title: "Groupe planifié !",
-          description: `Votre groupe est programmé pour le ${format(scheduledFor, 'PPP à HH:mm', { locale: fr })}`
-        });
+        toast.success(`Groupe planifié pour le ${format(scheduledFor, 'PPP à HH:mm', { locale: fr })}`);
         
         resetForm();
         setShowForm(false);
         onScheduled?.();
       } else {
-        toast({
-          title: "Erreur",
-          description: result.error || "Impossible de créer le groupe planifié",
-          variant: "destructive"
-        });
+        toast.error(result.error || "Impossible de créer le groupe planifié");
       }
     } catch (error) {
       console.error('Error scheduling group:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive"
-      });
+      toast.error("Une erreur inattendue s'est produite");
     } finally {
       setLoading(false);
     }
