@@ -71,33 +71,54 @@
   }
 
   .dark {
-    --background: 0 0% 9%;
-    --foreground: 0 0% 96%;
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 45 85% 65%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 0 84.2% 60.2%;
+    /* SOTA 2025 - Backgrounds confortables (pas trop sombres) */
+    --background: 0 0% 12%;
+    --foreground: 0 0% 95%;
+    
+    /* Cards - Élévation claire */
+    --card: 0 0% 16%;
+    --card-foreground: 0 0% 95%;
+    
+    /* Popover */
+    --popover: 0 0% 16%;
+    --popover-foreground: 0 0% 95%;
+    
+    /* Primary - ROUGE RANDOM (identité de marque) */
+    --primary: 0 72% 58%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Secondary - Gris moyens */
+    --secondary: 0 0% 22%;
+    --secondary-foreground: 0 0% 95%;
+    
+    /* Muted - Textes secondaires lisibles */
+    --muted: 0 0% 22%;
+    --muted-foreground: 0 0% 65%;
+    
+    /* Accent */
+    --accent: 0 0% 22%;
+    --accent-foreground: 0 0% 95%;
+    
+    /* Destructive - Rouge vif visible */
+    --destructive: 0 84% 65%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 45 85% 65%;
-    --sidebar-background: 0 0% 15%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 45 85% 65%;
-    --sidebar-primary-foreground: 0 0% 9%;
-    --sidebar-accent: 0 0% 20%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 45 85% 65%;
+    
+    /* Bordures subtiles */
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    
+    /* Ring - Rouge Random */
+    --ring: 0 72% 58%;
+    
+    /* Sidebar - Cohérent avec thème */
+    --sidebar-background: 0 0% 14%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 72% 58%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 22%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 24%;
+    --sidebar-ring: 0 72% 58%;
   }
 
   * {
@@ -105,7 +126,7 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-neutral-50 to-brand-50 dark:from-neutral-900 dark:to-neutral-800 text-foreground font-body;
+    @apply bg-gradient-to-br from-neutral-50 to-brand-50/30 dark:from-[hsl(0,0%,6%)] dark:via-[hsl(0,0%,10%)] dark:to-[hsl(0,0%,7%)] text-foreground font-body;
     font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -150,8 +171,9 @@
   }
 
   .dark .glass-morphism {
-    background: rgba(38, 38, 38, 0.90);
-    border: 1px solid rgba(241, 194, 50, 0.15);
+    background: rgba(41, 41, 41, 0.85);
+    border: 1px solid rgba(234, 60, 60, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   .glass-card {
@@ -162,8 +184,9 @@
   }
 
   .dark .glass-card {
-    background: rgba(38, 38, 38, 0.96);
-    border: 1px solid rgba(241,194,50,0.18);
+    background: rgba(41, 41, 41, 0.92);
+    border: 1px solid rgba(234, 60, 60, 0.15);
+    box-shadow: 0 5px 28px rgba(0, 0, 0, 0.3);
   }
 
   .glass-card:hover {
@@ -175,8 +198,19 @@
     background: linear-gradient(135deg, #f1c232 0%, #e6a91a 50%, #c08a15 100%);
   }
 
+  .dark .gradient-brand {
+    background: linear-gradient(135deg, #EA3C3C 0%, #C93030 50%, #A82626 100%);
+  }
+
   .gradient-text {
     background: linear-gradient(135deg, #f1c232 0%, #e6a91a 50%, #c08a15 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .dark .gradient-text {
+    background: linear-gradient(135deg, #EA3C3C 0%, #C93030 50%, #A82626 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -267,6 +301,20 @@
   background: linear-gradient(135deg, #e6a91a, #c08a15);
 }
 
+.dark::-webkit-scrollbar-track {
+  background: rgba(31, 31, 31, 0.5);
+  border-radius: 10px;
+}
+
+.dark::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #EA3C3C, #C93030);
+  border-radius: 10px;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #C93030, #A82626);
+}
+
 /* Selection highlight */
 ::selection {
   background: rgba(241, 194, 50, 0.3);
@@ -276,6 +324,16 @@
 ::-moz-selection {
   background: rgba(241, 194, 50, 0.3);
   color: #825c16;
+}
+
+.dark ::selection {
+  background: rgba(234, 60, 60, 0.35);
+  color: #F2F2F2;
+}
+
+.dark ::-moz-selection {
+  background: rgba(234, 60, 60, 0.35);
+  color: #F2F2F2;
 }
 
 /* Animation keyframes */

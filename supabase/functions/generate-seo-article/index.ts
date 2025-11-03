@@ -541,8 +541,8 @@ ${JSON.stringify(schemaFAQ, null, 2)}
     console.log(`📊 SEO Score: ${seoScore}/100 (Words: ${wordCount}, Flesch: ${fleschScore.toFixed(1)}, Density: ${keywordDensity.toFixed(2)}%)`);
     console.log(`📊 Rich elements: Table=${hasTable}, FAQ=${hasFAQ}, Internal Links=${internalLinksCount}, Sources=${externalSourcesCount}`);
     
-    // ⚠️ Quality validation: regenerate if score < 85
-    if (seoScore < 85) {
+    // ⚠️ Quality validation: regenerate if score < 70
+    if (seoScore < 70) {
       console.warn(`⚠️ SEO Score too low (${seoScore}/100). Article quality insufficient but will be saved as draft.`);
       // Note: On pourrait implémenter une régénération automatique ici, mais pour éviter les boucles infinies,
       // on sauvegarde en draft et on log l'avertissement
@@ -569,8 +569,8 @@ ${JSON.stringify(schemaFAQ, null, 2)}
         excerpt: articleData.excerpt,
         featured_image_url: featuredImageUrl,
         seo_score: seoScore,
-        status: seoScore >= 85 ? 'published' : 'draft', // Auto-publish uniquement si score >= 85
-        published_at: seoScore >= 85 ? new Date().toISOString() : null,
+        status: seoScore >= 70 ? 'published' : 'draft', // Auto-publish uniquement si score >= 70
+        published_at: seoScore >= 70 ? new Date().toISOString() : null,
         generated_by_ai: true,
       })
       .select()
