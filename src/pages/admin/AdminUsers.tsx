@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BatchActions } from '@/components/admin/users/BatchActions';
 import { UserFilters } from '@/components/admin/users/UserFilters';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGenderDetection } from '@/hooks/useGenderDetection';
 
 interface UserData {
   id: string;
@@ -42,6 +43,9 @@ export const AdminUsers = () => {
   const [healthScores, setHealthScores] = useState<Record<string, number>>({});
   const [healthScoreRange, setHealthScoreRange] = useState<number[]>([0, 100]);
   const [churnRisks, setChurnRisks] = useState<string[]>([]);
+  
+  // ✅ GENDER DETECTION via Lovable AI
+  const { detectGenders, genderStats, getGenderForUser, loading: genderLoading } = useGenderDetection();
 
   React.useEffect(() => {
     fetchUsers();
@@ -73,6 +77,9 @@ export const AdminUsers = () => {
       }));
 
       setUsers(processedUsers);
+      
+      // ✅ GENDER DETECTION: Trigger detection for all users
+      detectGenders(processedUsers);
       
       // ✅ SOTA 2025: Fetch health scores
       const { data: healthData } = await supabase
@@ -127,7 +134,7 @@ export const AdminUsers = () => {
       </div>
 
       {/* ✅ SOTA 2025: Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
@@ -180,6 +187,44 @@ export const AdminUsers = () => {
             <div className="text-3xl font-bold text-orange-800">
               {selectedUsers.length}
             </div>
+          </CardContent>
+        </Card>
+        
+        {/* ✅ NEW: Gender Detection KPI Card */}
+        <Card className="border-pink-200 bg-pink-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-pink-700 flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Répartition H/F
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {genderLoading ? (
+              <div className="flex justify-center py-2">
+                <LoadingSpinner size="sm" />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">👨 Hommes</span>
+                  <Badge className="bg-blue-100 text-blue-800 text-xs">
+                    {genderStats.hommes} ({genderStats.total > 0 ? Math.round(genderStats.hommes / genderStats.total * 100) : 0}%)
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">👩 Femmes</span>
+                  <Badge className="bg-pink-100 text-pink-800 text-xs">
+                    {genderStats.femmes} ({genderStats.total > 0 ? Math.round(genderStats.femmes / genderStats.total * 100) : 0}%)
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">❓ Doute</span>
+                  <Badge className="bg-gray-100 text-gray-800 text-xs">
+                    {genderStats.doutes} ({genderStats.total > 0 ? Math.round(genderStats.doutes / genderStats.total * 100) : 0}%)
+                  </Badge>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -277,6 +322,7 @@ export const AdminUsers = () => {
                       </TableHead>
                       <TableHead>Utilisateur</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Genre</TableHead>
                       <TableHead>Health Score</TableHead>
                       <TableHead>Inscription</TableHead>
                       <TableHead>Dernière connexion</TableHead>
@@ -315,6 +361,15 @@ export const AdminUsers = () => {
                           </div>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const gender = getGenderForUser(user.id);
+                            if (!gender) return <span className="text-muted-foreground text-xs">-</span>;
+                            if (gender === 'homme') return <Badge className="bg-blue-100 text-blue-800 text-xs">👨 H</Badge>;
+                            if (gender === 'femme') return <Badge className="bg-pink-100 text-pink-800 text-xs">👩 F</Badge>;
+                            return <Badge className="bg-gray-100 text-gray-800 text-xs">❓</Badge>;
+                          })()}
+                        </TableCell>
                         <TableCell>
                           {healthScores[user.id] ? (
                             <Badge 

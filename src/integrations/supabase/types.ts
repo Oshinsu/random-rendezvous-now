@@ -2257,6 +2257,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_gender_cache: {
+        Row: {
+          confidence: number | null
+          detected_at: string | null
+          gender: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          detected_at?: string | null
+          gender: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          detected_at?: string | null
+          gender?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notification_preferences: {
         Row: {
           channel_email: boolean

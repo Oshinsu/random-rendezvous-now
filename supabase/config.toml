@@ -188,3 +188,6 @@ verify_jwt = false
 [functions.monitor-blog-health]
 verify_jwt = false
 
+[functions.detect-user-gender]
+verify_jwt = true
+
