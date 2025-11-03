@@ -47,7 +47,9 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function AdminBlogSEO() {
   const [newKeyword, setNewKeyword] = useState('');
@@ -602,9 +604,9 @@ export default function AdminBlogSEO() {
           <TabsContent value="schedule" className="space-y-4">
             <Card>
               <CardHeader className="border-b bg-gradient-to-r from-red-50 to-orange-50">
-                <CardTitle className="text-xl">Configuration de la génération automatique</CardTitle>
+                <CardTitle className="text-xl">Génération Automatique (Deno Cron)</CardTitle>
                 <CardDescription className="mt-1">
-                  Paramétrez la fréquence et l'automatisation de la génération d'articles
+                  Système automatisé via Supabase Scheduled Functions. Exécution quotidienne à 9h00 (Paris).
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-8">
@@ -697,16 +699,40 @@ export default function AdminBlogSEO() {
                 {/* Info Box */}
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    <strong className="font-semibold">Comment ça marche ?</strong>
-                    <p className="mt-2 text-muted-foreground">
-                      Un système CRON automatique vérifie la planification. Quand le moment est venu, 
-                      l'IA sélectionne intelligemment le mot-clé prioritaire non utilisé récemment et génère 
-                      un article optimisé SEO de 1500-2000 mots. L'article est sauvegardé en brouillon pour 
-                      relecture avant publication sur le blog.
-                    </p>
+                  <AlertTitle>Système SOTA 2025 Activé</AlertTitle>
+                  <AlertDescription className="text-sm mt-2">
+                    <strong>Deno Cron (daily-blog-generation)</strong> s'exécute chaque jour à 9h00 (Paris). 
+                    Il vérifie <code>blog_generation_schedule</code>, sélectionne intelligemment le mot-clé prioritaire, 
+                    puis invoque <code>generate-seo-article</code> pour créer un article enrichi (tableaux, FAQ Schema.org, 
+                    internal links). Score SEO cible : <strong>&gt;85/100</strong>.
                   </AlertDescription>
                 </Alert>
+
+                {/* Test Buttons */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => generateNow.mutate()}
+                    disabled={generateNow.isPending || !schedule?.is_active}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {generateNow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    🎯 Générer Article (generate-seo-article)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const { data, error } = await supabase.functions.invoke('daily-blog-generation');
+                        if (error) throw error;
+                        toast.success(`Cron testé avec succès: ${JSON.stringify(data)}`);
+                      } catch (err: any) {
+                        toast.error(`Erreur cron: ${err.message}`);
+                      }
+                    }}
+                  >
+                    🧪 Tester Cron (daily-blog-generation)
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -724,6 +750,17 @@ export default function AdminBlogSEO() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
+                {(!logs || logs.length === 0) && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Aucune génération détectée</AlertTitle>
+                    <AlertDescription>
+                      Le système n'a enregistré aucune tentative de génération. Testez manuellement 
+                      avec le bouton "🧪 Tester Cron" dans l'onglet Planification pour vérifier que tout fonctionne.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="text-sm text-blue-700 font-medium">Taux de succès</div>
