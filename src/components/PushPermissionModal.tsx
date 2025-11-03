@@ -6,6 +6,7 @@ import { BellRing, Sparkles } from 'lucide-react';
 
 interface PushPermissionModalProps {
   trigger: 'first_group' | 'group_confirmed' | 'first_visit';
+  open: boolean;
   onClose?: () => void;
 }
 
@@ -19,9 +20,8 @@ interface PushPermissionModalProps {
  * 
  * Source: Braze, MoEngage best practices October 2025
  */
-export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalProps) => {
+export const PushPermissionModal = ({ trigger, open, onClose }: PushPermissionModalProps) => {
   const { requestPermission, isEnabled } = usePushNotifications();
-  const [isOpen, setIsOpen] = useState(false);
 
   // Copy selon contexte (Random tone of voice - Gen Z)
   const COPY = {
@@ -47,73 +47,17 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
 
   const copy = COPY[trigger];
 
-  useEffect(() => {
-    // Check if permission already asked (localStorage)
-    const permissionAsked = localStorage.getItem('push_permission_asked');
-    
-    // ✅ VÉRIFICATION DIRECTE DU NAVIGATEUR (pas juste le hook)
-    const browserPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-    
-    // Don't show if browser already granted OR already asked OR hook says enabled
-    if (browserPermission === 'granted' || permissionAsked === 'true' || isEnabled) {
-      console.log('🔕 Modal NOT shown:', { browserPermission, permissionAsked, isEnabled });
-      setIsOpen(false);
-      return;
-    }
-
-    // Show modal after delay (better UX)
-    const timer = setTimeout(() => {
-      // ✅ Double-check avant d'ouvrir (race condition)
-      const recheckAsked = localStorage.getItem('push_permission_asked');
-      const recheckBrowser = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-      
-      if (recheckBrowser !== 'granted' && recheckAsked !== 'true') {
-        console.log('🔔 Opening permission modal');
-        setIsOpen(true);
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []); // ❗ PAS de dépendances - s'exécute qu'une seule fois
-
   const handleAccept = async () => {
-    // ✅ Vérifier si déjà bloqué dans le navigateur
-    if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
-      // Si bloqué, pas besoin de réessayer - juste marquer comme asked
-      localStorage.setItem('push_permission_asked', 'true');
-      localStorage.setItem('push_permission_result', 'denied');
-      setIsOpen(false);
-      onClose?.();
-      return;
-    }
-
     await requestPermission();
-    
-    // Track acceptance (analytics)
-    localStorage.setItem('push_permission_asked', 'true');
-    localStorage.setItem('push_permission_result', 'requested');
-    localStorage.setItem('push_permission_trigger', trigger);
-    
-    setIsOpen(false);
     onClose?.();
   };
 
   const handleDismiss = () => {
-    // Track dismissal
-    localStorage.setItem('push_permission_asked', 'true');
-    localStorage.setItem('push_permission_result', 'dismissed');
-    localStorage.setItem('push_permission_trigger', trigger);
-    
-    setIsOpen(false);
     onClose?.();
   };
 
-  // Don't render if already enabled OR browser granted
-  const browserPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
-  if (isEnabled || browserPermission === 'granted') return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         {/* Image contextuelle - ✅ SANS MARGES NÉGATIVES */}
         <div className="relative w-full h-40 overflow-hidden">

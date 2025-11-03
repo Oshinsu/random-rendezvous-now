@@ -340,6 +340,7 @@ export default function NotificationsPage() {
       {showPermissionModal && (
         <PushPermissionModal 
           trigger="first_visit"
+          open={showPermissionModal}
           onClose={() => setShowPermissionModal(false)}
         />
       )}

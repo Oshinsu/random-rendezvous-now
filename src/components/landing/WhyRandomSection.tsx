@@ -35,10 +35,10 @@ const WhyRandomSection = () => {
   const sectionTitle = getContent('benefits_section_title', 'Pourquoi Random ?');
   
   return (
-    <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-white via-brand-50/10 to-white relative overflow-hidden">
+    <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-white via-neutral-50/10 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-10 left-20 w-72 h-72 bg-brand-200/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-10 right-20 w-96 h-96 bg-brand-300/10 rounded-full blur-3xl"></div>
+      <div className="absolute top-10 left-20 w-72 h-72 bg-amber-200/10 dark:bg-red-900/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-10 right-20 w-96 h-96 bg-amber-300/10 dark:bg-red-800/10 rounded-full blur-3xl"></div>
       
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-extrabold text-center mb-4 sm:mb-6 animate-slide-in-up">
@@ -50,14 +50,14 @@ const WhyRandomSection = () => {
             )
           ))}
         </h2>
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
+        <p className="text-base sm:text-lg md:text-xl text-neutral-600 dark:text-neutral-400 text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
           {getContent('benefits_section_subtitle', 'Découvre pourquoi Random transforme tes sorties')}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
           {benefits.map((benefit, index) => (
             <div 
               key={index} 
-              className="bento-card group relative overflow-hidden rounded-3xl bg-white shadow-strong border border-brand-200/20 animate-slide-in-up" 
+              className="bento-card group relative overflow-hidden rounded-3xl bg-white dark:bg-neutral-800 shadow-strong border border-amber-200/20 dark:border-red-900/20 animate-slide-in-up" 
               style={{animationDelay: `${index * 100 + 200}ms`}}
             >
               {/* Image avec Ken Burns effect */}
@@ -84,18 +84,18 @@ const WhyRandomSection = () => {
                 
                 {/* Titre sur l'image */}
                 <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
-                  <h3 className="text-xl sm:text-2xl font-bold text-white drop-shadow-2xl">{benefit.title}</h3>
+                  <h3 className="text-xl sm:text-2xl font-bold text-white dark:text-neutral-100 drop-shadow-2xl">{benefit.title}</h3>
                 </div>
               </div>
               
               {/* Description */}
-              <div className="p-6 sm:p-8 bg-gradient-to-br from-white via-brand-50/30 to-white">
-                <p className="text-muted-foreground text-sm sm:text-base leading-relaxed group-hover:text-foreground transition-colors duration-300">
+              <div className="p-6 sm:p-8 bg-gradient-to-br from-white via-neutral-50/30 to-white dark:from-neutral-800 dark:via-neutral-850 dark:to-neutral-800">
+                <p className="text-neutral-600 dark:text-neutral-400 text-sm sm:text-base leading-relaxed group-hover:text-neutral-900 dark:group-hover:text-neutral-100 transition-colors duration-300">
                   {benefit.description}
                 </p>
                 
                 {/* Barre décorative animée */}
-                <div className="mt-4 sm:mt-6 h-1.5 bg-gradient-to-r from-brand-400 via-brand-500 to-brand-600 rounded-full transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
+                <div className="mt-4 sm:mt-6 h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 dark:from-red-600 dark:via-red-700 dark:to-red-800 rounded-full transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
               </div>
             </div>
           ))}

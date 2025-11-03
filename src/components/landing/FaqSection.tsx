@@ -44,7 +44,7 @@ const FaqSection = () => {
             )
           ))}
         </h2>
-        <p className="text-sm sm:text-base text-muted-foreground text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
           {t('faq.subtitle')}
         </p>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
@@ -53,7 +53,7 @@ const FaqSection = () => {
               <AccordionTrigger className="text-left text-sm sm:text-base hover:no-underline py-3 sm:py-4 font-semibold hover:text-primary transition-colors duration-300">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-3 sm:pb-4 pt-2 text-xs sm:text-sm leading-relaxed">
+              <AccordionContent className="text-neutral-600 dark:text-neutral-400 pb-3 sm:pb-4 pt-2 text-xs sm:text-sm leading-relaxed">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

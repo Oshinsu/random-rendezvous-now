@@ -425,7 +425,8 @@ export default function UnifiedScheduledGroupsPage() {
       {showPermissionModal && (
         <Suspense fallback={null}>
           <PushPermissionModal 
-            trigger="first_group" 
+            trigger="first_group"
+            open={showPermissionModal}
             onClose={() => setShowPermissionModal(false)}
           />
         </Suspense>

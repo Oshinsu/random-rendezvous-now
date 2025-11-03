@@ -133,6 +133,10 @@
     min-height: 100vh;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    @apply dark:text-neutral-100;
+  }
+
   h1 {
     @apply font-playfair text-3xl md:text-4xl font-bold tracking-tight;
   }
@@ -277,6 +281,10 @@
     filter: drop-shadow(0 0 12px #f1c23288) drop-shadow(0 0 4px #fffacd25);
   }
 
+  .dark .drop-shadow-glow-gold {
+    filter: drop-shadow(0 0 12px rgba(234, 60, 60, 0.5)) drop-shadow(0 0 4px rgba(234, 60, 60, 0.3));
+  }
+
   .font-playfair {
     font-family: 'Playfair Display', serif;
   }
@@ -390,6 +398,15 @@
 /* Gradient Text Animation */
 .gradient-text-animated {
   background: linear-gradient(90deg, #f1c232, #e6a91a, #f5d363, #f1c232);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+.dark .gradient-text-animated {
+  background: linear-gradient(90deg, #EA3C3C, #FF5555, #EA3C3C, #C93030);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

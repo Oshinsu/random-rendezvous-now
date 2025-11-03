@@ -13,14 +13,17 @@ const PushPermissionModal = lazy(() => import("@/components/PushPermissionModal"
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, Star } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import RandomLogo from "@/components/RandomLogo";
 import LanguageToggle from "@/components/LanguageToggle";
 import ScrollProgressBar from "@/components/ScrollProgressBar";
 import { Helmet } from "react-helmet-async";
+import { usePushPermissionState } from "@/hooks/usePushPermissionState";
+
 const Index = () => {
   const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const { shouldShowModal, markAsAsked } = usePushPermissionState();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   
   // Track section views
@@ -30,15 +33,14 @@ const Index = () => {
 
   // Show push permission modal after user lands (first visit only)
   useEffect(() => {
-    if (user) {
-      const permissionAsked = localStorage.getItem('push_permission_asked');
-      if (!permissionAsked) {
-        setTimeout(() => {
-          setShowPermissionModal(true);
-        }, 8000); // 8s après chargement - moins intrusif
-      }
+    if (user && shouldShowModal) {
+      const timer = setTimeout(() => {
+        setShowPermissionModal(true);
+      }, 8000); // 8s après chargement - moins intrusif
+
+      return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user, shouldShowModal]);
   
   useEffect(() => {
     const sectionTimers = new Map<string, number>();
@@ -87,13 +89,20 @@ const Index = () => {
     trackCTAClick('header', 'go_to_dashboard');
     navigate('/dashboard');
   };
-  return <div className="bg-gradient-to-br from-white via-amber-50/30 to-amber-100/20 min-h-screen flex flex-col bg-pattern">
+
+  const handleCloseModal = () => {
+    markAsAsked();
+    setShowPermissionModal(false);
+  };
+
+  return <div className="bg-gradient-to-br from-white via-neutral-50 to-neutral-100/20 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 min-h-screen flex flex-col bg-pattern">
       <ScrollProgressBar />
       {user && showPermissionModal && (
         <Suspense fallback={null}>
           <PushPermissionModal 
-            trigger="first_visit" 
-            onClose={() => setShowPermissionModal(false)}
+            trigger="first_visit"
+            open={showPermissionModal}
+            onClose={handleCloseModal}
           />
         </Suspense>
       )}
@@ -122,16 +131,16 @@ const Index = () => {
         <div className="container mx-auto flex justify-between items-center max-w-7xl">
           <div className="flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
             <RandomLogo size={36} className="sm:w-12 sm:h-12" withAura animated={false} />
-            <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight drop-shadow-glow-gold">
+            <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 dark:from-red-500 dark:via-red-600 dark:to-red-700 bg-clip-text text-transparent tracking-tight drop-shadow-glow-gold">
               Random
             </span>
           </div>
           {loading ? <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-amber-700 font-medium text-sm hidden xs:block">Chargement...</p>
+              <div className="w-4 h-4 border-2 border-amber-500 dark:border-red-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-amber-700 dark:text-red-400 font-medium text-sm hidden xs:block">Chargement...</p>
             </div> : user ? <div className="flex items-center gap-1 sm:gap-3">
               <LanguageToggle />
-              <Button onClick={handleGoToDashboard} className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-5" size="sm">
+              <Button onClick={handleGoToDashboard} className="bg-gradient-to-r from-amber-500 to-amber-600 dark:from-red-600 dark:to-red-700 hover:from-amber-600 hover:to-amber-700 dark:hover:from-red-700 dark:hover:to-red-800 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-5" size="sm">
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Mon groupe
               </Button>
@@ -143,7 +152,7 @@ const Index = () => {
               <Button 
                 asChild 
                 variant="outline" 
-                className="border-brand-300 text-brand-700 hover:bg-brand-50 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
+                className="border-amber-300 dark:border-red-700 text-amber-700 dark:text-red-400 hover:bg-amber-50 dark:hover:bg-red-950 hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
                 size="sm"
                 onClick={() => trackCTAClick('header', 'signin')}
               >
@@ -153,7 +162,7 @@ const Index = () => {
               </Button>
               <Button 
                 asChild 
-                className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
+                className="bg-gradient-to-r from-amber-500 to-amber-600 dark:from-red-600 dark:to-red-700 hover:from-amber-600 hover:to-amber-700 dark:hover:from-red-700 dark:hover:to-red-800 text-white shadow-medium hover:scale-102 transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4" 
                 size="sm"
                 onClick={() => trackCTAClick('header', 'signup')}
               >

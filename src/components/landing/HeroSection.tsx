@@ -33,17 +33,12 @@ const HeroSection = () => {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Overlay gradient dynamique */}
-      <div 
-        className="absolute inset-0" 
-        style={{
-          background: 'linear-gradient(135deg, rgba(241, 194, 50, 0.15) 0%, rgba(0, 0, 0, 0.65) 50%, rgba(241, 194, 50, 0.1) 100%)'
-        }}
-      ></div>
+      {/* Overlay gradient - Adapté pour dark mode */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-black/60 to-black/85 dark:from-red-900/20 dark:via-black/70 dark:to-black/90"></div>
       
       <div className="relative container mx-auto px-4 sm:px-6 text-center z-10 h-full flex flex-col justify-center max-w-5xl">
         <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 sm:mb-8 tracking-tight leading-tight">
-          <span className="font-signature text-5xl sm:text-6xl md:text-8xl block mb-2 animate-scale-in drop-shadow-glow-gold">
+          <span className="font-signature text-5xl sm:text-6xl md:text-8xl block mb-2 animate-scale-in drop-shadow-glow-gold text-white dark:text-neutral-100">
             Random
           </span>
           <DynamicText
@@ -61,7 +56,7 @@ const HeroSection = () => {
           <Button 
             onClick={handleMainAction} 
             size="lg" 
-            className="magnetic-button bg-primary hover:bg-primary text-primary-foreground font-bold px-10 sm:px-12 py-5 sm:py-6 text-base sm:text-lg w-full sm:w-auto max-w-xs sm:max-w-none transition-all duration-300 shadow-glow-strong animate-pulse-glow group rounded-2xl"
+            className="magnetic-button bg-gradient-to-r from-amber-500 to-amber-600 dark:from-red-600 dark:to-red-700 hover:from-amber-600 hover:to-amber-700 dark:hover:from-red-700 dark:hover:to-red-800 text-white font-bold px-10 sm:px-12 py-5 sm:py-6 text-base sm:text-lg w-full sm:w-auto max-w-xs sm:max-w-none transition-all duration-300 shadow-glow-strong animate-pulse-glow group rounded-2xl"
           >
             <Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 group-hover:animate-pulse" />
             {user 
