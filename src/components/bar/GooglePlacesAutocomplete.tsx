@@ -30,7 +30,7 @@ export function GooglePlacesAutocomplete({
     const loadGoogleMaps = async () => {
       try {
         const loader = new Loader({
-          apiKey: 'AIzaSyCV-s1LQkLIYHcLJpJ7aGhKQ5Jy6ItJOHc',
+          apiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
           version: 'weekly',
           libraries: ['places']
         });

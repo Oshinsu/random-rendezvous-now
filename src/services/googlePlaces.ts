@@ -19,11 +19,11 @@ export class GooglePlacesService {
     try {
       console.log('🔍 [GooglePlacesService] Recherche améliorée de bars:', { latitude, longitude });
       
-      const response = await fetch('https://xhrievvdnajvylyrowwu.supabase.co/functions/v1/simple-bar-search', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/simple-bar-search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocmlldnZkbmFqdnlseXJvd3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4OTQ1MzUsImV4cCI6MjA2NTQ3MDUzNX0.RfwNUnsTFAzfRqxiqCOtunXBTMJj90MKWOm1iwzVBAs`
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
         },
         body: JSON.stringify({ latitude, longitude })
       });
