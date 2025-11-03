@@ -374,6 +374,66 @@ export type Database = {
           },
         ]
       }
+      blog_generation_logs: {
+        Row: {
+          article_id: string | null
+          created_at: string | null
+          error_message: string | null
+          generation_time_ms: number | null
+          id: string
+          keyword: string | null
+          keyword_id: string | null
+          metadata: Json | null
+          seo_score: number | null
+          status: string
+          tokens_used: number | null
+          word_count: number | null
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          keyword?: string | null
+          keyword_id?: string | null
+          metadata?: Json | null
+          seo_score?: number | null
+          status: string
+          tokens_used?: number | null
+          word_count?: number | null
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          keyword?: string | null
+          keyword_id?: string | null
+          metadata?: Json | null
+          seo_score?: number | null
+          status?: string
+          tokens_used?: number | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_generation_logs_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "blog_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_generation_logs_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "blog_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_generation_schedule: {
         Row: {
           frequency_days: number

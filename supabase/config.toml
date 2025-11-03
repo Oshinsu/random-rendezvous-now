@@ -194,6 +194,9 @@ verify_jwt = true
 [functions.trigger-blog-generation]
 verify_jwt = false
 
+[functions.daily-blog-generation]
+verify_jwt = false
+
 [functions.validate-oauth-request]
 verify_jwt = false
 

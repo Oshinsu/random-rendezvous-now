@@ -25,6 +25,7 @@ import {
 import { useBlogKeywords } from '@/hooks/useBlogKeywords';
 import { useBlogArticles } from '@/hooks/useBlogArticles';
 import { useBlogGeneration } from '@/hooks/useBlogGeneration';
+import { useBlogGenerationLogs, useBlogGenerationStats } from '@/hooks/useBlogGenerationLogs';
 import { 
   Plus, 
   Edit2, 
@@ -58,6 +59,8 @@ export default function AdminBlogSEO() {
   const { keywords, isLoading: keywordsLoading, addKeyword, updateKeyword, deleteKeyword } = useBlogKeywords();
   const { articles, isLoading: articlesLoading, publishArticle, unpublishArticle, deleteArticle, updateArticle } = useBlogArticles();
   const { schedule, generateNow, updateSchedule } = useBlogGeneration();
+  const { data: logs } = useBlogGenerationLogs();
+  const { data: stats } = useBlogGenerationStats();
 
   const handleAddKeyword = async () => {
     if (!newKeyword.trim()) return;
@@ -209,7 +212,7 @@ export default function AdminBlogSEO() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="keywords" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
             <TabsTrigger value="keywords" className="data-[state=active]:bg-red-100">
               <FileText className="h-4 w-4 mr-2" />
               Mots-clés
@@ -221,6 +224,10 @@ export default function AdminBlogSEO() {
             <TabsTrigger value="schedule" className="data-[state=active]:bg-red-100">
               <Calendar className="h-4 w-4 mr-2" />
               Planification
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="data-[state=active]:bg-red-100">
+              <Clock className="h-4 w-4 mr-2" />
+              Monitoring
             </TabsTrigger>
             <TabsTrigger value="health" className="data-[state=active]:bg-red-100">
               <Activity className="h-4 w-4 mr-2" />
@@ -700,6 +707,74 @@ export default function AdminBlogSEO() {
                     </p>
                   </AlertDescription>
                 </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Onglet Monitoring */}
+          <TabsContent value="monitoring" className="space-y-4">
+            <Card>
+              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Monitoring Génération (SOTA 2025)
+                </CardTitle>
+                <CardDescription>
+                  Statistiques en temps réel et logs détaillés
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-sm text-blue-700 font-medium">Taux de succès</div>
+                    <div className="text-2xl font-bold text-blue-900">{stats?.successRate || 0}%</div>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-sm text-green-700 font-medium">Score SEO moyen</div>
+                    <div className="text-2xl font-bold text-green-900">{stats?.avgScore || 0}/100</div>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="text-sm text-purple-700 font-medium">Temps moyen</div>
+                    <div className="text-2xl font-bold text-purple-900">{stats?.avgTime ? `${(stats.avgTime / 1000).toFixed(1)}s` : 'N/A'}</div>
+                  </div>
+                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="text-sm text-orange-700 font-medium">7 derniers jours</div>
+                    <div className="text-2xl font-bold text-orange-900">{stats?.recentActivity || 0}</div>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>Mot-clé</TableHead>
+                        <TableHead>Score SEO</TableHead>
+                        <TableHead>Mots</TableHead>
+                        <TableHead>Temps</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logs?.slice(0, 20).map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell>
+                            {log.status === 'success' && <Badge variant="default">Succès</Badge>}
+                            {log.status === 'error' && <Badge variant="destructive">Erreur</Badge>}
+                            {log.status === 'started' && <Badge variant="secondary">En cours</Badge>}
+                          </TableCell>
+                          <TableCell className="font-medium">{log.keyword || 'N/A'}</TableCell>
+                          <TableCell>{log.seo_score ? `${log.seo_score}/100` : 'N/A'}</TableCell>
+                          <TableCell>{log.word_count || 'N/A'}</TableCell>
+                          <TableCell>{log.generation_time_ms ? `${(log.generation_time_ms / 1000).toFixed(1)}s` : 'N/A'}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: fr })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -11,6 +11,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let logId: string | null = null;
+
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -22,7 +25,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    // Sélectionner le mot-clé à utiliser (priorité haute, jamais utilisé ou utilisé il y a >30 jours)
+    // Select keyword with highest priority
     const { data: keywords, error: keywordError } = await supabase
       .from('blog_keywords')
       .select('*')
@@ -35,7 +38,7 @@ serve(async (req) => {
     if (keywordError) throw keywordError;
 
     if (!keywords || keywords.length === 0) {
-      console.log('No keywords available for article generation');
+      console.log('❌ No keywords available for article generation');
       return new Response(
         JSON.stringify({ error: 'No keywords available' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -43,117 +46,107 @@ serve(async (req) => {
     }
 
     const keyword = keywords[0];
-    console.log(`Generating article for keyword: ${keyword.keyword}`);
+    console.log(`✅ Selected keyword: "${keyword.keyword}" (priority: ${keyword.priority})`);
 
-    // Prompt SOTA 2025 avec USP RANDOM TOTAL + Variété tonale
-    const systemPrompt = `Tu es un expert SEO senior + sociologue urbain, spécialisé dans les liens sociaux, la vie nocturne parisienne et l'innovation sociale.
+    // Log generation start
+    const { data: startLog } = await supabase
+      .from('blog_generation_logs')
+      .insert({
+        status: 'started',
+        keyword_id: keyword.id,
+        keyword: keyword.keyword,
+        metadata: { priority: keyword.priority }
+      })
+      .select()
+      .single();
+    
+    logId = startLog?.id || null;
 
-**USP RANDOM - PROPOSITION DE VALEUR UNIQUE (À MARTELER)** :
-Random n'est PAS juste une app de sorties. C'est un mouvement de résistance contre l'atomisation sociale, un outil de sérendipité urbaine, un catalyseur de liens faibles puissants (Granovetter), et un acteur économique local (180+ bars partenaires). Random permet de sortir de sa bulle de filtre algorithmique pour retrouver le hasard positif des rencontres IRL.
+    // SOTA 2025 System Prompt with Tool Calling
+    const systemPrompt = `Tu es un expert SEO senior + sociologue urbain spécialisé dans les liens sociaux, la vie nocturne parisienne et l'innovation sociale.
 
-**CONTEXTE APPLICATIF (OBLIGATOIRE À INTÉGRER)** :
-- Random est une app mobile/web lancée en 2024 qui matche automatiquement 5 personnes inconnues dans un bar à Paris
+**USP RANDOM - À MARTELER** :
+Random est un mouvement de résistance contre l'atomisation sociale, un catalyseur de liens faibles puissants (Granovetter), avec 180+ bars partenaires. Random sort les gens de leur bulle algorithmique pour créer de la sérendipité urbaine.
+
+**CONTEXTE APPLICATIF** :
+- App mobile/web lancée en 2024, matche automatiquement 5 personnes dans un bar à Paris
 - 3 500+ utilisateurs actifs, 450+ sorties réussies, 180+ bars partenaires
-- USP : spontanéité, authenticité, sortir de sa zone de confort sans prise de tête
-- Cible : 22-35 ans, jeunes actifs parisiens, sociables mais seuls le soir
-- Ton de marque : fun, inclusif, Gen Z-friendly, pas de bullshit
+- USP : spontanéité, authenticité, sortir de sa zone de confort
+- Cible : 22-35 ans, jeunes actifs parisiens
+- Ton : fun, inclusif, Gen Z-friendly
 
-**VARIÉTÉ TONALE OBLIGATOIRE (adapter au keyword)** :
-- **Ton FUN** (bars, sorties, jeudi soir) : Enjoué, Gen Z, émojis légers, anecdotes drôles
-- **Ton SÉRIEUX** (sociologie, économie, psycho) : Académique, citer Granovetter/Putnam/Oldenburg, études IFOP/INSEE, pas d'émojis
-- **Ton MIXTE** (rencontres, amis, seul) : Empathique, stats + témoignages, équilibré
+**STRUCTURE HTML EXIGÉE (SOTA 2025)** :
+Tu DOIS générer un HTML sémantique ultra-riche avec :
 
-**RÈGLES E-E-A-T GOOGLE 2025 (CRITIQUES)** :
-1. **Experience** : Témoignages Random crédibles (prénom + âge + quartier)
-2. **Expertise** : Citer études sociologiques (Granovetter 1973, Putnam 2000), stats IFOP/INSEE
-3. **Authoritativeness** : Quartiers précis (11e, 3e, 10e), concepts académiques (liens faibles, capital social bridging)
-4. **Trustworthiness** : CTA subtils, lien vers Random sans pression
+1. **En-tête** (<header>) :
+   - 1 seul H1 avec mot-clé dans les 10 premiers mots
+   - Intro 150-200 mots avec mot-clé dans les 100 premiers mots
 
-**STRUCTURE JSON OBLIGATOIRE** :
-{
-  "title": "Titre H1 accrocheur avec mot-clé (max 60 caractères)",
-  "meta_title": "Meta title optimisé SEO (50-60 caractères)",
-  "meta_description": "Meta description engageante (140-155 caractères)",
-  "excerpt": "Résumé en 2-3 phrases (150 caractères max)",
-  "content": "HTML sémantique complet"
-}
+2. **Sections principales** (3-5 <section>) :
+   - Chaque section avec H2 + sous-sections H3
+   - Minimum 1 tableau comparatif <table> avec <thead> et <tbody> style Tailwind
+   - Minimum 2 listes à puces <ul>/<ol>
+   - 1-2 blockquotes stylisées pour témoignages utilisateurs Random
 
-**STRUCTURE HTML OBLIGATOIRE** :
-<article>
-  <header>
-    <h1>[Titre avec mot-clé]</h1>
-    <p class="intro">[Introduction 150-200 mots avec mot-clé dans les 100 premiers mots]</p>
-  </header>
+3. **Grille statistiques** :
+   - Au moins 1 grille de KPIs en <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+   - Stats Random réelles : 3 500+ users, 450+ sorties, 180+ bars, etc.
 
-  <section>
-    <h2>[Section principale 1]</h2>
-    <p>[Paragraphe 100-150 mots]</p>
-    <h3>[Sous-section]</h3>
-    <ul>
-      <li>[Point clé 1]</li>
-      <li>[Point clé 2]</li>
-    </ul>
-  </section>
+4. **FAQ Section** (OBLIGATOIRE) :
+   - <section id="faq"> avec 4-6 questions
+   - Questions en H3, réponses en paragraphes
+   - Questions naturelles longue traîne
 
-  <section>
-    <h2>[Section principale 2]</h2>
-    <p>[Intégrer une anecdote utilisateur Random ici]</p>
-    <blockquote>"Citation réaliste d'un utilisateur Random"</blockquote>
-  </section>
+5. **Footer & Sources** :
+   - Section "Conclusion" avec CTA subtil vers Random
+   - Section "Sources & Références" avec liens externes cliquables
 
-  <section>
-    <h2>[Section principale 3]</h2>
-    <p>[Paragraphe avec stat crédible]</p>
-  </section>
+6. **Internal Links** :
+   - Tu DOIS mentionner 2-3 articles connexes (je les injecterai après)
 
-  <footer>
-    <h2>Conclusion</h2>
-    <p>[Résumé + CTA subtil vers Random]</p>
-    <p>Envie de tester ? <a href="https://random-app.fr">Découvre Random</a> et rejoins la communauté.</p>
-  </footer>
-</article>
+**STYLE & DESIGN** :
+- Utilise les classes Tailwind : bg-gradient-to-r, border-l-4, shadow-lg, rounded-lg
+- Cartes KPI avec <div class="bg-gray-50 rounded-lg p-6 shadow-md">
+- Tableaux avec zebra-striping : <tr class="odd:bg-white even:bg-gray-50">
 
 **RÈGLES SEO STRICTES** :
-1. Longueur : 1 500-2 000 mots (idéal pour 2025)
-2. Densité mot-clé : 1-1.5% (naturelle, PAS de keyword stuffing)
-3. Lisibilité : Score Flesch-Kincaid > 60 (phrases courtes, vocabulaire simple)
-4. Headings : 1 H1, 3-5 H2, 2-3 H3 par section
-5. Listes : Minimum 2 listes à puces
-6. Paragraphes : 100-150 mots max par paragraphe
-7. Émojis stratégiques : 2-3 max (pas plus, trop Gen Z = spam)
+1. Longueur : 1 800-2 200 mots
+2. Densité mot-clé : 1-1.5% (naturelle)
+3. Lisibilité : Flesch-Kincaid > 65
+4. Headings : 1 H1, 4-6 H2, 3-5 H3 par section
+5. Listes : Minimum 3 listes
+6. Émojis stratégiques : 2-4 max
 
-**ANGLES ÉDITORIAUX À EXPLORER** :
-- **Sociologique** : Théorie des liens faibles (Granovetter), capital social bridging (Putnam), tiers-lieux (Oldenburg)
-- **Psychologique** : Anxiété sociale, sérendipité, bien-être par connexions sociales
-- **Économique** : Impact bars locaux (€15-20/personne × 450 sorties = €33K injectés économie locale)
-- **Sociétal** : Solitude urbaine, atomisation millenials, résistance aux algorithmes
-- **Pratique** : Bars par quartier, horaires peak, astuces timides, budget étudiant
+**ANGLES ÉDITORIAUX** :
+- Sociologique : Granovetter, Putnam, Oldenburg
+- Psychologique : Anxiété sociale, sérendipité, bien-être
+- Économique : Impact bars locaux (€15-20/personne)
+- Pratique : Bars par quartier, horaires, astuces timides
 
-**TON À ADOPTER (selon keyword)** :
-- **Fun** : Conversationnel, tutoiement, émojis 2-3 max, anecdotes légères
-- **Sérieux** : Académique, vouvoiement possible, citations sourcées, vocabulaire précis
-- **Mixte** : Empathique, tutoiement, stats + témoignages, équilibré
+**TON** : Adapter selon le keyword (fun/sérieux/mixte)
 
-**CE QU'IL FAUT ÉVITER** :
-❌ Répétition excessive du mot-clé (bourrage)
-❌ Phrases de plus de 25 mots
-❌ Jargon technique SEO (backlinks, SERP...)
-❌ Contenu générique applicable à toutes les villes
-❌ Promesses exagérées ("Révolutionnez votre vie sociale !")
-❌ Absence de données chiffrées ou sources`;
+**À ÉVITER** :
+❌ Keyword stuffing
+❌ Phrases > 25 mots
+❌ Contenu générique
+❌ Pas de sources`;
 
-    const userPrompt = `Génère un article SEO sur le mot-clé: "${keyword.keyword}"
+    const userPrompt = `Génère un article SEO SOTA 2025 sur : "${keyword.keyword}"
 
-L'article doit positionner Random comme LA solution pour les personnes qui cherchent à ${keyword.keyword.toLowerCase()}. 
-Mets en avant les avantages: spontanéité, authenticité, découverte de bars, rencontres sans prise de tête.
+L'article doit positionner Random comme LA solution. Mets en avant : spontanéité, authenticité, découverte de bars, rencontres sans prise de tête.
 
-Important: 
-- Renvoie UNIQUEMENT du JSON valide
-- Le contenu HTML doit être bien formaté avec des balises sémantiques
-- Intègre naturellement le mot-clé sans forcer
-- Termine avec un CTA subtil vers Random`;
+IMPORTANT Structure exigée :
+- Header avec H1 + intro
+- 3-5 sections avec H2/H3
+- 1+ tableau comparatif stylisé Tailwind
+- 1 grille stats Random (3 500+ users, 450+ sorties, 180+ bars)
+- 1 FAQ section (4-6 Q&A)
+- Footer avec sources & CTA Random
+- 2-3 mentions d'articles connexes (placeholder: "[ARTICLE_CONNEXE]")
 
-    // Appel à l'API Lovable AI
+Renvoie le résultat via la fonction structured_article.`;
+
+    // AI Call with Tool Calling for structured output
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -167,25 +160,62 @@ Important:
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
+        tools: [{
+          type: 'function',
+          function: {
+            name: 'structured_article',
+            description: 'Return a fully structured SEO article',
+            parameters: {
+              type: 'object',
+              properties: {
+                title: { type: 'string', description: 'H1 title with keyword, max 60 chars' },
+                meta_title: { type: 'string', description: 'Meta title 50-60 chars' },
+                meta_description: { type: 'string', description: 'Meta description 140-155 chars' },
+                excerpt: { type: 'string', description: 'Summary 2-3 sentences, 150 chars max' },
+                content: { type: 'string', description: 'Full HTML semantic content' },
+                sources: { 
+                  type: 'array', 
+                  items: { type: 'string' },
+                  description: 'List of external source URLs cited'
+                },
+                faq: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      question: { type: 'string' },
+                      answer: { type: 'string' }
+                    }
+                  },
+                  description: 'FAQ questions and answers'
+                }
+              },
+              required: ['title', 'meta_title', 'meta_description', 'excerpt', 'content', 'sources', 'faq']
+            }
+          }
+        }],
+        tool_choice: { type: 'function', function: { name: 'structured_article' } }
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI API error:', aiResponse.status, errorText);
+      console.error('❌ AI API error:', aiResponse.status, errorText);
       throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    const generatedContent = aiData.choices?.[0]?.message?.content;
-
-    if (!generatedContent) {
-      throw new Error('No content generated by AI');
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (!toolCall) {
+      console.error('❌ No tool call in AI response');
+      throw new Error('No structured output from AI');
     }
 
-    console.log('AI generated content successfully');
+    const articleData = JSON.parse(toolCall.function.arguments);
+    console.log('✅ AI generated structured article');
 
-    // Générer une image avec Lovable AI (Phase 4)
+    // Generate featured image
     console.log('🎨 Generating featured image...');
     const imagePrompt = `Create a vibrant, modern illustration showing young Parisians (diverse, ages 25-35) socializing at a trendy bar in Paris. Warm colors (reds, oranges), friendly atmosphere, flat design style. 16:9 aspect ratio for blog header.`;
 
@@ -200,16 +230,17 @@ Important:
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash-image',
-          messages: [{ role: 'user', content: imagePrompt }]
+          messages: [{ role: 'user', content: imagePrompt }],
+          modalities: ['image', 'text']
         }),
       });
 
       if (imageResponse.ok) {
         const imageData = await imageResponse.json();
-        const base64Image = imageData.choices?.[0]?.message?.content;
+        const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
         
-        if (base64Image && base64Image.includes('base64,')) {
-          const base64Data = base64Image.split('base64,')[1];
+        if (imageUrl && imageUrl.includes('base64,')) {
+          const base64Data = imageUrl.split('base64,')[1];
           const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
           const fileName = `${keyword.keyword.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.png`;
           
@@ -231,22 +262,153 @@ Important:
         }
       }
     } catch (imageError) {
-      console.error('Image generation failed (non-blocking):', imageError);
+      console.error('⚠️ Image generation failed (non-blocking):', imageError);
     }
 
-    // Parser la réponse JSON
-    let articleData;
-    try {
-      // Extraire le JSON si enrobé dans du texte
-      const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : generatedContent;
-      articleData = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', generatedContent);
-      throw new Error('Invalid JSON response from AI');
+    // Fetch existing articles for internal linking
+    const { data: existingArticles } = await supabase
+      .from('blog_articles')
+      .select('slug, title')
+      .eq('status', 'published')
+      .limit(10);
+
+    // Inject 2-3 internal links in content
+    let enrichedContent = articleData.content;
+    if (existingArticles && existingArticles.length > 0) {
+      const shuffled = existingArticles.sort(() => 0.5 - Math.random());
+      const linksToInject = shuffled.slice(0, Math.min(3, shuffled.length));
+      
+      linksToInject.forEach((article) => {
+        const placeholder = `[ARTICLE_CONNEXE]`;
+        const link = `<a href="/blog/${article.slug}" class="text-blue-600 hover:underline font-medium">${article.title}</a>`;
+        enrichedContent = enrichedContent.replace(placeholder, link);
+      });
     }
 
-    // Générer un slug SEO-friendly
+    // Inject Schema.org JSON-LD
+    const schemaArticle = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": articleData.title,
+      "description": articleData.meta_description,
+      "image": featuredImageUrl || undefined,
+      "author": {
+        "@type": "Organization",
+        "name": "Random"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Random",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.random-app.fr/logo.png"
+        }
+      },
+      "datePublished": new Date().toISOString()
+    };
+
+    const schemaFAQ = articleData.faq && articleData.faq.length > 0 ? {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": articleData.faq.map((item: any) => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": item.answer
+        }
+      }))
+    } : null;
+
+    const schemaScripts = `
+<script type="application/ld+json">
+${JSON.stringify(schemaArticle, null, 2)}
+</script>
+${schemaFAQ ? `<script type="application/ld+json">
+${JSON.stringify(schemaFAQ, null, 2)}
+</script>` : ''}`;
+
+    enrichedContent = schemaScripts + enrichedContent;
+
+    // Calculate ADVANCED SEO Score (SOTA 2025)
+    const plainText = enrichedContent.replace(/<[^>]*>/g, ' ');
+    const wordCount = plainText.split(/\s+/).filter(w => w.length > 0).length;
+    const keywordCount = (enrichedContent.match(new RegExp(keyword.keyword, 'gi')) || []).length;
+    const keywordDensity = (keywordCount / wordCount) * 100;
+
+    // Flesch-Kincaid
+    const sentences = plainText.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    const words = wordCount;
+    const syllables = plainText.split(/[aeiouyAEIOUY]/).length - 1;
+    const avgWordsPerSentence = words / (sentences || 1);
+    const avgSyllablesPerWord = syllables / (words || 1);
+    const fleschScore = Math.max(0, Math.min(100, 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord)));
+
+    // Headings
+    const h1Count = (enrichedContent.match(/<h1>/g) || []).length;
+    const h2Count = (enrichedContent.match(/<h2>/g) || []).length;
+    const h3Count = (enrichedContent.match(/<h3>/g) || []).length;
+
+    // Rich elements
+    const hasTable = enrichedContent.includes('<table>');
+    const hasFAQ = enrichedContent.includes('id="faq"') || (articleData.faq && articleData.faq.length > 0);
+    const listCount = (enrichedContent.match(/<ul>|<ol>/g) || []).length;
+    const internalLinksCount = (enrichedContent.match(/href="\/blog\//g) || []).length;
+    const externalSourcesCount = articleData.sources?.length || 0;
+
+    // Meta tags
+    const metaTitleLength = articleData.meta_title?.length || 0;
+    const metaDescLength = articleData.meta_description?.length || 0;
+
+    // ADVANCED SCORING (SOTA 2025)
+    let seoScore = 0;
+
+    // 1. Length (15pts)
+    if (wordCount >= 1800 && wordCount <= 2200) seoScore += 15;
+    else if (wordCount >= 1500 && wordCount < 1800) seoScore += 12;
+    else if (wordCount >= 1200 && wordCount < 1500) seoScore += 8;
+    else seoScore += 4;
+
+    // 2. Keyword density (10pts)
+    if (keywordDensity >= 1 && keywordDensity <= 1.5) seoScore += 10;
+    else if (keywordDensity >= 0.8 && keywordDensity < 2) seoScore += 7;
+    else seoScore += 3;
+
+    // 3. Structure HTML (25pts)
+    if (h1Count === 1) seoScore += 5;
+    if (h2Count >= 4 && h2Count <= 6) seoScore += 8;
+    else if (h2Count >= 3) seoScore += 5;
+    if (h3Count >= 3) seoScore += 7;
+    if (listCount >= 3) seoScore += 5;
+
+    // 4. Rich content (20pts)
+    if (hasTable) seoScore += 8;
+    if (hasFAQ) seoScore += 7;
+    if (internalLinksCount >= 2) seoScore += 5;
+
+    // 5. Lisibilité (15pts)
+    if (fleschScore >= 65) seoScore += 15;
+    else if (fleschScore >= 55) seoScore += 12;
+    else if (fleschScore >= 45) seoScore += 8;
+    else seoScore += 4;
+
+    // 6. Meta tags (10pts)
+    if (metaTitleLength >= 50 && metaTitleLength <= 60) seoScore += 5;
+    else if (metaTitleLength >= 40 && metaTitleLength <= 70) seoScore += 3;
+    if (metaDescLength >= 140 && metaDescLength <= 160) seoScore += 5;
+    else if (metaDescLength >= 120 && metaDescLength <= 170) seoScore += 3;
+
+    // 7. External sources (5pts)
+    if (externalSourcesCount >= 5) seoScore += 5;
+    else if (externalSourcesCount >= 3) seoScore += 3;
+    else seoScore += 1;
+
+    seoScore = Math.min(100, Math.max(0, seoScore));
+
+    console.log(`📊 SEO Score: ${seoScore}/100 (Words: ${wordCount}, Flesch: ${fleschScore.toFixed(1)}, Density: ${keywordDensity.toFixed(2)}%)`);
+    console.log(`📊 Rich elements: Table=${hasTable}, FAQ=${hasFAQ}, Internal Links=${internalLinksCount}, Sources=${externalSourcesCount}`);
+
+    // Generate slug
     const slug = keyword.keyword
       .toLowerCase()
       .normalize('NFD')
@@ -254,86 +416,7 @@ Important:
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
 
-    // Fonction de calcul du score Flesch-Kincaid (lisibilité)
-    function calculateFleschKincaid(text: string): number {
-      const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
-      const words = text.split(/\s+/).filter(w => w.length > 0).length;
-      const syllables = text.split(/[aeiouyAEIOUY]/).length - 1;
-      
-      if (sentences === 0 || words === 0) return 0;
-      
-      const avgWordsPerSentence = words / sentences;
-      const avgSyllablesPerWord = syllables / words;
-      
-      const score = 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord);
-      return Math.max(0, Math.min(100, score));
-    }
-
-    // Calculer le score SEO avancé SOTA 2025
-    const content = articleData.content || '';
-    const plainText = content.replace(/<[^>]*>/g, ' ');
-    const wordCount = plainText.split(/\s+/).filter(w => w.length > 0).length;
-    const keywordCount = (content.match(new RegExp(keyword.keyword, 'gi')) || []).length;
-    const keywordDensity = (keywordCount / wordCount) * 100;
-    const fleschScore = calculateFleschKincaid(plainText);
-
-    // Headings
-    const h1Count = (content.match(/<h1>/g) || []).length;
-    const h2Count = (content.match(/<h2>/g) || []).length;
-    const h3Count = (content.match(/<h3>/g) || []).length;
-
-    // Lists
-    const hasLists = content.includes('<ul>') || content.includes('<ol>');
-    const listCount = (content.match(/<ul>|<ol>/g) || []).length;
-
-    // Meta tags
-    const metaTitleLength = articleData.meta_title?.length || 0;
-    const metaDescLength = articleData.meta_description?.length || 0;
-
-    // CALCUL DU SCORE AVANCÉ (SOTA 2025)
-    let seoScore = 0;
-
-    // 1. Longueur (20pts)
-    if (wordCount >= 1500 && wordCount <= 2000) seoScore += 20;
-    else if (wordCount >= 1200 && wordCount < 1500) seoScore += 15;
-    else if (wordCount >= 800 && wordCount < 1200) seoScore += 10;
-    else if (wordCount < 800) seoScore += 5;
-
-    // 2. Keyword density (15pts)
-    if (keywordDensity >= 1 && keywordDensity <= 1.5) seoScore += 15;
-    else if (keywordDensity >= 0.8 && keywordDensity < 2) seoScore += 10;
-    else if (keywordDensity < 0.8 || keywordDensity > 2.5) seoScore += 5;
-
-    // 3. Structure HTML (25pts)
-    if (h1Count === 1) seoScore += 5;
-    if (h2Count >= 3 && h2Count <= 5) seoScore += 10;
-    else if (h2Count >= 2) seoScore += 7;
-    if (h3Count >= 2) seoScore += 5;
-    if (hasLists && listCount >= 2) seoScore += 5;
-
-    // 4. Lisibilité (20pts)
-    if (fleschScore >= 60) seoScore += 20;
-    else if (fleschScore >= 50) seoScore += 15;
-    else if (fleschScore >= 40) seoScore += 10;
-    else seoScore += 5;
-
-    // 5. Meta tags (10pts)
-    if (metaTitleLength >= 50 && metaTitleLength <= 60) seoScore += 5;
-    else if (metaTitleLength >= 40 && metaTitleLength <= 70) seoScore += 3;
-
-    if (metaDescLength >= 140 && metaDescLength <= 160) seoScore += 5;
-    else if (metaDescLength >= 120 && metaDescLength <= 170) seoScore += 3;
-
-    // 6. Lisibilité bonus (10pts) - check internal links would be here but we skip for now
-    seoScore += 5; // Base bonus
-
-    // MAX = 100pts
-    seoScore = Math.min(100, Math.max(0, seoScore));
-
-    console.log(`Advanced SEO Score: ${seoScore}/100 (Words: ${wordCount}, Flesch: ${fleschScore.toFixed(1)}, Density: ${keywordDensity.toFixed(2)}%)`);
-
-
-    // Insérer l'article dans la base de données
+    // Insert article
     const { data: article, error: insertError } = await supabase
       .from('blog_articles')
       .insert({
@@ -342,10 +425,10 @@ Important:
         title: articleData.title,
         meta_title: articleData.meta_title,
         meta_description: articleData.meta_description,
-        content: articleData.content,
+        content: enrichedContent,
         excerpt: articleData.excerpt,
         featured_image_url: featuredImageUrl,
-        seo_score: Math.min(100, seoScore),
+        seo_score: seoScore,
         status: 'published',
         published_at: new Date().toISOString(),
         generated_by_ai: true,
@@ -355,7 +438,7 @@ Important:
 
     if (insertError) throw insertError;
 
-    // Mettre à jour les statistiques du mot-clé
+    // Update keyword stats
     await supabase
       .from('blog_keywords')
       .update({
@@ -364,7 +447,7 @@ Important:
       })
       .eq('id', keyword.id);
 
-    // Mettre à jour le schedule
+    // Update schedule
     const { data: schedule } = await supabase
       .from('blog_generation_schedule')
       .select('*')
@@ -381,7 +464,34 @@ Important:
         .eq('id', schedule.id);
     }
 
-    console.log(`Article created successfully: ${article.slug} (Score SEO: ${seoScore})`);
+    // Log success
+    const generationTime = Date.now() - startTime;
+    if (logId) {
+      await supabase
+        .from('blog_generation_logs')
+        .update({
+          status: 'success',
+          article_id: article.id,
+          word_count: wordCount,
+          seo_score: seoScore,
+          generation_time_ms: generationTime,
+          metadata: {
+            h1: h1Count,
+            h2: h2Count,
+            h3: h3Count,
+            lists: listCount,
+            table: hasTable,
+            faq: hasFAQ,
+            internal_links: internalLinksCount,
+            sources: externalSourcesCount,
+            flesch_score: Math.round(fleschScore),
+            keyword_density: parseFloat(keywordDensity.toFixed(2))
+          }
+        })
+        .eq('id', logId);
+    }
+
+    console.log(`🎉 Article created: ${article.slug} (Score: ${seoScore}, Time: ${generationTime}ms)`);
 
     return new Response(
       JSON.stringify({
@@ -391,6 +501,8 @@ Important:
           slug: article.slug,
           title: article.title,
           seo_score: seoScore,
+          word_count: wordCount,
+          generation_time_ms: generationTime
         },
         keyword: keyword.keyword,
       }),
@@ -398,7 +510,28 @@ Important:
     );
 
   } catch (error) {
-    console.error('Error in generate-seo-article:', error);
+    console.error('💥 Error in generate-seo-article:', error);
+    
+    // Log error
+    if (logId) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        await supabase
+          .from('blog_generation_logs')
+          .update({
+            status: 'error',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            generation_time_ms: Date.now() - startTime
+          })
+          .eq('id', logId);
+      } catch (logError) {
+        console.error('Failed to log error:', logError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error',
