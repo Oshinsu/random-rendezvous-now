@@ -404,8 +404,19 @@ serve(async (req) => {
       )
     }
 
-    if (group.status !== 'confirmed' || group.bar_name) {
-      console.log('⚠️ [AUTO-ASSIGN] Groupe non éligible:', { status: group.status, bar_name: group.bar_name });
+    // ✅ Accepter les groupes 'waiting' (nouveau) et 'confirmed' (avec 3+ participants)
+    // Rejeter uniquement si bar déjà assigné
+    if (group.bar_name) {
+      console.log('⚠️ [AUTO-ASSIGN] Bar déjà assigné:', group.bar_name);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Bar déjà assigné' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Accepter 'waiting' (nouveau groupe) ou 'confirmed' (trigger 3+ participants)
+    if (group.status !== 'waiting' && group.status !== 'confirmed') {
+      console.log('⚠️ [AUTO-ASSIGN] Statut non éligible:', group.status);
       return new Response(
         JSON.stringify({ success: false, error: 'Groupe non éligible' }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
