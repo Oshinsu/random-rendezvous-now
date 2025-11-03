@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export const useProfileUpdate = () => {
   const { user } = useAuth();
@@ -10,10 +10,8 @@ export const useProfileUpdate = () => {
 
   const updateProfile = async (firstName: string, lastName: string, gender?: string, city?: string, onSuccess?: () => void) => {
     if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour mettre à jour votre profil.',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Vous devez être connecté pour mettre à jour votre profil.'
       });
       return false;
     }
@@ -51,9 +49,8 @@ export const useProfileUpdate = () => {
         throw profileError;
       }
 
-      toast({
-        title: 'Profil mis à jour',
-        description: 'Vos informations ont été sauvegardées avec succès.',
+      toast.success('Profil mis à jour', {
+        description: 'Vos informations ont été sauvegardées avec succès.'
       });
 
       // Call success callback to refresh data
@@ -62,10 +59,8 @@ export const useProfileUpdate = () => {
       return true;
     } catch (error) {
       console.error('❌ Erreur mise à jour profil:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le profil. Veuillez réessayer.',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de mettre à jour le profil. Veuillez réessayer.'
       });
       return false;
     } finally {

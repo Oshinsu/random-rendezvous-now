@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AISuggestion {
   name: string;
@@ -28,18 +28,15 @@ export const useAISuggestions = () => {
       setSuggestions(data.suggestions);
       setSegmentName(data.segment_name);
 
-      toast({
-        title: '✨ Suggestions générées',
+      toast.success('✨ Suggestions générées', {
         description: `${data.suggestions.length} campagnes créatives pour ${data.segment_name}`
       });
 
       return data;
     } catch (err) {
       console.error('Error fetching AI suggestions:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de générer les suggestions IA',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de générer les suggestions IA'
       });
       throw err;
     } finally {

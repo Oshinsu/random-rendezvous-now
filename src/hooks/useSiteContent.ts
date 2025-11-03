@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface SiteContent {
   id: string;
@@ -16,7 +16,6 @@ export interface SiteContent {
 export const useSiteContent = () => {
   const [contents, setContents] = useState<SiteContent[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const fetchContents = async () => {
     try {
@@ -37,10 +36,8 @@ export const useSiteContent = () => {
       setContents(transformedData);
     } catch (error) {
       console.error('Error fetching site contents:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger le contenu du site",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de charger le contenu du site"
       });
     } finally {
       setLoading(false);
@@ -67,17 +64,14 @@ export const useSiteContent = () => {
         )
       );
 
-      toast({
-        title: "Succès",
-        description: "Contenu mis à jour avec succès",
+      toast.success("Succès", {
+        description: "Contenu mis à jour avec succès"
       });
       return true;
     } catch (error) {
       console.error('Error updating content:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le contenu",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de mettre à jour le contenu"
       });
       return false;
     }

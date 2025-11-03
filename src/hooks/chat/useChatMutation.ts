@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorHandler } from '@/utils/errorHandling';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { ChatMessage } from '@/types/chat';
 import { RateLimiter, RATE_LIMITS } from '@/utils/rateLimiter';
 import { logger } from '@/utils/cleanLogging';
@@ -86,10 +86,8 @@ export const useChatMutation = (groupId: string, onSuccess: (message: ChatMessag
     },
     onError: (error) => {
       ErrorHandler.logError('SEND_MESSAGE_MUTATION', error);
-      toast({
-        title: 'Erreur d\'envoi',
-        description: error.message || 'Impossible d\'envoyer le message.',
-        variant: 'destructive'
+      toast.error('Erreur d\'envoi', {
+        description: error.message || 'Impossible d\'envoyer le message.'
       });
     }
   });

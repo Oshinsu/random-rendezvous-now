@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AutomationRule {
   id: string;
@@ -58,8 +58,7 @@ export const useCRMAutomation = () => {
 
       if (createError) throw createError;
 
-      toast({
-        title: 'Règle créée',
+      toast.success('Règle créée', {
         description: 'La règle d\'automation a été créée avec succès'
       });
 
@@ -67,10 +66,8 @@ export const useCRMAutomation = () => {
       return data;
     } catch (err) {
       console.error('Error creating automation rule:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer la règle',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de créer la règle'
       });
       throw err;
     }
@@ -85,18 +82,15 @@ export const useCRMAutomation = () => {
 
       if (error) throw error;
 
-      toast({
-        title: isActive ? 'Règle activée' : 'Règle désactivée',
+      toast.success(isActive ? 'Règle activée' : 'Règle désactivée', {
         description: 'Le statut a été mis à jour'
       });
 
       await fetchRules();
     } catch (err) {
       console.error('Error toggling rule status:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de modifier le statut',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de modifier le statut'
       });
       throw err;
     }
@@ -111,18 +105,15 @@ export const useCRMAutomation = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Règle supprimée',
+      toast.success('Règle supprimée', {
         description: 'La règle d\'automation a été supprimée'
       });
 
       await fetchRules();
     } catch (err) {
       console.error('Error deleting rule:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer la règle',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de supprimer la règle'
       });
       throw err;
     }

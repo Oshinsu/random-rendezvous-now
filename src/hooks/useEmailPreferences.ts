@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface EmailPreferences {
   id?: string;
@@ -98,10 +98,8 @@ export const useEmailPreferences = () => {
         }
       }
       
-      toast({
-        title: 'Erreur de chargement',
-        description: errorMessage,
-        variant: 'destructive'
+      toast.error('Erreur de chargement', {
+        description: errorMessage
       });
     } finally {
       setLoading(false);
@@ -126,17 +124,14 @@ export const useEmailPreferences = () => {
       if (error) throw error;
 
       setPreferences(data);
-      toast({
-        title: 'Préférences mises à jour',
-        description: 'Vos préférences email ont été sauvegardées.',
+      toast.success('Préférences mises à jour', {
+        description: 'Vos préférences email ont été sauvegardées.'
       });
       return true;
     } catch (error) {
       console.error('Erreur lors de la mise à jour des préférences:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de sauvegarder vos préférences.',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de sauvegarder vos préférences.'
       });
       return false;
     } finally {

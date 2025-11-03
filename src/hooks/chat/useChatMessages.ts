@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ErrorHandler } from '@/utils/errorHandling';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { SystemMessagingService } from '@/services/systemMessaging';
 import type { ChatMessage } from '@/types/chat';
 
@@ -38,10 +38,8 @@ export const useChatMessages = (groupId: string) => {
         if (error) {
           ErrorHandler.logError('FETCH_MESSAGES', error);
           if (error.message.includes('permission denied') || error.message.includes('row-level security')) {
-            toast({
-              title: 'Accès refusé',
-              description: 'Vous n\'avez pas accès aux messages de ce groupe.',
-              variant: 'destructive'
+            toast.error('Accès refusé', {
+              description: 'Vous n\'avez pas accès aux messages de ce groupe.'
             });
           } else {
             const appError = ErrorHandler.handleSupabaseError(error);

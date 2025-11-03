@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface CampaignSequence {
   id: string;
@@ -104,8 +104,7 @@ export const useCRMSequences = () => {
 
       if (stepsError) throw stepsError;
 
-      toast({
-        title: 'Séquence créée',
+      toast.success('Séquence créée', {
         description: 'La séquence de campagne a été créée avec succès'
       });
 
@@ -113,10 +112,8 @@ export const useCRMSequences = () => {
       return sequence;
     } catch (err) {
       console.error('Error creating sequence:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de créer la séquence',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de créer la séquence'
       });
       throw err;
     }
@@ -131,18 +128,15 @@ export const useCRMSequences = () => {
 
       if (error) throw error;
 
-      toast({
-        title: isActive ? 'Séquence activée' : 'Séquence désactivée',
+      toast.success(isActive ? 'Séquence activée' : 'Séquence désactivée', {
         description: 'Le statut de la séquence a été mis à jour'
       });
 
       await fetchSequences();
     } catch (err) {
       console.error('Error toggling sequence status:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de modifier le statut',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de modifier le statut'
       });
       throw err;
     }
@@ -157,18 +151,15 @@ export const useCRMSequences = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Séquence supprimée',
+      toast.success('Séquence supprimée', {
         description: 'La séquence a été supprimée avec succès'
       });
 
       await fetchSequences();
     } catch (err) {
       console.error('Error deleting sequence:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer la séquence',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de supprimer la séquence'
       });
       throw err;
     }
@@ -182,18 +173,15 @@ export const useCRMSequences = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Séquence lancée',
+      toast.success('Séquence lancée', {
         description: `${data.steps_scheduled} étapes programmées`
       });
 
       return data;
     } catch (err) {
       console.error('Error executing sequence:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de lancer la séquence',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de lancer la séquence'
       });
       throw err;
     }

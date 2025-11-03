@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './use-toast';
+import { toast } from 'sonner';
 
 export const useBatchActions = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => 
@@ -47,16 +46,13 @@ export const useBatchActions = () => {
       a.download = `users-export-${new Date().toISOString()}.csv`;
       a.click();
 
-      toast({
-        title: 'Export successful',
-        description: `Exported ${selectedIds.length} users`,
+      toast.success('Export successful', {
+        description: `Exported ${selectedIds.length} users`
       });
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: 'Export failed',
-        description: 'Could not export users',
-        variant: 'destructive',
+      toast.error('Export failed', {
+        description: 'Could not export users'
       });
     } finally {
       setIsProcessing(false);
@@ -67,17 +63,14 @@ export const useBatchActions = () => {
     setIsProcessing(true);
     try {
       // TODO: Implement suspension logic with admin action
-      toast({
-        title: 'Feature coming soon',
-        description: 'User suspension will be available soon',
+      toast.info('Feature coming soon', {
+        description: 'User suspension will be available soon'
       });
       clearSelection();
     } catch (error) {
       console.error('Suspend error:', error);
-      toast({
-        title: 'Suspend failed',
-        description: 'Could not suspend users',
-        variant: 'destructive',
+      toast.error('Suspend failed', {
+        description: 'Could not suspend users'
       });
     } finally {
       setIsProcessing(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface Campaign {
   id: string;
@@ -100,8 +100,7 @@ export const useCRMCampaigns = () => {
 
       if (createError) throw createError;
 
-      toast({
-        title: 'Campagne créée',
+      toast.success('Campagne créée', {
         description: 'La campagne a été créée avec succès'
       });
 
@@ -130,10 +129,8 @@ export const useCRMCampaigns = () => {
         errorMessage = '🔒 Accès refusé: veuillez vous reconnecter';
       }
       
-      toast({
-        title: 'Erreur',
-        description: errorMessage,
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: errorMessage
       });
       throw err;
     }
@@ -160,21 +157,16 @@ export const useCRMCampaigns = () => {
       // ✅ PHASE 3: Message spécifique si 0 envois (SOTA Oct 2025)
       if (data?.sent === 0) {
         if (data?.message?.includes('No target users')) {
-          toast({
-            title: '⚠️ Segment vide',
-            description: '🔍 Aucun utilisateur trouvé dans ce segment. Vérifiez les critères du segment ou recalculez les segments.',
-            variant: 'destructive'
+          toast.error('⚠️ Segment vide', {
+            description: '🔍 Aucun utilisateur trouvé dans ce segment. Vérifiez les critères du segment ou recalculez les segments.'
           });
         } else {
-          toast({
-            title: '⚠️ Aucun envoi',
-            description: 'Aucun utilisateur n\'a pu recevoir la campagne. Vérifiez les logs pour plus de détails.',
-            variant: 'destructive'
+          toast.error('⚠️ Aucun envoi', {
+            description: 'Aucun utilisateur n\'a pu recevoir la campagne. Vérifiez les logs pour plus de détails.'
           });
         }
       } else {
-        toast({
-          title: 'Campagne envoyée',
+        toast.success('Campagne envoyée', {
           description: `${data.sent || 0} emails envoyés avec succès`
         });
       }
@@ -185,10 +177,8 @@ export const useCRMCampaigns = () => {
       console.error('Error sending campaign:', err);
       
       // Message d'erreur générique si pas de data
-      toast({
-        title: 'Erreur',
-        description: "Impossible d'envoyer la campagne. Vérifiez les logs serveur.",
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: "Impossible d'envoyer la campagne. Vérifiez les logs serveur."
       });
       throw err;
     }
@@ -203,18 +193,15 @@ export const useCRMCampaigns = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Statut mis à jour',
+      toast.success('Statut mis à jour', {
         description: 'Le statut de la campagne a été modifié'
       });
 
       await fetchCampaigns();
     } catch (err) {
       console.error('Error updating campaign status:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le statut',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de mettre à jour le statut'
       });
       throw err;
     }
@@ -229,18 +216,15 @@ export const useCRMCampaigns = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Campagne reprogrammée',
+      toast.success('Campagne reprogrammée', {
         description: 'La date d\'envoi a été mise à jour'
       });
 
       await fetchCampaigns();
     } catch (err) {
       console.error('Error rescheduling campaign:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de reprogrammer la campagne',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Impossible de reprogrammer la campagne'
       });
       throw err;
     }
@@ -266,18 +250,15 @@ export const useCRMCampaigns = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Campagne supprimée",
-        description: "La campagne a été supprimée avec succès",
+      toast.success("Campagne supprimée", {
+        description: "La campagne a été supprimée avec succès"
       });
 
       await fetchCampaigns();
     } catch (err) {
       console.error('Error deleting campaign:', err);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer la campagne",
-        variant: "destructive",
+      toast.error("Erreur", {
+        description: "Impossible de supprimer la campagne"
       });
     }
   };

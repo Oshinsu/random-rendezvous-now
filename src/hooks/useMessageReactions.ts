@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface MessageReactions {
   [emoji: string]: string[]; // emoji -> array of user IDs
@@ -14,10 +14,8 @@ export const useMessageReactions = () => {
 
   const toggleReaction = async (messageId: string, emoji: string) => {
     if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour réagir',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Vous devez être connecté pour réagir'
       });
       return false;
     }

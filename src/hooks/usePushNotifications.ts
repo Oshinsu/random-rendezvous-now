@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, isSupported as checkFCMSupported } from 'firebase/messaging';
 
@@ -42,7 +42,6 @@ interface PushNotificationStatus {
  */
 export const usePushNotifications = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const [status, setStatus] = useState<PushNotificationStatus>({
     isSupported: false,
@@ -58,10 +57,8 @@ export const usePushNotifications = () => {
 
       // Step 1: Check browser support
       if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        toast({
-          title: 'Non supporté',
-          description: 'Les notifications ne sont pas supportées sur ce navigateur.',
-          variant: 'destructive',
+        toast.error('Non supporté', {
+          description: 'Les notifications ne sont pas supportées sur ce navigateur.'
         });
         return;
       }
@@ -69,10 +66,8 @@ export const usePushNotifications = () => {
       // Step 2: Check FCM support
       const fcmSupported = await checkFCMSupported();
       if (!fcmSupported) {
-        toast({
-          title: 'Non supporté',
-          description: 'Firebase Messaging n\'est pas supporté.',
-          variant: 'destructive',
+        toast.error('Non supporté', {
+          description: 'Firebase Messaging n\'est pas supporté.'
         });
         return;
       }
@@ -88,10 +83,8 @@ export const usePushNotifications = () => {
       console.log('Permission status:', permission);
 
       if (permission !== 'granted') {
-        toast({
-          title: 'Permission refusée',
-          description: 'Vous devez autoriser les notifications dans les paramètres de votre navigateur.',
-          variant: 'destructive',
+        toast.error('Permission refusée', {
+          description: 'Vous devez autoriser les notifications dans les paramètres de votre navigateur.'
         });
         setStatus((prev) => ({ ...prev, permission }));
         return;
@@ -145,19 +138,16 @@ export const usePushNotifications = () => {
         isEnabled: true,
       });
 
-      toast({
-        title: 'Notifications activées ✅',
-        description: 'Vous recevrez des notifications push pour vos groupes (FCM HTTP v1 API).',
+      toast.success('Notifications activées ✅', {
+        description: 'Vous recevrez des notifications push pour vos groupes (FCM HTTP v1 API).'
       });
     } catch (error) {
       console.error('Error requesting permission:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'activer les notifications. Vérifiez la console.',
-        variant: 'destructive',
+      toast.error('Erreur', {
+        description: 'Impossible d\'activer les notifications. Vérifiez la console.'
       });
     }
-  }, [user?.id, toast]);
+  }, [user?.id]);
 
   // Check existing token on mount and user login
   useEffect(() => {

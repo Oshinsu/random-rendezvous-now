@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface Notification {
@@ -90,9 +90,7 @@ export const useNotifications = () => {
       );
       setUnreadCount(0);
 
-      toast({
-        title: '✅ Toutes les notifications marquées comme lues',
-      });
+      toast.success('✅ Toutes les notifications marquées comme lues');
     } catch (error) {
       console.error('❌ Error marking all as read:', error);
     }
@@ -137,9 +135,7 @@ export const useNotifications = () => {
       setNotifications([]);
       setUnreadCount(0);
 
-      toast({
-        title: '🗑️ Toutes les notifications supprimées',
-      });
+      toast.success('🗑️ Toutes les notifications supprimées');
     } catch (error) {
       console.error('❌ Error clearing notifications:', error);
     }
@@ -196,10 +192,9 @@ export const useNotifications = () => {
           vibrate();
 
           // Toast notification
-          toast({
-            title: newNotif.title,
+          toast(newNotif.title, {
             description: newNotif.body,
-            duration: 5000,
+            duration: 5000
           });
         }
       )

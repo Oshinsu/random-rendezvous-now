@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface BarRating {
@@ -22,19 +22,15 @@ export const useBarRating = () => {
 
   const rateBar = async (outingId: string, rating: number, review?: string) => {
     if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour noter un bar',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Vous devez être connecté pour noter un bar'
       });
       return false;
     }
 
     if (rating < 1 || rating > 5) {
-      toast({
-        title: 'Erreur',
-        description: 'La note doit être entre 1 et 5',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'La note doit être entre 1 et 5'
       });
       return false;
     }
@@ -53,26 +49,21 @@ export const useBarRating = () => {
 
       if (error) {
         console.error('❌ Erreur lors de la notation:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de sauvegarder votre note',
-          variant: 'destructive'
+        toast.error('Erreur', {
+          description: 'Impossible de sauvegarder votre note'
         });
         return false;
       }
 
-      toast({
-        title: 'Note enregistrée',
-        description: 'Merci pour votre évaluation !',
+      toast.success('Note enregistrée', {
+        description: 'Merci pour votre évaluation !'
       });
 
       return true;
     } catch (error) {
       console.error('❌ Erreur rateBar:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur inattendue s\'est produite',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Une erreur inattendue s\'est produite'
       });
       return false;
     } finally {

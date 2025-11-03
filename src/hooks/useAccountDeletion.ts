@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export const useAccountDeletion = () => {
   const { user, signOut } = useAuth();
@@ -9,10 +9,8 @@ export const useAccountDeletion = () => {
 
   const deleteAccount = async () => {
     if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour supprimer votre compte.',
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: 'Vous devez être connecté pour supprimer votre compte.'
       });
       return false;
     }
@@ -32,9 +30,8 @@ export const useAccountDeletion = () => {
       // Sign out the user after successful deletion
       await signOut();
 
-      toast({
-        title: 'Compte supprimé',
-        description: 'Votre compte et toutes vos données ont été supprimés définitivement.',
+      toast.success('Compte supprimé', {
+        description: 'Votre compte et toutes vos données ont été supprimés définitivement.'
       });
 
       return true;
@@ -46,10 +43,8 @@ export const useAccountDeletion = () => {
         errorMessage = error.message;
       }
 
-      toast({
-        title: 'Erreur',
-        description: errorMessage,
-        variant: 'destructive'
+      toast.error('Erreur', {
+        description: errorMessage
       });
       return false;
     } finally {
