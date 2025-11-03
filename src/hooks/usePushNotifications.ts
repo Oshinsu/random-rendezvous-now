@@ -17,7 +17,7 @@ const firebaseConfig = {
 };
 
 // VAPID public key for Web Push (from Firebase Console → Project Settings → Cloud Messaging)
-const VAPID_PUBLIC_KEY = 'BOkV_HGdsNuvLckQFeB9DOsjp47KIDdBZ1RcWckIKur5gEmKYVmCuIGOX02l-QxA7_9JLX4gNvuMsk2SAbDTLko';
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_FIREBASE_VAPID_PUBLIC_KEY;
 
 // Initialize Firebase once
 let firebaseApp: ReturnType<typeof initializeApp> | null = null;

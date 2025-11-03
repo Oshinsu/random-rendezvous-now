@@ -103,27 +103,34 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
         value,
       }));
 
-      // 4. Peak Hours Heatmap (simplified - generate sample data for demo)
+      // 4. Peak Hours Heatmap (real data from notification_analytics)
       const peakHours: Array<{ hour: number; day: string; value: number }> = [];
       const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
       
-      // Generate heatmap data based on typical patterns
+      // Fetch all notifications in range to calculate peak hours
+      const { data: notifData } = await supabase
+        .from('user_notifications')
+        .select('created_at')
+        .gte('created_at', startDate.toISOString());
+
+      // Aggregate by day of week and hour
+      const heatmapData: Record<string, number> = {};
+      notifData?.forEach((notif) => {
+        const date = new Date(notif.created_at);
+        const dayOfWeek = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+        const hour = date.getHours();
+        const key = `${dayOfWeek}-${hour}`;
+        heatmapData[key] = (heatmapData[key] || 0) + 1;
+      });
+
+      // Convert to chart format
       for (let day = 0; day < 7; day++) {
         for (let hour = 0; hour < 24; hour++) {
-          // Peak hours: Thursday-Saturday 18-22h
-          let baseValue = 5;
-          if (day >= 3 && day <= 5 && hour >= 18 && hour <= 22) {
-            baseValue = 50 + Math.random() * 30;
-          } else if (hour >= 18 && hour <= 22) {
-            baseValue = 20 + Math.random() * 15;
-          } else {
-            baseValue = Math.random() * 10;
-          }
-          
+          const key = `${day}-${hour}`;
           peakHours.push({
             hour,
             day: days[day],
-            value: Math.round(baseValue),
+            value: heatmapData[key] || 0,
           });
         }
       }
