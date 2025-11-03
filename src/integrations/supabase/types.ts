@@ -1900,6 +1900,48 @@ export type Database = {
           },
         ]
       }
+      notification_test_sends: {
+        Row: {
+          body: string
+          delivery_status: string | null
+          error_message: string | null
+          id: string
+          notification_type: string
+          recipient_email: string
+          recipient_user_id: string | null
+          sent_at: string | null
+          sent_by: string | null
+          title: string
+          variables: Json | null
+        }
+        Insert: {
+          body: string
+          delivery_status?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type: string
+          recipient_email: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          title: string
+          variables?: Json | null
+        }
+        Update: {
+          body?: string
+          delivery_status?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type?: string
+          recipient_email?: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          title?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       notification_throttle: {
         Row: {
           id: string

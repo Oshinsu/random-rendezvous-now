@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { NotificationDetailDialog } from './NotificationDetailDialog';
 import { AddNotificationDialog } from './AddNotificationDialog';
 
 const CATEGORY_ICONS = {
@@ -34,9 +35,10 @@ const CATEGORY_COLORS = {
 };
 
 export const NotificationControlCenter = () => {
-  const { configs, isLoading, toggleActivation } = useNotificationTypesConfig();
+  const { configs, isLoading, toggleActivation, updateNotificationType, addNotificationType } = useNotificationTypesConfig();
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [search, setSearch] = useState('');
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   const filteredConfigs = configs?.filter((config) => {
@@ -150,11 +152,15 @@ export const NotificationControlCenter = () => {
                       </p>
                     </TableCell>
                   </TableRow>
-                ) : (
+                 ) : (
                   filteredConfigs.map((config) => {
                     const CategoryIcon = CATEGORY_ICONS[config.category];
                     return (
-                      <TableRow key={config.id}>
+                      <TableRow 
+                        key={config.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => setSelectedNotification(config)}
+                      >
                         <TableCell>
                           <Switch
                             checked={config.is_active}
@@ -205,11 +211,15 @@ export const NotificationControlCenter = () => {
                             <span className="text-xs text-muted-foreground">Jamais</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm">
-                            <TrendingUp className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedNotification(config)}
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                       </TableRow>
                     );
                   })
@@ -219,6 +229,16 @@ export const NotificationControlCenter = () => {
           </div>
         </CardContent>
       </Card>
+
+      <NotificationDetailDialog
+        notification={selectedNotification}
+        open={!!selectedNotification}
+        onOpenChange={(open) => !open && setSelectedNotification(null)}
+        onUpdate={(id, updates) => {
+          updateNotificationType({ id, updates });
+          setSelectedNotification(null);
+        }}
+      />
 
       <AddNotificationDialog 
         open={showAddDialog}

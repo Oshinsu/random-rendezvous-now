@@ -142,10 +142,10 @@ export const useNotificationTypesConfig = () => {
     configs,
     isLoading,
     toggleActivation: toggleActivation.mutate,
-    addNotificationType: addNotificationType.mutate,
-    updateNotificationType: updateNotificationType.mutate,
     isToggling: toggleActivation.isPending,
+    addNotificationType: addNotificationType.mutate,
     isAdding: addNotificationType.isPending,
+    updateNotificationType: updateNotificationType.mutate,
     isUpdating: updateNotificationType.isPending,
   };
 };
