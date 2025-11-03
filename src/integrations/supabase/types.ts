@@ -482,6 +482,51 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_conversations: {
+        Row: {
+          context_used: string | null
+          cost_usd: number | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          messages: Json | null
+          satisfaction_rating: number | null
+          started_at: string
+          total_messages: number | null
+          total_tokens: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          context_used?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          messages?: Json | null
+          satisfaction_rating?: number | null
+          started_at?: string
+          total_messages?: number | null
+          total_tokens?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          context_used?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          messages?: Json | null
+          satisfaction_rating?: number | null
+          started_at?: string
+          total_messages?: number | null
+          total_tokens?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       community_stories: {
         Row: {
           city: string | null
@@ -1334,6 +1379,42 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean | null
+          flag_key: string
+          flag_name: string
+          id: string
+          rollout_percentage: number | null
+          target_segments: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean | null
+          flag_key: string
+          flag_name: string
+          id?: string
+          rollout_percentage?: number | null
+          target_segments?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean | null
+          flag_key?: string
+          flag_name?: string
+          id?: string
+          rollout_percentage?: number | null
+          target_segments?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_force_confirm_votes: {
         Row: {
           group_id: string
@@ -1722,6 +1803,33 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_name: string
+          metric_value: number
+          timestamp: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_name: string
+          metric_value: number
+          timestamp?: string
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          timestamp?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1902,6 +2010,50 @@ export type Database = {
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "community_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      structured_logs: {
+        Row: {
+          created_at: string
+          event: string
+          group_id: string | null
+          id: string
+          level: string
+          metadata: Json | null
+          tags: string[] | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          group_id?: string | null
+          id?: string
+          level: string
+          metadata?: Json | null
+          tags?: string[] | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          group_id?: string | null
+          id?: string
+          level?: string
+          metadata?: Json | null
+          tags?: string[] | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "structured_logs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]

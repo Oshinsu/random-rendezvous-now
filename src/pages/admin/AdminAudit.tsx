@@ -7,8 +7,9 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAdminAudit } from "@/hooks/useAdminAudit";
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Shield, User, Database, Filter } from 'lucide-react';
+import { Shield, User, Database, Filter, Clock, Activity } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ContentVersionTimeline } from "@/components/admin/cms/ContentVersionTimeline";
 
 export const AdminAudit = () => {
   const { auditLogs, loading, error, fetchAuditLogs } = useAdminAudit();
@@ -76,10 +77,96 @@ export const AdminAudit = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Journal d'audit</h1>
-          <p className="text-red-600 mt-2">{auditLogs.length} entrées d'audit</p>
+          <h1 className="text-3xl font-bold text-red-800">Journal d'audit SOTA 2025</h1>
+          <p className="text-red-600 mt-2">{auditLogs.length} entrées d'audit + Timeline</p>
         </div>
       </div>
+
+      {/* ✅ SOTA 2025: Stats Cards Audit */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Actions aujourd'hui
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-800">
+              {auditLogs.filter(log => {
+                const today = new Date();
+                const logDate = new Date(log.created_at);
+                return logDate.toDateString() === today.toDateString();
+              }).length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-green-700">Insertions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-800">
+              {auditLogs.filter(log => log.action_type.toLowerCase() === 'insert').length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-orange-700">Modifications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-800">
+              {auditLogs.filter(log => log.action_type.toLowerCase() === 'update').length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-red-700">Suppressions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-800">
+              {auditLogs.filter(log => log.action_type.toLowerCase() === 'delete').length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ✅ SOTA 2025: Timeline Visuelle */}
+      <Card className="border-purple-200">
+        <CardHeader className="bg-purple-50">
+          <CardTitle className="text-purple-800 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Timeline des Modifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <ContentVersionTimeline
+            versions={auditLogs.slice(0, 20).map((log, idx) => ({
+              id: log.id,
+              version: idx + 1,
+              created_at: log.created_at,
+              created_by: log.admin_profile?.first_name || log.admin_profile?.last_name
+                ? `${log.admin_profile.first_name || ''} ${log.admin_profile.last_name || ''}`.trim()
+                : log.admin_profile?.email || 'Admin',
+              updated_at: log.created_at,
+              updated_by: log.admin_profile?.first_name || log.admin_profile?.last_name
+                ? `${log.admin_profile.first_name || ''} ${log.admin_profile.last_name || ''}`.trim()
+                : log.admin_profile?.email || 'Admin',
+              changes_summary: `${log.action_type} sur ${log.table_name}${log.record_id ? ` (${log.record_id.slice(0, 8)})` : ''}`,
+              changes: log.metadata ? JSON.stringify(log.metadata) : `${log.action_type} operation`,
+              is_published: log.action_type.toLowerCase() !== 'delete'
+            }))}
+            onRevert={(versionId) => {
+              console.log('Audit log restore not implemented for version', versionId);
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Filtres */}
       <Card>

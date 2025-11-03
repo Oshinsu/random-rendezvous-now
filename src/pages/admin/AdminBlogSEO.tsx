@@ -41,7 +41,9 @@ import {
   Pause, 
   Archive,
   FileText,
-  BarChart3
+  BarChart3,
+  Activity,
+  Clock
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -209,7 +211,7 @@ export default function AdminBlogSEO() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="keywords" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1">
             <TabsTrigger value="keywords" className="data-[state=active]:bg-red-100">
               <FileText className="h-4 w-4 mr-2" />
               Mots-clés
@@ -221,6 +223,10 @@ export default function AdminBlogSEO() {
             <TabsTrigger value="schedule" className="data-[state=active]:bg-red-100">
               <Calendar className="h-4 w-4 mr-2" />
               Planification
+            </TabsTrigger>
+            <TabsTrigger value="health" className="data-[state=active]:bg-red-100">
+              <Activity className="h-4 w-4 mr-2" />
+              Santé SEO
             </TabsTrigger>
           </TabsList>
 
@@ -694,6 +700,123 @@ export default function AdminBlogSEO() {
                       un article optimisé SEO de 1500-2000 mots. L'article est sauvegardé en brouillon pour 
                       relecture avant publication sur le blog.
                     </p>
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ✅ SOTA 2025: Onglet Santé SEO */}
+          <TabsContent value="health" className="space-y-4">
+            <Card className="border-green-200">
+              <CardHeader className="bg-green-50">
+                <CardTitle className="text-green-800 flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Santé Globale du Blog
+                </CardTitle>
+                <CardDescription>
+                  Monitoring SEO + Performance + Engagement
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* SEO Health Score */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-blue-700">Score SEO Moyen</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-800">
+                        {articles && articles.length > 0
+                          ? Math.round(
+                              articles
+                                .filter(a => a.seo_score)
+                                .reduce((sum, a) => sum + (a.seo_score || 0), 0) /
+                              articles.filter(a => a.seo_score).length
+                            )
+                          : 'N/A'}
+                        /100
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-green-200 bg-green-50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-green-700">Vues Totales</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-green-800">
+                        {articles?.reduce((sum, a) => sum + (a.views_count || 0), 0) || 0}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-purple-200 bg-purple-50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-purple-700">Taux Publication</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-purple-800">
+                        {articles && articles.length > 0
+                          ? Math.round((articles.filter(a => a.status === 'published').length / articles.length) * 100)
+                          : 0}%
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Top Performing Articles */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">🏆 Top 5 Articles les Plus Vus</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {articles
+                        ?.sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
+                        .slice(0, 5)
+                        .map((article, idx) => (
+                          <div key={article.id} className="flex justify-between items-center p-3 bg-muted/30 rounded">
+                            <div className="flex items-center gap-3">
+                              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                                #{idx + 1}
+                              </Badge>
+                              <div>
+                                <div className="font-medium">{article.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Publié {formatDistanceToNow(new Date(article.published_at || article.created_at), { addSuffix: true, locale: fr })}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-lg">{article.views_count || 0}</div>
+                              <div className="text-xs text-muted-foreground">vues</div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Alert */}
+                <Alert className={
+                  articles && articles.filter(a => a.status === 'published').length < 5
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-green-300 bg-green-50'
+                }>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {articles && articles.filter(a => a.status === 'published').length < 5 ? (
+                      <>
+                        <strong>⚠️ Attention:</strong> Vous avez moins de 5 articles publiés. 
+                        Générez plus de contenu pour améliorer votre SEO.
+                      </>
+                    ) : (
+                      <>
+                        <strong>✅ Excellent:</strong> Votre blog est bien fourni. 
+                        Continuez à publier régulièrement pour maintenir le trafic.
+                      </>
+                    )}
                   </AlertDescription>
                 </Alert>
               </CardContent>

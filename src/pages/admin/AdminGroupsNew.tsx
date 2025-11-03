@@ -236,6 +236,32 @@ export default function AdminGroupsNew() {
           </Card>
         </div>
 
+        {/* ✅ SOTA 2025: Real-time Monitoring Enhancement */}
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="text-purple-800 flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Monitoring Groupes en Temps Réel
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Groupes actifs maintenant</div>
+                <div className="text-2xl font-bold text-purple-800">
+                  {activeGroups.length}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Participants en ligne</div>
+                <div className="text-2xl font-bold text-purple-800">
+                  {activeGroups.reduce((sum, g) => sum + (g.current_participants || 0), 0)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Tabs: Table / Map / Realtime */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">

@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { ExportButton } from "@/components/admin/ExportButton";
 import { useAdminLogs } from "@/hooks/useAdminLogs";
-import { Search, AlertCircle, Info, AlertTriangle, CheckCircle, Download } from "lucide-react";
+import { useStructuredLogs } from "@/hooks/useStructuredLogs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, AlertCircle, Info, AlertTriangle, CheckCircle, Download, Filter, Database } from "lucide-react";
 
 interface LogEntry {
   id: string;
@@ -24,6 +27,18 @@ export const AdminLogs = () => {
   const { logs, loading, error, fetchLogs, currentPage, totalPages, setCurrentPage } = useAdminLogs();
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<'all' | 'error' | 'warn' | 'info' | 'debug'>('all');
+  
+  // ✅ SOTA 2025: Structured Logs avec filtres JSON
+  const [structuredFilters, setStructuredFilters] = useState<any>({});
+  const { 
+    logs: structuredLogs, 
+    loading: structuredLoading, 
+    totalCount, 
+    logEvent, 
+    getEventCounts, 
+    getLevelCounts,
+    refresh: refreshStructured 
+  } = useStructuredLogs(structuredFilters);
 
   useEffect(() => {
     fetchLogs(1);
@@ -139,8 +154,8 @@ export const AdminLogs = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Logs système</h1>
-          <p className="text-red-600 mt-2">Journal des événements et erreurs système</p>
+          <h1 className="text-3xl font-bold text-red-800">Logs système SOTA 2025</h1>
+          <p className="text-red-600 mt-2">Structured Logging + OpenTelemetry + JSON Metadata</p>
         </div>
         <div className="flex gap-2">
           <ExportButton
@@ -148,11 +163,177 @@ export const AdminLogs = () => {
             filename="system-logs"
             format="csv"
           />
-          <Button onClick={() => fetchLogs(1)} variant="outline" size="sm">
+          <Button onClick={() => { fetchLogs(1); refreshStructured(); }} variant="outline" size="sm">
             Actualiser
           </Button>
         </div>
       </div>
+
+      {/* ✅ SOTA 2025: Tabs pour Legacy vs Structured Logs */}
+      <Tabs defaultValue="structured" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="structured">
+            <Database className="h-4 w-4 mr-2" />
+            📊 Structured Logs (SOTA)
+          </TabsTrigger>
+          <TabsTrigger value="legacy">
+            📜 Legacy Logs
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="structured" className="space-y-6">
+          {/* Stats Structured */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card className="border-gray-200 bg-gray-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-gray-700">Total Structured</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-800">
+                  {totalCount}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {Object.entries(getLevelCounts()).map(([level, count]) => {
+              const colors = {
+                error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', value: 'text-red-800' },
+                warn: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', value: 'text-yellow-800' },
+                info: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', value: 'text-blue-800' },
+                debug: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', value: 'text-purple-800' }
+              };
+              const colorConfig = colors[level as keyof typeof colors] || colors.info;
+              
+              return (
+                <Card key={level} className={`${colorConfig.border} ${colorConfig.bg}`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className={`text-sm ${colorConfig.text}`}>{level.toUpperCase()}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-2xl font-bold ${colorConfig.value}`}>
+                      {count}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Filtres Structured */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtres Avancés
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Niveau</label>
+                  <Select 
+                    value={structuredFilters.level || 'all'}
+                    onValueChange={(value) => setStructuredFilters({ ...structuredFilters, level: value === 'all' ? undefined : value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les niveaux" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous</SelectItem>
+                      <SelectItem value="error">Error</SelectItem>
+                      <SelectItem value="warn">Warn</SelectItem>
+                      <SelectItem value="info">Info</SelectItem>
+                      <SelectItem value="debug">Debug</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Événement</label>
+                  <Input
+                    placeholder="Ex: group_created"
+                    value={structuredFilters.event || ''}
+                    onChange={(e) => setStructuredFilters({ ...structuredFilters, event: e.target.value || undefined })}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Tags (séparés par virgule)</label>
+                  <Input
+                    placeholder="Ex: production,critical"
+                    onChange={(e) => {
+                      const tags = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
+                      setStructuredFilters({ ...structuredFilters, tags: tags.length > 0 ? tags : undefined });
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table Structured Logs */}
+          <Card>
+            <CardHeader className="bg-red-50">
+              <CardTitle className="text-red-800">Logs Structurés JSON</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              {structuredLoading ? (
+                <LoadingSpinner size="lg" />
+              ) : (
+                <div className="space-y-2">
+                  {structuredLogs.map((log) => (
+                    <Card key={log.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              {getLevelBadge(log.level)}
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {log.event}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(log.timestamp).toLocaleString('fr-FR')}
+                              </span>
+                            </div>
+                            
+                            {log.tags && log.tags.length > 0 && (
+                              <div className="flex gap-1">
+                                {log.tags.map((tag, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {log.metadata && Object.keys(log.metadata).length > 0 && (
+                              <details className="text-xs">
+                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                  Metadata JSON
+                                </summary>
+                                <pre className="mt-2 bg-gray-100 p-2 rounded overflow-x-auto">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {structuredLogs.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Aucun log structuré trouvé
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="legacy" className="space-y-6">
 
       {/* Statistiques des logs */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -212,8 +393,8 @@ export const AdminLogs = () => {
         </Card>
       </div>
 
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-4 items-center">
+          {/* Legacy Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-gray-500" />
           <Input
@@ -242,52 +423,84 @@ export const AdminLogs = () => {
         </div>
       </div>
 
-      {/* Table des logs */}
-      <AdminTable
-        data={filteredLogs}
-        columns={columns}
-        searchKey="message"
-        searchPlaceholder="Rechercher dans les messages..."
-        hideSearch={true} // Car on a déjà notre propre search
-      />
-
-      {filteredLogs.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-gray-500">
-              Aucun log trouvé pour les critères sélectionnés
+          {/* Filtres Legacy */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Rechercher dans les logs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ✅ PHASE 7: Pagination Controls */}
-      {totalPages > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <Button 
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(currentPage - 1)}
-                variant="outline"
-              >
-                ← Précédent
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page <strong>{currentPage}</strong> sur <strong>{totalPages}</strong>
-                <span className="ml-2">({pageSize} logs par page)</span>
-              </div>
-              <Button 
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(currentPage + 1)}
-                variant="outline"
-              >
-                Suivant →
-              </Button>
+            
+            <div className="flex gap-2">
+              {(['all', 'error', 'warn', 'info', 'debug'] as const).map((level) => (
+                <Button
+                  key={level}
+                  variant={levelFilter === level ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLevelFilter(level)}
+                >
+                  {level === 'all' ? 'Tous' : 
+                   level === 'error' ? 'Erreurs' :
+                   level === 'warn' ? 'Avertissements' :
+                   level === 'info' ? 'Infos' : 
+                   'Debug'}
+                </Button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+
+          {/* Table Legacy */}
+          <AdminTable
+            data={filteredLogs}
+            columns={columns}
+            searchKey="message"
+            searchPlaceholder="Rechercher dans les messages..."
+            hideSearch={true}
+          />
+
+          {filteredLogs.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <div className="text-gray-500">
+                  Aucun log trouvé pour les critères sélectionnés
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pagination Legacy */}
+          {totalPages > 1 && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <Button 
+                    disabled={currentPage === 1} 
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    variant="outline"
+                  >
+                    ← Précédent
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    Page <strong>{currentPage}</strong> sur <strong>{totalPages}</strong>
+                    <span className="ml-2">({pageSize} logs par page)</span>
+                  </div>
+                  <Button 
+                    disabled={currentPage === totalPages} 
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    variant="outline"
+                  >
+                    Suivant →
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

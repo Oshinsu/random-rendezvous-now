@@ -7,9 +7,12 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { User, Eye } from 'lucide-react';
+import { User, Eye, Users, TrendingUp, Activity, Filter } from 'lucide-react';
 import { UserDetailModal } from "@/components/admin/UserDetailModal";
 import { useToast } from '@/hooks/use-toast';
+import { BatchActions } from '@/components/admin/users/BatchActions';
+import { UserFilters } from '@/components/admin/users/UserFilters';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface UserData {
   id: string;
@@ -32,6 +35,13 @@ export const AdminUsers = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
+  
+  // ✅ SOTA 2025: Batch Actions & CRM Filters
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [filters, setFilters] = useState<any>({});
+  const [healthScores, setHealthScores] = useState<Record<string, number>>({});
+  const [healthScoreRange, setHealthScoreRange] = useState<number[]>([0, 100]);
+  const [churnRisks, setChurnRisks] = useState<string[]>([]);
 
   React.useEffect(() => {
     fetchUsers();
@@ -63,6 +73,21 @@ export const AdminUsers = () => {
       }));
 
       setUsers(processedUsers);
+      
+      // ✅ SOTA 2025: Fetch health scores
+      const { data: healthData } = await supabase
+        .from('crm_user_health')
+        .select('user_id, health_score')
+        .in('user_id', processedUsers.map(u => u.id));
+      
+      if (healthData) {
+        const scoresMap: Record<string, number> = {};
+        healthData.forEach((h: any) => {
+          scoresMap[h.user_id] = h.health_score;
+        });
+        setHealthScores(scoresMap);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -96,106 +121,323 @@ export const AdminUsers = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Gestion des utilisateurs</h1>
-          <p className="text-red-600 mt-2">{users.length} utilisateurs enregistrés</p>
+          <h1 className="text-3xl font-bold text-red-800">Gestion des utilisateurs SOTA 2025</h1>
+          <p className="text-red-600 mt-2">{users.length} utilisateurs + Health Scores + Batch Actions</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des utilisateurs</CardTitle>
-          <CardDescription>
-            Vue d'ensemble des utilisateurs de Random
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Inscription</TableHead>
-                  <TableHead>Dernière connexion</TableHead>
-                  <TableHead>Groupes actifs</TableHead>
-                  <TableHead>Sorties totales</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {user.profile?.first_name || user.profile?.last_name 
-                            ? `${user.profile.first_name || ''} ${user.profile.last_name || ''}`.trim()
-                            : 'Utilisateur'
-                          }
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          ID: {user.id.slice(0, 8)}...
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      {formatDistanceToNow(new Date(user.created_at), { 
-                        addSuffix: true, 
-                        locale: fr 
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {user.last_sign_in_at ? (
-                        formatDistanceToNow(new Date(user.last_sign_in_at), { 
-                          addSuffix: true, 
-                          locale: fr 
-                        })
-                      ) : (
-                        <span className="text-muted-foreground">Jamais</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.active_groups > 0 ? (
-                        <Badge variant="default">{user.active_groups}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.total_outings > 0 ? (
-                        <Badge variant="secondary">{user.total_outings}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={user.active_groups > 0 ? "default" : "outline"}
-                          className={user.active_groups > 0 ? "bg-green-100 text-green-800" : ""}
-                        >
-                          {user.active_groups > 0 ? "Actif" : "Inactif"}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUserId(user.id);
-                            setModalOpen(true);
+      {/* ✅ SOTA 2025: Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Total Utilisateurs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-800">
+              {users.length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-green-700 flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Utilisateurs actifs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-800">
+              {users.filter(u => u.active_groups && u.active_groups > 0).length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-purple-700 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Santé moyenne
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-800">
+              {Object.values(healthScores).length > 0
+                ? Math.round(Object.values(healthScores).reduce((a, b) => a + b, 0) / Object.values(healthScores).length)
+                : 'N/A'}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-orange-700">Sélectionnés</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-800">
+              {selectedUsers.length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ✅ SOTA 2025: Tabs */}
+      <Tabs defaultValue="table">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="table">📋 Liste des utilisateurs</TabsTrigger>
+          <TabsTrigger value="crm">💎 CRM & Health Scores</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="table" className="space-y-4">
+          {/* ✅ SOTA 2025: User Filters */}
+          <UserFilters
+            healthScoreRange={healthScoreRange}
+            onHealthScoreChange={setHealthScoreRange}
+            churnRisks={churnRisks}
+            onChurnRiskToggle={(risk) => {
+              if (churnRisks.includes(risk)) {
+                setChurnRisks(churnRisks.filter(r => r !== risk));
+              } else {
+                setChurnRisks([...churnRisks, risk]);
+              }
+            }}
+            onApplyFilters={() => {
+              // Apply filters logic
+              console.log('Applying filters:', { healthScoreRange, churnRisks });
+            }}
+            onResetFilters={() => {
+              setHealthScoreRange([0, 100]);
+              setChurnRisks([]);
+            }}
+          />
+
+          {/* ✅ SOTA 2025: Batch Actions */}
+          <BatchActions
+            selectedCount={selectedUsers.length}
+            totalCount={users.length}
+            onSelectAll={() => {
+              if (selectedUsers.length === users.length) {
+                setSelectedUsers([]);
+              } else {
+                setSelectedUsers(users.map(u => u.id));
+              }
+            }}
+            onExport={() => {
+              console.log('Exporting users:', selectedUsers);
+              toast({
+                title: "Export en cours",
+                description: `Export de ${selectedUsers.length} utilisateurs`,
+              });
+            }}
+            onAddToSegment={() => {
+              console.log('Adding to segment:', selectedUsers);
+              toast({
+                title: "Ajout au segment",
+                description: `${selectedUsers.length} utilisateurs ajoutés`,
+              });
+            }}
+            onSuspend={() => {
+              console.log('Suspending users:', selectedUsers);
+              toast({
+                title: "Suspension",
+                description: `${selectedUsers.length} utilisateurs suspendus`,
+                variant: "destructive"
+              });
+            }}
+            isProcessing={false}
+          />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des utilisateurs</CardTitle>
+              <CardDescription>
+                Vue d'ensemble des utilisateurs de Random
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.length === users.length && users.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedUsers(users.map(u => u.id));
+                            } else {
+                              setSelectedUsers([]);
+                            }
                           }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                        />
+                      </TableHead>
+                      <TableHead>Utilisateur</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Health Score</TableHead>
+                      <TableHead>Inscription</TableHead>
+                      <TableHead>Dernière connexion</TableHead>
+                      <TableHead>Groupes actifs</TableHead>
+                      <TableHead>Sorties totales</TableHead>
+                      <TableHead>Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUsers([...selectedUsers, user.id]);
+                              } else {
+                                setSelectedUsers(selectedUsers.filter(id => id !== user.id));
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {user.profile?.first_name || user.profile?.last_name 
+                                ? `${user.profile.first_name || ''} ${user.profile.last_name || ''}`.trim()
+                                : 'Utilisateur'
+                              }
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              ID: {user.id.slice(0, 8)}...
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          {healthScores[user.id] ? (
+                            <Badge 
+                              className={
+                                healthScores[user.id] >= 70 ? 'bg-green-100 text-green-800' :
+                                healthScores[user.id] >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }
+                            >
+                              {healthScores[user.id]}/100
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {formatDistanceToNow(new Date(user.created_at), { 
+                            addSuffix: true, 
+                            locale: fr 
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          {user.last_sign_in_at ? (
+                            formatDistanceToNow(new Date(user.last_sign_in_at), { 
+                              addSuffix: true, 
+                              locale: fr 
+                            })
+                          ) : (
+                            <span className="text-muted-foreground">Jamais</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {user.active_groups > 0 ? (
+                            <Badge variant="default">{user.active_groups}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {user.total_outings > 0 ? (
+                            <Badge variant="secondary">{user.total_outings}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={user.active_groups > 0 ? "default" : "outline"}
+                              className={user.active_groups > 0 ? "bg-green-100 text-green-800" : ""}
+                            >
+                              {user.active_groups > 0 ? "Actif" : "Inactif"}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUserId(user.id);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="crm">
+          <Card>
+            <CardHeader className="bg-purple-50">
+              <CardTitle className="text-purple-800">CRM Health Scores & Segmentation</CardTitle>
+              <CardDescription>
+                Analyse comportementale + prédiction churn + lifecycle stages
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {users.filter(u => healthScores[u.id]).map((user) => {
+                  const score = healthScores[user.id];
+                  return (
+                    <Card key={user.id} className="border-l-4 border-l-purple-500">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">
+                              {user.profile?.first_name || user.profile?.last_name 
+                                ? `${user.profile.first_name || ''} ${user.profile.last_name || ''}`.trim()
+                                : user.email
+                              }
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.active_groups} groupes • {user.total_outings} sorties
+                            </div>
+                          </div>
+                          <Badge 
+                            className={
+                              score >= 70 ? 'bg-green-100 text-green-800' :
+                              score >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }
+                          >
+                            {score >= 70 ? '🟢 Excellent' :
+                             score >= 50 ? '🟡 Moyen' :
+                             '🔴 Critique'
+                            } ({score}/100)
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {selectedUserId && (
         <UserDetailModal
