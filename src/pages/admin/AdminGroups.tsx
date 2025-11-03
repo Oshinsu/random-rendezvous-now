@@ -1,82 +1,62 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AdminTable } from "@/components/admin/AdminTable";
-import { GroupComposition } from "@/components/admin/GroupComposition";
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { MapPin, Users, Clock, CheckCircle, Calendar } from "lucide-react";
-import { Group, GroupParticipant } from '@/types/database';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdminTable } from '@/components/admin/AdminTable';
+import { RefreshCw, Users, Clock, TrendingUp, MapPin, BarChart3, Filter } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAdminGroupsAnalytics } from '@/hooks/useAdminGroupsAnalytics';
+import { GroupsTimelineChart } from '@/components/admin/groups/GroupsTimelineChart';
+import { GroupsGeographicMap } from '@/components/admin/groups/GroupsGeographicMap';
+import { GroupsTemporalHeatmap } from '@/components/admin/groups/GroupsTemporalHeatmap';
+import { GroupsFunnelChart } from '@/components/admin/groups/GroupsFunnelChart';
+import { GroupsRealtimeActivity } from '@/components/admin/groups/GroupsRealtimeActivity';
+import { GroupsInsightsPanel } from '@/components/admin/groups/GroupsInsightsPanel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface GroupWithParticipants extends Group {
+interface GroupWithParticipants {
+  id: string;
+  status: string;
+  current_participants: number;
+  max_participants: number;
+  location_name: string | null;
+  bar_name: string | null;
+  created_at: string;
   participants?: any[];
-  created_by_user_id?: string; // Add the missing field
 }
 
 export const AdminGroups = () => {
   const [groups, setGroups] = useState<GroupWithParticipants[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'waiting' | 'confirmed' | 'completed'>('all');
-  const { toast } = useToast();
+  const [filter, setFilter] = useState<'all' | 'waiting' | 'confirmed' | 'completed' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  const { analytics, loading: analyticsLoading, refreshAnalytics } = useAdminGroupsAnalytics();
 
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      
-      // Step 1: Fetch groups with participants (without profiles)
-      const { data: groupsData, error: groupsError } = await supabase
+      const { data, error } = await supabase
         .from('groups')
         .select(`
           *,
-          participants:group_participants(*)
+          participants:group_participants(
+            user_id,
+            status,
+            last_seen,
+            profiles(first_name, last_name)
+          )
         `)
         .order('created_at', { ascending: false });
 
-      if (groupsError) throw groupsError;
-
-      // Step 2: Get all unique user IDs from participants
-      const allUserIds = new Set<string>();
-      groupsData?.forEach(group => {
-        group.participants?.forEach(participant => {
-          if (participant.user_id) {
-            allUserIds.add(participant.user_id);
-          }
-        });
-      });
-
-      // Step 4: Fetch all profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email')
-        .in('id', Array.from(allUserIds));
-
-      if (profilesError) throw profilesError;
-
-      // Step 5: Create a map for quick profile lookup
-      const profilesMap = new Map();
-      profilesData?.forEach(profile => {
-        profilesMap.set(profile.id, profile);
-      });
-
-      // Step 6: Merge profiles with participants
-      const enrichedGroups = groupsData?.map(group => ({
-        ...group,
-        participants: group.participants?.map(participant => ({
-          ...participant,
-          profiles: profilesMap.get(participant.user_id) || null
-        }))
-      }));
-
-      setGroups(enrichedGroups as GroupWithParticipants[] || []);
+      if (error) throw error;
+      setGroups(data || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les groupes",
-        variant: "destructive",
-      });
+      toast.error('Erreur lors du chargement des groupes');
     } finally {
       setLoading(false);
     }
@@ -84,270 +64,232 @@ export const AdminGroups = () => {
 
   useEffect(() => {
     fetchGroups();
+
+    const channel = supabase
+      .channel('admin-groups-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, () => {
+        fetchGroups();
+        toast.info('Nouveau groupe créé', { duration: 2000 });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const handleForceConfirm = async (groupId: string) => {
-    try {
-      const { error } = await supabase
-        .from('groups')
-        .update({ status: 'confirmed' })
-        .eq('id', groupId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Groupe confirmé",
-        description: "Le groupe a été forcé en statut confirmé",
-      });
-
-      fetchGroups();
-    } catch (error) {
-      console.error('Error confirming group:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de confirmer le groupe",
-        variant: "destructive",
-      });
-    }
+  const handleRefresh = () => {
+    fetchGroups();
+    refreshAnalytics();
+    toast.success('Données actualisées');
   };
 
-  const handleCancelGroup = async (groupId: string) => {
-    console.log('🚀 [DEBUG] Attempting to cancel group:', groupId);
-    
-    try {
-      // Debug: Check current user session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('🚀 [DEBUG] Current session:', { 
-        user_id: sessionData?.session?.user?.id, 
-        email: sessionData?.session?.user?.email,
-        sessionError 
-      });
+  const filteredGroups = filter === 'all' 
+    ? groups 
+    : groups.filter(g => g.status === filter);
 
-      // Debug: Check admin status
-      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
-      console.log('🚀 [DEBUG] Admin check result:', { isAdmin, adminError });
-
-      const { error } = await supabase
-        .from('groups')
-        .update({ status: 'cancelled' })
-        .eq('id', groupId);
-
-      console.log('🚀 [DEBUG] Update result:', { error });
-
-      if (error) throw error;
-
-      toast({
-        title: "Groupe annulé",
-        description: "Le groupe a été annulé avec succès.",
-      });
-      
-      fetchGroups();
-    } catch (error) {
-      console.error('🚨 [ERROR] Error cancelling group:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible d'annuler le groupe: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
-        variant: "destructive",
-      });
-    }
-  };
+  const activeGroups = groups.filter(g => g.status === 'waiting' || g.status === 'confirmed');
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      waiting: { variant: 'outline' as const, color: 'text-yellow-600 border-yellow-300', icon: Clock },
-      confirmed: { variant: 'outline' as const, color: 'text-green-600 border-green-300', icon: CheckCircle },
-      completed: { variant: 'outline' as const, color: 'text-blue-600 border-blue-300', icon: MapPin },
-      cancelled: { variant: 'outline' as const, color: 'text-red-600 border-red-300', icon: Clock }
+      waiting: { label: 'En attente', color: 'bg-yellow-500' },
+      confirmed: { label: 'Confirmé', color: 'bg-green-500' },
+      completed: { label: 'Complété', color: 'bg-blue-500' },
+      cancelled: { label: 'Annulé', color: 'bg-red-500' },
     };
-    
-    const config = variants[status as keyof typeof variants] || variants.waiting;
-    const Icon = config.icon;
-
+    const variant = variants[status as keyof typeof variants] || { label: status, color: 'bg-gray-500' };
     return (
-      <Badge variant={config.variant} className={config.color}>
-        <Icon className="h-3 w-3 mr-1" />
-        {status}
+      <Badge className={`${variant.color} text-white`}>
+        {variant.label}
       </Badge>
     );
   };
 
-  const filteredGroups = groups.filter(group => 
-    filter === 'all' || group.status === filter
-  );
+  // Calculate KPIs
+  const totalGroups = groups.length;
+  const waitingGroups = groups.filter(g => g.status === 'waiting').length;
+  const confirmedGroups = groups.filter(g => g.status === 'confirmed').length;
+  const completedGroups = groups.filter(g => g.status === 'completed').length;
+  const cancelledGroups = groups.filter(g => g.status === 'cancelled').length;
+  const avgParticipants = groups.length > 0 
+    ? (groups.reduce((sum, g) => sum + g.current_participants, 0) / groups.length).toFixed(1)
+    : '0';
+  const conversionRate = totalGroups > 0
+    ? ((completedGroups / totalGroups) * 100).toFixed(1)
+    : '0';
+  const uniqueLocations = new Set(groups.map(g => g.location_name).filter(Boolean)).size;
 
   const columns = [
-    {
-      header: "Statut",
-      accessor: "status" as keyof GroupWithParticipants,
-      render: (value: string) => getStatusBadge(value)
-    },
-    {
-      header: "Participants",
-      accessor: "current_participants" as keyof GroupWithParticipants,
-      render: (value: number, row: GroupWithParticipants) => (
-        <div className="flex items-center gap-1">
-          <Users className="h-4 w-4" />
-          {value}/{row.max_participants}
-        </div>
-      )
-    },
-    {
-      header: "Composition",
-      accessor: "participants" as keyof GroupWithParticipants,
-      render: (participants: any[], row: GroupWithParticipants) => (
-        <GroupComposition
-          participants={participants || []}
-          createdByUserId={row.created_by_user_id}
-          createdAt={row.created_at}
-        />
-      )
-    },
-    {
-      header: "Zone",
-      accessor: "location_name" as keyof GroupWithParticipants,
-      render: (value: string) => (
-        <div className="max-w-[200px] truncate" title={value}>
-          {value || "Non spécifiée"}
-        </div>
-      )
-    },
-    {
-      header: "Bar assigné",
-      accessor: "bar_name" as keyof GroupWithParticipants,
-      render: (value: string) => (
-        <div className="max-w-[150px] truncate" title={value}>
-          {value || "Aucun"}
-        </div>
-      )
-    },
-    {
-      header: "Créé le",
-      accessor: "created_at" as keyof GroupWithParticipants,
-      render: (value: string) => new Date(value).toLocaleString('fr-FR')
-    },
-    {
-      header: "Actions",
-      accessor: "id" as keyof GroupWithParticipants,
-      render: (value: string, row: GroupWithParticipants) => (
-        <div className="flex gap-2">
-          {row.status === 'waiting' && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleForceConfirm(value)}
-              className="text-green-600 border-green-300 hover:bg-green-50"
-            >
-              Confirmer
-            </Button>
-          )}
-          {['waiting', 'confirmed'].includes(row.status) && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleCancelGroup(value)}
-              className="text-red-600 border-red-300 hover:bg-red-50"
-            >
-              Annuler
-            </Button>
-          )}
-        </div>
-      )
-    }
+    { header: 'ID', accessor: 'id' as keyof GroupWithParticipants, render: (val: any, row: GroupWithParticipants) => row.id.slice(0, 8) },
+    { header: 'Statut', accessor: 'status' as keyof GroupWithParticipants, render: (val: any, row: GroupWithParticipants) => getStatusBadge(row.status) },
+    { header: 'Zone', accessor: 'location_name' as keyof GroupWithParticipants, render: (val: any) => val || '-' },
+    { header: 'Participants', accessor: 'current_participants' as keyof GroupWithParticipants, render: (val: any, row: GroupWithParticipants) => `${row.current_participants}/${row.max_participants}` },
+    { header: 'Bar', accessor: 'bar_name' as keyof GroupWithParticipants, render: (val: any) => val || '-' },
+    { header: 'Créé', accessor: 'created_at' as keyof GroupWithParticipants, render: (val: any) => new Date(val).toLocaleString('fr-FR') },
   ];
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <LoadingSpinner size="lg" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <AdminLayout>
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-red-800">Gestion des groupes</h1>
-          <p className="text-red-600 mt-2">Supervision et modération des groupes en temps réel</p>
+          <h1 className="text-3xl font-bold">Gestion des Groupes</h1>
+          <p className="text-muted-foreground">Dashboard SOTA 2025</p>
         </div>
-        <Button onClick={fetchGroups} variant="outline" size="sm">
-          Actualiser
-        </Button>
-      </div>
+        {/* Header avec actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button onClick={handleRefresh} disabled={loading || analyticsLoading} size="sm" variant="outline">
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading || analyticsLoading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+            <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les groupes</SelectItem>
+                <SelectItem value="waiting">En attente</SelectItem>
+                <SelectItem value="confirmed">Confirmés</SelectItem>
+                <SelectItem value="completed">Complétés</SelectItem>
+                <SelectItem value="cancelled">Annulés</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline" className="text-sm">
+            Données en temps réel
+          </Badge>
+        </div>
 
-      {/* Stats rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-yellow-700">En attente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-800">
-              {groups.filter(g => g.status === 'waiting').length}
+        {/* 6 KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Groupes Actifs</p>
+                <p className="text-3xl font-bold text-primary">{activeGroups.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {waitingGroups} en attente • {confirmedGroups} confirmés
+                </p>
+              </div>
+              <Users className="w-10 h-10 text-primary/20" />
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-green-700">Confirmés</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-800">
-              {groups.filter(g => g.status === 'confirmed').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-700">Terminés</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-800">
-              {groups.filter(g => g.status === 'completed').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-purple-200 bg-purple-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-purple-700">Total actif</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-800">
-              {groups.filter(g => ['waiting', 'confirmed'].includes(g.status)).length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </Card>
 
-      {/* Filtres */}
-      <div className="flex gap-2">
-        {(['all', 'waiting', 'confirmed', 'completed'] as const).map((status) => (
-          <Button
-            key={status}
-            variant={filter === status ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter(status)}
-          >
-            {status === 'all' ? 'Tous' : 
-             status === 'waiting' ? 'En attente' :
-             status === 'confirmed' ? 'Confirmés' : 
-             'Terminés'}
-          </Button>
-        ))}
-      </div>
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Taux Conversion</p>
+                <p className="text-3xl font-bold">{conversionRate}%</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {completedGroups} complétés / {totalGroups} créés
+                </p>
+              </div>
+              <TrendingUp className="w-10 h-10 text-green-500/20" />
+            </div>
+          </Card>
 
-      {/* Table des groupes */}
-      <AdminTable
-        data={filteredGroups}
-        columns={columns}
-        searchKey="location_name"
-        searchPlaceholder="Rechercher par zone..."
-      />
-    </div>
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Participants Moy.</p>
+                <p className="text-3xl font-bold">{avgParticipants}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sur {totalGroups} groupes
+                </p>
+              </div>
+              <Users className="w-10 h-10 text-blue-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Zones Couvertes</p>
+                <p className="text-3xl font-bold">{uniqueLocations}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Villes actives
+                </p>
+              </div>
+              <MapPin className="w-10 h-10 text-purple-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Groupes Annulés</p>
+                <p className="text-3xl font-bold text-red-500">{cancelledGroups}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalGroups > 0 ? ((cancelledGroups / totalGroups) * 100).toFixed(1) : 0}% du total
+                </p>
+              </div>
+              <Clock className="w-10 h-10 text-red-500/20" />
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Groupes</p>
+                <p className="text-3xl font-bold">{totalGroups}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Toutes périodes
+                </p>
+              </div>
+              <BarChart3 className="w-10 h-10 text-gray-500/20" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Timeline + Real-time Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <GroupsTimelineChart data={analytics.timeline} />
+          <GroupsRealtimeActivity />
+        </div>
+
+        {/* Insights Panel */}
+        <GroupsInsightsPanel 
+          geographic={analytics.geographic}
+          heatmap={analytics.heatmap}
+          funnel={analytics.funnel}
+        />
+
+        {/* Tabs avec visualisations */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+            <TabsTrigger value="geographic">Géographique</TabsTrigger>
+            <TabsTrigger value="temporal">Patterns Temps</TabsTrigger>
+            <TabsTrigger value="funnel">Funnel</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Table des Groupes</h3>
+                <Badge variant="secondary">{filteredGroups.length} résultats</Badge>
+              </div>
+              <AdminTable
+                data={filteredGroups}
+                columns={columns}
+              />
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="geographic">
+            <GroupsGeographicMap data={analytics.geographic} />
+          </TabsContent>
+
+          <TabsContent value="temporal">
+            <GroupsTemporalHeatmap data={analytics.heatmap} />
+          </TabsContent>
+
+          <TabsContent value="funnel">
+            <GroupsFunnelChart data={analytics.funnel} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AdminLayout>
   );
-};
+}
