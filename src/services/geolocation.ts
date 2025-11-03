@@ -166,24 +166,28 @@ export class GeolocationService {
         console.log('📍 Demande de permission géolocalisation en cours...');
       }
 
-      // Tentative 1: Haute précision (60s pour GPS froid)
+      // Tentative 1: Haute précision (8s optimal)
       let coords: { latitude: number; longitude: number };
       try {
-        coords = await this.attemptGeolocation(true, 60000);
+        coords = await this.attemptGeolocation(true, 8000);
         console.log('✅ Géolocalisation haute précision réussie');
       } catch (error) {
-        console.warn('⚠️ Tentative haute précision échouée, fallback basse précision');
+        console.warn('⚠️ Tentative haute précision échouée, fallback basse précision immédiat');
         
-        // Tentative 2: Basse précision (30s pour WiFi/Cell towers)
+        // Tentative 2: Basse précision (5s WiFi/Cell towers)
         try {
-          coords = await this.attemptGeolocation(false, 30000);
+          coords = await this.attemptGeolocation(false, 5000);
           console.log('✅ Géolocalisation basse précision réussie (fallback)');
         } catch (fallbackError) {
           console.warn('❌ Géolocalisation navigateur échouée, tentative IP Geolocation');
           
-          // Tentative 3: IP Geolocation (dernier recours)
+          // Tentative 3: IP Geolocation avec timeout (3s max)
           try {
-            coords = await this.getIPBasedLocation();
+            const ipPromise = this.getIPBasedLocation();
+            const timeoutPromise = new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('IP Geolocation timeout')), 3000)
+            );
+            coords = await Promise.race([ipPromise, timeoutPromise]) as { latitude: number; longitude: number };
             console.log('✅ Géolocalisation IP réussie (fallback ultime)');
           } catch (ipError) {
             console.error('❌ Tous les fallbacks ont échoué');

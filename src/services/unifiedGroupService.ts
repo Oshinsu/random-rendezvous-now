@@ -254,15 +254,32 @@ export class UnifiedGroupService {
         return null;
       }
 
-      const newGroup = result[0];
-      console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
-      
-      const typedGroup: Group = {
-        ...newGroup,
-        status: newGroup.status as Group['status']
-      };
-      
-      return typedGroup;
+    const newGroup = result[0];
+    console.log('✅ Groupe créé avec transaction atomique sécurisée:', newGroup.id);
+
+    // Assignment de bar immédiat en background (non bloquant)
+    supabase.functions.invoke('simple-auto-assign-bar', {
+      body: {
+        group_id: newGroup.id,
+        latitude: newGroup.latitude,
+        longitude: newGroup.longitude
+      }
+    }).then(({ data, error }) => {
+      if (error) {
+        console.error('⚠️ Erreur assignment bar en background:', error);
+      } else {
+        console.log('✅ Bar assigné en background:', data);
+      }
+    }).catch(err => {
+      console.error('❌ Erreur invocation assignment bar:', err);
+    });
+
+    const typedGroup: Group = {
+      ...newGroup,
+      status: newGroup.status as Group['status']
+    };
+
+    return typedGroup;
     } catch (error) {
       ErrorHandler.logError('CREATE_GROUP_ATOMIC', error);
       const appError = ErrorHandler.handleGenericError(error as Error);

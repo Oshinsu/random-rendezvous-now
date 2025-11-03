@@ -295,7 +295,7 @@ export const useUnifiedGroups = () => {
       
       // 1. Géolocalisation fraîche
       console.log('📍 Géolocalisation...');
-      const location = await getUserLocation(true);
+      const location = await getUserLocation(false);
       if (!location) {
         // Diagnostic de l'erreur pour afficher un message précis
         try {
@@ -303,17 +303,17 @@ export const useUnifiedGroups = () => {
           
           if (permissionState === 'denied') {
             toast({ 
-              title: '🚫 Géolocalisation bloquée', 
-              description: 'Va dans les paramètres de ton navigateur (icône 🔒 à gauche de l\'URL) pour autoriser www.random-app.fr à accéder à ta position, puis reclique sur le bouton pour réessayer.', 
+              title: 'Position introuvable', 
+              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.', 
               variant: 'destructive',
-              duration: 10000
+              duration: 5000
             });
           } else {
             toast({ 
-              title: '⏱️ GPS trop lent ou désactivé', 
-              description: 'Active le GPS de ton appareil dans les paramètres système (cela peut prendre jusqu\'à 60 secondes si le GPS est en veille), puis reclique sur le bouton pour réessayer.', 
+              title: 'Position introuvable', 
+              description: 'Vérifie que la géolocalisation est activée dans les paramètres de ton navigateur et de ton appareil.', 
               variant: 'destructive',
-              duration: 10000
+              duration: 5000
             });
           }
         } catch (error) {

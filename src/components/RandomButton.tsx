@@ -110,7 +110,7 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
             className={`text-white ${isRolling ? 'animate-spin' : isDisabled ? '' : 'group-hover:rotate-12'} transition-transform duration-500`} 
           />
           <span className="text-white whitespace-nowrap text-xs md:text-base">
-            {isRolling ? 'Recherche position GPS...' : loading ? 'Chargement...' : 'GROUPE FRAIS'}
+            {isRolling ? 'Recherche position...' : loading ? 'Création groupe...' : 'GROUPE FRAIS'}
           </span>
           <Sparkles size={iconSize - 4} className={`text-white ${isRolling ? 'animate-pulse' : ''}`} />
         </div>
@@ -163,20 +163,6 @@ const RandomButton = ({ size = 'lg' }: RandomButtonProps) => {
           </span>
         </div>
       </div>
-
-      {isRolling && (
-        <div className={isCompact
-          ? "text-center space-y-1 p-2 bg-blue-50 rounded-xl border border-blue-200"
-          : "text-center space-y-2 p-4 bg-blue-50 rounded-2xl border border-blue-200"
-        }>
-          <p className={isCompact ? "text-xs font-semibold text-blue-700" : "text-sm font-semibold text-blue-700"}>
-            🔍 Recherche de ta position...
-          </p>
-          <p className={isCompact ? "text-xs text-blue-600" : "text-sm text-blue-600"}>
-            Cela peut prendre jusqu'à 60 secondes si ton GPS est en veille. Merci de patienter.
-          </p>
-        </div>
-      )}
       
       {isDisabled && !isRolling && (
         <div className={isCompact
