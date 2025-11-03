@@ -297,11 +297,32 @@ export const useUnifiedGroups = () => {
       console.log('📍 Géolocalisation...');
       const location = await getUserLocation(true);
       if (!location) {
-        toast({ 
-          title: '📍 Position requise', 
-          description: 'Active ta géolocalisation pour trouver un groupe près de toi', 
-          variant: 'destructive' 
-        });
+        // Diagnostic de l'erreur pour afficher un message précis
+        try {
+          const permissionState = await GeolocationService.checkPermissionState();
+          
+          if (permissionState === 'denied') {
+            toast({ 
+              title: '🚫 Géolocalisation bloquée', 
+              description: 'Va dans les paramètres de ton navigateur (icône 🔒 à gauche de l\'URL) pour autoriser www.random-app.fr à accéder à ta position. Plus d\'infos: support.google.com/chrome/answer/142065', 
+              variant: 'destructive',
+              duration: 8000
+            });
+          } else {
+            toast({ 
+              title: '⏱️ Géolocalisation lente', 
+              description: 'Réessaye dans quelques secondes, active le GPS de ton appareil, ou vérifie ta connexion Internet', 
+              variant: 'destructive',
+              duration: 6000
+            });
+          }
+        } catch (error) {
+          toast({ 
+            title: '📍 Position requise', 
+            description: 'Active ta géolocalisation pour trouver un groupe près de toi', 
+            variant: 'destructive' 
+          });
+        }
         return false;
       }
 

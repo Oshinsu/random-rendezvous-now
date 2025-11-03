@@ -19,6 +19,49 @@ export class GeolocationService {
     this.lastLocationMetadata = null;
   }
 
+  /**
+   * Détecte proactivement l'état des permissions de géolocalisation
+   */
+  static async checkPermissionState(): Promise<'granted' | 'denied' | 'prompt'> {
+    try {
+      const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+      console.log('🔐 État permission géolocalisation:', result.state);
+      return result.state as 'granted' | 'denied' | 'prompt';
+    } catch (error) {
+      console.warn('⚠️ Permissions API non supportée, fallback sur getCurrentPosition direct');
+      return 'prompt';
+    }
+  }
+
+  /**
+   * Tentative de géolocalisation avec paramètres configurables
+   */
+  private static attemptGeolocation(highAccuracy: boolean, timeout: number): Promise<{ latitude: number; longitude: number }> {
+    return new Promise((resolve, reject) => {
+      console.log(`📍 Tentative géolocalisation (highAccuracy: ${highAccuracy}, timeout: ${timeout}ms)`);
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('✅ Position obtenue (brute):', { latitude, longitude, accuracy: position.coords.accuracy });
+          resolve({ latitude, longitude });
+        },
+        (error) => {
+          console.error(`❌ Erreur géolocalisation (${highAccuracy ? 'haute' : 'basse'} précision):`, {
+            code: error.code,
+            message: error.message
+          });
+          reject(error);
+        },
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: timeout,
+          maximumAge: highAccuracy ? 0 : 60000,
+        }
+      );
+    });
+  }
+
   static async getCurrentLocation(): Promise<LocationData> {
     // Vérifier le cache d'abord
     if (this.locationCache) {
@@ -52,66 +95,83 @@ export class GeolocationService {
       }
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Géolocalisation non supportée'));
+        reject(new Error('GEOLOCATION_NOT_SUPPORTED: Géolocalisation non supportée par ce navigateur'));
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log('✅ Position obtenue (brute):', { latitude, longitude });
-          
-          // CRITIQUE: Sanitiser les coordonnées dès leur obtention pour compatibilité PostgreSQL
-          const { CoordinateValidator } = await import('@/utils/coordinateValidation');
-          const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
-          
-          if (!validation.isValid || !validation.sanitized) {
-            console.error('❌ Coordonnées invalides reçues du navigateur');
-            reject(new Error('Coordonnées invalides'));
-            return;
-          }
-          
-          const sanitizedLatitude = validation.sanitized.latitude;
-          const sanitizedLongitude = validation.sanitized.longitude;
-          console.log('🔧 Coordonnées sanitisées (6 décimales max):', { 
-            original: { latitude, longitude },
-            sanitized: { latitude: sanitizedLatitude, longitude: sanitizedLongitude }
-          });
-          
-          try {
-            const locationName = await this.reverseGeocode(sanitizedLatitude, sanitizedLongitude);
-            const location: LocationData = { 
-              latitude: sanitizedLatitude, 
-              longitude: sanitizedLongitude, 
-              locationName 
-            };
-            
-            // Mettre en cache
-            this.locationCache = { location, timestamp: Date.now() };
-            resolve(location);
-          } catch (error) {
-            console.warn('⚠️ Géocodage échoué, utilisation des coordonnées sanitisées');
-            const location: LocationData = { 
-              latitude: sanitizedLatitude, 
-              longitude: sanitizedLongitude, 
-              locationName: `${sanitizedLatitude.toFixed(4)}, ${sanitizedLongitude.toFixed(4)}` 
-            };
-            this.locationCache = { location, timestamp: Date.now() };
-            resolve(location);
-          }
-        },
-        (error) => {
-          console.error('❌ Erreur géolocalisation:', error);
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 60000
+      // Vérifier l'état des permissions AVANT de demander la position
+      const permissionState = await this.checkPermissionState();
+
+      if (permissionState === 'denied') {
+        reject(new Error('GEOLOCATION_DENIED: Géolocalisation refusée par l\'utilisateur. Réactive-la dans les paramètres de ton navigateur.'));
+        return;
+      }
+
+      if (permissionState === 'prompt') {
+        console.log('📍 Demande de permission géolocalisation en cours...');
+      }
+
+      // Tentative 1: Haute précision (30s)
+      let coords: { latitude: number; longitude: number };
+      try {
+        coords = await this.attemptGeolocation(true, 30000);
+        console.log('✅ Géolocalisation haute précision réussie');
+      } catch (error) {
+        console.warn('⚠️ Tentative haute précision échouée, fallback basse précision');
+        
+        // Tentative 2: Basse précision (15s)
+        try {
+          coords = await this.attemptGeolocation(false, 15000);
+          console.log('✅ Géolocalisation basse précision réussie (fallback)');
+        } catch (fallbackError) {
+          console.error('❌ Géolocalisation totalement échouée');
+          reject(fallbackError);
+          return;
         }
-      );
+      }
+
+      const { latitude, longitude } = coords;
+      
+      // CRITIQUE: Sanitiser les coordonnées dès leur obtention pour compatibilité PostgreSQL
+      const { CoordinateValidator } = await import('@/utils/coordinateValidation');
+      const validation = CoordinateValidator.validateCoordinates(latitude, longitude);
+      
+      if (!validation.isValid || !validation.sanitized) {
+        console.error('❌ Coordonnées invalides reçues du navigateur');
+        reject(new Error('Coordonnées invalides'));
+        return;
+      }
+      
+      const sanitizedLatitude = validation.sanitized.latitude;
+      const sanitizedLongitude = validation.sanitized.longitude;
+      console.log('🔧 Coordonnées sanitisées (6 décimales max):', { 
+        original: { latitude, longitude },
+        sanitized: { latitude: sanitizedLatitude, longitude: sanitizedLongitude }
+      });
+      
+      try {
+        const locationName = await this.reverseGeocode(sanitizedLatitude, sanitizedLongitude);
+        const location: LocationData = { 
+          latitude: sanitizedLatitude, 
+          longitude: sanitizedLongitude, 
+          locationName 
+        };
+        
+        // Mettre en cache
+        this.locationCache = { location, timestamp: Date.now() };
+        resolve(location);
+      } catch (error) {
+        console.warn('⚠️ Géocodage échoué, utilisation des coordonnées sanitisées');
+        const location: LocationData = { 
+          latitude: sanitizedLatitude, 
+          longitude: sanitizedLongitude, 
+          locationName: `${sanitizedLatitude.toFixed(4)}, ${sanitizedLongitude.toFixed(4)}` 
+        };
+        this.locationCache = { location, timestamp: Date.now() };
+        resolve(location);
+      }
     });
   }
 
