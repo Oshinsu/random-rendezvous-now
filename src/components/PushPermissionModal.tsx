@@ -51,20 +51,42 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
     // Check if permission already asked (localStorage)
     const permissionAsked = localStorage.getItem('push_permission_asked');
     
-    // Don't show if already enabled or already asked
-    if (isEnabled || permissionAsked === 'true') {
+    // ✅ VÉRIFICATION DIRECTE DU NAVIGATEUR (pas juste le hook)
+    const browserPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+    
+    // Don't show if browser already granted OR already asked OR hook says enabled
+    if (browserPermission === 'granted' || permissionAsked === 'true' || isEnabled) {
+      console.log('🔕 Modal NOT shown:', { browserPermission, permissionAsked, isEnabled });
+      setIsOpen(false);
       return;
     }
 
-    // Show modal after small delay (better UX)
+    // Show modal after delay (better UX)
     const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, 1000);
+      // ✅ Double-check avant d'ouvrir (race condition)
+      const recheckAsked = localStorage.getItem('push_permission_asked');
+      const recheckBrowser = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+      
+      if (recheckBrowser !== 'granted' && recheckAsked !== 'true') {
+        console.log('🔔 Opening permission modal');
+        setIsOpen(true);
+      }
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, [isEnabled]);
+  }, []); // ❗ PAS de dépendances - s'exécute qu'une seule fois
 
   const handleAccept = async () => {
+    // ✅ Vérifier si déjà bloqué dans le navigateur
+    if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+      // Si bloqué, pas besoin de réessayer - juste marquer comme asked
+      localStorage.setItem('push_permission_asked', 'true');
+      localStorage.setItem('push_permission_result', 'denied');
+      setIsOpen(false);
+      onClose?.();
+      return;
+    }
+
     await requestPermission();
     
     // Track acceptance (analytics)
@@ -86,14 +108,15 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
     onClose?.();
   };
 
-  // Don't render if already enabled
-  if (isEnabled) return null;
+  // Don't render if already enabled OR browser granted
+  const browserPermission = typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  if (isEnabled || browserPermission === 'granted') return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden">
-        {/* Image contextuelle */}
-        <div className="relative w-full h-40 -mx-6 -mt-6 mb-4 overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        {/* Image contextuelle - ✅ SANS MARGES NÉGATIVES */}
+        <div className="relative w-full h-40 overflow-hidden">
           <img 
             src={copy.image} 
             alt="" 
@@ -102,7 +125,9 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
         </div>
 
-        <DialogHeader className="space-y-3">
+        {/* ✅ CONTENU AVEC PADDING PROPRE */}
+        <div className="px-6 pb-6 pt-2">
+          <DialogHeader className="space-y-3">
           <DialogTitle className="text-xl flex items-center gap-2">
             <BellRing className="h-5 w-5 text-brand-500 animate-pulse" />
             {copy.title}
@@ -144,10 +169,11 @@ export const PushPermissionModal = ({ trigger, onClose }: PushPermissionModalPro
           </Button>
         </DialogFooter>
 
-        {/* Privacy note - ton Random */}
-        <p className="text-xs text-muted-foreground text-center mt-2">
-          On respecte ta vie privée. Zéro spam, promis 🙏
-        </p>
+          {/* Privacy note - ton Random */}
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            On respecte ta vie privée. Zéro spam, promis 🙏
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
