@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Edit, Check, X, Type, Image as ImageIcon, Code, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SiteContent } from '@/hooks/useSiteContent';
+import { SiteContent } from '@/contexts/SiteContentContext';
 
 interface ContentEditCardProps {
   content: SiteContent;

@@ -1,14 +1,13 @@
-import { useSiteContent } from '@/hooks/useSiteContent';
+import { useState } from 'react';
+import { useSiteContentContext } from '@/contexts/SiteContentContext';
 import { ContentEditCard } from '@/components/admin/cms/ContentEditCard';
-import { CMSNavigation } from '@/components/admin/cms/CMSNavigation';
-import { CMSHeader } from '@/components/admin/cms/CMSHeader';
 import { CMSPerformanceDashboard } from '@/components/admin/cms/CMSPerformanceDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye } from 'lucide-react';
+import { Eye, Loader2, RefreshCw, Rocket } from 'lucide-react';
 import HeroSection from '@/components/landing/HeroSection';
 import WhyRandomSection from '@/components/landing/WhyRandomSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
@@ -19,40 +18,34 @@ interface AdminContentProps {
 }
 
 export default function AdminContent({ view = 'all' }: AdminContentProps) {
-  const { contents, loading, updateContent, refresh } = useSiteContent();
+  const { contents, loading, updateContent, refresh, isSaving } = useSiteContentContext();
+  const [previewKey, setPreviewKey] = useState(0);
 
   const handleUpdateContent = async (id: string, value: any) => {
     const success = await updateContent(id, value);
     if (success) {
-      await refresh();
+      setPreviewKey(prev => prev + 1);
+      toast.success("Contenu mis à jour", {
+        description: "Le preview est à jour",
+        action: {
+          label: "Voir le résultat",
+          onClick: () => {
+            document.querySelector('.preview-container')?.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      });
+    } else {
+      toast.error("Erreur de mise à jour");
     }
     return success;
   };
 
-  const handleAIAnalyze = async () => {
-    toast.info('Lancement de l\'analyse AI...');
-    try {
-      const textContents = contents.filter(c => c.content_type === 'text');
-      for (const content of textContents) {
-        await supabase.functions.invoke('calculate-cms-seo', {
-          body: { content_id: content.id }
-        });
-      }
-      toast.success(`Analyse complétée pour ${textContents.length} contenus !`);
-      await refresh();
-    } catch (error) {
-      toast.error('Erreur lors de l\'analyse AI');
-    }
-  };
-
   const handlePublish = async () => {
-    toast.info('Publication en cours...');
     try {
-      await supabase.rpc('refresh_cms_engagement');
-      toast.success('Contenus publiés avec succès !');
       await refresh();
+      toast.success("Modifications publiées");
     } catch (error) {
-      toast.error('Erreur lors de la publication');
+      toast.error("Erreur de publication");
     }
   };
 
@@ -64,21 +57,27 @@ export default function AdminContent({ view = 'all' }: AdminContentProps) {
     );
   }
 
-  const stats = {
-    total: contents.length,
-    sections: Array.from(new Set(contents.map(c => c.page_section))).length,
-    recentlyUpdated: contents.filter(c => {
-      const diffDays = Math.ceil((new Date().getTime() - new Date(c.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-      return diffDays <= 7;
-    }).length
-  };
-
   return (
-    <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-      <CMSHeader onRefresh={refresh} onAIAnalyze={handleAIAnalyze} onPublish={handlePublish} />
-      <CMSPerformanceDashboard stats={stats} />
-      <Separator />
-      <CMSNavigation />
+    <div className="space-y-6">
+      <div className="flex items-center justify-end gap-2 mb-6">
+        <Button variant="outline" onClick={refresh} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Actualiser
+        </Button>
+        <Button onClick={handlePublish}>
+          <Rocket className="h-4 w-4 mr-2" />
+          Publier
+        </Button>
+      </div>
+
+      <CMSPerformanceDashboard stats={{
+        total: contents.length,
+        sections: Array.from(new Set(contents.map(c => c.page_section))).length,
+        recentlyUpdated: contents.filter(c => {
+          const diffDays = Math.ceil((new Date().getTime() - new Date(c.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        }).length
+      }} />
 
       {view === 'hero' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -95,18 +94,19 @@ export default function AdminContent({ view = 'all' }: AdminContentProps) {
               </CardContent>
             </Card>
           </div>
-          <div className="sticky top-4 h-fit">
-            <Card>
+          <div className="sticky top-4 h-fit preview-container">
+            <Card className={`border-2 transition-colors ${isSaving ? 'border-primary/40' : 'border-primary/20'}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${isSaving ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
                   <Eye className="h-5 w-5" />
-                  Aperçu en temps réel
-                </CardTitle>
+                  <CardTitle>Aperçu en temps réel</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-2">
                 <div className="border-2 border-dashed rounded-lg overflow-hidden bg-neutral-50">
                   <div className="scale-50 origin-top-left w-[200%] h-[400px] overflow-hidden">
-                    <HeroSection />
+                    <HeroSection key={`hero-${previewKey}`} />
                   </div>
                 </div>
               </CardContent>
@@ -130,18 +130,19 @@ export default function AdminContent({ view = 'all' }: AdminContentProps) {
               </CardContent>
             </Card>
           </div>
-          <div className="sticky top-4 h-fit">
-            <Card>
+          <div className="sticky top-4 h-fit preview-container">
+            <Card className={`border-2 transition-colors ${isSaving ? 'border-primary/40' : 'border-primary/20'}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${isSaving ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
                   <Eye className="h-5 w-5" />
-                  Aperçu en temps réel
-                </CardTitle>
+                  <CardTitle>Aperçu en temps réel</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-2">
                 <div className="border-2 border-dashed rounded-lg overflow-hidden bg-neutral-50">
-                  <div className="scale-[0.4] origin-top-left w-[250%] h-[500px] overflow-hidden">
-                    <WhyRandomSection />
+                  <div className="scale-50 origin-top-left w-[200%] h-[600px] overflow-hidden">
+                    <WhyRandomSection key={`benefits-${previewKey}`} />
                   </div>
                 </div>
               </CardContent>
@@ -165,18 +166,19 @@ export default function AdminContent({ view = 'all' }: AdminContentProps) {
               </CardContent>
             </Card>
           </div>
-          <div className="sticky top-4 h-fit">
-            <Card>
+          <div className="sticky top-4 h-fit preview-container">
+            <Card className={`border-2 transition-colors ${isSaving ? 'border-primary/40' : 'border-primary/20'}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${isSaving ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
                   <Eye className="h-5 w-5" />
-                  Aperçu en temps réel
-                </CardTitle>
+                  <CardTitle>Aperçu en temps réel</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-2">
                 <div className="border-2 border-dashed rounded-lg overflow-hidden bg-neutral-50">
-                  <div className="scale-[0.4] origin-top-left w-[250%] h-[500px] overflow-hidden">
-                    <HowItWorksSection />
+                  <div className="scale-50 origin-top-left w-[200%] h-[600px] overflow-hidden">
+                    <HowItWorksSection key={`how-it-works-${previewKey}`} />
                   </div>
                 </div>
               </CardContent>
@@ -200,21 +202,32 @@ export default function AdminContent({ view = 'all' }: AdminContentProps) {
               </CardContent>
             </Card>
           </div>
-          <div className="sticky top-4 h-fit">
-            <Card>
+          <div className="sticky top-4 h-fit preview-container">
+            <Card className={`border-2 transition-colors ${isSaving ? 'border-primary/40' : 'border-primary/20'}`}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${isSaving ? 'bg-yellow-500' : 'bg-green-500'} animate-pulse`} />
                   <Eye className="h-5 w-5" />
-                  Aperçu en temps réel
-                </CardTitle>
+                  <CardTitle>Aperçu en temps réel</CardTitle>
+                </div>
               </CardHeader>
               <CardContent className="p-2">
-                <div className="border-2 border-dashed rounded-lg overflow-hidden bg-white">
-                  <Footer />
+                <div className="border-2 border-dashed rounded-lg overflow-hidden bg-neutral-50">
+                  <div className="scale-50 origin-top-left w-[200%] h-[400px] overflow-hidden">
+                    <Footer key={`footer-${previewKey}`} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+        </div>
+      )}
+
+      {/* Global saving indicator */}
+      {isSaving && (
+        <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Sauvegarde en cours...
         </div>
       )}
     </div>

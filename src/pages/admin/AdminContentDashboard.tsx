@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useSiteContent } from '@/hooks/useSiteContent';
+import { useSiteContentContext } from '@/contexts/SiteContentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -72,7 +72,7 @@ const SectionCard = ({ title, description, count, path, gradient, icon, lastUpda
 };
 
 export default function AdminContentDashboard() {
-  const { contents, loading } = useSiteContent();
+  const { contents, loading } = useSiteContentContext();
 
   const sections = [
     {

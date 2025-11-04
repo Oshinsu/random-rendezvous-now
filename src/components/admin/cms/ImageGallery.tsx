@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageManager } from './ImageManager';
-import { SiteContent } from '@/hooks/useSiteContent';
+import { SiteContent } from '@/contexts/SiteContentContext';
 import { Image, Eye, Edit, Trash2, ExternalLink } from 'lucide-react';
 import {
   Dialog,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SiteContent } from '@/hooks/useSiteContent';
+import { SiteContent } from '@/contexts/SiteContentContext';
 import { RichTextEditor } from './RichTextEditor';
 import { ImageManager } from './ImageManager';
 import { ContentPreview } from './ContentPreview';

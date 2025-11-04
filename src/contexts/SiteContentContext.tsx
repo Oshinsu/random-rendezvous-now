@@ -12,10 +12,14 @@ interface SiteContent {
   updated_at: string;
 }
 
+export type { SiteContent };
+
 interface SiteContentContextType {
   contents: SiteContent[];
   loading: boolean;
+  isSaving: boolean;
   getContent: (key: string, fallback?: string) => string;
+  updateContent: (id: string, value: any) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -24,6 +28,7 @@ const SiteContentContext = createContext<SiteContentContextType | null>(null);
 export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
   const [contents, setContents] = useState<SiteContent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchContents = async () => {
     try {
@@ -76,13 +81,50 @@ export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
     return item.content_value || fallback;
   }, [contents]);
 
+  const updateContent = useCallback(async (id: string, contentValue: any): Promise<boolean> => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .update({ content_value: contentValue, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setContents(prev => 
+        prev.map(item => 
+          item.id === id 
+            ? { ...item, content_value: contentValue, updated_at: new Date().toISOString() }
+            : item
+        )
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error updating content:', error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
   const refresh = async () => {
     setLoading(true);
     await fetchContents();
   };
 
+  const value = useMemo(() => ({
+    contents,
+    loading,
+    isSaving,
+    getContent,
+    updateContent,
+    refresh
+  }), [contents, loading, isSaving, getContent, updateContent]);
+
   return (
-    <SiteContentContext.Provider value={{ contents, loading, getContent, refresh }}>
+    <SiteContentContext.Provider value={value}>
       {children}
     </SiteContentContext.Provider>
   );

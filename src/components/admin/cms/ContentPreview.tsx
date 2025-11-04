@@ -14,7 +14,7 @@ import {
   Code,
   Palette
 } from 'lucide-react';
-import { SiteContent } from '@/hooks/useSiteContent';
+import { SiteContent } from '@/contexts/SiteContentContext';
 
 interface ContentPreviewProps {
   content: SiteContent;
