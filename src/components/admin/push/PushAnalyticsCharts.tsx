@@ -115,48 +115,51 @@ export const PushAnalyticsCharts = () => {
         </Card>
       </div>
 
-      {/* Peak Hours Heatmap */}
+      {/* Peak Hours Chart - SOTA 2025 Optimized */}
       <Card>
         <CardHeader>
-          <CardTitle>🔥 Peak Hours Heatmap</CardTitle>
-          <CardDescription>Meilleurs horaires d'ouverture (heures × jours de la semaine)</CardDescription>
+          <CardTitle>🔥 Peak Hours - Meilleurs Horaires</CardTitle>
+          <CardDescription>Ouvertures par heure et jour de la semaine</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-25 gap-1 min-w-[800px]">
-              <div className="col-span-1" />
-              {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="text-xs text-center text-muted-foreground">
-                  {i}h
-                </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data?.peakHoursByDay || []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" />
+              <YAxis label={{ value: 'Opens', angle: -90, position: 'insideLeft' }} />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (!active || !payload?.[0]) return null;
+                  const data = payload[0].payload;
+                  const hour = payload[0].dataKey?.toString().replace('h', '');
+                  return (
+                    <div className="bg-background border p-3 rounded-lg shadow-lg">
+                      <p className="font-semibold text-sm">{data.day}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {hour}h: <span className="font-medium text-foreground">{payload[0].value} opens</span>
+                      </p>
+                    </div>
+                  );
+                }}
+              />
+              <Legend 
+                wrapperStyle={{ fontSize: '12px' }}
+                formatter={(value) => `${value.replace('h', '')}h`}
+              />
+              {/* Generate 24 bars with gradient colors */}
+              {Array.from({ length: 24 }, (_, hour) => (
+                <Bar 
+                  key={hour}
+                  dataKey={`h${hour}`} 
+                  name={`h${hour}`}
+                  fill={`hsl(${210 + (hour / 24) * 60}, 70%, ${50 + (hour / 24) * 20}%)`}
+                  stackId="a"
+                />
               ))}
-              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
-                <React.Fragment key={day}>
-                  <div className="text-xs text-right pr-2 text-muted-foreground flex items-center">
-                    {day}
-                  </div>
-                  {Array.from({ length: 24 }, (_, hour) => {
-                    const dataPoint = data?.peakHours.find((p) => p.day === day && p.hour === hour);
-                    const value = dataPoint?.value || 0;
-                    const intensity = Math.min(value / 50, 1);
-                    
-                    return (
-                      <div
-                        key={`${day}-${hour}`}
-                        className="aspect-square rounded"
-                        style={{
-                          backgroundColor: `hsla(var(--primary), ${intensity})`,
-                        }}
-                        title={`${day} ${hour}h: ${value} opens`}
-                      />
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
+            </BarChart>
+          </ResponsiveContainer>
           <p className="text-xs text-muted-foreground mt-4">
-            💡 Les horaires optimaux : Jeudi-Samedi 18h-22h (zone rouge/orange)
+            💡 Insight: Les pics d'engagement sont visibles par hauteur et couleur (hover pour détails)
           </p>
         </CardContent>
       </Card>

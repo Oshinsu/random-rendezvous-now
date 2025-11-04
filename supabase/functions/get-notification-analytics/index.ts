@@ -26,6 +26,10 @@ interface ChartData {
     day: string;
     value: number;
   }>;
+  peakHoursByDay: Array<{
+    day: string;
+    [key: string]: string | number;
+  }>;
 }
 
 /**
@@ -168,11 +172,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ✅ SOTA 2025: Optimized aggregated format for BarChart (7 objects vs 168)
+    const peakHoursByDay = days.map((day, dayIndex) => {
+      const hourlyData: Record<string, number> = { day };
+      for (let hour = 0; hour < 24; hour++) {
+        hourlyData[`h${hour}`] = heatmapMap.get(`${dayIndex}-${hour}`) || 0;
+      }
+      return hourlyData;
+    });
+
     const result: ChartData = {
       performanceByType,
       timeline,
       deviceTypes,
       peakHours,
+      peakHoursByDay,
     };
 
     // Store in cache (expires in 1 hour)

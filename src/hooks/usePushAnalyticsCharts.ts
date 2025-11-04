@@ -22,6 +22,10 @@ export interface ChartData {
     day: string;
     value: number;
   }>;
+  peakHoursByDay: Array<{
+    day: string;
+    [key: string]: string | number;
+  }>;
 }
 
 export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') => {
