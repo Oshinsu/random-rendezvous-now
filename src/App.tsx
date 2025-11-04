@@ -25,6 +25,7 @@ import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminGroups } from "./pages/admin/AdminGroups";
 import { AdminMessages } from "./pages/admin/AdminMessages";
 import AdminContent from "./pages/admin/AdminContent";
+import AdminContentDashboard from "./pages/admin/AdminContentDashboard";
 import { AdminAudit } from "./pages/admin/AdminAudit";
 import { AdminActivity } from "./pages/admin/AdminActivity";
 import { AdminLogs } from "./pages/admin/AdminLogs";
@@ -190,43 +191,43 @@ const AppRoutes = () => (
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <AdminContent />
+            <AdminContentDashboard />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
     } />
-    <Route path="/admin/content/texts" element={
+    <Route path="/admin/content/hero" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <AdminContent />
+            <AdminContent view="hero" />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
     } />
-    <Route path="/admin/content/images" element={
+    <Route path="/admin/content/benefits" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <AdminContent />
+            <AdminContent view="benefits" />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
     } />
-    <Route path="/admin/content/templates" element={
+    <Route path="/admin/content/how-it-works" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <AdminContent />
+            <AdminContent view="how_it_works" />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>
     } />
-    <Route path="/admin/content/builder" element={
+    <Route path="/admin/content/footer" element={
       <ProtectedRoute>
         <AdminRoute>
           <AdminLayout>
-            <AdminContent />
+            <AdminContent view="footer" />
           </AdminLayout>
         </AdminRoute>
       </ProtectedRoute>

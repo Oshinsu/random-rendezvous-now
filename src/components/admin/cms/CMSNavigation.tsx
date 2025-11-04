@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom';
-import { FileText, Image, Layout, Settings } from 'lucide-react';
+import { Layout, Target, Zap, Globe, LayoutDashboard } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 export const CMSNavigation = () => {
   const navItems = [
-    { label: 'Tous', path: '/admin/content', icon: Layout, exact: true },
-    { label: 'Textes', path: '/admin/content/texts', icon: FileText },
-    { label: 'Images', path: '/admin/content/images', icon: Image },
-    { label: 'Templates', path: '/admin/content/templates', icon: Settings },
+    { label: '📊 Dashboard', path: '/admin/content', icon: LayoutDashboard, exact: true },
+    { label: '🎯 Hero', path: '/admin/content/hero', icon: Layout, section: 'hero' },
+    { label: '✨ Benefits', path: '/admin/content/benefits', icon: Target, section: 'benefits' },
+    { label: '⚡ How It Works', path: '/admin/content/how-it-works', icon: Zap, section: 'how_it_works' },
+    { label: '🌍 Footer', path: '/admin/content/footer', icon: Globe, section: 'footer' },
   ];
 
   return (
