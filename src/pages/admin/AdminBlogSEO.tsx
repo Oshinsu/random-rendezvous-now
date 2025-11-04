@@ -57,9 +57,10 @@ export default function AdminBlogSEO() {
   const [newNotes, setNewNotes] = useState('');
   const [isAddingKeyword, setIsAddingKeyword] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<string | null>(null);
+  const [articleStatusFilter, setArticleStatusFilter] = useState<'draft' | 'published' | 'archived' | undefined>(undefined);
 
   const { keywords, isLoading: keywordsLoading, addKeyword, updateKeyword, deleteKeyword } = useBlogKeywords();
-  const { articles, isLoading: articlesLoading, publishArticle, unpublishArticle, deleteArticle, updateArticle } = useBlogArticles();
+  const { articles, isLoading: articlesLoading, publishArticle, unpublishArticle, deleteArticle, updateArticle } = useBlogArticles(articleStatusFilter);
   const { schedule, generateNow, updateSchedule } = useBlogGeneration();
   const { data: logs } = useBlogGenerationLogs();
   const { data: stats } = useBlogGenerationStats();
@@ -471,6 +472,50 @@ export default function AdminBlogSEO() {
                   Gérez, prévisualisez et publiez vos articles générés automatiquement
                 </CardDescription>
               </CardHeader>
+              
+              {/* Filtres UI - SOTA 2025 */}
+              <div className="flex gap-2 p-4 border-b bg-muted/30">
+                <Button
+                  size="sm"
+                  variant={articleStatusFilter === undefined ? 'default' : 'outline'}
+                  onClick={() => setArticleStatusFilter(undefined)}
+                  className="gap-1"
+                >
+                  Tous
+                  {articles && <Badge variant="secondary" className="ml-1">{articles.length}</Badge>}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={articleStatusFilter === 'draft' ? 'default' : 'outline'}
+                  onClick={() => setArticleStatusFilter('draft')}
+                  className="gap-1"
+                >
+                  <FileText className="h-3 w-3" />
+                  Brouillons
+                  {articles && <Badge variant="secondary" className="ml-1">{articles.filter(a => a.status === 'draft').length}</Badge>}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={articleStatusFilter === 'published' ? 'default' : 'outline'}
+                  onClick={() => setArticleStatusFilter('published')}
+                  className="gap-1"
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  Publiés
+                  {articles && <Badge variant="secondary" className="ml-1">{articles.filter(a => a.status === 'published').length}</Badge>}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={articleStatusFilter === 'archived' ? 'default' : 'outline'}
+                  onClick={() => setArticleStatusFilter('archived')}
+                  className="gap-1"
+                >
+                  <Archive className="h-3 w-3" />
+                  Archivés
+                  {articles && <Badge variant="secondary" className="ml-1">{articles.filter(a => a.status === 'archived').length}</Badge>}
+                </Button>
+              </div>
+
               <CardContent className="p-0">
                 {articlesLoading ? (
                   <div className="flex items-center justify-center py-16">

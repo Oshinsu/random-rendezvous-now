@@ -32,11 +32,11 @@ export const useBlogArticles = (status?: 'draft' | 'published' | 'archived') => 
         .select('*')
         .order('created_at', { ascending: false });
 
+      // ✅ SOTA 2025: Si status fourni, filtrer. Sinon, TOUT afficher (pour admin)
       if (status) {
         query = query.eq('status', status);
-      } else {
-        query = query.eq('status', 'published');
       }
+      // ✅ Pas de filtre par défaut = Admin voit TOUS les articles
 
       const { data, error } = await query;
       if (error) throw error;
