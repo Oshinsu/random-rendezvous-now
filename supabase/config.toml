@@ -200,3 +200,15 @@ verify_jwt = false
 [functions.validate-oauth-request]
 verify_jwt = false
 
+[functions.sync-notification-analytics]
+verify_jwt = false
+
+[functions.sync-notification-analytics.schedule]
+cron = "0 2 * * *"
+
+[functions.update-notification-config-stats]
+verify_jwt = false
+
+[functions.update-notification-config-stats.schedule]
+cron = "0 * * * *"
+

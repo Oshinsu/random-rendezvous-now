@@ -88,7 +88,7 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
       const tokensResponse = await supabase
         .from('user_push_tokens')
         .select('device_type')
-        .eq('active', true);
+        .eq('is_active', true);
       
       const tokensData = tokensResponse.data as Array<{ device_type: string | null }> | null;
 
@@ -103,20 +103,22 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
         value,
       }));
 
-      // 4. Peak Hours Heatmap (real data from notification_analytics)
+      // 4. Peak Hours Heatmap (based on OPENS, not sends)
       const peakHours: Array<{ hour: number; day: string; value: number }> = [];
       const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
       
-      // Fetch all notifications in range to calculate peak hours
+      // Fetch all OPENED notifications in range to calculate peak hours
       const { data: notifData } = await supabase
         .from('user_notifications')
-        .select('created_at')
-        .gte('created_at', startDate.toISOString());
+        .select('read_at')
+        .gte('created_at', startDate.toISOString())
+        .not('read_at', 'is', null); // Only opened notifications
 
-      // Aggregate by day of week and hour
+      // Aggregate by day of week and hour (using read_at, not created_at)
       const heatmapData: Record<string, number> = {};
       notifData?.forEach((notif) => {
-        const date = new Date(notif.created_at);
+        if (!notif.read_at) return;
+        const date = new Date(notif.read_at);
         const dayOfWeek = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
         const hour = date.getHours();
         const key = `${dayOfWeek}-${hour}`;

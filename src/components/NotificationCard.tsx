@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Notification } from '@/hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { notificationTracking } from '@/services/notificationTracking';
 
 interface NotificationCardProps {
   notification: Notification;
@@ -15,10 +17,16 @@ interface NotificationCardProps {
 
 export const NotificationCard = ({ notification, onRead, onDelete }: NotificationCardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!notification.read_at) {
       onRead();
+    }
+
+    // Track click for analytics
+    if (user?.id && notification.action_url) {
+      await notificationTracking.trackClick(notification.id, user.id, 'card_click');
     }
 
     if (notification.action_url) {

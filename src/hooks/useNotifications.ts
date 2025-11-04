@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
+import { notificationTracking } from '@/services/notificationTracking';
 
 export interface Notification {
   id: string;
@@ -53,24 +54,31 @@ export const useNotifications = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('user_notifications')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', notificationId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
+      // 1. Update UI state immediately (optimistic update)
       setNotifications(prev =>
         prev.map(n =>
           n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      // 2. Update read_at in DB (for UI)
+      const { error: updateError } = await supabase
+        .from('user_notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // 3. Track open for analytics (separate call to RPC)
+      await notificationTracking.trackOpen(notificationId, user.id);
     } catch (error) {
       console.error('❌ Error marking notification as read:', error);
+      // Revert optimistic update on error
+      fetchNotifications();
     }
-  }, [user]);
+  }, [user, fetchNotifications]);
 
   // Marquer toutes comme lues
   const markAllAsRead = useCallback(async () => {
