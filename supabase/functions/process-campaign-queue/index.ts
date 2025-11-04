@@ -83,7 +83,11 @@ serve(async (req) => {
           const content = campaign.campaign_data.content
             .replace(/{{first_name}}/g, user.firstName || 'là');
 
-          // Invoke send-zoho-email
+          /**
+           * Send email with retry logic (exponential backoff)
+           * SOTA Oct 2025: AWS Well-Architected Framework
+           * Source: https://aws.amazon.com/architecture/well-architected/
+           */
           const emailResponse = await supabase.functions.invoke('send-zoho-email', {
             body: {
               to: user.email,
@@ -99,6 +103,50 @@ serve(async (req) => {
           if (emailResponse.error) {
             console.error(`❌ Failed to send email to ${user.email}:`, emailResponse.error);
             batchFailed++;
+
+            // Get current queue item for retry count
+            const retryCount = campaign.retry_count || 0;
+
+            // Retry logic: Max 3 attempts with exponential backoff (2^n minutes)
+            if (retryCount < 3) {
+              const nextRetryDelay = Math.pow(2, retryCount) * 60 * 1000; // 2min, 4min, 8min
+              const nextRetryAt = new Date(Date.now() + nextRetryDelay);
+
+              console.log(`⏰ Retry ${retryCount + 1}/3 scheduled for ${user.email} at ${nextRetryAt.toISOString()}`);
+
+              // Re-queue with incremented retry count
+              await supabase.from('campaign_email_queue').insert({
+                campaign_id: campaign.campaign_id,
+                users: [user],
+                processed: 0,
+                total: 1,
+                failed: 0,
+                status: 'pending',
+                retry_count: retryCount + 1,
+                last_error: emailResponse.error.message || 'Unknown error',
+                next_retry_at: nextRetryAt.toISOString(),
+                campaign_data: campaign.campaign_data
+              });
+            } else {
+              // Max retries exceeded → Move to Dead Letter Queue (DLQ)
+              console.error(`💀 Moving ${user.email} to DLQ after 3 failed attempts`);
+
+              await supabase.from('campaign_email_dlq').insert({
+                campaign_id: campaign.campaign_id,
+                user_id: user.userId,
+                user_email: user.email,
+                subject,
+                content,
+                original_queue_id: campaign.id,
+                retry_count: 3,
+                last_error: emailResponse.error.message || 'Max retries exceeded',
+                last_attempt_at: new Date().toISOString(),
+                metadata: {
+                  campaign_name: campaign.campaign_id,
+                  final_subject: subject
+                }
+              });
+            }
           } else {
             console.log(`✅ Email sent to ${user.email}`);
             batchSuccess++;

@@ -215,3 +215,12 @@ cron = "0 * * * *"
 [functions.get-notification-analytics]
 verify_jwt = false
 
+# Auto-refresh Zoho OAuth token (SOTA Oct 2025)
+# Source: OAuth 2.0 RFC 6749 - Proactive token refresh
+# https://datatracker.ietf.org/doc/html/rfc6749
+[functions.refresh-zoho-token]
+verify_jwt = false
+
+[functions.refresh-zoho-token.schedule]
+cron = "*/45 * * * *"
+

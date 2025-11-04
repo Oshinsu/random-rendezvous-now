@@ -13,13 +13,17 @@ import { CRMSegmentsTab } from '@/components/crm/CRMSegmentsTab';
 import { AutomationRulesPanel } from '@/components/crm/AutomationRulesPanel';
 import { FunnelChart } from '@/components/admin/charts/FunnelChart';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, Users, Target, Zap, Plus, Send } from 'lucide-react';
+import { BarChart3, Users, Target, Zap, Plus, Send, Loader2 } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { EmailTemplateEditor } from '@/components/crm/EmailTemplateEditor';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { campaignSchema, type CampaignFormData } from '@/schemas/campaignSchema';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 export default function AdminCRMNew() {
   const { isAdmin, loading: authLoading } = useAdminAuth();
@@ -84,21 +88,29 @@ export default function AdminCRMNew() {
     { label: 'Réguliers (3+ sorties)', value: analytics.funnelStats.regular, color: '#3b82f6' },
   ] : [];
 
-  const handleCreateCampaign = async () => {
+  /**
+   * Handle campaign creation with validated data
+   * SOTA Oct 2025: Form submission with Zod validation
+   */
+  const handleCreateCampaign = async (data: CampaignFormData) => {
     try {
       await createCampaign({
-        campaign_name: campaignName,
+        campaign_name: data.campaign_name,
         campaign_type: 'email',
         trigger_type: 'manual',
-        subject: campaignSubject,
-        content: campaignContent,
-        target_segment_id: '',
+        subject: data.subject,
+        content: data.content,
+        target_segment_id: data.segment_id || undefined,
+        target_lifecycle_stage_id: data.lifecycle_stage_id || undefined,
         channels: ['email'],
-        send_at: null
+        send_at: data.send_at || undefined,
+        status: 'draft'
       });
       toast.success('✅ Campagne créée avec succès');
+      form.reset();
     } catch (error) {
-      toast.error('❌ Erreur');
+      console.error('Error creating campaign:', error);
+      toast.error('❌ Erreur lors de la création');
     }
   };
 
@@ -187,86 +199,121 @@ export default function AdminCRMNew() {
             <CRMSegmentsTab />
           </TabsContent>
 
-          {/* TAB 2: CAMPAGNES (Split-Screen Editor) */}
+          {/* TAB 2: CAMPAGNES (Split-Screen Editor with Validation) */}
           <TabsContent value="campaigns" className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-red-800">Éditeur de Campagne</h2>
-              <Button onClick={handleCreateCampaign} className="bg-red-600 hover:bg-red-700">
-                <Send className="h-4 w-4 mr-2" />
-                Créer & Envoyer
-              </Button>
-            </div>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleCreateCampaign)}>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-red-800">Éditeur de Campagne</h2>
+                  <Button type="submit" disabled={form.formState.isSubmitting} className="bg-red-600 hover:bg-red-700">
+                    {form.formState.isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Création...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Créer Campagne
+                      </>
+                    )}
+                  </Button>
+                </div>
 
-            {/* Split-Screen Layout */}
-            <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border border-red-200">
-              <ResizablePanel defaultSize={60} minSize={40}>
-                <Card className="h-full border-0 rounded-none">
-                  <CardHeader className="border-b bg-red-50">
-                    <CardTitle className="text-red-800">📝 Édition</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div>
-                      <Label>Nom de la campagne</Label>
-                      <Input
-                        value={campaignName}
-                        onChange={(e) => setCampaignName(e.target.value)}
-                        placeholder="Ex: Welcome Series - Day 1"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Sujet de l'email</Label>
-                      <Input
-                        value={campaignSubject}
-                        onChange={(e) => setCampaignSubject(e.target.value)}
-                        placeholder="Ex: Bienvenue sur Random 🎉"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Contenu HTML</Label>
-                      <EmailTemplateEditor
-                        template={{ subject: campaignSubject, html_content: campaignContent, variables: [] }}
-                        onChange={(template) => setCampaignContent(template.html_content)}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </ResizablePanel>
-
-              <ResizableHandle className="bg-red-200 hover:bg-red-300" />
-
-              <ResizablePanel defaultSize={40} minSize={30}>
-                <Card className="h-full border-0 rounded-none">
-                  <CardHeader className="border-b bg-red-50">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-red-800">👁️ Preview Live</CardTitle>
-                      <Select value={previewDevice} onValueChange={(v) => setPreviewDevice(v as 'desktop' | 'mobile')}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="desktop">💻 Desktop</SelectItem>
-                          <SelectItem value="mobile">📱 Mobile</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className={previewDevice === 'mobile' ? 'max-w-[375px] mx-auto' : ''}>
-                      <div className="border rounded-lg p-4 bg-white">
-                        <p className="text-sm text-gray-600 mb-2">De: Random &lt;hello@random.app&gt;</p>
-                        <p className="font-bold text-lg mb-4">{campaignSubject || 'Sujet de l\'email'}</p>
-                        <div 
-                          className="prose prose-sm max-w-none" 
-                          dangerouslySetInnerHTML={{ __html: campaignContent || '<p class="text-gray-400">Le contenu apparaîtra ici...</p>' }}
+                {/* Split-Screen Layout */}
+                <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border border-red-200">
+                  <ResizablePanel defaultSize={60} minSize={40}>
+                    <Card className="h-full border-0 rounded-none">
+                      <CardHeader className="border-b bg-red-50">
+                        <CardTitle className="text-red-800">📝 Édition</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-4 overflow-y-auto max-h-[550px]">
+                        <FormField
+                          control={form.control}
+                          name="campaign_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Nom de la campagne *</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Ex: Welcome Series - Day 1" />
+                              </FormControl>
+                              <FormDescription>3-100 caractères, alphanumériques</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ResizablePanel>
-            </ResizablePanelGroup>
+                        
+                        <FormField
+                          control={form.control}
+                          name="subject"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Sujet de l'email *</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Ex: Bienvenue sur Random 🎉" />
+                              </FormControl>
+                              <FormDescription>5-200 caractères, sans HTML</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contenu HTML *</FormLabel>
+                              <FormControl>
+                                <EmailTemplateEditor
+                                  template={{ subject: '', html_content: field.value, variables: [] }}
+                                  onChange={(template) => field.onChange(template.html_content)}
+                                />
+                              </FormControl>
+                              <FormDescription>Min. 50 caractères</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                    </Card>
+                  </ResizablePanel>
+
+                  <ResizableHandle className="bg-red-200 hover:bg-red-300" />
+
+                  <ResizablePanel defaultSize={40} minSize={30}>
+                    <Card className="h-full border-0 rounded-none">
+                      <CardHeader className="border-b bg-red-50">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-red-800">👁️ Preview Live</CardTitle>
+                          <Select value={previewDevice} onValueChange={(v) => setPreviewDevice(v as 'desktop' | 'mobile')}>
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="desktop">💻 Desktop</SelectItem>
+                              <SelectItem value="mobile">📱 Mobile</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-6 overflow-y-auto max-h-[550px]">
+                        <div className={previewDevice === 'mobile' ? 'max-w-[375px] mx-auto' : ''}>
+                          <div className="border rounded-lg p-4 bg-white">
+                            <p className="text-sm text-gray-600 mb-2">De: Random &lt;hello@random.app&gt;</p>
+                            <p className="font-bold text-lg mb-4">{form.watch('subject') || 'Sujet de l\'email'}</p>
+                            <div 
+                              className="prose prose-sm max-w-none" 
+                              dangerouslySetInnerHTML={{ __html: form.watch('content') || '<p class="text-gray-400">Le contenu apparaîtra ici...</p>' }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </form>
+            </Form>
           </TabsContent>
 
           {/* TAB 3: AUTOMATIONS */}

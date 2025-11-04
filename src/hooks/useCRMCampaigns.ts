@@ -35,48 +35,53 @@ export const useCRMCampaigns = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Fetch campaigns with optimized RPC (fixes N+1 query)
+   * SOTA Oct 2025: PostgreSQL 16 Performance
+   * Source: https://www.postgresql.org/docs/16/performance-tips.html
+   */
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
       
+      // Use optimized RPC function (1 query instead of N+1)
+      // @ts-ignore - RPC function added via migration, not yet in generated types
       const { data: campaignsData, error: campaignsError } = await supabase
-        .from('crm_campaigns')
-        .select(`
-          *,
-          segment:crm_user_segments(segment_name),
-          lifecycle_stage:crm_lifecycle_stages(stage_name)
-        `)
-        .order('created_at', { ascending: false });
+        .rpc('get_campaigns_with_stats' as any);
 
       if (campaignsError) throw campaignsError;
 
-      // Get stats for each campaign
-      const campaignsWithStats = await Promise.all(
-        (campaignsData || []).map(async (campaign) => {
-          const { data: sends } = await supabase
-            .from('crm_campaign_sends')
-            .select('opened_at, clicked_at, converted_at')
-            .eq('campaign_id', campaign.id);
+      // Transform RPC result to match Campaign interface
+      const campaignsWithStats = ((campaignsData || []) as any[]).map((campaign: any) => ({
+        id: campaign.id,
+        campaign_name: campaign.campaign_name,
+        campaign_type: 'email' as const,
+        trigger_type: 'manual' as const,
+        subject: campaign.subject,
+        content: campaign.content,
+        channels: ['email'],
+        status: campaign.status,
+        send_at: campaign.send_at,
+        created_at: campaign.created_at,
+        updated_at: campaign.updated_at,
+        target_segment_id: campaign.segment_id,
+        target_lifecycle_stage_id: campaign.lifecycle_stage_id,
+        segment: campaign.segment_name ? { segment_name: campaign.segment_name } : undefined,
+        lifecycle_stage: campaign.lifecycle_stage_name ? { stage_name: campaign.lifecycle_stage_name } : undefined,
+        stats: {
+          total_sent: Number(campaign.total_sent),
+          opened: Number(campaign.opened),
+          clicked: Number(campaign.clicked),
+          converted: Number(campaign.converted)
+        }
+      }));
 
-          const stats = {
-            total_sent: sends?.length || 0,
-            opened: sends?.filter(s => s.opened_at).length || 0,
-            clicked: sends?.filter(s => s.clicked_at).length || 0,
-            converted: sends?.filter(s => s.converted_at).length || 0
-          };
-
-          return {
-            ...campaign,
-            stats
-          } as Campaign;
-        })
-      );
-
-      setCampaigns(campaignsWithStats);
+      setCampaigns(campaignsWithStats as Campaign[]);
       setError(null);
     } catch (err) {
       console.error('Error fetching CRM campaigns:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
+      toast.error('Erreur lors du chargement des campagnes');
     } finally {
       setLoading(false);
     }
