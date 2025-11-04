@@ -27,17 +27,14 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
       style={{
         width: size,
         height: size,
-        borderRadius: rounded ? '50%' : undefined,
+        borderRadius: rounded ? '20%' : undefined,
         overflow: 'hidden',
         background: '#fffbe8',
         border: '1.5px solid #f1c23255',
-        boxShadow: rounded 
-          ? '0 4px 12px rgba(241, 194, 50, 0.25), inset 0 -3px 8px rgba(0, 0, 0, 0.15)'
-          : undefined,
       }}
       animate={animated ? { rotate: 360 } : {}}
       transition={{
-        duration: 10,
+        duration: 20,
         repeat: Infinity,
         ease: 'linear',
       }}
@@ -63,7 +60,7 @@ const RandomLogo: React.FC<RandomLogoProps> = ({
           objectFit: 'cover',
           width: '100%',
           height: '100%',
-          borderRadius: rounded ? '50%' : undefined,
+          borderRadius: rounded ? '20%' : undefined,
           display: 'block',
         }}
       />
