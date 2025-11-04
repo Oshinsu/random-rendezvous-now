@@ -3,18 +3,21 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useTranslation } from 'react-i18next';
 import { useReferralProgram } from '@/hooks/useReferralProgram';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoogleOAuthStatus } from '@/hooks/useGoogleOAuthStatus';
 import { Chrome, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -28,11 +31,33 @@ const AuthPage = () => {
   const [referralCode, setReferralCode] = useState('');
   const [gender, setGender] = useState<string>('');
   const [city, setCity] = useState<string>('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const { trackSignUp, trackLogin } = useAnalytics();
   const { t } = useTranslation();
   const { applyReferralCode } = useReferralProgram();
   const { signInWithGoogle } = useAuth();
   const { isEnabled: googleOAuthEnabled, loading: googleOAuthLoading } = useGoogleOAuthStatus();
+
+  // Email validation
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !regex.test(email)) {
+      setEmailError(t('auth.invalid_email'));
+    } else {
+      setEmailError('');
+    }
+  };
+
+  // Password strength calculator
+  const calculatePasswordStrength = (pwd: string) => {
+    let strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+    setPasswordStrength(strength);
+  };
 
   // Handle URL parameters to set the active tab
   useEffect(() => {
@@ -124,8 +149,24 @@ const AuthPage = () => {
       });
 
       if (error) {
-        // Signin error
-        toast.error(t('auth.signin_error'), { description: error.message });
+        // Friendly error messages
+        let userMessage = t('auth.signin_error');
+        let description = error.message;
+        let action = undefined;
+
+        if (error.message.includes('Invalid login credentials')) {
+          userMessage = t('auth.invalid_credentials');
+          description = t('auth.check_email_password');
+          action = {
+            label: t('auth.forgot_password'),
+            onClick: () => navigate('/auth/reset-password')
+          };
+        } else if (error.message.includes('Email not confirmed')) {
+          userMessage = t('auth.email_not_confirmed');
+          description = t('auth.check_inbox');
+        }
+
+        toast.error(userMessage, { description, action });
       } else {
         trackLogin();
         // Signin successful
@@ -169,11 +210,41 @@ const AuthPage = () => {
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email-signin">{t('auth.email')}</Label>
-                  <Input id="email-signin" type="email" placeholder={t('auth.email_placeholder')} value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
+                  <Input 
+                    id="email-signin" 
+                    type="email" 
+                    placeholder={t('auth.email_placeholder')} 
+                    value={email} 
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      validateEmail(e.target.value);
+                    }} 
+                    required 
+                    className="rounded-2xl" 
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">{emailError}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-signin">{t('auth.password')}</Label>
-                  <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
+                  <PasswordInput 
+                    id="password-signin" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    className="rounded-2xl" 
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 px-0 h-auto"
+                      onClick={() => navigate('/auth/reset-password')}
+                    >
+                      {t('auth.forgot_password')}
+                    </Button>
+                  </div>
                 </div>
 
                 {googleOAuthEnabled && !googleOAuthLoading && (
@@ -228,11 +299,56 @@ const AuthPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email-signup">{t('auth.email')}</Label>
-                  <Input id="email-signup" type="email" placeholder={t('auth.email_placeholder')} value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-2xl" />
+                  <Input 
+                    id="email-signup" 
+                    type="email" 
+                    placeholder={t('auth.email_placeholder')} 
+                    value={email} 
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      validateEmail(e.target.value);
+                    }} 
+                    required 
+                    className="rounded-2xl" 
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">{emailError}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">{t('auth.password')}</Label>
-                  <Input id="password-signup" type="password" placeholder={t('auth.password_placeholder')} value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-2xl" />
+                  <PasswordInput 
+                    id="password-signup" 
+                    placeholder={t('auth.password_placeholder')} 
+                    value={password} 
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      calculatePasswordStrength(e.target.value);
+                    }} 
+                    required 
+                    className="rounded-2xl" 
+                  />
+                  {password && (
+                    <>
+                      <Progress 
+                        value={passwordStrength * 25} 
+                        className={cn(
+                          "h-1 transition-all",
+                          passwordStrength === 1 && "[&>div]:bg-red-500",
+                          passwordStrength === 2 && "[&>div]:bg-orange-500",
+                          passwordStrength === 3 && "[&>div]:bg-yellow-500",
+                          passwordStrength === 4 && "[&>div]:bg-green-500"
+                        )}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {passwordStrength === 0 && t('auth.password_too_short')}
+                        {passwordStrength === 1 && t('auth.password_weak')}
+                        {passwordStrength === 2 && t('auth.password_fair')}
+                        {passwordStrength === 3 && t('auth.password_good')}
+                        {passwordStrength === 4 && t('auth.password_strong')}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-2">

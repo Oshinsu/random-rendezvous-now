@@ -204,26 +204,6 @@ export function EnhancedSearchButton({
         )}
       </div>
       
-      {/* Status indicator dot */}
-      <motion.div
-        className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-card dark:bg-neutral-800 shadow-medium flex items-center justify-center"
-        animate={{
-          scale: state === 'loading' ? [1, 1.2, 1] : 1,
-        }}
-        transition={{
-          duration: 1,
-          repeat: state === 'loading' ? Infinity : 0,
-        }}
-      >
-        <div className={cn(
-          "w-3 h-3 rounded-full",
-          {
-            'bg-green-500': state === 'idle',
-            'bg-yellow-500 animate-pulse': state === 'loading',
-            'bg-emerald-500': state === 'success',
-          }
-        )} />
-      </motion.div>
       
       {/* Gold/White confetti on success */}
       <AnimatePresence>
