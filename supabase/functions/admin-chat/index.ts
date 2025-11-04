@@ -17,11 +17,23 @@ serve(async (req) => {
     // Verify admin access
     const authHeader = req.headers.get("authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
     const token = authHeader?.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Create client with user's token for admin check
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader! } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -30,14 +42,17 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is admin
-    const { data: isAdmin } = await supabase.rpc("is_admin_user");
+    // Check if user is admin using the user's session context
+    const { data: isAdmin } = await supabaseUser.rpc("is_admin_user");
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Use service role key for fetching stats
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch recent stats for context
     const { data: stats } = await supabase.rpc("get_comprehensive_admin_stats");
