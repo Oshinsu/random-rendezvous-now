@@ -131,7 +131,7 @@ const Index = () => {
         <div className="container mx-auto flex justify-between items-center max-w-7xl">
           <div className="flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
             <RandomLogo size={36} className="sm:w-12 sm:h-12" withAura animated={false} />
-            <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 bg-clip-text text-transparent tracking-tight filter drop-shadow-[0_0_12px_rgba(241,194,50,0.5)]">
+            <span className="text-xl sm:text-3xl font-signature bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent tracking-tight filter drop-shadow-[0_0_12px_rgba(241,194,50,0.3)]">
               Random
             </span>
           </div>

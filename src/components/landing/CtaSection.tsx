@@ -25,13 +25,13 @@ const CtaSection = () => {
   const ctaTitle = getContent('cta_title', 'Prêt pour ta prochaine aventure ?');
 
   return (
-    <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-white via-neutral-50/20 to-white relative overflow-hidden">
+    <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-white via-neutral-50 to-neutral-100 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-10 right-10 w-96 h-96 bg-brand-200/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-10 left-10 w-72 h-72 bg-brand-300/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      <div className="absolute top-10 right-10 w-96 h-96 bg-neutral-200/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-10 left-10 w-72 h-72 bg-neutral-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       
       <div className="container mx-auto px-4 sm:px-6 text-center relative z-10 max-w-4xl">
-        <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 shadow-glow mx-auto mb-6 sm:mb-8 animate-float">
+        <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 shadow-glow mx-auto mb-6 sm:mb-8 animate-float">
           <Rocket className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-extrabold mb-5 sm:mb-6 animate-slide-in-up">
