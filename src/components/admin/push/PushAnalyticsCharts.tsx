@@ -1,3 +1,4 @@
+import React from 'react';
 import { usePushAnalyticsCharts } from '@/hooks/usePushAnalyticsCharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -129,9 +130,9 @@ export const PushAnalyticsCharts = () => {
                   {i}h
                 </div>
               ))}
-              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day, dayIndex) => (
-                <>
-                  <div key={day} className="text-xs text-right pr-2 text-muted-foreground flex items-center">
+              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
+                <React.Fragment key={day}>
+                  <div className="text-xs text-right pr-2 text-muted-foreground flex items-center">
                     {day}
                   </div>
                   {Array.from({ length: 24 }, (_, hour) => {
@@ -150,7 +151,7 @@ export const PushAnalyticsCharts = () => {
                       />
                     );
                   })}
-                </>
+                </React.Fragment>
               ))}
             </div>
           </div>

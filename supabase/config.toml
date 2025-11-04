@@ -212,3 +212,6 @@ verify_jwt = false
 [functions.update-notification-config-stats.schedule]
 cron = "0 * * * *"
 
+[functions.get-notification-analytics]
+verify_jwt = false
+
