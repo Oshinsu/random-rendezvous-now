@@ -81,22 +81,48 @@ Deno.serve(async (req) => {
 
     console.log(`👥 Found ${eligibleUsers.length} eligible users`);
 
-    // Step 3: Filter users who haven't received this notification today
+    // Step 3: Filter users who haven't received this notification in LAST 7 DAYS
+    // ✅ SOTA 2025: Frequency Capping (max 1 fois par semaine)
     const { data: recentNotifs, error: notifsError } = await supabase
       .from('notification_throttle')
       .select('user_id')
       .in('user_id', eligibleUsers.map(u => u.id))
       .eq('notification_type', 'peak_hours_fomo')
-      .gte('sent_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      .gte('sent_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // ✅ 7 jours au lieu de 24h
 
     const alreadyNotifiedIds = new Set(recentNotifs?.map(n => n.user_id) || []);
-    const usersToNotify = eligibleUsers.filter(u => !alreadyNotifiedIds.has(u.id));
+    let usersToNotify = eligibleUsers.filter(u => !alreadyNotifiedIds.has(u.id));
 
-    console.log(`📤 Sending to ${usersToNotify.length} users (${alreadyNotifiedIds.size} already notified today)`);
+    console.log(`📤 Sending to ${usersToNotify.length} users (${alreadyNotifiedIds.size} already notified this week)`);
+
+    // ✅ NOUVEAU: Step 3.5 - Filter by IDF location (Contextual Relevance)
+    const IDF_BOUNDS = {
+      lat_min: 48.1, lat_max: 49.2,
+      lng_min: 1.4, lng_max: 3.5,
+    };
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, location_lat, location_lng')
+      .in('id', usersToNotify.map(u => u.id));
+
+    if (profiles) {
+      const idfUserIds = new Set(
+        profiles.filter(p => 
+          p.location_lat >= IDF_BOUNDS.lat_min &&
+          p.location_lat <= IDF_BOUNDS.lat_max &&
+          p.location_lng >= IDF_BOUNDS.lng_min &&
+          p.location_lng <= IDF_BOUNDS.lng_max
+        ).map(p => p.id)
+      );
+
+      usersToNotify = usersToNotify.filter(u => idfUserIds.has(u.id));
+      console.log(`📍 ${usersToNotify.length} users in IDF (${profiles.length - idfUserIds.size} outside IDF filtered)`);
+    }
 
     if (usersToNotify.length === 0) {
       return new Response(
-        JSON.stringify({ status: 'success', sent: 0, reason: 'All users already notified today' }),
+        JSON.stringify({ status: 'success', sent: 0, reason: 'No users in IDF or already notified this week' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

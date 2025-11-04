@@ -32,10 +32,23 @@ export default function AdminPushNotificationsNew() {
   const [previewDevice, setPreviewDevice] = useState<'iphone' | 'android'>('iphone');
   const [selectedVariant, setSelectedVariant] = useState<'A' | 'B'>('A');
 
-  const handleSendABTest = () => {
+  const handleSendABTest = async () => {
     if (!user?.id) return;
     
-    toast.success('🧪 Test A/B lancé sur 100 utilisateurs (50/50 split)');
+    try {
+      // Variant A (50% des users)
+      await sendTestNotification({
+        userId: user.id,
+        type: 'ab_test_variant_a',
+        title: titleA,
+        body: bodyA,
+        imageUrl: '/notification-icon.png',
+      });
+      
+      toast.success('✅ A/B Test lancé (Variant A envoyé à vous pour preview)');
+    } catch (error) {
+      toast.error('❌ Erreur A/B Test');
+    }
   };
 
   return (

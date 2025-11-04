@@ -9,18 +9,16 @@ export const usePushPermissionState = () => {
 
   useEffect(() => {
     const checkPermissionState = () => {
-      // Vérifier localStorage
-      const permissionAsked = localStorage.getItem('push_permission_asked');
-      
-      // Vérifier le navigateur directement
-      const browserPermission = typeof Notification !== 'undefined' 
-        ? Notification.permission 
-        : 'default';
+      // ✅ NOUVELLE LOGIQUE SIMPLIFIÉE
+      const hasAskedBefore = localStorage.getItem('push_permission_asked') === 'true';
+      const hasGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+      const hasDenied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
 
-      // Ne pas montrer si:
-      // 1. Permission déjà demandée (localStorage)
-      // 2. Permission déjà accordée dans le navigateur
-      const shouldShow = permissionAsked !== 'true' && browserPermission !== 'granted';
+      // Ne montrer que si:
+      // 1. Pas encore demandé (localStorage)
+      // 2. Pas déjà granted
+      // 3. Pas denied (sinon on spam l'user)
+      const shouldShow = !hasAskedBefore && !hasGranted && !hasDenied;
       
       setShouldShowModal(shouldShow);
     };

@@ -1960,6 +1960,24 @@ export type Database = {
           },
         ]
       }
+      notification_deduplication: {
+        Row: {
+          last_sent_at: string
+          notification_type: string
+          user_id: string
+        }
+        Insert: {
+          last_sent_at?: string
+          notification_type: string
+          user_id: string
+        }
+        Update: {
+          last_sent_at?: string
+          notification_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_test_sends: {
         Row: {
           body: string

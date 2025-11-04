@@ -18,20 +18,25 @@ export default function AdminPushNotifications() {
   const { user } = useAuth();
   const { sendTestNotification, isSending } = usePushNotificationsAdmin();
 
-  const handleQuickTest = () => {
+  const handleQuickTest = async () => {
     if (!user?.id) {
       toast.error('❌ Utilisateur non connecté');
       return;
     }
 
-    sendTestNotification({
-      userId: user.id,
-      type: 'test_quick',
-      title: '⚡ Test rapide',
-      body: 'Notification envoyée depuis le dashboard admin',
-      imageUrl: '/notification-icon.png',
-      actionUrl: '/admin/push-notifications',
-    });
+    try {
+      await sendTestNotification({
+        userId: user.id,
+        type: 'test_quick',
+        title: '⚡ Test rapide',
+        body: 'Notification envoyée depuis le dashboard admin',
+        imageUrl: '/notification-icon.png',
+        actionUrl: '/admin/push-notifications',
+      });
+      toast.success('✅ Test envoyé avec succès');
+    } catch (error) {
+      toast.error('❌ Erreur lors de l\'envoi du test');
+    }
   };
 
   return (

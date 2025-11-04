@@ -53,6 +53,8 @@ export const PushPermissionModal = ({ trigger, open, onClose }: PushPermissionMo
   };
 
   const handleDismiss = () => {
+    // ✅ Marquer comme "asked" même si refusé
+    localStorage.setItem('push_permission_asked', 'true');
     onClose?.();
   };
 
