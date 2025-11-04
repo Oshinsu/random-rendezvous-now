@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import heroImage from "@/assets/hero-banner.png";
+import heroImageDefault from "@/assets/hero-banner-optimized.jpg";
 import { trackCTAClick } from "@/utils/cmsTracking";
 import { useDynamicContent } from "@/hooks/useDynamicContent";
 import { DynamicText } from "@/components/dynamic/DynamicText";
@@ -22,7 +22,12 @@ const HeroSection = () => {
     }
   };
 
-  const heroBackgroundImage = getContent('hero_background_image_url', heroImage);
+  // Dynamic content with ES6 import fallback
+  const dynamicImagePath = getContent('hero_background_image_url', '');
+  const heroBackgroundImage = dynamicImagePath.includes('@/assets') 
+    ? heroImageDefault 
+    : (dynamicImagePath || heroImageDefault);
+  
   const heroTitle = i18n.language === 'fr' 
     ? getContent('hero_title', '1 clic. 1 groupe. 1 bar.') 
     : getContent('hero_title_en', '1 click. 1 group. 1 bar.');
