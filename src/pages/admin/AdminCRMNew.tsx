@@ -28,10 +28,34 @@ export default function AdminCRMNew() {
   const { campaigns, createCampaign, loading: campaignsLoading } = useCRMCampaigns();
   
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [campaignName, setCampaignName] = useState('');
-  const [campaignSubject, setCampaignSubject] = useState('');
-  const [campaignContent, setCampaignContent] = useState('');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+
+  /**
+   * Form validation with React Hook Form + Zod
+   * 
+   * SOTA Oct 2025: Type-safe form validation
+   * Sources:
+   * 1. React Hook Form Best Practices: https://react-hook-form.com/get-started#SchemaValidation
+   * 2. OWASP Input Validation: https://owasp.org/www-project-top-ten/
+   * 
+   * Benefits:
+   * - Client-side validation (instant feedback)
+   * - Type safety (TypeScript inference from Zod schema)
+   * - XSS prevention (sanitization in schema)
+   * - UX improvement (field-level errors)
+   */
+  const form = useForm<CampaignFormData>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      campaign_name: '',
+      subject: '',
+      content: '',
+      send_at: null,
+      segment_id: null,
+      lifecycle_stage_id: null,
+      template_id: null,
+    },
+  });
 
   if (authLoading) {
     return (
