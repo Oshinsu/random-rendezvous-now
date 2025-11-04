@@ -137,6 +137,24 @@ export default function AdminBlogSEO() {
           </Button>
         </div>
 
+        {/* Indicateur génération automatique - SOTA 2025 */}
+        {schedule && schedule.is_active && (
+          <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <Clock className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-900 font-semibold">Génération automatique active</AlertTitle>
+            <AlertDescription className="text-green-800">
+              <div className="flex flex-col gap-1 mt-1">
+                <span className="font-medium">
+                  Prochain article : {schedule.next_generation_at ? format(new Date(schedule.next_generation_at), 'PPpp', { locale: fr }) : 'Non planifié'}
+                </span>
+                <span className="text-sm text-green-700">
+                  {schedule.total_generated} articles générés • Fréquence : tous les {schedule.frequency_days} jour(s)
+                </span>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">

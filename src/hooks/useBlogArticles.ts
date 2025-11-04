@@ -44,18 +44,25 @@ export const useBlogArticles = (status?: 'draft' | 'published' | 'archived') => 
     },
   });
 
-  const getArticleBySlug = async (slug: string) => {
-    const { data, error } = await supabase
+  const getArticleBySlug = async (slug: string, allowDraft = false) => {
+    let query = supabase
       .from('blog_articles')
       .select('*')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single();
+      .eq('slug', slug);
 
+    // ✅ SOTA 2025: Si pas admin preview, filtrer published
+    if (!allowDraft) {
+      query = query.eq('status', 'published');
+    }
+
+    const { data, error } = await query.single();
+    
     if (error) throw error;
 
-    // Incrémenter les vues
-    await supabase.rpc('increment_article_views', { article_id: data.id });
+    // ✅ Incrémenter vues seulement si publié
+    if (data.status === 'published') {
+      await supabase.rpc('increment_article_views', { article_id: data.id });
+    }
 
     return data as BlogArticle;
   };

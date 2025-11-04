@@ -3,6 +3,7 @@ import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './styles/article-typography.css'; // ✅ SOTA 2025 Typography
 import './i18n';
 // 🧹 NETTOYAGE UNIFIÉ
 // Le nettoyage est maintenant géré uniquement par cleanup-groups Edge Function

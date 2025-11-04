@@ -75,7 +75,9 @@ export default function BlogArticle() {
       
       setIsLoading(true);
       try {
-        const data = await getArticleBySlug(slug);
+        // ✅ SOTA 2025: Détecter si on vient de l'admin pour preview des drafts
+        const isAdminPreview = window.location.pathname.includes('/admin');
+        const data = await getArticleBySlug(slug, isAdminPreview);
         setArticle(data);
       } catch (error) {
         console.error('Error loading article:', error);
@@ -212,9 +214,9 @@ export default function BlogArticle() {
             )}
               </header>
 
-              {/* Content */}
+              {/* Content - SOTA 2025 Typography */}
               <div 
-                className="prose prose-lg max-w-none prose-headings:font-display prose-h2:text-red-800 prose-h3:text-red-700 prose-a:text-red-600 hover:prose-a:text-red-700 prose-h2:scroll-mt-24"
+                className="article-content"
                 itemProp="articleBody"
                 dangerouslySetInnerHTML={{ __html: article.content }}
               />
