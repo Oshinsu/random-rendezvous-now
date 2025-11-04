@@ -94,11 +94,11 @@ serve(async (req) => {
       throw new Error('Missing Zoho credentials in environment variables');
     }
 
-    // Request new access token from Zoho
+    // Request new access token from Zoho (US datacenter)
     // Source: Zoho Mail API Documentation 2025
     // https://www.zoho.com/mail/help/api/oauth-overview.html
     const tokenResponse = await fetch(
-      `https://accounts.zoho.eu/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`,
+      `https://accounts.zoho.com/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`,
       { method: 'POST' }
     );
 

@@ -82,7 +82,7 @@ async function getZohoAccessToken(supabaseClient: any, credentials: any): Promis
   try {
     console.log('🔄 Fetching new Zoho access token...');
     
-    const response = await fetchWithRetry('https://accounts.zoho.eu/oauth/v2/token', {
+    const response = await fetchWithRetry('https://accounts.zoho.com/oauth/v2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -236,7 +236,7 @@ serve(async (req) => {
       content: htmlContent,
     };
 
-    const sendResponse = await fetchWithRetry('https://mail.zoho.eu/api/accounts/' + ZOHO_ACCOUNT_ID + '/messages', {
+    const sendResponse = await fetchWithRetry('https://mail.zoho.com/api/accounts/' + ZOHO_ACCOUNT_ID + '/messages', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${access_token}`,

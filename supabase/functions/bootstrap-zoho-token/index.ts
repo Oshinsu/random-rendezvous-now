@@ -64,9 +64,9 @@ serve(async (req) => {
 
     console.log('🔑 [Bootstrap] Fetching initial access token from Zoho...');
 
-    // Request access token from Zoho
+    // Request access token from Zoho (US datacenter)
     const tokenResponse = await fetch(
-      `https://accounts.zoho.eu/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`,
+      `https://accounts.zoho.com/oauth/v2/token?refresh_token=${refreshToken}&client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token`,
       { method: 'POST' }
     );
 
