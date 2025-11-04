@@ -11,28 +11,33 @@ const WhyRandomSection = () => {
 
   const benefits = [
     {
+      icon: getContent('benefit_1_icon_new', '🤝'),
       image: getContent('benefit_1_image_url', defaultBenefit1),
-      title: getContent('benefit_1_title', 'Des rencontres authentiques'),
-      description: getContent('benefit_1_description', 'Finis les swipes infinis et les conversations qui mènent nulle part.'),
+      title: getContent('benefit_1_title_new', 'Rencontres Authentiques'),
+      description: getContent('benefit_1_description_new', 'Connectez-vous avec des personnes qui partagent vos centres d\'intérêt dans une ambiance décontractée'),
     },
     {
+      icon: getContent('benefit_2_icon_new', '🍹'),
       image: getContent('benefit_2_image_url', defaultBenefit2),
-      title: getContent('benefit_2_title', 'Zéro prise de tête'),
-      description: getContent('benefit_2_description', "Plus besoin d'organiser, de choisir le lieu ou de coordonner les agendas."),
+      title: getContent('benefit_2_title_new', 'Découverte de Lieux'),
+      description: getContent('benefit_2_description_new', 'Explorez les meilleurs bars et lieux branchés de votre ville sélectionnés spécialement pour vous'),
     },
     {
+      icon: getContent('benefit_3_icon_new', '⚡'),
       image: getContent('benefit_3_image_url', defaultBenefit3),
-      title: getContent('benefit_3_title', 'Sors de ta bulle'),
-      description: getContent('benefit_3_description', 'Élargis ton cercle social sans effort.'),
+      title: getContent('benefit_3_title_new', 'Simplicité Totale'),
+      description: getContent('benefit_3_description_new', 'En quelques clics, rejoignez un groupe et laissez-nous nous occuper du reste'),
     },
     {
+      icon: getContent('benefit_4_icon_new', '🛡️'),
       image: getContent('benefit_4_image_url', defaultBenefit4),
-      title: getContent('benefit_4_title', 'Des soirées spontanées'),
-      description: getContent('benefit_4_description', 'Un clic suffit pour transformer ta soirée.'),
+      title: getContent('benefit_4_title_new', 'Sécurité Garantie'),
+      description: getContent('benefit_4_description_new', 'Tous nos membres sont vérifiés pour garantir des rencontres en toute sécurité'),
     },
   ];
 
-  const sectionTitle = getContent('benefits_section_title', 'Pourquoi Random ?');
+  const sectionTitle = getContent('benefits_main_title', 'Pourquoi choisir Random ?');
+  const sectionSubtitle = getContent('benefits_main_subtitle', 'Découvrez tous les avantages de rejoindre notre communauté');
   
   return (
     <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-br from-white via-neutral-50 to-neutral-100 relative overflow-hidden">
@@ -51,7 +56,7 @@ const WhyRandomSection = () => {
           ))}
         </h2>
         <p className="text-sm sm:text-base text-neutral-600 text-center mb-10 sm:mb-12 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
-          {getContent('benefits_section_subtitle', 'Découvre pourquoi Random transforme tes sorties')}
+          {sectionSubtitle}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10">
           {benefits.map((benefit, index) => (
@@ -77,9 +82,9 @@ const WhyRandomSection = () => {
                   }}
                 ></div>
                 
-                {/* Numéro stylisé */}
-                <div className="absolute top-4 right-4 text-8xl font-signature text-white/20">
-                  {index + 1}
+                {/* Icône stylisée */}
+                <div className="absolute top-4 right-4 text-6xl filter drop-shadow-2xl">
+                  {benefit.icon}
                 </div>
                 
                 {/* Titre sur l'image */}

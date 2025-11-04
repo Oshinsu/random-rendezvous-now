@@ -52,9 +52,9 @@ const Footer = () => {
           </div>
           
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-2">
-            <span>{getContent('footer_tagline', 'Fait avec ❤️ à Paris').replace('❤️', '')}</span>
+            <span>{getContent('footer_made_with_love', 'Fait avec ❤️ à Paris').replace('❤️', '')}</span>
             <Heart className="h-3 w-3 text-red-500 fill-current" />
-            <span>à Paris</span>
+            <span>{getContent('footer_made_with_love', 'Fait avec ❤️ à Paris').includes('Paris') ? '' : 'à Paris'}</span>
           </div>
         </div>
       </div>

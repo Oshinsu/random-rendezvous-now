@@ -8,27 +8,28 @@ const HowItWorksSection = () => {
   const steps = [
     {
       icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
-      title: getContent('how_it_works_step1_title', 'Tu cliques'),
-      description: getContent('how_it_works_step1_desc', "Un simple clic et Random s'occupe de tout."),
+      title: getContent('how_it_works_step_1_title', 'Tu cliques'),
+      description: getContent('how_it_works_step_1_description', "Un simple clic et Random s'occupe de tout."),
     },
     {
       icon: <Users className="w-10 h-10 text-primary mb-4" />,
-      title: getContent('how_it_works_step2_title', 'On matche un groupe'),
-      description: getContent('how_it_works_step2_desc', 'Notre algorithme crée un groupe équilibré de 4-5 personnes.'),
+      title: getContent('how_it_works_step_2_title', 'On matche un groupe'),
+      description: getContent('how_it_works_step_2_description', 'Notre algorithme crée un groupe équilibré de 4-5 personnes.'),
     },
     {
       icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
-      title: getContent('how_it_works_step3_title', 'On trouve le bar parfait'),
-      description: getContent('how_it_works_step3_desc', 'Random sélectionne un bar cool, équidistant de tous.'),
+      title: getContent('how_it_works_step_3_title', 'On trouve le bar parfait'),
+      description: getContent('how_it_works_step_3_description', 'Random sélectionne un bar cool, équidistant de tous.'),
     },
     {
       icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
-      title: getContent('how_it_works_step4_title', 'Tu profites'),
-      description: getContent('how_it_works_step4_desc', 'Rendez-vous au bar et vis une soirée authentique.'),
+      title: getContent('how_it_works_step_4_title', 'Tu profites'),
+      description: getContent('how_it_works_step_4_description', 'Rendez-vous au bar et vis une soirée authentique.'),
     },
   ];
 
-  const sectionTitle = getContent('how_it_works_title', 'Comment ça marche avec Random ?');
+  const sectionTitle = getContent('how_it_works_main_title_new', 'Comment ça marche ?');
+  const sectionSubtitle = getContent('how_it_works_subtitle_new', 'Rejoindre Random est simple comme bonjour');
 
   return (
     <section className="py-16 sm:py-20 md:py-32 bg-gradient-to-br from-white via-neutral-50 to-neutral-100 relative overflow-hidden">
@@ -47,7 +48,7 @@ const HowItWorksSection = () => {
           ))}
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-neutral-600 text-center mb-12 sm:mb-16 max-w-3xl mx-auto leading-relaxed animate-slide-in-up" style={{animationDelay: '0.1s'}}>
-          {getContent('how_it_works_subtitle', 'Quatre étapes pour une soirée inoubliable')}
+          {sectionSubtitle}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {steps.map((step, index) => (

@@ -22,11 +22,18 @@ const HeroSection = () => {
     }
   };
 
+  const heroBackgroundImage = getContent('hero_background_image_url', heroImage);
+  const heroTitle = i18n.language === 'fr' 
+    ? getContent('hero_title', '1 clic. 1 groupe. 1 bar.') 
+    : getContent('hero_title_en', '1 click. 1 group. 1 bar.');
+  const heroSubtitle = getContent('hero_subtitle', 'Rencontrez de nouvelles personnes autour d\'un verre');
+  const heroCta = getContent('hero_cta_button', 'Commencer l\'aventure');
+
   return (
     <section 
       className="relative py-12 sm:py-16 md:py-20 text-white animate-fade-in overflow-hidden min-h-[85vh] flex items-center" 
       style={{
-        backgroundImage: `url(${heroImage})`,
+        backgroundImage: `url(${heroBackgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -40,13 +47,16 @@ const HeroSection = () => {
           <span className="font-signature text-4xl sm:text-5xl md:text-6xl block mb-2 animate-scale-in bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent filter drop-shadow-[0_0_12px_rgba(241,194,50,0.3)]">
             Random
           </span>
-          <DynamicText
-            contentKey={i18n.language === 'fr' ? 'hero_title' : 'hero_title_en'}
-            fallback={i18n.language === 'fr' ? '1 clic. 1 groupe. 1 bar.' : '1 click. 1 group. 1 bar.'}
-            as="span"
-            className="text-neutral-100 font-display block animate-slide-in-up text-xl sm:text-2xl md:text-3xl"
-          />
+          <span className="text-neutral-100 font-display block animate-slide-in-up text-xl sm:text-2xl md:text-3xl">
+            {heroTitle}
+          </span>
         </h1>
+        
+        {heroSubtitle && (
+          <p className="text-base sm:text-lg text-neutral-200 mb-6 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
+            {heroSubtitle}
+          </p>
+        )}
         
         <div 
           className="flex justify-center items-center mb-8 sm:mb-10 animate-slide-in-up" 
