@@ -9,6 +9,7 @@ import { Edit, Check, X, Type, Image as ImageIcon, Code, FileText, Trash2, Loade
 import { cn } from '@/lib/utils';
 import { SiteContent } from '@/contexts/SiteContentContext';
 import { toast } from 'sonner';
+import { ImageManager } from './ImageManager';
 
 interface ContentEditCardProps {
   content: SiteContent;
@@ -203,13 +204,12 @@ export const ContentEditCard = ({ content, onUpdate, onDelete }: ContentEditCard
                 disabled={isLoading}
               />
             ) : content.content_type === 'image' ? (
-              <Input
-                type="text"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="URL de l'image"
-                className="font-mono text-sm"
-                disabled={isLoading}
+              <ImageManager
+                value={typeof value === 'string' ? value : JSON.stringify(value)}
+                onChange={(newUrl) => setValue(newUrl)}
+                onSave={handleSave}
+                isSaving={isLoading}
+                label={content.content_key.replace(/_/g, ' ')}
               />
             ) : content.content_type === 'html' ? (
               <Textarea

@@ -1,28 +1,37 @@
 import React from "react";
-import { HandMetal, Users, MapPin, GlassWater } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { useDynamicContent } from '@/hooks/useDynamicContent';
 
 const HowItWorksSection = () => {
   const { getContent } = useDynamicContent();
 
+  // Helper pour obtenir une icône Lucide dynamiquement
+  const getDynamicIcon = (iconName: string) => {
+    const IconComponent = (LucideIcons as any)[iconName];
+    if (!IconComponent) {
+      return <LucideIcons.HelpCircle className="w-10 h-10 text-primary mb-4" />;
+    }
+    return <IconComponent className="w-10 h-10 text-primary mb-4" />;
+  };
+
   const steps = [
     {
-      icon: <HandMetal className="w-10 h-10 text-primary mb-4" />,
+      icon: getDynamicIcon(getContent('how_it_works_step_1_icon', 'HandMetal')),
       title: getContent('how_it_works_step_1_title', 'Tu cliques'),
       description: getContent('how_it_works_step_1_description', "Un simple clic et Random s'occupe de tout."),
     },
     {
-      icon: <Users className="w-10 h-10 text-primary mb-4" />,
+      icon: getDynamicIcon(getContent('how_it_works_step_2_icon', 'Users')),
       title: getContent('how_it_works_step_2_title', 'On matche un groupe'),
       description: getContent('how_it_works_step_2_description', 'Notre algorithme crée un groupe équilibré de 4-5 personnes.'),
     },
     {
-      icon: <MapPin className="w-10 h-10 text-primary mb-4" />,
+      icon: getDynamicIcon(getContent('how_it_works_step_3_icon', 'MapPin')),
       title: getContent('how_it_works_step_3_title', 'On trouve le bar parfait'),
       description: getContent('how_it_works_step_3_description', 'Random sélectionne un bar cool, équidistant de tous.'),
     },
     {
-      icon: <GlassWater className="w-10 h-10 text-primary mb-4" />,
+      icon: getDynamicIcon(getContent('how_it_works_step_4_icon', 'GlassWater')),
       title: getContent('how_it_works_step_4_title', 'Tu profites'),
       description: getContent('how_it_works_step_4_description', 'Rendez-vous au bar et vis une soirée authentique.'),
     },

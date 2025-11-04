@@ -1,12 +1,36 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Heart, Mail } from "lucide-react";
+import { Heart, Mail, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import { useDynamicContent } from "@/hooks/useDynamicContent";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const { i18n } = useTranslation();
   const { getContent } = useDynamicContent();
+  
+  // Récupérer les liens sociaux depuis le CMS
+  const socialLinks = [
+    { 
+      name: 'Facebook', 
+      url: getContent('social_facebook', ''), 
+      icon: <Facebook className="h-4 w-4" /> 
+    },
+    { 
+      name: 'Instagram', 
+      url: getContent('social_instagram', ''), 
+      icon: <Instagram className="h-4 w-4" /> 
+    },
+    { 
+      name: 'Twitter', 
+      url: getContent('social_twitter', ''), 
+      icon: <Twitter className="h-4 w-4" /> 
+    },
+    { 
+      name: 'LinkedIn', 
+      url: getContent('social_linkedin', ''), 
+      icon: <Linkedin className="h-4 w-4" /> 
+    },
+  ].filter(link => link.url && link.url.trim() !== ''); // Ne garder que les liens remplis
   
   return (
     <footer className="py-6 sm:py-8 bg-secondary border-t border-border">
@@ -50,6 +74,24 @@ const Footer = () => {
               Contact
             </Link>
           </div>
+          
+          {/* Réseaux sociaux */}
+          {socialLinks.length > 0 && (
+            <div className="flex justify-center gap-4 pt-3">
+              {socialLinks.map(link => (
+                <a
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors duration-200"
+                  aria-label={link.name}
+                >
+                  {link.icon}
+                </a>
+              ))}
+            </div>
+          )}
           
           <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-2">
             <span>{getContent('footer_made_with_love', 'Fait avec ❤️ à Paris').replace('❤️', '')}</span>
