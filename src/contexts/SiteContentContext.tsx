@@ -20,6 +20,7 @@ interface SiteContentContextType {
   isSaving: boolean;
   getContent: (key: string, fallback?: string) => string;
   updateContent: (id: string, value: any) => Promise<boolean>;
+  deleteContent: (id: string) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -109,6 +110,25 @@ export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const deleteContent = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update local state immediately
+      setContents(prev => prev.filter(item => item.id !== id));
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting content:', error);
+      return false;
+    }
+  }, []);
+
   const refresh = async () => {
     setLoading(true);
     await fetchContents();
@@ -120,8 +140,9 @@ export const SiteContentProvider = ({ children }: { children: ReactNode }) => {
     isSaving,
     getContent,
     updateContent,
+    deleteContent,
     refresh
-  }), [contents, loading, isSaving, getContent, updateContent]);
+  }), [contents, loading, isSaving, getContent, updateContent, deleteContent]);
 
   return (
     <SiteContentContext.Provider value={value}>

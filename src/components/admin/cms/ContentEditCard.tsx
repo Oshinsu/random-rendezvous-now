@@ -4,19 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Edit, Check, X, Type, Image as ImageIcon, Code, FileText } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Edit, Check, X, Type, Image as ImageIcon, Code, FileText, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SiteContent } from '@/contexts/SiteContentContext';
+import { toast } from 'sonner';
 
 interface ContentEditCardProps {
   content: SiteContent;
   onUpdate: (id: string, value: any) => Promise<boolean>;
+  onDelete: (id: string) => Promise<boolean>;
 }
 
-export const ContentEditCard = ({ content, onUpdate }: ContentEditCardProps) => {
+export const ContentEditCard = ({ content, onUpdate, onDelete }: ContentEditCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(content.content_value);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
@@ -55,6 +60,35 @@ export const ContentEditCard = ({ content, onUpdate }: ContentEditCardProps) => 
     
     if (success) {
       setIsEditing(false);
+      toast.success(`"${content.content_key.replace(/_/g, ' ')}" sauvegardé`, {
+        description: `Modifié à ${new Date().toLocaleTimeString('fr-FR')}`,
+        duration: 3000
+      });
+    } else {
+      toast.error("Échec de la sauvegarde", {
+        description: "Veuillez réessayer",
+        action: {
+          label: "Réessayer",
+          onClick: handleSave
+        }
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    const success = await onDelete(content.id);
+    setIsDeleting(false);
+    
+    if (success) {
+      setShowDeleteDialog(false);
+      toast.success("Contenu supprimé", {
+        description: `"${content.content_key.replace(/_/g, ' ')}" a été supprimé`
+      });
+    } else {
+      toast.error("Échec de la suppression", {
+        description: "Veuillez réessayer"
+      });
     }
   };
 
@@ -90,13 +124,43 @@ export const ContentEditCard = ({ content, onUpdate }: ContentEditCardProps) => 
               {content.content_type}
             </Badge>
             {!isEditing ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogTitle>Supprimer ce contenu ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Le contenu "<strong>{content.content_key}</strong>" sera définitivement supprimé.
+                      Cette action est irréversible.
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Supprimer'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             ) : (
               <div className="flex gap-1">
                 <Button
@@ -106,7 +170,7 @@ export const ContentEditCard = ({ content, onUpdate }: ContentEditCardProps) => 
                   disabled={isLoading}
                   className="text-green-600 hover:text-green-700 hover:bg-green-50"
                 >
-                  <Check className="h-4 w-4" />
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 </Button>
                 <Button
                   size="sm"
