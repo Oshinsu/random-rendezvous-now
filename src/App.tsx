@@ -187,61 +187,51 @@ const AppRoutes = () => (
       </ProtectedRoute>
     } />
     {/* CMS Routes with sub-navigation */}
-          <Route path="/admin/content" element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminLayout>
-                  <SiteContentProvider>
-                    <AdminContentDashboard />
-                  </SiteContentProvider>
-                </AdminLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/content/hero" element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminLayout>
-                  <SiteContentProvider>
-                    <AdminContent view="hero" />
-                  </SiteContentProvider>
-                </AdminLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/content/benefits" element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminLayout>
-                  <SiteContentProvider>
-                    <AdminContent view="benefits" />
-                  </SiteContentProvider>
-                </AdminLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/content/how-it-works" element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminLayout>
-                  <SiteContentProvider>
-                    <AdminContent view="how_it_works" />
-                  </SiteContentProvider>
-                </AdminLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/content/footer" element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminLayout>
-                  <SiteContentProvider>
-                    <AdminContent view="footer" />
-                  </SiteContentProvider>
-                </AdminLayout>
-              </AdminRoute>
-            </ProtectedRoute>
-          } />
+        <Route path="/admin/content" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout>
+                <AdminContentDashboard />
+              </AdminLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/content/hero" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout>
+                <AdminContent view="hero" />
+              </AdminLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/content/benefits" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout>
+                <AdminContent view="benefits" />
+              </AdminLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/content/how-it-works" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout>
+                <AdminContent view="how_it_works" />
+              </AdminLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/content/footer" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout>
+                <AdminContent view="footer" />
+              </AdminLayout>
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
     <Route path="/admin/bar-owners" element={
       <ProtectedRoute>
         <AdminRoute>
@@ -353,23 +343,25 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <AnalyticsProvider>
-            <HelmetProvider>
-              <TooltipProvider>
-                <div className="min-h-screen bg-background font-sans antialiased">
-                  <Toaster />
-                  <GoogleProfileCompletion />
-                  <AppRoutes />
-                </div>
-              </TooltipProvider>
-            </HelmetProvider>
-          </AnalyticsProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <SiteContentProvider>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AuthProvider>
+            <AnalyticsProvider>
+              <HelmetProvider>
+                <TooltipProvider>
+                  <div className="min-h-screen bg-background font-sans antialiased">
+                    <Toaster />
+                    <GoogleProfileCompletion />
+                    <AppRoutes />
+                  </div>
+                </TooltipProvider>
+              </HelmetProvider>
+            </AnalyticsProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </SiteContentProvider>
   </QueryClientProvider>
 );
 
