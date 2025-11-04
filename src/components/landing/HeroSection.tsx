@@ -21,9 +21,9 @@ const HeroSection = () => {
     }
   };
 
-  // Dynamic hero background with optimization
+  // Dynamic hero background - NO FALLBACK, DB is single source of truth
   const heroBackgroundImage = getOptimizedImageUrl(
-    getContent('hero_background_image_url', 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1920&q=80'),
+    getContent('hero_background_image_url', ''),
     { width: 1920, quality: 85, format: 'webp' }
   );
   

@@ -6,25 +6,25 @@ const WhyRandomSection = () => {
 
   const benefits = [
     {
-      icon: getContent('benefit_1_icon_new', '🤝'),
+      icon: getContent('benefit_1_icon_new', ''),
       image: getContent('benefit_1_image_url', 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=800&q=80'),
       title: getContent('benefit_1_title_new', 'Rencontres Authentiques'),
       description: getContent('benefit_1_description_new', 'Connectez-vous avec des personnes qui partagent vos centres d\'intérêt dans une ambiance décontractée'),
     },
     {
-      icon: getContent('benefit_2_icon_new', '🍹'),
+      icon: getContent('benefit_2_icon_new', ''),
       image: getContent('benefit_2_image_url', 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'),
       title: getContent('benefit_2_title_new', 'Découverte de Lieux'),
       description: getContent('benefit_2_description_new', 'Explorez les meilleurs bars et lieux branchés de votre ville sélectionnés spécialement pour vous'),
     },
     {
-      icon: getContent('benefit_3_icon_new', '⚡'),
+      icon: getContent('benefit_3_icon_new', ''),
       image: getContent('benefit_3_image_url', 'https://images.unsplash.com/photo-1542731370-05f1938145eb?w=800&q=80'),
       title: getContent('benefit_3_title_new', 'Simplicité Totale'),
       description: getContent('benefit_3_description_new', 'En quelques clics, rejoignez un groupe et laissez-nous nous occuper du reste'),
     },
     {
-      icon: getContent('benefit_4_icon_new', '🛡️'),
+      icon: getContent('benefit_4_icon_new', ''),
       image: getContent('benefit_4_image_url', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80'),
       title: getContent('benefit_4_title_new', 'Sécurité Garantie'),
       description: getContent('benefit_4_description_new', 'Tous nos membres sont vérifiés pour garantir des rencontres en toute sécurité'),
@@ -77,10 +77,12 @@ const WhyRandomSection = () => {
                   }}
                 ></div>
                 
-                {/* Icône stylisée */}
-                <div className="absolute top-4 right-4 text-6xl filter drop-shadow-2xl">
-                  {benefit.icon}
-                </div>
+                {/* Icône stylisée - Affichée seulement si présente dans DB */}
+                {benefit.icon && (
+                  <div className="absolute top-4 right-4 text-6xl filter drop-shadow-2xl">
+                    {benefit.icon}
+                  </div>
+                )}
                 
                 {/* Titre sur l'image */}
                 <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6">
