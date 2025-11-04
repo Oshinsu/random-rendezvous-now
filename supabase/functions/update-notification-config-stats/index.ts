@@ -112,11 +112,23 @@ Deno.serve(async (req) => {
 
     console.log(`\n🎉 Update complete! Updated ${totalUpdated}/${notificationTypes?.length || 0} notification types`);
 
+    // Invalidate related cache entries
+    console.log('🗑️ Invalidating overview stats cache...');
+    const { error: cacheDeleteError } = await supabase
+      .from('notification_analytics_cache')
+      .delete()
+      .or('cache_key.like.push_overview_%,cache_key.like.notification_types_%');
+
+    if (!cacheDeleteError) {
+      console.log('✅ Overview stats cache invalidated');
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         updated: totalUpdated,
         total: notificationTypes?.length || 0,
+        cacheInvalidated: !cacheDeleteError,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

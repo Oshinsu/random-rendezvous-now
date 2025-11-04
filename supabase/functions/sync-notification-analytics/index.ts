@@ -117,12 +117,32 @@ Deno.serve(async (req) => {
 
     console.log(`\n🎉 Sync complete! Processed ${totalProcessed}/${uniqueTypes.length} notification types`);
 
+    // Invalidate analytics cache to force refresh
+    console.log('🗑️ Invalidating analytics cache...');
+    const { error: cacheDeleteError } = await supabase
+      .from('notification_analytics_cache')
+      .delete()
+      .like('cache_key', 'push_analytics_charts_%');
+
+    if (cacheDeleteError) {
+      console.error('⚠️ Failed to invalidate cache:', cacheDeleteError);
+    } else {
+      console.log('✅ Analytics cache invalidated');
+    }
+
+    // Cleanup expired cache entries
+    const { error: cleanupError } = await supabase.rpc('cleanup_expired_analytics_cache');
+    if (!cleanupError) {
+      console.log('✅ Expired cache entries cleaned up');
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         processed: totalProcessed,
         total: uniqueTypes.length,
         dateRange: { start: startDate, end: endDate },
+        cacheInvalidated: !cacheDeleteError,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

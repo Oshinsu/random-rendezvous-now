@@ -28,6 +28,23 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
   return useQuery({
     queryKey: ['push-analytics-charts', dateRange],
     queryFn: async (): Promise<ChartData> => {
+      const cacheKey = `push_analytics_charts_${dateRange}`;
+      
+      // 1. Check cache first (SOTA 2025: Performance optimization)
+      const { data: cachedData, error: cacheError } = await supabase
+        .from('notification_analytics_cache')
+        .select('data, expires_at')
+        .eq('cache_key', cacheKey)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (!cacheError && cachedData) {
+        console.log('✅ Using cached analytics data for', dateRange);
+        return cachedData.data as unknown as ChartData;
+      }
+
+      console.log('🔄 Cache miss, computing fresh analytics for', dateRange);
+      
       const daysAgo = dateRange === 'week' ? 7 : 30;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
@@ -137,13 +154,33 @@ export const usePushAnalyticsCharts = (dateRange: 'week' | 'month' = 'month') =>
         }
       }
 
-      return {
+      const result: ChartData = {
         performanceByType,
         timeline,
         deviceTypes,
         peakHours,
       };
+
+      // 2. Store in cache (expires in 1 hour)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      await supabase
+        .from('notification_analytics_cache')
+        .upsert({
+          cache_key: cacheKey,
+          data: result as any,
+          expires_at: expiresAt.toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'cache_key',
+        });
+
+      console.log('✅ Analytics cached until', expiresAt.toISOString());
+
+      return result;
     },
     refetchInterval: 300000, // Refresh every 5 minutes
+    staleTime: 60000, // Consider data fresh for 1 minute
   });
 };

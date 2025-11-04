@@ -1960,6 +1960,33 @@ export type Database = {
           },
         ]
       }
+      notification_analytics_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          data: Json
+          expires_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          data?: Json
+          expires_at: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          data?: Json
+          expires_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_deduplication: {
         Row: {
           last_sent_at: string
@@ -2938,6 +2965,7 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      cleanup_expired_analytics_cache: { Args: never; Returns: number }
       cleanup_expired_force_confirm_votes: { Args: never; Returns: number }
       cleanup_notification_throttle: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
