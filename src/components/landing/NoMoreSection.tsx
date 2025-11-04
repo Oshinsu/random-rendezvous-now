@@ -1,6 +1,3 @@
-import step1 from "@/assets/step-1.png";
-import step2 from "@/assets/step-2.png";
-import step3 from "@/assets/step-3.png";
 import { useTranslation } from 'react-i18next';
 const NoMoreSection = () => {
   const {

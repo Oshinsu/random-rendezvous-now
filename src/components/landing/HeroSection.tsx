@@ -1,11 +1,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import heroImageDefault from "@/assets/hero-banner-optimized.jpg";
 import { trackCTAClick } from "@/utils/cmsTracking";
 import { useDynamicContent } from "@/hooks/useDynamicContent";
-import { DynamicText } from "@/components/dynamic/DynamicText";
 import { EnhancedSearchButton } from "@/components/EnhancedSearchButton";
+import { getOptimizedImageUrl } from "@/utils/imageOptimization";
 
 const HeroSection = () => {
   const { user } = useAuth();
@@ -22,11 +21,11 @@ const HeroSection = () => {
     }
   };
 
-  // Dynamic content with ES6 import fallback
-  const dynamicImagePath = getContent('hero_background_image_url', '');
-  const heroBackgroundImage = dynamicImagePath.includes('@/assets') 
-    ? heroImageDefault 
-    : (dynamicImagePath || heroImageDefault);
+  // Dynamic hero background with optimization
+  const heroBackgroundImage = getOptimizedImageUrl(
+    getContent('hero_background_image_url', 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1920&q=80'),
+    { width: 1920, quality: 85, format: 'webp' }
+  );
   
   const brandName = getContent('hero_brand_name', 'Random');
   const heroTitle = i18n.language === 'fr' 
