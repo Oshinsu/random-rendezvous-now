@@ -1,459 +1,373 @@
 import { useState } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useAdminBarOwners } from '@/hooks/useAdminBarOwners';
 import { useStripeMRR } from '@/hooks/useStripeMRR';
 import { EmptyBarOwnersState } from '@/components/admin/EmptyBarOwnersState';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { KanbanBoard } from '@/components/admin/KanbanBoard';
+import { FunnelChart } from '@/components/admin/charts/FunnelChart';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
-  Users, 
   Building, 
-  Euro, 
-  CheckCircle, 
-  XCircle, 
-  Pause, 
-  Play, 
-  MoreVertical, 
-  Search,
-  Clock,
-  UserCheck,
-  UserX,
-  AlertTriangle,
-  ExternalLink,
   DollarSign,
-  Loader2,
+  Search,
+  List,
+  Columns,
+  TrendingUp
 } from 'lucide-react';
 import type { BarOwnerWithSubscription } from '@/hooks/useAdminBarOwners';
 
-export default function AdminBarOwners() {
-  const { barOwners, stats, isLoading, updateApplicationStatus, toggleSuspension, deleteBarOwner } = useAdminBarOwners();
+export default function AdminBarOwnersNew() {
+  const { barOwners, stats, isLoading } = useAdminBarOwners();
   const { data: mrrData, isLoading: mrrLoading } = useStripeMRR();
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedBarOwner, setSelectedBarOwner] = useState<BarOwnerWithSubscription | null>(null);
-  const [actionDialog, setActionDialog] = useState<{
-    type: 'approve' | 'reject' | 'suspend' | 'delete' | null;
-    barOwner: BarOwnerWithSubscription | null;
-  }>({ type: null, barOwner: null });
 
   const filteredBarOwners = barOwners?.filter(owner =>
     owner.bar_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.contact_email.toLowerCase().includes(searchTerm.toLowerCase())
+    owner.business_name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: { variant: 'secondary' as const, icon: Clock, label: 'En attente' },
-      approved: { variant: 'default' as const, icon: CheckCircle, label: 'Approuvé' },
-      rejected: { variant: 'destructive' as const, icon: XCircle, label: 'Rejeté' },
-      suspended: { variant: 'outline' as const, icon: Pause, label: 'Suspendu' },
-    };
-
-    const config = variants[status as keyof typeof variants];
-    if (!config) return null;
-
-    const Icon = config.icon;
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getSubscriptionBadge = (status: string) => {
-    const variants = {
-      trial: { variant: 'secondary' as const, label: 'Essai' },
-      active: { variant: 'default' as const, label: 'Actif' },
-      past_due: { variant: 'destructive' as const, label: 'Impayé' },
-      canceled: { variant: 'outline' as const, label: 'Annulé' },
-      unpaid: { variant: 'destructive' as const, label: 'Impayé' },
-    };
-
-    const config = variants[status as keyof typeof variants];
-    if (!config) return null;
-
-    return (
-      <Badge variant={config.variant}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const handleAction = (type: string, barOwner: BarOwnerWithSubscription) => {
-    setActionDialog({ 
-      type: type as 'approve' | 'reject' | 'suspend' | 'delete', 
-      barOwner 
-    });
-  };
-
-  const confirmAction = () => {
-    if (!actionDialog.barOwner || !actionDialog.type) return;
-
-    switch (actionDialog.type) {
-      case 'approve':
-        updateApplicationStatus.mutate({
-          barOwnerId: actionDialog.barOwner.id,
-          status: 'approved',
-        });
-        break;
-      case 'reject':
-        updateApplicationStatus.mutate({
-          barOwnerId: actionDialog.barOwner.id,
-          status: 'rejected',
-        });
-        break;
-      case 'suspend':
-        toggleSuspension.mutate({
-          barOwnerId: actionDialog.barOwner.id,
-          suspend: actionDialog.barOwner.status !== 'suspended',
-        });
-        break;
-      case 'delete':
-        deleteBarOwner.mutate(actionDialog.barOwner.id);
-        break;
-    }
-
-    setActionDialog({ type: null, barOwner: null });
-  };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
+      <AdminLayout>
+        <div className="p-8 space-y-6">
+          <Skeleton className="h-12 w-64" />
+          <div className="grid grid-cols-4 gap-4">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </div>
+          <Skeleton className="h-96" />
         </div>
-        <Skeleton className="h-96" />
-      </div>
+      </AdminLayout>
     );
   }
 
-  // ✅ PHASE 3: Show empty state if no bar owners
   if (!barOwners || barOwners.length === 0) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des Gérants de Bar</h1>
-          <p className="text-muted-foreground">
-            Gérez les demandes et abonnements des gérants de bar partenaires
-          </p>
+      <AdminLayout>
+        <div className="p-8 space-y-6">
+          <h1 className="text-3xl font-bold text-red-800">Gestion des Gérants de Bar</h1>
+          <EmptyBarOwnersState />
         </div>
-        <EmptyBarOwnersState />
-      </div>
+      </AdminLayout>
     );
   }
 
+  // Kanban columns
+  const kanbanColumns = [
+    {
+      id: 'pending',
+      title: '📝 Pending',
+      color: 'bg-yellow-50 border-yellow-200',
+      items: filteredBarOwners
+        .filter(o => o.status === 'pending')
+        .map(o => ({
+          id: o.id,
+          title: o.bar_name,
+          subtitle: o.business_name,
+          badge: o.contact_email,
+          ...o
+        }))
+    },
+    {
+      id: 'approved',
+      title: '✅ Approved',
+      color: 'bg-green-50 border-green-200',
+      items: filteredBarOwners
+        .filter(o => o.status === 'approved')
+        .map(o => ({
+          id: o.id,
+          title: o.bar_name,
+          subtitle: o.business_name,
+          badge: 'Actif',
+          ...o
+        }))
+    },
+    {
+      id: 'suspended',
+      title: '⏸️ Suspended',
+      color: 'bg-orange-50 border-orange-200',
+      items: filteredBarOwners
+        .filter(o => o.status === 'suspended')
+        .map(o => ({
+          id: o.id,
+          title: o.bar_name,
+          subtitle: o.business_name,
+          ...o
+        }))
+    },
+    {
+      id: 'rejected',
+      title: '❌ Rejected',
+      color: 'bg-red-50 border-red-200',
+      items: filteredBarOwners
+        .filter(o => o.status === 'rejected')
+        .map(o => ({
+          id: o.id,
+          title: o.bar_name,
+          subtitle: o.business_name,
+          ...o
+        }))
+    }
+  ];
+
+  // Conversion funnel
+  const funnelData = [
+    { label: 'Candidatures', value: stats?.total || 0, color: '#dc2626' },
+    { label: 'Approuvés', value: stats?.approved || 0, color: '#22c55e' },
+    { label: 'Abonnés actifs', value: mrrData?.active_subscriptions || 0, color: '#3b82f6' },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Gestion des Gérants de Bar</h1>
-        <p className="text-muted-foreground">
-          Gérez les demandes et abonnements des gérants de bar partenaires
-        </p>
-      </div>
+    <AdminLayout>
+      <div className="p-8 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-red-800">Gestion des Gérants de Bar</h1>
+            <p className="text-red-600">Pipeline de conversion et abonnements</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+              className={viewMode === 'kanban' ? 'bg-red-600' : 'border-red-300 text-red-700'}
+            >
+              <Columns className="h-4 w-4 mr-2" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? 'bg-red-600' : 'border-red-300 text-red-700'}
+            >
+              <List className="h-4 w-4 mr-2" />
+              Liste
+            </Button>
+          </div>
+        </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Building className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total gérants</p>
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-blue-700 flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Total gérants
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-800">
+                {stats?.total || 0}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-8 w-8 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
-                  <p className="text-sm text-muted-foreground">En attente</p>
-                </div>
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-yellow-700">En attente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-yellow-800">
+                {stats?.pending || 0}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <UserCheck className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{stats.approved}</p>
-                  <p className="text-sm text-muted-foreground">Approuvés</p>
-                </div>
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-green-700">Approuvés</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-800">
+                {stats?.approved || 0}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-8 w-8 text-green-600" />
-                  <div>
-                    {mrrLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-green-600" />
-                        <p className="text-sm text-green-600">Chargement...</p>
-                      </div>
-                    ) : mrrData?.success ? (
-                      <>
-                        <p className="text-2xl font-bold text-green-800">
-                          {mrrData.mrr.toFixed(2)}€
-                        </p>
-                        <p className="text-sm text-green-600">
-                          MRR ({mrrData.active_subscriptions} abonnement{mrrData.active_subscriptions > 1 ? 's' : ''})
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-2xl font-bold text-green-800">N/A</p>
-                        <p className="text-sm text-green-600">MRR (Revenus mensuels)</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
-                  className="border-green-300 text-green-700 hover:bg-green-100"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Stripe
-                </Button>
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-purple-700 flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                MRR
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-800">
+                {mrrLoading ? '...' : `${mrrData?.mrr.toFixed(0)}€`}
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
 
-      {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un bar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+        {/* Conversion Funnel */}
+        <Card className="border-red-200">
+          <CardHeader className="bg-red-50">
+            <CardTitle className="text-red-800 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Tunnel de Conversion
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <FunnelChart data={funnelData} />
+          </CardContent>
+        </Card>
+
+        {/* Search */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-400" />
+            <Input
+              placeholder="Rechercher un bar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 border-red-200 focus:border-red-400"
+            />
+          </div>
+        </div>
+
+        {/* Content: Kanban or List */}
+        {viewMode === 'kanban' ? (
+          <KanbanBoard
+            columns={kanbanColumns}
+            onItemClick={(item) => setSelectedBarOwner(item as any)}
           />
-        </div>
-      </div>
-
-      {/* Bar Owners Table */}
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Bar</TableHead>
-              <TableHead>Gérant</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredBarOwners.map((owner) => (
-              <TableRow key={owner.id}>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{owner.bar_name}</p>
-                    <p className="text-sm text-muted-foreground">{owner.bar_address}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <p className="font-medium">{owner.business_name}</p>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p>{owner.contact_email}</p>
-                    {owner.contact_phone && (
-                      <p className="text-sm text-muted-foreground">{owner.contact_phone}</p>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {getStatusBadge(owner.status)}
-                </TableCell>
-                <TableCell>
-                  {new Date(owner.created_at).toLocaleDateString('fr-FR')}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {owner.status === 'pending' && (
-                        <>
-                          <DropdownMenuItem 
-                            onClick={() => handleAction('approve', owner)}
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Approuver
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleAction('reject', owner)}
-                            className="text-red-600"
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Rejeter
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      {owner.status === 'approved' && (
-                        <DropdownMenuItem 
-                          onClick={() => handleAction('suspend', owner)}
-                          className="text-orange-600"
-                        >
-                          <Pause className="mr-2 h-4 w-4" />
-                          Suspendre
-                        </DropdownMenuItem>
-                      )}
-                      {owner.status === 'suspended' && (
-                        <DropdownMenuItem 
-                          onClick={() => handleAction('suspend', owner)}
-                          className="text-green-600"
-                        >
-                          <Play className="mr-2 h-4 w-4" />
-                          Réactiver
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem 
+        ) : (
+          <Card className="border-red-200">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-red-50 border-b border-red-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Bar
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Gérant
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Statut
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-red-100">
+                    {filteredBarOwners.map((owner) => (
+                      <tr 
+                        key={owner.id} 
+                        className="hover:bg-red-50 cursor-pointer transition-colors"
                         onClick={() => setSelectedBarOwner(owner)}
                       >
-                        Voir détails
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleAction('delete', owner)}
-                        className="text-red-600"
-                      >
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      {/* Action Confirmation Dialog */}
-      <Dialog 
-        open={!!actionDialog.type} 
-        onOpenChange={() => setActionDialog({ type: null, barOwner: null })}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {actionDialog.type === 'approve' && 'Approuver la demande'}
-              {actionDialog.type === 'reject' && 'Rejeter la demande'}
-              {actionDialog.type === 'suspend' && 'Modifier le statut'}
-              {actionDialog.type === 'delete' && 'Supprimer le gérant'}
-            </DialogTitle>
-            <DialogDescription>
-              {actionDialog.type === 'approve' && 
-                `Approuver la demande de ${actionDialog.barOwner?.business_name} ? Un essai gratuit de 30 jours sera automatiquement activé.`
-              }
-              {actionDialog.type === 'reject' && 
-                `Rejeter définitivement la demande de ${actionDialog.barOwner?.business_name} ?`
-              }
-              {actionDialog.type === 'suspend' && actionDialog.barOwner?.status !== 'suspended' &&
-                `Suspendre l'accès de ${actionDialog.barOwner?.business_name} ?`
-              }
-              {actionDialog.type === 'suspend' && actionDialog.barOwner?.status === 'suspended' &&
-                `Réactiver l'accès de ${actionDialog.barOwner?.business_name} ?`
-              }
-              {actionDialog.type === 'delete' && 
-                `Supprimer définitivement ${actionDialog.barOwner?.business_name} ? Cette action est irréversible.`
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setActionDialog({ type: null, barOwner: null })}
-            >
-              Annuler
-            </Button>
-            <Button 
-              onClick={confirmAction}
-              variant={actionDialog.type === 'delete' || actionDialog.type === 'reject' ? 'destructive' : 'default'}
-            >
-              Confirmer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bar Owner Details Dialog */}
-      <Dialog open={!!selectedBarOwner} onOpenChange={() => setSelectedBarOwner(null)}>
-        <DialogContent className="max-w-2xl">
-          {selectedBarOwner && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedBarOwner.business_name}</DialogTitle>
-                <DialogDescription>
-                  Détails du gérant de bar
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-semibold">Informations générales</h4>
-                    <div className="space-y-2 text-sm">
-                      <p><strong>Nom du bar :</strong> {selectedBarOwner.bar_name}</p>
-                      <p><strong>Adresse :</strong> {selectedBarOwner.bar_address}</p>
-                      <p><strong>Email :</strong> {selectedBarOwner.contact_email}</p>
-                      {selectedBarOwner.contact_phone && (
-                        <p><strong>Téléphone :</strong> {selectedBarOwner.contact_phone}</p>
-                      )}
-                      <p><strong>Statut :</strong> {getStatusBadge(selectedBarOwner.status)}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Abonnement</h4>
-                    <div className="space-y-2 text-sm">
-                      <p className="text-muted-foreground">Géré via Stripe Dashboard</p>
-                      <p className="text-xs">Les abonnements sont maintenant gérés exclusivement via Stripe</p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Dates importantes</h4>
-                  <div className="space-y-1 text-sm">
-                    <p><strong>Candidature :</strong> {new Date(selectedBarOwner.created_at).toLocaleDateString('fr-FR')}</p>
-                    {selectedBarOwner.approved_at && (
-                      <p><strong>Approuvé le :</strong> {new Date(selectedBarOwner.approved_at).toLocaleDateString('fr-FR')}</p>
-                    )}
-                  </div>
-                </div>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Building className="h-5 w-5 text-red-600 mr-2" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {owner.bar_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {owner.bar_address}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{owner.business_name}</div>
+                          <div className="text-sm text-gray-500">{owner.owner_name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{owner.contact_email}</div>
+                          <div className="text-sm text-gray-500">{owner.phone_number}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge 
+                            variant={
+                              owner.status === 'approved' ? 'default' :
+                              owner.status === 'pending' ? 'secondary' :
+                              owner.status === 'rejected' ? 'destructive' :
+                              'outline'
+                            }
+                            className={
+                              owner.status === 'approved' ? 'bg-green-100 text-green-800 border-green-300' :
+                              owner.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              owner.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-300' :
+                              'bg-orange-100 text-orange-800 border-orange-300'
+                            }
+                          >
+                            {owner.status === 'approved' ? '✅ Approuvé' :
+                             owner.status === 'pending' ? '📝 En attente' :
+                             owner.status === 'rejected' ? '❌ Rejeté' :
+                             '⏸️ Suspendu'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(owner.created_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBarOwner(owner);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Voir détails
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Details Dialog */}
+        <Dialog open={!!selectedBarOwner} onOpenChange={() => setSelectedBarOwner(null)}>
+          <DialogContent className="max-w-2xl">
+            {selectedBarOwner && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selectedBarOwner.business_name}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <p><strong>Bar:</strong> {selectedBarOwner.bar_name}</p>
+                    <p><strong>Email:</strong> {selectedBarOwner.contact_email}</p>
+                    <p><strong>Statut:</strong> {selectedBarOwner.status}</p>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminLayout>
   );
 }

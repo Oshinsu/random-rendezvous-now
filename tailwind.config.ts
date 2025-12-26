@@ -79,6 +79,16 @@ export default {
           900: 'hsl(36 66% 29%)',  // #825c16
           950: 'hsl(35 62% 17%)',  // #4a3309
         },
+        // 🎨 NOUVEAU: Palette Blanc/Or inspirée du logo
+        brandWhiteGold: {
+          'white-pure': '#ffffff',
+          'white-cream': '#fffbe8',
+          'white-warm': '#fefdf8',
+          'gold-light': '#f9e6a7',
+          'gold-primary': '#f1c232',
+          'gold-rich': '#c08a15',
+          'gold-deep': '#825c16',
+        },
         neutral: {
           50: 'hsl(0 0% 98%)',     // #fafafa
           100: 'hsl(0 0% 96%)',    // #f5f5f5

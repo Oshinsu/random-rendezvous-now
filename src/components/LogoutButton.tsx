@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LogoutButton = () => {
-  const { signOut } = useEnhancedAuth();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();

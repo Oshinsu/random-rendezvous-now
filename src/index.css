@@ -220,6 +220,22 @@
     background-clip: text;
   }
 
+  /* 🎨 NOUVEAUX GRADIENTS BLANC/OR (Logo-inspired) */
+  .gradient-hero {
+    background: linear-gradient(135deg, #ffffff 0%, #fffbe8 30%, #f1c232 70%, #c08a15 100%);
+  }
+
+  .gradient-button {
+    background: linear-gradient(90deg, #fffbe8 0%, #f1c232 100%);
+  }
+
+  .gradient-text-white-gold {
+    background: linear-gradient(to right, #ffffff 0%, #fffbe8 25%, #f1c232 60%, #c08a15 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-heading font-semibold rounded-2xl;
     @apply bg-gradient-to-r from-brand-500 to-brand-600 text-white;

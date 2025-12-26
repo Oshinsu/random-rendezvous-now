@@ -245,10 +245,105 @@ export default function AdminBarOwnersNew() {
           />
         ) : (
           <Card className="border-red-200">
-            <CardContent className="p-4">
-              <p className="text-center text-muted-foreground py-12">
-                Vue liste disponible prochainement
-              </p>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-red-50 border-b border-red-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Bar
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Gérant
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Statut
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-red-700 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-red-100">
+                    {filteredBarOwners.map((owner) => (
+                      <tr 
+                        key={owner.id} 
+                        className="hover:bg-red-50 cursor-pointer transition-colors"
+                        onClick={() => setSelectedBarOwner(owner)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Building className="h-5 w-5 text-red-600 mr-2" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {owner.bar_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {owner.bar_address}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{owner.business_name}</div>
+                          <div className="text-sm text-gray-500">{owner.owner_name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{owner.contact_email}</div>
+                          <div className="text-sm text-gray-500">{owner.phone_number}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge 
+                            variant={
+                              owner.status === 'approved' ? 'default' :
+                              owner.status === 'pending' ? 'secondary' :
+                              owner.status === 'rejected' ? 'destructive' :
+                              'outline'
+                            }
+                            className={
+                              owner.status === 'approved' ? 'bg-green-100 text-green-800 border-green-300' :
+                              owner.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                              owner.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-300' :
+                              'bg-orange-100 text-orange-800 border-orange-300'
+                            }
+                          >
+                            {owner.status === 'approved' ? '✅ Approuvé' :
+                             owner.status === 'pending' ? '📝 En attente' :
+                             owner.status === 'rejected' ? '❌ Rejeté' :
+                             '⏸️ Suspendu'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(owner.created_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBarOwner(owner);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Voir détails
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         )}

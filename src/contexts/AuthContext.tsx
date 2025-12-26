@@ -100,6 +100,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signOut = async () => {
     try {
+      // PLAN D'URGENCE: Rate limiting avant déconnexion
+      const { RateLimiter } = await import('@/utils/rateLimiter');
+      if (RateLimiter.isRateLimited('auth_signout', {
+        maxAttempts: 3,
+        windowMs: 60000, // 1 minute
+        blockDurationMs: 30000 // 30 seconds
+      })) {
+        console.log('🚫 Sign out rate limited');
+        return;
+      }
+
       setLoading(true);
       
       const { error } = await supabase.auth.signOut();
@@ -121,6 +132,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signInWithGoogle = async () => {
     try {
+      // PLAN D'URGENCE: Rate limiting avant connexion Google
+      const { RateLimiter } = await import('@/utils/rateLimiter');
+      if (RateLimiter.isRateLimited('auth_google_signin', {
+        maxAttempts: 5,
+        windowMs: 300000, // 5 minutes
+        blockDurationMs: 60000 // 1 minute
+      })) {
+        throw new Error('Trop de tentatives de connexion. Veuillez patienter.');
+      }
+
       setLoading(true);
       
       // Validate server-side if Google OAuth is allowed
