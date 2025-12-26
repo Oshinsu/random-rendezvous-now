@@ -5,13 +5,17 @@ import { trackCTAClick } from "@/utils/cmsTracking";
 import { useDynamicContent } from "@/hooks/useDynamicContent";
 import { EnhancedSearchButton } from "@/components/EnhancedSearchButton";
 import { getOptimizedImageUrl } from "@/utils/imageOptimization";
-
 const HeroSection = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
-  const { getContent } = useDynamicContent();
-
+  const {
+    i18n
+  } = useTranslation();
+  const {
+    getContent
+  } = useDynamicContent();
   const handleMainAction = async () => {
     trackCTAClick('hero', user ? 'go_to_dashboard' : 'signup');
     if (user) {
@@ -22,28 +26,21 @@ const HeroSection = () => {
   };
 
   // Dynamic hero background - NO FALLBACK, DB is single source of truth
-  const heroBackgroundImage = getOptimizedImageUrl(
-    getContent('hero_background_image_url', ''),
-    { width: 1920, quality: 85, format: 'webp' }
-  );
-  
+  const heroBackgroundImage = getOptimizedImageUrl(getContent('hero_background_image_url', ''), {
+    width: 1920,
+    quality: 85,
+    format: 'webp'
+  });
   const brandName = getContent('hero_brand_name', 'Random');
-  const heroTitle = i18n.language === 'fr' 
-    ? getContent('hero_title', '1 clic. 1 groupe. 1 bar.') 
-    : getContent('hero_title_en', '1 click. 1 group. 1 bar.');
+  const heroTitle = i18n.language === 'fr' ? getContent('hero_title', '1 clic. 1 groupe. 1 bar.') : getContent('hero_title_en', '1 click. 1 group. 1 bar.');
   const heroSubtitle = getContent('hero_subtitle', 'Rencontrez de nouvelles personnes autour d\'un verre');
   const heroCta = getContent('hero_cta_button', 'Commencer l\'aventure');
-
-  return (
-    <section 
-      className="relative py-12 sm:py-16 md:py-20 text-white animate-fade-in overflow-hidden min-h-[85vh] flex items-center" 
-      style={{
-        backgroundImage: `url(${heroBackgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+  return <section className="relative py-12 sm:py-16 md:py-20 text-white animate-fade-in overflow-hidden min-h-[85vh] flex items-center" style={{
+    backgroundImage: `url(${heroBackgroundImage})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }}>
       {/* Overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/60 to-black/80"></div>
       
@@ -57,25 +54,14 @@ const HeroSection = () => {
           </span>
         </h1>
         
-        {heroSubtitle && (
-          <p className="text-base sm:text-lg text-neutral-200 mb-6 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
-            {heroSubtitle}
-          </p>
-        )}
+        {heroSubtitle}
         
-        <div 
-          className="flex justify-center items-center mb-8 sm:mb-10 animate-slide-in-up" 
-          style={{ animationDelay: '0.3s' }}
-        >
-          <EnhancedSearchButton 
-            onSearch={handleMainAction}
-            isSearching={false}
-            isDisabled={false}
-          />
+        <div className="flex justify-center items-center mb-8 sm:mb-10 animate-slide-in-up" style={{
+        animationDelay: '0.3s'
+      }}>
+          <EnhancedSearchButton onSearch={handleMainAction} isSearching={false} isDisabled={false} />
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
