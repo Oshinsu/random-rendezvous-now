@@ -292,11 +292,11 @@ export default function AdminBarOwnersNew() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{owner.business_name}</div>
-                          <div className="text-sm text-gray-500">{owner.owner_name}</div>
+                          <div className="text-sm text-gray-500">{owner.bar_name}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{owner.contact_email}</div>
-                          <div className="text-sm text-gray-500">{owner.phone_number}</div>
+                          <div className="text-sm text-gray-500">{owner.contact_phone}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge 
