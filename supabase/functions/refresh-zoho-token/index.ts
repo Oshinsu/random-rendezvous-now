@@ -12,7 +12,7 @@ const corsHeaders = {
  * SOTA Oct 2025: Proactive token refresh pattern (Google Cloud API Design Guide)
  * Source: https://cloud.google.com/apis/design/design_patterns
  * 
- * CRON Schedule: */45 * * * * (every 45 min, tokens expire at 59min)
+ * CRON Schedule: Every 45 minutes (tokens expire at 59min)
  * Reference: OAuth 2.0 RFC 6749 - Token Refresh Best Practices
  */
 
