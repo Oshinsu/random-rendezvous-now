@@ -80,7 +80,7 @@ export function useCampaignSystemStatus() {
 
   useEffect(() => {
     checkStatus();
-    const interval = setInterval(checkStatus, 10000); // Every 10s
+    const interval = setInterval(checkStatus, 60000); // Every 60s (was 10s)
     return () => clearInterval(interval);
   }, []);
 

@@ -68,8 +68,8 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
 
     console.log('🗳️ [REALTIME] Souscription aux votes pour groupe:', groupId);
 
-    // Unique channel name to prevent duplicate subscriptions
-    const channelName = `votes-${groupId}-${Date.now()}`;
+    // Stable channel name (no timestamp) to avoid orphaned channels on remount
+    const channelName = `votes-${groupId}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -87,18 +87,10 @@ export const useForceConfirmVotes = (groupId: string | undefined, currentPartici
       )
       .subscribe();
 
-    // Polling de secours toutes les 10 secondes
-    const pollInterval = setInterval(() => {
-      console.log('🔄 [POLLING] Rafraîchissement des votes...');
-      fetchVotes();
-    }, 10000);
-
     return () => {
       console.log('🗳️ [REALTIME] Désinscription des votes pour groupe:', groupId);
-      // ✅ SOTA 2025: unsubscribe avant removeChannel
       channel.unsubscribe();
       supabase.removeChannel(channel);
-      clearInterval(pollInterval);
     };
   }, [groupId, currentParticipants]); // Only depend on groupId and currentParticipants, not fetchVotes
 

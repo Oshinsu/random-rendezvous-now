@@ -48,7 +48,7 @@ export const useRealAdminDashboard = () => {
       if (error) throw error;
       return (data || []) as UserGrowth[];
     },
-    refetchInterval: 60000,
+    refetchInterval: 300000, // 5min (was 60s)
   });
 
   // Hourly Activity (24h)
@@ -59,7 +59,7 @@ export const useRealAdminDashboard = () => {
       if (error) throw error;
       return (data || []) as HourlyActivity[];
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000, // 2min (was 30s)
   });
 
   // Bar Performance (30 days)
@@ -81,7 +81,7 @@ export const useRealAdminDashboard = () => {
       if (error) throw error;
       return (data || []) as ConversionFunnel[];
     },
-    refetchInterval: 120000,
+    refetchInterval: 300000, // 5min (was 120s)
   });
 
   // API Costs (7 days)
@@ -103,7 +103,7 @@ export const useRealAdminDashboard = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000, // 2min (was 30s)
   });
 
   // Manual refresh function

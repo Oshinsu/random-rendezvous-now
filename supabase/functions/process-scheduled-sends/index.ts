@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
           .from('crm_scheduled_sends')
           .update({
             status: 'failed',
-            error_message: error.message || 'Unknown error',
+            error_message: (error instanceof Error ? error.message : String(error)) || 'Unknown error',
             sent_at: new Date().toISOString()
           })
           .eq('id', scheduledSend.id);
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in process-scheduled-sends:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

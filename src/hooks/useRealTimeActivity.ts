@@ -330,8 +330,8 @@ export const useRealTimeActivity = (period: TimePeriod = 'day') => {
     
     fetchAllData();
 
-    // ✅ OPTIMISATION: Reduced polling (2 min for day, 3 min for week, 5 min for others)
-    const pollInterval = period === 'day' ? 120000 : period === 'week' ? 180000 : 300000;
+    // Polling réduit au maximum (Realtime gère les updates)
+    const pollInterval = period === 'day' ? 300000 : period === 'week' ? 600000 : 900000; // 5/10/15 min
     const interval = setInterval(() => {
       // 🔧 FIX: Ne fetch que si toujours actif
       if (isActiveRef.current) {

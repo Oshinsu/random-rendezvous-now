@@ -67,9 +67,8 @@ export function useCampaignQueue() {
         console.log('📡 Real-time subscription status:', status);
       });
 
-    // Fallback: Still poll every 30s as backup (in case WebSocket fails)
-    // Best practice: Defense in depth
-    const fallbackInterval = setInterval(fetchQueues, 30000);
+    // Fallback: Poll every 5min as backup (in case WebSocket fails)
+    const fallbackInterval = setInterval(fetchQueues, 300000);
 
     return () => {
       console.log('🔌 Unsubscribing from campaign queue real-time');

@@ -54,10 +54,11 @@ export const useProfile = () => {
         setProfile(newProfile);
       }
     } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError(err instanceof Error ? err.message : 'Error fetching profile');
+      const message = err instanceof Error ? err.message : 'Error fetching profile';
+      console.error('[useProfile] Database error — using metadata fallback:', message);
+      setError(message);
       
-      // Fallback to user metadata if database fails
+      // Fallback to auth metadata so the UI is not broken, but the error is surfaced
       if (user) {
         setProfile({
           id: user.id,

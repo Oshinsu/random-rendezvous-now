@@ -1,12 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -663,7 +662,7 @@ ${JSON.stringify(schemaFAQ, null, 2)}
           .from('blog_generation_logs')
           .update({
             status: 'error',
-            error_message: error instanceof Error ? error.message : 'Unknown error',
+            error_message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
             generation_time_ms: Date.now() - startTime
           })
           .eq('id', logId);
@@ -674,7 +673,7 @@ ${JSON.stringify(schemaFAQ, null, 2)}
 
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
         details: error instanceof Error ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

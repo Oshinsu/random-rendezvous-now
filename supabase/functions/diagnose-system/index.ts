@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +12,7 @@ const corsHeaders = {
  * SOTA Oct 2025 best practices
  */
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -137,7 +136,7 @@ serve(async (req) => {
     console.log('📊 Checking recent campaigns...');
     const { data: campaignsData, error: campaignsError } = await supabaseClient
       .from('crm_campaigns')
-      .select('id, campaign_name, status, channels, created_at, sent_at')
+      .select('id, campaign_name, status, channels, created_at, send_at')
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -154,7 +153,7 @@ serve(async (req) => {
           name: c.campaign_name,
           status: c.status,
           channels: c.channels,
-          sent_at: c.sent_at
+          send_at: c.send_at
         }))
       };
     }
@@ -246,7 +245,7 @@ serve(async (req) => {
     console.error('❌ Diagnostic failed:', error);
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         overall_status: '🔴 DIAGNOSTIC FAILURE'
       }),
       { 

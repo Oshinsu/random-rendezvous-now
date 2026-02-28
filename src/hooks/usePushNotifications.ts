@@ -113,8 +113,8 @@ export const usePushNotifications = () => {
 
       // Step 7: Save token to database
       if (user?.id) {
-        // @ts-ignore - Avoid Supabase type recursion issue
-        const result: any = await supabase.from('user_push_tokens').upsert({
+        // @ts-expect-error - Avoid Supabase type recursion issue
+        const result: unknown = await supabase.from('user_push_tokens').upsert({
           user_id: user.id,
           token: token,
           device_type: 'web',
@@ -169,8 +169,8 @@ export const usePushNotifications = () => {
       }
 
       // Check for existing token in database
-      // @ts-ignore - Avoid Supabase type recursion issue
-      const result: any = await supabase
+      // @ts-expect-error - Avoid Supabase type recursion issue
+      const result: unknown = await supabase
         .from('user_push_tokens')
         .select('token')
         .eq('user_id', user.id)

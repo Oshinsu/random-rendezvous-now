@@ -29,7 +29,7 @@ export const useBlogGenerationLogs = () => {
       if (error) throw error;
       return (data || []) as BlogGenerationLog[];
     },
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 120000, // Refresh every 2min (was 30s)
   });
 };
 
@@ -83,6 +83,6 @@ export const useBlogGenerationStats = () => {
         recentActivity: recentLogs.length,
       };
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000, // 2min (was 30s)
   });
 };

@@ -6,32 +6,22 @@ import { GROUP_CONSTANTS } from '@/constants/groupConstants';
 import { getSearchRadius } from '@/utils/searchRadiusUtils';
 import { getGroupLocation } from '@/utils/parisRedirection';
 import { ErrorHandler } from '@/utils/errorHandling';
+import { logger } from '@/utils/logger';
 
 export class GroupGeolocationService {
+  /** Delegates to GeolocationService to avoid duplicating the Haversine formula. */
   static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371000; // Rayon de la Terre en mètres
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
+    return GeolocationService.calculateDistance(lat1, lon1, lat2, lon2);
   }
 
   static async findCompatibleGroup(userLocation: LocationData): Promise<Group | null> {
     try {
-      console.log('🌍 [POSTGIS OPTIMIZED] Recherche de groupe compatible...');
-      
-      // Utilisation centralisée de la redirection IDF
+      logger.debug('[POSTGIS OPTIMIZED] Recherche de groupe compatible...');
+
       const searchLocation = getGroupLocation(userLocation);
-      
+
       if (searchLocation.locationName !== userLocation.locationName) {
-        console.log('🗺️ Utilisateur IDF détecté - recherche de groupes parisiens');
+        logger.debug('Utilisateur IDF détecté - recherche de groupes parisiens');
       }
       
       const maxDistance = await getSearchRadius();
@@ -52,28 +42,26 @@ export class GroupGeolocationService {
         }> | null, error: any };
 
       if (error) {
-        console.error('❌ Erreur recherche PostGIS:', error);
-        // Fallback vers ancienne méthode si PostGIS échoue
+        logger.error('Erreur recherche PostGIS', error);
         return this.findCompatibleGroupLegacy(searchLocation);
       }
 
       if (!compatibleGroups || compatibleGroups.length === 0) {
-        console.log('📍 Aucun groupe compatible trouvé (PostGIS)');
+        logger.debug('Aucun groupe compatible trouvé (PostGIS)');
         return null;
       }
 
       const bestGroup = compatibleGroups[0];
-      console.log(`✅ [POSTGIS] Groupe compatible trouvé à ${Math.round(bestGroup.distance_meters / 1000)}km (âge: ${Math.round(bestGroup.group_age_minutes)}min):`, bestGroup.group_id);
-      
-      // Récupérer les détails complets du groupe
+      logger.debug(`[POSTGIS] Groupe trouvé à ${Math.round(bestGroup.distance_meters / 1000)}km`, bestGroup.group_id);
+
       const { data: groupDetails, error: detailsError } = await supabase
         .from('groups')
         .select('*')
         .eq('id', bestGroup.group_id)
         .single();
-      
+
       if (detailsError || !groupDetails) {
-        console.error('❌ Erreur récupération détails groupe:', detailsError);
+        logger.error('Erreur récupération détails groupe', detailsError);
         return null;
       }
       
@@ -84,9 +72,8 @@ export class GroupGeolocationService {
     }
   }
 
-  // Fallback legacy pour compatibilité
   private static async findCompatibleGroupLegacy(searchLocation: LocationData): Promise<Group | null> {
-    console.log('🔄 Utilisation méthode legacy (fallback)');
+    logger.debug('Utilisation méthode legacy (fallback)');
     
     const maxGroupAge = new Date(Date.now() - GROUP_CONSTANTS.GROUP_JOIN.MAX_GROUP_AGE).toISOString();
     

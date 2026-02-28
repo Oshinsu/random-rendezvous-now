@@ -45,7 +45,7 @@ export const useCRMCampaigns = () => {
       setLoading(true);
       
       // Use optimized RPC function (1 query instead of N+1)
-      // @ts-ignore - RPC function added via migration, not yet in generated types
+      // @ts-expect-error - RPC function added via migration, not yet in generated types
       const { data: campaignsData, error: campaignsError } = await supabase
         .rpc('get_campaigns_with_stats' as any);
 

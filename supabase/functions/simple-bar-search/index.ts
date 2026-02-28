@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,7 +72,7 @@ const selectBarWithDiversification = async (
       .order('assigned_at', { ascending: false });
     
     if (error) {
-      console.warn('⚠️ [DIVERSIFICATION] DB error, fallback to simple random:', error.message);
+      console.warn('⚠️ [DIVERSIFICATION] DB error, fallback to simple random:', (error instanceof Error ? error.message : String(error)));
       const randomBar = bars[Math.floor(Math.random() * bars.length)];
       return { ...randomBar, weight: 1.0 };
     }
@@ -449,7 +448,7 @@ const searchBarsWithRadius = async (latitude: number, longitude: number, radius:
   return data.places || [];
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -773,7 +772,7 @@ serve(async (req) => {
           status_code: 500,
           response_time_ms: Date.now() - startTime,
           cost_usd: 0,
-          error_message: error instanceof Error ? error.message : 'Unknown error',
+          error_message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
           metadata: { error_details: error }
         }
       });
@@ -782,7 +781,7 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ error: 'Erreur de recherche', details: error.message }),
+      JSON.stringify({ error: 'Erreur de recherche', details: (error instanceof Error ? error.message : String(error)) }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

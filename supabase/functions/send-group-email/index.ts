@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,7 +56,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Failed to get Zoho access token');
     }
 
-    const { access_token } = await tokenResponse.json();
+    const tokenData = await tokenResponse.json();
+    const access_token: string | undefined = tokenData.access_token;
+
+    if (!access_token) {
+      console.error('❌ Zoho token response missing access_token:', tokenData);
+      throw new Error('Failed to retrieve Zoho access token');
+    }
 
     // Build email based on type
     let subject = '';
@@ -97,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case 'bar_assigned':
-        subject = `🍸 RDV au ${bar_name} !`;
+        subject = `🍸 RDV au ${bar_name || 'bar mystère'} !`;
         htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #10b981;">Ton bar est prêt ! 🔥</h1>
@@ -149,10 +154,11 @@ const handler = async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error in send-group-email:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

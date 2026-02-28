@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -361,7 +360,7 @@ const searchBarsWithRadius = async (latitude: number, longitude: number, radius:
   return data.places || [];
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -637,8 +636,8 @@ serve(async (req) => {
         formatted_address: randomBar.formattedAddress || 'Adresse non disponible',
         geometry: {
           location: {
-            lat: randomBar.location.latitude,
-            lng: randomBar.location.longitude
+            lat: randomBar.location?.latitude ?? null,
+            lng: randomBar.location?.longitude ?? null,
           }
         }
       }
@@ -738,7 +737,7 @@ serve(async (req) => {
         .from('group_participants')
         .select('user_id')
         .eq('group_id', group_id)
-        .eq('status', 'active');
+        .eq('status', 'confirmed');
       
       if (participants && participants.length > 0) {
         const userIds = participants.map(p => p.user_id);
@@ -814,8 +813,9 @@ serve(async (req) => {
       console.error('Failed to log API error:', logError);
     }
     
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Erreur serveur', details: error.message }),
+      JSON.stringify({ success: false, error: 'Erreur serveur', details: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

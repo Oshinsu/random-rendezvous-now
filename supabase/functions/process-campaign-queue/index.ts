@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,7 +8,7 @@ const corsHeaders = {
 const BATCH_SIZE = 5; // Send 5 emails per batch (respects 10 OAuth/min limit)
 const ZOHO_HOURLY_LIMIT = 100;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -65,7 +64,8 @@ serve(async (req) => {
       }
 
       // Get next batch of users to send
-      const usersToSend = campaign.users.slice(
+      const allUsers: Array<{ email: string; firstName?: string; userId: string }> = campaign.users ?? [];
+      const usersToSend = allUsers.slice(
         campaign.processed, 
         campaign.processed + BATCH_SIZE
       );
@@ -77,11 +77,11 @@ serve(async (req) => {
       for (const user of usersToSend) {
         try {
           // Replace template variables
-          const subject = campaign.campaign_data.subject
-            .replace(/{{first_name}}/g, user.firstName || 'là');
-          
-          const content = campaign.campaign_data.content
-            .replace(/{{first_name}}/g, user.firstName || 'là');
+          const rawSubject: string = campaign.campaign_data?.subject ?? '(sans objet)';
+          const rawContent: string = campaign.campaign_data?.content ?? '';
+          const firstName = user.firstName || 'là';
+          const subject = rawSubject.replace(/{{first_name}}/g, firstName);
+          const content = rawContent.replace(/{{first_name}}/g, firstName);
 
           /**
            * Send email with retry logic (exponential backoff)
@@ -203,10 +203,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Queue processor error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

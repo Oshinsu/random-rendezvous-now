@@ -87,6 +87,6 @@ export const usePushAnalytics = (dateRange: 'week' | 'month' | 'all' = 'month') 
         percentChange: Math.round(percentChange * 10) / 10,
       };
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 300000, // Refresh every 5min (was 1min)
   });
 };

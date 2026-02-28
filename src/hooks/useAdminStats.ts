@@ -35,8 +35,8 @@ export const useAdminStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Refresh stats every 30 seconds
-    const interval = setInterval(fetchStats, 30000);
+    // Refresh stats every 2 minutes (was 30s)
+    const interval = setInterval(fetchStats, 120000);
     
     return () => clearInterval(interval);
   }, []);

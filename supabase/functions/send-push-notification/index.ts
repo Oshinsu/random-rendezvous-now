@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { create, getNumericDate } from 'https://deno.land/x/djwt@v3.0.2/mod.ts';
 
 // Interface for push notification requests
@@ -261,7 +261,7 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to create notifications: ${notifError.message}`);
     }
 
-    console.log(`✅ Created ${createdNotifications.length} in-app notifications`);
+    console.log(`✅ Created ${createdNotifications?.length ?? 0} in-app notifications`);
 
     // Step 2: Get active push tokens (< 30 days)
     const { data: activeTokens, error: tokensError } = await supabase
@@ -270,7 +270,12 @@ Deno.serve(async (req) => {
       .in('user_id', user_ids)
       .gt('last_used_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-    if (tokensError || !activeTokens || activeTokens.length === 0) {
+    if (tokensError) {
+      console.error('❌ Error fetching push tokens:', tokensError);
+      throw new Error(`Failed to fetch push tokens: ${tokensError.message}`);
+    }
+
+    if (!activeTokens || activeTokens.length === 0) {
       console.log('⚠️ No active push tokens found');
       return new Response(
         JSON.stringify({
@@ -311,14 +316,21 @@ Deno.serve(async (req) => {
 
     console.log(`✅ ${validUserIds.length} valid recipients after filtering`);
 
-    // Step 5: Get FCM tokens for valid users
+    // Step 5: Get FCM tokens for valid users (same 30-day freshness filter as step 2)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: fcmTokens, error: tokenError } = await supabase
       .from('user_push_tokens')
       .select('token, user_id')
       .in('user_id', validUserIds)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .gt('last_used_at', thirtyDaysAgo);
 
-    if (tokenError || !fcmTokens || fcmTokens.length === 0) {
+    if (tokenError) {
+      console.error('❌ Error fetching FCM tokens:', tokenError);
+      throw new Error(`Failed to fetch FCM tokens: ${tokenError.message}`);
+    }
+
+    if (!fcmTokens || fcmTokens.length === 0) {
       console.log('⚠️ No FCM tokens found for valid users');
       return new Response(
         JSON.stringify({ success: true, message: 'No FCM tokens', sent: 0, failed: 0 }),
@@ -391,9 +403,10 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

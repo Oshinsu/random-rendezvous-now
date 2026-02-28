@@ -1,12 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -88,8 +87,11 @@ serve(async (req) => {
         case 'inactivity':
           if (daysInactiveExact !== undefined) {
             // Match exact days for specific rules
-            const expectedDays = condition.days_inactive || condition.hours_since_signup ? 
-              Math.ceil((condition.hours_since_signup || 0) / 24) : 7;
+            const expectedDays = condition.days_inactive != null
+              ? condition.days_inactive
+              : condition.hours_since_signup != null
+                ? Math.ceil(condition.hours_since_signup / 24)
+                : 7;
             
             // Additional checks for specific rules
             const matchesNeverLoggedIn = condition.never_logged_in === undefined || 
@@ -340,7 +342,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in lifecycle-automations:', error);
     return new Response(
-      JSON.stringify({ error: error.message, success: false }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)), success: false }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

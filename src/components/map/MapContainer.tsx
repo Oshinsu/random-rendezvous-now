@@ -15,31 +15,14 @@ const MapContainer = ({
   onBarLocationUpdated
 }: MapContainerProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
   const [barLocationUpdated, setBarLocationUpdated] = useState(false);
   const lastCoordinatesRef = useRef<{ lat?: number; lng?: number }>({});
   const { track } = useAnalytics();
 
-  // Ne devrait JAMAIS être appelé sans coordonnées valides (vérifié dans GroupsPage)
-  if (!barLatitude || !barLongitude) {
-    console.error('❌ MapContainer appelé sans coordonnées valides');
-    return (
-      <div className="w-full h-64 bg-red-50 flex items-center justify-center text-red-600 rounded-lg">
-        Erreur : coordonnées du bar manquantes
-      </div>
-    );
-  }
-
-  const mapLat = barLatitude;
-  const mapLng = barLongitude;
-
-  console.log('🗺️ [MapContainer] Props reçues:', {
-    barName,
-    barAddress,
-    isGroupComplete,
-    coordinates: barLatitude && barLongitude ? `${barLatitude}, ${barLongitude}` : 'Coordonnées par défaut utilisées'
-  });
+  const mapLat = barLatitude ?? 0;
+  const mapLng = barLongitude ?? 0;
 
   // Effet pour détecter les changements de coordonnées du bar SEULEMENT si elles ont vraiment changé
   useEffect(() => {
@@ -132,7 +115,7 @@ const MapContainer = ({
 
         const google = await loader.load();
         
-        const mapOptions: any = {
+        const mapOptions: google.maps.MapOptions = {
           center: { lat: mapLat, lng: mapLng },
           zoom: barLatitude && barLongitude ? 16 : 12, // Zoom moins fort si coordonnées par défaut
           mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -237,7 +220,6 @@ const MapContainer = ({
 
     return () => {
       if (mapInstanceRef.current) {
-        // Nettoyer la carte si nécessaire
         mapInstanceRef.current = null;
       }
       if (markerRef.current) {
@@ -245,6 +227,15 @@ const MapContainer = ({
       }
     };
   }, [isGroupComplete, mapLat, mapLng, barName, barAddress, barLatitude, barLongitude, onMapLoaded]);
+
+  if (!barLatitude || !barLongitude) {
+    console.error('❌ MapContainer appelé sans coordonnées valides');
+    return (
+      <div className="w-full h-64 bg-red-50 flex items-center justify-center text-red-600 rounded-lg">
+        Erreur : coordonnées du bar manquantes
+      </div>
+    );
+  }
 
   return (
     <div 

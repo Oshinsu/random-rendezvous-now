@@ -47,7 +47,7 @@ interface AdminGroupsAnalytics {
 }
 
 export const useAdminGroupsAnalytics = () => {
-  // Timeline data (refetch every 30s)
+  // Timeline data (refetch every 2min)
   const { data: timeline, isLoading: timelineLoading, refetch: refetchTimeline } = useQuery({
     queryKey: ['admin-groups-timeline'],
     queryFn: async () => {
@@ -55,8 +55,8 @@ export const useAdminGroupsAnalytics = () => {
       if (error) throw error;
       return data as TimelineData[];
     },
-    refetchInterval: 30000,
-    staleTime: 20000,
+    refetchInterval: 120000, // was 30s
+    staleTime: 60000,
   });
 
   // Geographic distribution (refetch every 2min)
@@ -83,7 +83,7 @@ export const useAdminGroupsAnalytics = () => {
     staleTime: 120000,
   });
 
-  // Funnel analysis (refetch every 1min)
+  // Funnel analysis (refetch every 5min)
   const { data: funnel, isLoading: funnelLoading, refetch: refetchFunnel } = useQuery({
     queryKey: ['admin-groups-funnel'],
     queryFn: async () => {
@@ -91,8 +91,8 @@ export const useAdminGroupsAnalytics = () => {
       if (error) throw error;
       return data as FunnelData[];
     },
-    refetchInterval: 60000,
-    staleTime: 30000,
+    refetchInterval: 300000, // was 60s
+    staleTime: 120000,
   });
 
   const refreshAnalytics = () => {

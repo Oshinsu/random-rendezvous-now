@@ -82,7 +82,7 @@ export const useNotificationTypesConfig = () => {
 
       return enriched;
     },
-    refetchInterval: 30000,
+    refetchInterval: 120000, // 2min (was 30s)
   });
 
   const toggleActivation = useMutation({

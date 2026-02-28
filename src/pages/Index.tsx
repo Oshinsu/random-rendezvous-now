@@ -107,16 +107,16 @@ const Index = () => {
         </Suspense>
       )}
       <Helmet>
-        <title>Random • 1 clic, 1 groupe, 1 bar | Soirées authentiques</title>
-        <meta name="description" content="Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies. Beta gratuite à Paris." />
+        <title>Random • 1 clic. 5 inconnus. 1 bar. | Martinique</title>
+        <meta name="description" content="Random tire ton groupe de 5 au sort et choisit un bar. Pas d'algo, pas de filtre. Que du hasard. Bêta gratuite en Martinique — Mars 2026." />
         <link rel="canonical" href={typeof window !== "undefined" ? `${window.location.origin}/` : "/"} />
         
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://xhrievvdnajvylyrowwu.supabase.co" />
         <link rel="dns-prefetch" href="https://xhrievvdnajvylyrowwu.supabase.co" />
         
-        <meta property="og:title" content="Random • 1 clic, 1 groupe, 1 bar" />
-        <meta property="og:description" content="Clique, on forme ton groupe de 5 et on choisit un bar près de toi." />
+        <meta property="og:title" content="Random • 1 clic. 5 inconnus. 1 bar." />
+        <meta property="og:description" content="Le hasard forme ton groupe, tire un bar au sort. Vraies rencontres, zéro algo. Lancement Martinique mars 2026." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify({
@@ -124,7 +124,7 @@ const Index = () => {
           "@type": "WebSite",
           "name": "Random",
           "url": typeof window !== "undefined" ? `${window.location.origin}/` : "https://random.app/",
-          "description": "Random forme un groupe de 5 près de toi et choisit un bar ouvert. 1 clic pour des rencontres vraies."
+          "description": "Random tire ton groupe de 5 au sort et choisit un bar. Pas d'algo, pas de filtre. Lancement Martinique mars 2026."
         })}</script>
       </Helmet>
       <header className="p-3 sm:p-4 glass-enhanced sticky top-0 z-50">

@@ -29,8 +29,7 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "ipv4"
-port = 54324
+ip_version = "IPv4"
 max_header_length = 4096
 
 [studio]
@@ -41,45 +40,35 @@ api_url = "http://127.0.0.1:54321"
 [inbucket]
 enabled = true
 port = 54324
-server_name = "localhost"
 
 [storage]
 enabled = true
-port = 54325
 file_size_limit = "50MiB"
-file_transform_enabled = false
 
 [auth]
 enabled = true
-port = 54326
 site_url = "https://www.random-app.fr"
 additional_redirect_urls = ["https://xhrievvdnajvylyrowwu.supabase.co", "https://www.random-app.fr", "https://www.random-app.fr/**", "http://localhost:3000/**"]
 jwt_expiry = 3600
 enable_signup = true
-enable_email_confirmations = false
-enable_email_autoconfirm = true
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
-enable_email_autoconfirm = true
 
 [auth.sms]
 enable_signup = false
 enable_confirmations = false
-enable_sms_autoconfirm = true
 
 [edge_runtime]
 enabled = true
-port = 54327
 inspector_port = 54328
 
 [analytics]
 enabled = false
 port = 54329
 vector_port = 54330
-gw_port = 54331
 
 [functions.group-participant-trigger]
 verify_jwt = false
@@ -146,20 +135,11 @@ verify_jwt = false
 [functions.scheduled-campaigns]
 verify_jwt = false
 
-[functions.scheduled-campaigns.schedule]
-cron = "*/15 * * * *"
-
 [functions.process-recurring-campaigns]
 verify_jwt = false
 
-[functions.process-recurring-campaigns.schedule]
-cron = "0 2 * * *"
-
 [functions.process-campaign-queue]
 verify_jwt = false
-
-[functions.process-campaign-queue.schedule]
-cron = "* * * * *"
 
 [functions.optimize-send-time]
 verify_jwt = false
@@ -203,14 +183,8 @@ verify_jwt = false
 [functions.sync-notification-analytics]
 verify_jwt = false
 
-[functions.sync-notification-analytics.schedule]
-cron = "0 2 * * *"
-
 [functions.update-notification-config-stats]
 verify_jwt = false
-
-[functions.update-notification-config-stats.schedule]
-cron = "0 * * * *"
 
 [functions.get-notification-analytics]
 verify_jwt = false
@@ -220,7 +194,4 @@ verify_jwt = false
 # https://datatracker.ietf.org/doc/html/rfc6749
 [functions.refresh-zoho-token]
 verify_jwt = false
-
-[functions.refresh-zoho-token.schedule]
-cron = "*/45 * * * *"
 

@@ -21,7 +21,9 @@ const ChatHeader = ({ messageCount, loading, onRefresh }: ChatHeaderProps) => {
       } else {
         toast.error('Activez-les dans les paramètres du navigateur.');
       }
-    } catch {}
+    } catch {
+      // ignore permission errors
+    }
   };
   return (
     <CardHeader className="pb-2">

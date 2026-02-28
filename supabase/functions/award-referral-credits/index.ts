@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in award-referral-credits:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: (error instanceof Error ? error.message : String(error)),
       details: error 
     }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

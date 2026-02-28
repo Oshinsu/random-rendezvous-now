@@ -1,13 +1,18 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { timingSafeEqual } from 'node:crypto';
 import { createHmac } from 'node:crypto';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const resendWebhookSecret = Deno.env.get('RESEND_WEBHOOK_SECRET')!;
 
 /**
- * Verify Resend webhook signature
+ * Verify Resend webhook signature using timing-safe comparison
  * https://resend.com/docs/dashboard/webhooks/verify-signature
  */
 function verifySignature(signature: string | null, body: string): boolean {
@@ -20,32 +25,40 @@ function verifySignature(signature: string | null, body: string): boolean {
     const hmac = createHmac('sha256', resendWebhookSecret);
     hmac.update(body);
     const expectedSignature = hmac.digest('hex');
-    
-    // Compare signatures (constant-time comparison)
-    return signature === expectedSignature;
+
+    // Timing-safe comparison to prevent timing attacks
+    const sigBuf = Buffer.from(signature.padEnd(expectedSignature.length, '0'));
+    const expBuf = Buffer.from(expectedSignature.padEnd(signature.length, '0'));
+    if (sigBuf.length !== expBuf.length) return false;
+    return timingSafeEqual(sigBuf, expBuf);
   } catch (error) {
     console.error('Error verifying signature:', error);
     return false;
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   // Only accept POST requests
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     // Get raw body for signature verification
     const rawBody = await req.text();
     const signature = req.headers.get('resend-signature');
-    
+
     // Verify webhook signature (IMPORTANT for security)
     if (resendWebhookSecret && !verifySignature(signature, rawBody)) {
       console.error('Invalid webhook signature');
-      return new Response('Invalid signature', { status: 401 });
+      return new Response('Invalid signature', { status: 401, headers: corsHeaders });
     }
 
     // Parse event
@@ -64,11 +77,11 @@ serve(async (req) => {
     if (findError || !emailLog) {
       console.error('Email log not found for resend_id:', data.email_id);
       // Still return 200 to avoid Resend retries
-      return new Response('Email log not found', { status: 200 });
+      return new Response('Email log not found', { status: 200, headers: corsHeaders });
     }
 
     // Update email log based on event type
-    let updateData: any = {};
+    let updateData: Record<string, unknown> = {};
 
     switch (type) {
       case 'email.sent':
@@ -80,7 +93,6 @@ serve(async (req) => {
         break;
 
       case 'email.delivery_delayed':
-        // Don't change status, just log
         console.warn('Email delivery delayed:', data.email_id);
         break;
 
@@ -93,7 +105,6 @@ serve(async (req) => {
         break;
 
       case 'email.opened':
-        // Only update if not already clicked (clicked > opened)
         if (emailLog.status !== 'clicked') {
           updateData = {
             status: 'opened',
@@ -106,7 +117,6 @@ serve(async (req) => {
         updateData = {
           status: 'clicked',
           clicked_at: new Date().toISOString(),
-          // If opened_at is null, set it to clicked_at (user clicked without opening tracking)
           ...(emailLog.opened_at ? {} : { opened_at: new Date().toISOString() }),
         };
         break;
@@ -116,7 +126,6 @@ serve(async (req) => {
         break;
     }
 
-    // Update email log if there's data to update
     if (Object.keys(updateData).length > 0) {
       const { error: updateError } = await supabase
         .from('email_send_logs')
@@ -125,18 +134,16 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating email log:', updateError);
-        return new Response('Error updating log', { status: 500 });
+        return new Response('Error updating log', { status: 500, headers: corsHeaders });
       }
 
       console.log(`Email log updated: ${emailLog.id} -> ${updateData.status || 'metadata updated'}`);
     }
 
-    // Return 200 to acknowledge receipt
-    return new Response('OK', { status: 200 });
+    return new Response('OK', { status: 200, headers: corsHeaders });
   } catch (error) {
     console.error('Webhook processing error:', error);
     // Return 200 even on error to avoid Resend retries
-    return new Response('Error processed', { status: 200 });
+    return new Response('Error processed', { status: 200, headers: corsHeaders });
   }
 });
-

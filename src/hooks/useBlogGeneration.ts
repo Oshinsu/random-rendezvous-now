@@ -33,7 +33,7 @@ export const useBlogGeneration = () => {
       const { data, error } = await supabase
         .from('blog_generation_schedule')
         .update(updates)
-        .eq('id', schedule?.id!)
+        .eq('id', schedule!.id)
         .select()
         .single();
 

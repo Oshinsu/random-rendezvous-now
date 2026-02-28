@@ -1,13 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -34,10 +33,10 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch group coordinates
+    // Fetch group data including status and participant count
     const { data: groupData, error: fetchError } = await supabase
       .from('groups')
-      .select('latitude, longitude, bar_place_id')
+      .select('latitude, longitude, bar_place_id, status, current_participants, max_participants')
       .eq('id', group_id)
       .single();
 
@@ -53,6 +52,23 @@ serve(async (req) => {
       console.log('⏭️ Bar already assigned, skipping');
       return new Response(
         JSON.stringify({ success: true, message: 'Bar already assigned' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Guard: only assign bar when group is confirmed and full
+    if (groupData.status !== 'confirmed') {
+      console.log(`⏭️ Group status is '${groupData.status}', skipping bar assignment`);
+      return new Response(
+        JSON.stringify({ success: true, message: `Group not confirmed (status: ${groupData.status})` }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if ((groupData.current_participants ?? 0) < (groupData.max_participants ?? 5)) {
+      console.log(`⏭️ Group not full (${groupData.current_participants}/${groupData.max_participants}), skipping`);
+      return new Response(
+        JSON.stringify({ success: true, message: 'Group not full yet' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -94,7 +110,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ [TRIGGER-BAR-ASSIGNMENT] Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: (error instanceof Error ? error.message : String(error)) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -92,19 +92,18 @@ Deno.serve(async (req) => {
       const { error: upsertError } = await supabase
         .from('notification_analytics')
         .upsert({
-          notification_type: notifType,
           event_type: notifType,
           successful_sends: totalSent || 0,
           opened_count: totalOpened || 0,
-          open_rate: Math.round(openRate * 10) / 10, // Round to 1 decimal
-          clicked_count: 0, // Will be populated by track_notification_click
-          converted_count: 0, // Will be populated by track_notification_conversion
+          open_rate: Math.round(openRate * 10) / 10,
+          clicked_count: 0,
+          converted_count: 0,
           click_rate: 0,
           conversion_rate: 0,
           created_at: startDate,
           updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'notification_type,created_at',
+          onConflict: 'event_type,created_at',
         });
 
       if (upsertError) {
@@ -152,7 +151,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('❌ Fatal error in sync-notification-analytics:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

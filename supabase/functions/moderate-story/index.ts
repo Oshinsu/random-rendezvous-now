@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,13 +33,9 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
+    const { data: isAdmin, error: adminError } = await supabaseClient.rpc('is_admin_user');
 
-    if (!profile?.is_admin) {
+    if (adminError || !isAdmin) {
       throw new Error('Admin access required');
     }
 
@@ -97,7 +93,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error moderating story:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }),
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

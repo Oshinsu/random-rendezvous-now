@@ -44,8 +44,8 @@ export const useComprehensiveAdminStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Increase interval to 60 seconds to reduce load
-    const interval = setInterval(fetchStats, 60000);
+    // Refresh stats every 5 minutes (was 60s)
+    const interval = setInterval(fetchStats, 300000);
     
     return () => clearInterval(interval);
   }, []);

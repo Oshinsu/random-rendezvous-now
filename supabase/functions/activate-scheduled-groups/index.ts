@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -151,11 +151,12 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error('❌ Unexpected error in activate-scheduled-groups:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
-        details: error.message,
+        details: message,
         timestamp: new Date().toISOString()
       }),
       { 

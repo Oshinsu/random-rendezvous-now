@@ -100,7 +100,7 @@ export function DynamicRecommendations({
       recommendations.push({
         id: 'large-groups',
         title: 'Grands groupes fréquents',
-        description: `Moyenne de ${avgGroupSize} pers/groupe. Assurez-vous d\'avoir l\'espace nécessaire.`,
+        description: `Moyenne de ${avgGroupSize} pers/groupe. Assurez-vous d'avoir l'espace nécessaire.`,
         impact: 'medium',
         category: 'retention',
         icon: <Users className="h-5 w-5" />,

@@ -1,5 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { Resend } from 'npm:resend@2.0.0';
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
@@ -7,7 +6,7 @@ const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // CORS headers
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -65,13 +64,13 @@ serve(async (req) => {
             campaign_id: campaignId,
             recipient_email: to,
             status: 'failed',
-            bounced_reason: error.message,
-            metadata: { user_id: userId, error: error.message },
+            bounced_reason: (error instanceof Error ? error.message : String(error)),
+            metadata: { user_id: userId, error: (error instanceof Error ? error.message : String(error)) },
           });
       }
       
       return new Response(
-        JSON.stringify({ error: error.message }), 
+        JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }), 
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -110,7 +109,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }), 
+      JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) || 'Internal server error' }), 
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
